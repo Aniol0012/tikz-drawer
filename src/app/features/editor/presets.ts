@@ -100,7 +100,7 @@ export const defaultPreferences: EditorPreferences = {
   snapToGrid: true,
   showGrid: true,
   showAxes: true,
-  scale: 32,
+  scale: 24,
   snapStep: 0.25,
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',

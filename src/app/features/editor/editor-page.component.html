@@ -107,6 +107,17 @@
         </button>
       </div>
 
+      <button
+        class="icon-button"
+        type="button"
+        [class.is-active]="inspectorTab() === 'scene'"
+        [title]="t('canvasSettings')"
+        (click)="setInspectorTab('scene')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.settings"></path>
+        </svg>
+      </button>
+
       <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
@@ -150,6 +161,7 @@
               <button
                 class="preset-card preset-card--scene"
                 type="button"
+                [title]="scenePresetDescription(preset)"
                 (click)="applyScenePreset(preset.id)">
                 <span class="preset-card__icon"
                   ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -179,9 +191,10 @@
             <div class="preset-list">
               @for (preset of section.presets; track presetTrackBy($index, preset)) {
                 <button
-                  class="preset-card"
+                  class="preset-card preset-card--library"
                   type="button"
                   [class.is-active]="activeTool() === preset.id"
+                  [title]="preset.description"
                   (click)="setActiveTool(preset.id)">
                   <span class="preset-card__icon"
                     ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -409,7 +422,7 @@
         </div>
 
         <div class="canvas-corner canvas-corner--bottom">
-          <div class="canvas-control-group">
+          <div class="canvas-control-group" (pointerdown)="$event.stopPropagation()">
             <button
               class="icon-button"
               type="button"
@@ -440,7 +453,7 @@
               </svg>
             </button>
           </div>
-          <div class="canvas-control-group canvas-control-group--zoom">
+          <div class="canvas-control-group canvas-control-group--zoom" (pointerdown)="$event.stopPropagation()">
             <button class="icon-button" type="button" [title]="t('zoomOut')" (click)="zoomOut()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.minus"></path>
@@ -448,11 +461,11 @@
             </button>
             <input
               type="range"
-              min="16"
+              min="12"
               max="120"
               step="4"
               [value]="preferences().scale"
-              (input)="updatePreferenceNumber('scale', $event, 16, 120)" />
+              (input)="updatePreferenceNumber('scale', $event, 12, 120)" />
             <button class="zoom-chip" type="button" (click)="resetZoom()">
               {{ zoomPercent() }}%
             </button>
@@ -463,6 +476,21 @@
             </button>
           </div>
         </div>
+
+        @if (showMinimap() && minimapOverview(); as minimap) {
+          <div class="minimap" (pointerdown)="$event.stopPropagation()">
+            <svg
+              class="minimap__svg"
+              [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
+              aria-hidden="true">
+              <rect class="minimap__scene" [attr.x]="minimap.sceneRect.x" [attr.y]="minimap.sceneRect.y" [attr.width]="minimap.sceneRect.width" [attr.height]="minimap.sceneRect.height"></rect>
+              @for (shape of minimap.shapes; track $index) {
+                <rect class="minimap__shape" [attr.x]="shape.x" [attr.y]="shape.y" [attr.width]="shape.width" [attr.height]="shape.height"></rect>
+              }
+              <rect class="minimap__viewport" [attr.x]="minimap.viewportRect.x" [attr.y]="minimap.viewportRect.y" [attr.width]="minimap.viewportRect.width" [attr.height]="minimap.viewportRect.height"></rect>
+            </svg>
+          </div>
+        }
       </div>
     </section>
 
@@ -860,11 +888,22 @@
                     @case ('text') {
                       <label class="field field--full"
                         ><span>{{ t('text') }}</span
-                        ><input
-                          type="text"
+                        ><textarea
+                          rows="3"
                           [value]="shape.text"
                           (input)="updateShapeText('text', $event)"
-                      /></label>
+                      ></textarea></label>
+                      <div class="field field--full">
+                        <span>{{ t('fontSize') }}</span>
+                        <div class="chip-row">
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.42)">S</button>
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.72)">M</button>
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(1.08)">L</button>
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('uppercase')">AA</button>
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('lowercase')">aa</button>
+                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('titlecase')">Aa</button>
+                        </div>
+                      </div>
                       <label class="field"
                         ><span>{{ t('x') }}</span>
                         <div class="range-field">
@@ -947,17 +986,17 @@
                   <div class="range-field">
                     <input
                       type="range"
-                      min="16"
+                      min="12"
                       max="120"
                       step="4"
                       [value]="preferences().scale"
-                      (input)="updatePreferenceNumber('scale', $event, 16, 120)" /><input
+                      (input)="updatePreferenceNumber('scale', $event, 12, 120)" /><input
                       type="number"
-                      min="16"
+                      min="12"
                       max="120"
                       step="4"
                       [value]="preferences().scale"
-                      (input)="updatePreferenceNumber('scale', $event, 16, 120)" /></div
+                      (input)="updatePreferenceNumber('scale', $event, 12, 120)" /></div
                 ></label>
                 <label class="field"
                   ><span>{{ t('snapTolerance') }} · {{ formatValue(preferences().snapStep) }}</span>

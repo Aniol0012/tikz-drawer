@@ -6,21 +6,24 @@
 }
 
 .editor-shell {
-  min-height: 100dvh;
-  display: grid;
-  grid-template-rows: 64px minmax(0, 1fr);
+  --topbar-height: 64px;
+  height: 100dvh;
   background: var(--app-background);
   overflow: hidden;
+  padding-top: var(--topbar-height);
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 30;
   display: grid;
   grid-template-columns: minmax(320px, 1fr) auto auto;
   gap: 12px;
   align-items: center;
+  min-height: var(--topbar-height);
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--panel-background);
@@ -118,6 +121,7 @@
 
 .workspace {
   min-height: 0;
+  height: calc(100dvh - var(--topbar-height));
   display: grid;
   grid-template-columns:
     minmax(240px, var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr)
@@ -128,6 +132,7 @@
 .left-sidebar,
 .right-sidebar {
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -306,6 +311,7 @@
 .mode-switch button.is-active,
 .sidebar-tabs button.is-active,
 .object-row.is-active,
+.icon-button.is-active,
 .canvas-chip.is-active {
   border-color: var(--accent-soft-border);
   background: var(--accent-soft);
@@ -418,22 +424,22 @@
 
 .preset-card {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
-  min-height: 56px;
-  padding: 8px 10px;
+  min-height: 46px;
+  padding: 7px 8px;
   text-align: left;
 }
 
 .preset-card--scene {
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr);
 }
 
 .preset-card__icon,
 .object-row__icon {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border: 1px solid var(--tool-border);
@@ -446,6 +452,18 @@
   min-width: 0;
   display: grid;
   gap: 2px;
+}
+
+.left-sidebar .preset-card__body small {
+  display: none;
+}
+
+.left-sidebar .preset-card__body strong {
+  font-size: 0.92rem;
+}
+
+.preset-card--scene .preset-card__body small {
+  display: block;
 }
 
 .preset-card__body strong,
@@ -489,13 +507,15 @@ kbd {
 .canvas-panel {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   padding: 12px;
   background: var(--canvas-shell-background);
+  overflow: hidden;
 }
 
 .canvas-viewport {
   position: relative;
-  min-height: 100%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid var(--tool-border);
   border-radius: 14px;
@@ -581,7 +601,7 @@ kbd {
 .canvas-empty {
   position: absolute;
   left: 16px;
-  bottom: 16px;
+  top: 16px;
   max-width: 260px;
   padding: 14px;
   border: 1px solid var(--tool-border);
@@ -617,6 +637,8 @@ kbd {
 .canvas-corner--bottom {
   left: 14px;
   bottom: 14px;
+  right: 164px;
+  align-items: flex-end;
 }
 
 .canvas-control-group {
@@ -644,6 +666,43 @@ kbd {
 
 .canvas-chip span {
   font-weight: 700;
+}
+
+.minimap {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  width: 132px;
+  height: 132px;
+  padding: 6px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
+  box-shadow: var(--floating-shadow);
+}
+
+.minimap__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.minimap__scene {
+  fill: color-mix(in srgb, var(--app-foreground) 4%, transparent);
+  stroke: color-mix(in srgb, var(--app-foreground) 12%, transparent);
+}
+
+.minimap__shape {
+  fill: color-mix(in srgb, var(--accent) 28%, white);
+  stroke: color-mix(in srgb, var(--accent) 66%, black 6%);
+  stroke-width: 0.8;
+}
+
+.minimap__viewport {
+  fill: transparent;
+  stroke: var(--app-foreground);
+  stroke-width: 1.4;
 }
 
 .zoom-chip {
@@ -749,9 +808,29 @@ kbd {
 }
 
 .field input[type='color'] {
+  width: 48px;
+  min-width: 48px;
   min-height: 40px;
-  padding: 4px;
+  padding: 3px;
   cursor: pointer;
+  justify-self: start;
+}
+
+.field textarea {
+  padding: 8px 10px;
+  resize: vertical;
+  min-height: 76px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondary-button--compact {
+  min-height: 30px;
+  padding: 0 10px;
 }
 
 .code-block,
@@ -970,7 +1049,7 @@ button:disabled {
 
 @media (max-width: 1220px) {
   .editor-shell {
-    grid-template-rows: auto minmax(0, 1fr);
+    --topbar-height: 124px;
   }
 
   .topbar {
@@ -985,6 +1064,7 @@ button:disabled {
   }
 
   .workspace {
+    height: calc(100dvh - var(--topbar-height));
     grid-template-columns: 1fr;
     grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
@@ -1014,6 +1094,10 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .editor-shell {
+    --topbar-height: 148px;
+  }
+
   .topbar {
     padding: 10px;
   }
@@ -1050,6 +1134,7 @@ button:disabled {
 
   .canvas-corner--bottom {
     bottom: 12px;
+    right: 12px;
     flex-direction: column;
     align-items: stretch;
   }
@@ -1058,6 +1143,11 @@ button:disabled {
   .canvas-control-group--zoom {
     width: 100%;
     min-width: 0;
+  }
+
+  .minimap {
+    width: 108px;
+    height: 108px;
   }
 
   .export-modal__header,

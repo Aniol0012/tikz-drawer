@@ -119,6 +119,21 @@ interface SidebarResizeState {
   readonly startWidth: number;
 }
 
+interface MinimapRect {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+interface MinimapOverview {
+  readonly viewBoxWidth: number;
+  readonly viewBoxHeight: number;
+  readonly sceneRect: MinimapRect;
+  readonly viewportRect: MinimapRect;
+  readonly shapes: readonly MinimapRect[];
+}
+
 @Component({
   selector: 'app-editor-page',
   templateUrl: './editor-page.component.html',
@@ -135,6 +150,7 @@ interface SidebarResizeState {
   }
 })
 export class EditorPageComponent {
+  private readonly defaultScale = 24;
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -192,7 +208,7 @@ export class EditorPageComponent {
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
 
-  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / 32) * 100));
+  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
   readonly selectionLabel = computed(() => {
     if (this.selectionCount() === 0) return this.t('noneSelected');
     if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
@@ -214,6 +230,57 @@ export class EditorPageComponent {
       top: viewportCenter.y + halfHeight,
       bottom: viewportCenter.y - halfHeight
     };
+  });
+  readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
+  readonly minimapOverview = computed<MinimapOverview | null>(() => {
+    const sceneBounds = this.sceneContentBounds();
+    if (!sceneBounds) return null;
+
+    const visibleBounds = this.visibleWorldBounds();
+    const padding = 1.5;
+    const left = Math.min(sceneBounds.left, visibleBounds.left) - padding;
+    const right = Math.max(sceneBounds.right, visibleBounds.right) + padding;
+    const bottom = Math.min(sceneBounds.bottom, visibleBounds.bottom) - padding;
+    const top = Math.max(sceneBounds.top, visibleBounds.top) + padding;
+    const width = Math.max(right - left, 1);
+    const height = Math.max(top - bottom, 1);
+    const mapSize = 100;
+    const scaleX = mapSize / width;
+    const scaleY = mapSize / height;
+    const scale = Math.min(scaleX, scaleY);
+    const contentWidth = width * scale;
+    const contentHeight = height * scale;
+    const offsetX = (mapSize - contentWidth) / 2;
+    const offsetY = (mapSize - contentHeight) / 2;
+    const toMapRect = (bounds: SelectionBounds): MinimapRect => ({
+      x: offsetX + (bounds.left - left) * scale,
+      y: offsetY + (top - bounds.top) * scale,
+      width: Math.max((bounds.right - bounds.left) * scale, 1.6),
+      height: Math.max((bounds.top - bounds.bottom) * scale, 1.6)
+    });
+
+    return {
+      viewBoxWidth: mapSize,
+      viewBoxHeight: mapSize,
+      sceneRect: toMapRect(sceneBounds),
+      viewportRect: toMapRect(visibleBounds),
+      shapes: this.scene()
+        .shapes
+        .map((shape) => this.shapeBounds(shape))
+        .filter((shapeBounds): shapeBounds is SelectionBounds => shapeBounds !== null)
+        .map((shapeBounds) => toMapRect(shapeBounds))
+    };
+  });
+  readonly showMinimap = computed(() => {
+    const sceneBounds = this.sceneContentBounds();
+    if (!sceneBounds) return false;
+    const visibleBounds = this.visibleWorldBounds();
+    const sceneFitsInView =
+      sceneBounds.left >= visibleBounds.left &&
+      sceneBounds.right <= visibleBounds.right &&
+      sceneBounds.bottom >= visibleBounds.bottom &&
+      sceneBounds.top <= visibleBounds.top;
+    return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
   });
   readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
     {
@@ -463,6 +530,14 @@ export class EditorPageComponent {
   }
 
   setActiveTool(toolId: ToolId): void {
+    if (toolId !== 'select' && this.activeTool() === toolId) {
+      this.runSceneMutation(() => {
+        this.store.addPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
+        this.inspectorTab.set('properties');
+      });
+      return;
+    }
+
     this.activeTool.set(toolId);
     this.closeContextMenu();
     this.closeFileMenu();
@@ -480,6 +555,7 @@ export class EditorPageComponent {
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === presetId);
       this.store.applyScenePreset(presetId);
+      this.store.patchPreferences({ scale: this.defaultScale });
       if (preset) {
         this.store.renameScene(this.scenePresetTitle(preset));
       }
@@ -529,7 +605,7 @@ export class EditorPageComponent {
   }
 
   resetZoom(): void {
-    this.setScaleFromViewportCenter(32);
+    this.setScaleFromViewportCenter(this.defaultScale);
   }
 
   downloadStandaloneFile(): void {
@@ -614,8 +690,27 @@ export class EditorPageComponent {
   }
 
   updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  setTextPresetSize(fontSize: number): void {
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape
+    );
+  }
+
+  transformSelectedText(mode: 'uppercase' | 'lowercase' | 'titlecase'): void {
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'text') return shape;
+      const text =
+        mode === 'uppercase'
+          ? shape.text.toUpperCase()
+          : mode === 'lowercase'
+            ? shape.text.toLowerCase()
+            : shape.text.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+      return { ...shape, text } as CanvasShape;
+    });
   }
 
   updateShapeNumber(
@@ -1098,7 +1193,7 @@ export class EditorPageComponent {
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number): void {
-    const clampedScale = Math.min(120, Math.max(16, Math.round(nextScale)));
+    const clampedScale = Math.min(120, Math.max(12, Math.round(nextScale)));
     const currentScale = this.preferences().scale;
     if (clampedScale === currentScale) return;
 
