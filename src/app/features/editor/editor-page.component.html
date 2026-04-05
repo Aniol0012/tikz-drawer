@@ -133,18 +133,34 @@
           @if (preferences().showGrid) {
             <g class="grid-layer">
               @for (column of gridColumns(); track column) {
-                <line [attr.x1]="toSvgX(column)" y1="0" [attr.x2]="toSvgX(column)" [attr.y2]="canvasHeight()"></line>
+                <line
+                  [attr.x1]="toSvgX(column)"
+                  y1="0"
+                  [attr.x2]="toSvgX(column)"
+                  [attr.y2]="canvasHeight()"></line>
               }
               @for (row of gridRows(); track row) {
-                <line x1="0" [attr.y1]="toSvgY(row)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(row)"></line>
+                <line
+                  x1="0"
+                  [attr.y1]="toSvgY(row)"
+                  [attr.x2]="canvasWidth()"
+                  [attr.y2]="toSvgY(row)"></line>
               }
             </g>
           }
 
           @if (preferences().showAxes) {
             <g class="axis-layer">
-              <line [attr.x1]="toSvgX(-100)" [attr.y1]="toSvgY(0)" [attr.x2]="toSvgX(100)" [attr.y2]="toSvgY(0)"></line>
-              <line [attr.x1]="toSvgX(0)" [attr.y1]="toSvgY(-100)" [attr.x2]="toSvgX(0)" [attr.y2]="toSvgY(100)"></line>
+              <line
+                [attr.x1]="toSvgX(-100)"
+                [attr.y1]="toSvgY(0)"
+                [attr.x2]="toSvgX(100)"
+                [attr.y2]="toSvgY(0)"></line>
+              <line
+                [attr.x1]="toSvgX(0)"
+                [attr.y1]="toSvgY(-100)"
+                [attr.x2]="toSvgX(0)"
+                [attr.y2]="toSvgY(100)"></line>
             </g>
           }
 
@@ -212,18 +228,25 @@
         @if (!scene().shapes.length) {
           <div class="canvas-empty">
             <h2>Start with a shape or a template.</h2>
-            <p>Use the left rail to drop in building blocks. The canvas stays clear until you need a panel.</p>
+            <p>
+              Use the left rail to drop in building blocks. The canvas stays clear until you need a
+              panel.
+            </p>
           </div>
         }
 
         @if (hasSelection()) {
           <div class="selection-actions">
             <button class="ghost-button" type="button" (click)="duplicateSelected()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.copy"></path></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconPaths.copy"></path>
+              </svg>
               Duplicate
             </button>
             <button class="ghost-button danger-ghost" type="button" (click)="removeSelected()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.trash"></path></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconPaths.trash"></path>
+              </svg>
               Delete
             </button>
           </div>
@@ -249,7 +272,10 @@
               <div class="dock-content">
                 <div class="template-grid">
                   @for (preset of scenePresets; track presetTrackBy($index, preset)) {
-                    <button class="template-card" type="button" (click)="applyScenePreset(preset.id)">
+                    <button
+                      class="template-card"
+                      type="button"
+                      (click)="applyScenePreset(preset.id)">
                       <span class="template-card__icon">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                           <path [attr.d]="presetIconPath(preset.icon)"></path>
@@ -307,15 +333,21 @@
                 @if (codePanelMode() === 'export') {
                   <div class="stack-actions">
                     <button class="ghost-button" type="button" (click)="copyExportedCode()">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.copy"></path></svg>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconPaths.copy"></path>
+                      </svg>
                       Copy
                     </button>
                     <button class="ghost-button" type="button" (click)="downloadStandaloneFile()">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.download"></path></svg>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconPaths.download"></path>
+                      </svg>
                       Download
                     </button>
                     <button class="ghost-button" type="button" (click)="syncImportWithExport()">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.upload"></path></svg>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconPaths.upload"></path>
+                      </svg>
                       Send to import
                     </button>
                   </div>
@@ -384,7 +416,9 @@
                   (input)="onScaleChange($event)" />
 
                 <div class="stack-actions">
-                  <button class="ghost-button" type="button" (click)="resetZoom()">Reset zoom</button>
+                  <button class="ghost-button" type="button" (click)="resetZoom()">
+                    Reset zoom
+                  </button>
                 </div>
               </div>
             }
@@ -431,21 +465,37 @@
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>From X</span>
-                    <input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.from.x"
+                      (input)="updateLinePoint('from', 'x', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>From Y</span>
-                    <input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.from.y"
+                      (input)="updateLinePoint('from', 'y', $event)" />
                   </label>
                 </div>
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>To X</span>
-                    <input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.to.x"
+                      (input)="updateLinePoint('to', 'x', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>To Y</span>
-                    <input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.to.y"
+                      (input)="updateLinePoint('to', 'y', $event)" />
                   </label>
                 </div>
                 <div class="mini-pair">
@@ -469,21 +519,39 @@
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>X</span>
-                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.x"
+                      (input)="updateShapeNumber('x', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>Y</span>
-                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.y"
+                      (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>Width</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.width" (input)="updateShapeNumber('width', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.width"
+                      (input)="updateShapeNumber('width', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>Height</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.height" (input)="updateShapeNumber('height', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.height"
+                      (input)="updateShapeNumber('height', $event)" />
                   </label>
                 </div>
                 <label class="mini-field">
@@ -498,16 +566,29 @@
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>CX</span>
-                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cx"
+                      (input)="updateShapeNumber('cx', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>CY</span>
-                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cy"
+                      (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
                 <label class="mini-field">
                   <span>Radius</span>
-                  <input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" />
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    [value]="shape.r"
+                    (input)="updateShapeNumber('r', $event)" />
                 </label>
                 <label class="mini-field">
                   <span>Fill</span>
@@ -521,21 +602,39 @@
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>CX</span>
-                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cx"
+                      (input)="updateShapeNumber('cx', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>CY</span>
-                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cy"
+                      (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>RX</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.rx"
+                      (input)="updateShapeNumber('rx', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>RY</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.ry"
+                      (input)="updateShapeNumber('ry', $event)" />
                   </label>
                 </div>
                 <label class="mini-field">
@@ -549,16 +648,27 @@
               @case ('text') {
                 <label class="mini-field mini-field--full">
                   <span>Text</span>
-                  <input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" />
+                  <input
+                    type="text"
+                    [value]="shape.text"
+                    (input)="updateShapeText('text', $event)" />
                 </label>
                 <div class="mini-pair">
                   <label class="mini-field">
                     <span>X</span>
-                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.x"
+                      (input)="updateShapeNumber('x', $event)" />
                   </label>
                   <label class="mini-field">
                     <span>Y</span>
-                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.y"
+                      (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
                 <div class="mini-pair">
@@ -573,7 +683,10 @@
                   </label>
                   <label class="mini-field">
                     <span>Color</span>
-                    <input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" />
+                    <input
+                      type="color"
+                      [value]="shape.color"
+                      (input)="updateShapeText('color', $event)" />
                   </label>
                 </div>
               }

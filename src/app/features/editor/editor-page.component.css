@@ -41,7 +41,9 @@
   border-radius: 16px;
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent-strong);
-  font: 700 1.25rem/1 'Space Grotesk', sans-serif;
+  font:
+    700 1.25rem/1 'Space Grotesk',
+    sans-serif;
 }
 
 .scene-chip {
@@ -117,7 +119,9 @@
 
 .topbar__title h1 {
   margin: 0;
-  font: 600 clamp(1.6rem, 2vw, 2.4rem) / 1 'Space Grotesk', sans-serif;
+  font:
+    600 clamp(1.6rem, 2vw, 2.4rem) / 1 'Space Grotesk',
+    sans-serif;
   letter-spacing: -0.04em;
 }
 
@@ -150,7 +154,9 @@
 }
 
 .meta-pill strong {
-  font: 600 0.92rem/1.1 'Space Grotesk', sans-serif;
+  font:
+    600 0.92rem/1.1 'Space Grotesk',
+    sans-serif;
 }
 
 .stage-area {
@@ -215,7 +221,9 @@
 .shape-layer rect,
 .shape-layer circle,
 .shape-layer ellipse {
-  transition: filter 120ms ease, opacity 120ms ease;
+  transition:
+    filter 120ms ease,
+    opacity 120ms ease;
 }
 
 .shape-layer text {
@@ -252,7 +260,9 @@
 .dock-header h2,
 .selection-hud h2 {
   margin: 0;
-  font: 600 1.08rem/1.1 'Space Grotesk', sans-serif;
+  font:
+    600 1.08rem/1.1 'Space Grotesk',
+    sans-serif;
 }
 
 .canvas-empty p {
@@ -283,7 +293,9 @@
   background: var(--float-surface);
   color: var(--app-foreground);
   backdrop-filter: blur(16px);
-  font: 500 0.9rem/1 'IBM Plex Sans', sans-serif;
+  font:
+    500 0.9rem/1 'IBM Plex Sans',
+    sans-serif;
   transition:
     transform 140ms ease,
     border-color 140ms ease,
@@ -386,7 +398,9 @@
 .template-card strong,
 .layer-row strong {
   display: block;
-  font: 600 0.96rem/1.15 'Space Grotesk', sans-serif;
+  font:
+    600 0.96rem/1.15 'Space Grotesk',
+    sans-serif;
 }
 
 .template-card small,
@@ -435,7 +449,9 @@
 .scene-chip,
 .toggle-row input,
 .selection-hud input {
-  font: 500 0.9rem/1.45 'IBM Plex Sans', sans-serif;
+  font:
+    500 0.9rem/1.45 'IBM Plex Sans',
+    sans-serif;
 }
 
 .code-block,
