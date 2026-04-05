@@ -25,6 +25,8 @@
 
 ## Preview
 
+> <img width="2526" height="1251" alt="image" src="https://github.com/user-attachments/assets/1eccde29-2a32-406f-88ef-55e10ca44dc3" />
+> v0.2.1
 
 ## Run it
 
