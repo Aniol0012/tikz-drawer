@@ -22,9 +22,19 @@ const shapeBounds = (
     case 'rectangle':
       return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
     case 'circle':
-      return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+      return {
+        left: shape.cx - shape.r,
+        right: shape.cx + shape.r,
+        bottom: shape.cy - shape.r,
+        top: shape.cy + shape.r
+      };
     case 'ellipse':
-      return { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry };
+      return {
+        left: shape.cx - shape.rx,
+        right: shape.cx + shape.rx,
+        bottom: shape.cy - shape.ry,
+        top: shape.cy + shape.ry
+      };
     case 'line':
       return {
         left: Math.min(shape.from.x, shape.to.x),
@@ -45,7 +55,10 @@ const shapeBounds = (
   }
 };
 
-const centerShapesOnPoint = (shapes: readonly CanvasShape[], point: { x: number; y: number }): readonly CanvasShape[] => {
+const centerShapesOnPoint = (
+  shapes: readonly CanvasShape[],
+  point: { x: number; y: number }
+): readonly CanvasShape[] => {
   if (!shapes.length) {
     return shapes;
   }
@@ -60,7 +73,12 @@ const centerShapesOnPoint = (shapes: readonly CanvasShape[], point: { x: number;
         bottom: Math.min(currentBounds.bottom, nextBounds.bottom)
       };
     },
-    { left: Number.POSITIVE_INFINITY, right: Number.NEGATIVE_INFINITY, top: Number.NEGATIVE_INFINITY, bottom: Number.POSITIVE_INFINITY }
+    {
+      left: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      top: Number.NEGATIVE_INFINITY,
+      bottom: Number.POSITIVE_INFINITY
+    }
   );
 
   const centerX = (bounds.left + bounds.right) / 2;
@@ -391,7 +409,9 @@ export class EditorStore {
 
     this.scene.update((scene) => ({
       ...scene,
-      shapes: scene.shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? translateShape(shape, deltaX, deltaY) : shape))
+      shapes: scene.shapes.map((shape) =>
+        selectedShapeIdSet.has(shape.id) ? translateShape(shape, deltaX, deltaY) : shape
+      )
     }));
   }
 

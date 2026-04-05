@@ -119,7 +119,10 @@
 .workspace {
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(240px, var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr) 10px minmax(280px, var(--right-sidebar-width, 340px));
+  grid-template-columns: minmax(240px, var(--left-sidebar-width, 288px)) 10px minmax(
+      0,
+      1fr
+    ) 10px minmax(280px, var(--right-sidebar-width, 340px));
   overflow: hidden;
 }
 

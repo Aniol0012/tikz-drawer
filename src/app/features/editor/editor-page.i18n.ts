@@ -22,7 +22,14 @@ export const localizedShapeKinds: Record<LanguageCode, Record<CanvasShape['kind'
   es: { line: 'Línea', rectangle: 'Rectángulo', circle: 'Círculo', ellipse: 'Elipse', text: 'Texto' }
 };
 
-export const categoryOrder: readonly PresetCategory[] = ['essentials', 'flow', 'geometry', 'data', 'interface', 'concepts'];
+export const categoryOrder: readonly PresetCategory[] = [
+  'essentials',
+  'flow',
+  'geometry',
+  'data',
+  'interface',
+  'concepts'
+];
 
 export const categoryTranslationKey: Record<PresetCategory, string> = {
   essentials: 'categoryEssentials',

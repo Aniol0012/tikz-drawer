@@ -230,9 +230,27 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Document block for reports and generated output.',
     [
       createRectangle({ name: 'Document frame', width: 4.2, height: 2.8, fill: '#fafafa' }),
-      createLine({ name: 'Document line 1', from: { x: -1.5, y: 0.8 }, to: { x: 1.4, y: 0.8 }, stroke: '#8a918b', strokeWidth: 0.05 }),
-      createLine({ name: 'Document line 2', from: { x: -1.5, y: 0.25 }, to: { x: 1.4, y: 0.25 }, stroke: '#8a918b', strokeWidth: 0.05 }),
-      createLine({ name: 'Document line 3', from: { x: -1.5, y: -0.3 }, to: { x: 1, y: -0.3 }, stroke: '#8a918b', strokeWidth: 0.05 })
+      createLine({
+        name: 'Document line 1',
+        from: { x: -1.5, y: 0.8 },
+        to: { x: 1.4, y: 0.8 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Document line 2',
+        from: { x: -1.5, y: 0.25 },
+        to: { x: 1.4, y: 0.25 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Document line 3',
+        from: { x: -1.5, y: -0.3 },
+        to: { x: 1, y: -0.3 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      })
     ],
     { searchTerms: ['document', 'report', 'paper'] }
   ),
@@ -244,7 +262,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Cylinder-like database symbol.',
     [
       createEllipse({ name: 'Database top', cx: 0, cy: 1.2, rx: 2.1, ry: 0.6, fill: '#ededed' }),
-      createRectangle({ name: 'Database body', x: -2.1, y: -1.3, width: 4.2, height: 2.5, fill: '#ededed', cornerRadius: 0 }),
+      createRectangle({
+        name: 'Database body',
+        x: -2.1,
+        y: -1.3,
+        width: 4.2,
+        height: 2.5,
+        fill: '#ededed',
+        cornerRadius: 0
+      }),
       createEllipse({ name: 'Database bottom', cx: 0, cy: -1.3, rx: 2.1, ry: 0.6, fill: '#e2e2e2' }),
       createText({ name: 'Database label', text: 'DB', y: 0 })
     ],
@@ -259,9 +285,25 @@ export const objectPresets: readonly ObjectPreset[] = [
     [
       createLine({ name: 'Chart axis x', from: { x: -2.3, y: -1.4 }, to: { x: 2.5, y: -1.4 }, arrowEnd: true }),
       createLine({ name: 'Chart axis y', from: { x: -2.3, y: -1.4 }, to: { x: -2.3, y: 1.8 }, arrowEnd: true }),
-      createRectangle({ name: 'Bar 1', x: -1.6, y: -1.4, width: 0.8, height: 1.2, fill: '#d8d8d8', cornerRadius: 0.08 }),
-      createRectangle({ name: 'Bar 2', x: -0.4, y: -1.4, width: 0.8, height: 2.1, fill: '#9cb9ff', cornerRadius: 0.08 }),
-      createRectangle({ name: 'Bar 3', x: 0.8, y: -1.4, width: 0.8, height: 2.7, fill: '#2f66f3', cornerRadius: 0.08 }),
+      createRectangle({
+        name: 'Bar 1',
+        x: -1.6,
+        y: -1.4,
+        width: 0.8,
+        height: 1.2,
+        fill: '#d8d8d8',
+        cornerRadius: 0.08
+      }),
+      createRectangle({
+        name: 'Bar 2',
+        x: -0.4,
+        y: -1.4,
+        width: 0.8,
+        height: 2.1,
+        fill: '#9cb9ff',
+        cornerRadius: 0.08
+      }),
+      createRectangle({ name: 'Bar 3', x: 0.8, y: -1.4, width: 0.8, height: 2.7, fill: '#2f66f3', cornerRadius: 0.08 })
     ],
     { searchTerms: ['bar', 'chart', 'graph', 'analytics'] }
   ),
@@ -331,7 +373,13 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Quick browser frame for UI sketches.',
     [
       createRectangle({ name: 'Browser frame', width: 5.2, height: 3.4, cornerRadius: 0.24, fill: '#fbfbfb' }),
-      createLine({ name: 'Browser divider', from: { x: -2.6, y: 1.1 }, to: { x: 2.6, y: 1.1 }, stroke: '#9ea39e', strokeWidth: 0.05 }),
+      createLine({
+        name: 'Browser divider',
+        from: { x: -2.6, y: 1.1 },
+        to: { x: 2.6, y: 1.1 },
+        stroke: '#9ea39e',
+        strokeWidth: 0.05
+      }),
       createCircle({ name: 'Browser dot 1', cx: -2.1, cy: 1.55, r: 0.12, fill: '#d9a16f', stroke: '#d9a16f' }),
       createCircle({ name: 'Browser dot 2', cx: -1.7, cy: 1.55, r: 0.12, fill: '#d7c28d', stroke: '#d7c28d' }),
       createCircle({ name: 'Browser dot 3', cx: -1.3, cy: 1.55, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' })
@@ -346,7 +394,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Mobile device frame.',
     [
       createRectangle({ name: 'Phone body', width: 2.6, height: 5, cornerRadius: 0.4, fill: '#fbfbfb' }),
-      createRectangle({ name: 'Phone screen', x: -1.05, y: -1.85, width: 2.1, height: 3.95, cornerRadius: 0.18, fill: '#f3f3f3' }),
+      createRectangle({
+        name: 'Phone screen',
+        x: -1.05,
+        y: -1.85,
+        width: 2.1,
+        height: 3.95,
+        cornerRadius: 0.18,
+        fill: '#f3f3f3'
+      }),
       createCircle({ name: 'Phone camera', cx: 0, cy: 2.1, r: 0.08, fill: '#8b8f89', stroke: '#8b8f89' })
     ],
     { searchTerms: ['phone', 'mobile', 'device', 'app'] }
@@ -358,9 +414,33 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Server Stack',
     'Stack of server units for architecture diagrams.',
     [
-      createRectangle({ name: 'Server 1', x: -2.2, y: 1.6, width: 4.4, height: 0.8, fill: '#f5f5f5', cornerRadius: 0.12 }),
-      createRectangle({ name: 'Server 2', x: -2.2, y: 0.4, width: 4.4, height: 0.8, fill: '#ececec', cornerRadius: 0.12 }),
-      createRectangle({ name: 'Server 3', x: -2.2, y: -0.8, width: 4.4, height: 0.8, fill: '#e2e2e2', cornerRadius: 0.12 }),
+      createRectangle({
+        name: 'Server 1',
+        x: -2.2,
+        y: 1.6,
+        width: 4.4,
+        height: 0.8,
+        fill: '#f5f5f5',
+        cornerRadius: 0.12
+      }),
+      createRectangle({
+        name: 'Server 2',
+        x: -2.2,
+        y: 0.4,
+        width: 4.4,
+        height: 0.8,
+        fill: '#ececec',
+        cornerRadius: 0.12
+      }),
+      createRectangle({
+        name: 'Server 3',
+        x: -2.2,
+        y: -0.8,
+        width: 4.4,
+        height: 0.8,
+        fill: '#e2e2e2',
+        cornerRadius: 0.12
+      }),
       createCircle({ name: 'Indicator 1', cx: 1.5, cy: 2, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' }),
       createCircle({ name: 'Indicator 2', cx: 1.5, cy: 0.8, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' }),
       createCircle({ name: 'Indicator 3', cx: 1.5, cy: -0.4, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' })
@@ -374,7 +454,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Callout',
     'Annotation card with a leader line.',
     [
-      createRectangle({ name: 'Callout body', x: -0.4, y: 0.3, width: 4.4, height: 2, fill: '#fbfbfb', cornerRadius: 0.24 }),
+      createRectangle({
+        name: 'Callout body',
+        x: -0.4,
+        y: 0.3,
+        width: 4.4,
+        height: 2,
+        fill: '#fbfbfb',
+        cornerRadius: 0.24
+      }),
       createLine({ name: 'Callout leader', from: { x: -0.4, y: 0.9 }, to: { x: -2.4, y: -1.1 }, stroke: '#6d706b' }),
       createCircle({ name: 'Callout target', cx: -2.4, cy: -1.1, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' }),
       createText({ name: 'Callout text', x: 1.8, y: 1.35, text: 'Annotation', fontSize: 0.36 })
@@ -459,24 +547,37 @@ export const scenePresets: readonly ScenePreset[] = [
     description: 'Input, process, decision and outputs ready to edit.',
     scene: createScene('Flow starter', [
       ...objectPresets.find((preset) => preset.id === 'input-output')!.shapes,
-      ...objectPresets.find((preset) => preset.id === 'box')!.shapes.map((shape) =>
-        shape.kind === 'rectangle'
-          ? { ...shape, id: crypto.randomUUID(), x: 2.3, y: -1.2, width: 3.2, height: 2.4, name: 'Process block', fill: '#ebebeb' }
-          : shape
-      ),
-      createText({ name: 'Process label', x: 3.9, y: 0, text: 'Process' }),
-      ...objectPresets.find((preset) => preset.id === 'decision')!.shapes.map((shape) =>
-        shape.kind === 'text'
-          ? { ...shape, id: crypto.randomUUID(), x: 8.1, y: 0, text: 'Check' }
-          : shape.kind === 'line'
+      ...objectPresets
+        .find((preset) => preset.id === 'box')!
+        .shapes.map((shape) =>
+          shape.kind === 'rectangle'
             ? {
                 ...shape,
                 id: crypto.randomUUID(),
-                from: { x: shape.from.x + 8.1, y: shape.from.y },
-                to: { x: shape.to.x + 8.1, y: shape.to.y }
+                x: 2.3,
+                y: -1.2,
+                width: 3.2,
+                height: 2.4,
+                name: 'Process block',
+                fill: '#ebebeb'
               }
             : shape
-      ),
+        ),
+      createText({ name: 'Process label', x: 3.9, y: 0, text: 'Process' }),
+      ...objectPresets
+        .find((preset) => preset.id === 'decision')!
+        .shapes.map((shape) =>
+          shape.kind === 'text'
+            ? { ...shape, id: crypto.randomUUID(), x: 8.1, y: 0, text: 'Check' }
+            : shape.kind === 'line'
+              ? {
+                  ...shape,
+                  id: crypto.randomUUID(),
+                  from: { x: shape.from.x + 8.1, y: shape.from.y },
+                  to: { x: shape.to.x + 8.1, y: shape.to.y }
+                }
+              : shape
+        ),
       createLine({ name: 'Input to process', from: { x: 2.2, y: 0 }, to: { x: 2.3, y: 0 }, arrowEnd: true }),
       createLine({ name: 'Process to decision', from: { x: 5.5, y: 0 }, to: { x: 6.2, y: 0 }, arrowEnd: true })
     ])
@@ -487,32 +588,36 @@ export const scenePresets: readonly ScenePreset[] = [
     title: 'System map',
     description: 'Client, API and database starter scene.',
     scene: createScene('System map', [
-      ...objectPresets.find((preset) => preset.id === 'browser')!.shapes.map((shape) =>
-        shape.kind === 'rectangle'
-          ? { ...shape, id: crypto.randomUUID(), x: -7.4, y: -1.7, name: shape.name }
-          : shape.kind === 'line'
-            ? {
-                ...shape,
-                id: crypto.randomUUID(),
-                from: { x: shape.from.x - 4.8, y: shape.from.y },
-                to: { x: shape.to.x - 4.8, y: shape.to.y }
-              }
-            : shape.kind === 'circle'
-              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx - 4.8, cy: shape.cy }
-              : shape
-      ),
+      ...objectPresets
+        .find((preset) => preset.id === 'browser')!
+        .shapes.map((shape) =>
+          shape.kind === 'rectangle'
+            ? { ...shape, id: crypto.randomUUID(), x: -7.4, y: -1.7, name: shape.name }
+            : shape.kind === 'line'
+              ? {
+                  ...shape,
+                  id: crypto.randomUUID(),
+                  from: { x: shape.from.x - 4.8, y: shape.from.y },
+                  to: { x: shape.to.x - 4.8, y: shape.to.y }
+                }
+              : shape.kind === 'circle'
+                ? { ...shape, id: crypto.randomUUID(), cx: shape.cx - 4.8, cy: shape.cy }
+                : shape
+        ),
       createText({ name: 'Client label', x: -4.8, y: -2.5, text: 'Client' }),
       createRectangle({ name: 'API', x: -1.5, y: -1, width: 3, height: 2, fill: '#ececec' }),
       createText({ name: 'API label', text: 'API', x: 0, y: 0 }),
-      ...objectPresets.find((preset) => preset.id === 'database')!.shapes.map((shape) =>
-        shape.kind === 'rectangle'
-          ? { ...shape, id: crypto.randomUUID(), x: 4.4, y: -1.3 }
-          : shape.kind === 'ellipse'
-            ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 6.5, cy: shape.cy }
-            : shape.kind === 'text'
-              ? { ...shape, id: crypto.randomUUID(), x: 6.5, y: 0, text: 'Database' }
-              : shape
-      ),
+      ...objectPresets
+        .find((preset) => preset.id === 'database')!
+        .shapes.map((shape) =>
+          shape.kind === 'rectangle'
+            ? { ...shape, id: crypto.randomUUID(), x: 4.4, y: -1.3 }
+            : shape.kind === 'ellipse'
+              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 6.5, cy: shape.cy }
+              : shape.kind === 'text'
+                ? { ...shape, id: crypto.randomUUID(), x: 6.5, y: 0, text: 'Database' }
+                : shape
+        ),
       createLine({ name: 'Client to API', from: { x: -2.2, y: 0 }, to: { x: -1.5, y: 0 }, arrowEnd: true }),
       createLine({ name: 'API to database', from: { x: 1.5, y: 0 }, to: { x: 4.4, y: 0 }, arrowEnd: true })
     ])
@@ -523,48 +628,54 @@ export const scenePresets: readonly ScenePreset[] = [
     title: 'Metrics board',
     description: 'Dashboard-like scene mixing charts and callouts.',
     scene: createScene('Metrics board', [
-      ...objectPresets.find((preset) => preset.id === 'bar-chart')!.shapes.map((shape) =>
-        shape.kind === 'line'
-          ? {
-              ...shape,
-              id: crypto.randomUUID(),
-              from: { x: shape.from.x - 4.5, y: shape.from.y - 0.6 },
-              to: { x: shape.to.x - 4.5, y: shape.to.y - 0.6 }
-            }
-          : shape.kind === 'rectangle'
-            ? { ...shape, id: crypto.randomUUID(), x: shape.x - 4.5, y: shape.y - 0.6 }
-            : shape
-      ),
-      ...objectPresets.find((preset) => preset.id === 'timeline')!.shapes.map((shape) =>
-        shape.kind === 'line'
-          ? {
-              ...shape,
-              id: crypto.randomUUID(),
-              from: { x: shape.from.x + 2.6, y: shape.from.y + 2.4 },
-              to: { x: shape.to.x + 2.6, y: shape.to.y + 2.4 }
-            }
-          : shape.kind === 'circle'
-            ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 2.6, cy: shape.cy + 2.4 }
-            : shape.kind === 'text'
-              ? { ...shape, id: crypto.randomUUID(), x: shape.x + 2.6, y: shape.y + 2.4 }
-              : shape
-      ),
-      ...objectPresets.find((preset) => preset.id === 'callout')!.shapes.map((shape) =>
-        shape.kind === 'rectangle'
-          ? { ...shape, id: crypto.randomUUID(), x: 1.8, y: -3.1 }
-          : shape.kind === 'line'
+      ...objectPresets
+        .find((preset) => preset.id === 'bar-chart')!
+        .shapes.map((shape) =>
+          shape.kind === 'line'
             ? {
                 ...shape,
                 id: crypto.randomUUID(),
-                from: { x: shape.from.x + 4.2, y: shape.from.y - 2.8 },
-                to: { x: shape.to.x + 4.2, y: shape.to.y - 2.8 }
+                from: { x: shape.from.x - 4.5, y: shape.from.y - 0.6 },
+                to: { x: shape.to.x - 4.5, y: shape.to.y - 0.6 }
+              }
+            : shape.kind === 'rectangle'
+              ? { ...shape, id: crypto.randomUUID(), x: shape.x - 4.5, y: shape.y - 0.6 }
+              : shape
+        ),
+      ...objectPresets
+        .find((preset) => preset.id === 'timeline')!
+        .shapes.map((shape) =>
+          shape.kind === 'line'
+            ? {
+                ...shape,
+                id: crypto.randomUUID(),
+                from: { x: shape.from.x + 2.6, y: shape.from.y + 2.4 },
+                to: { x: shape.to.x + 2.6, y: shape.to.y + 2.4 }
               }
             : shape.kind === 'circle'
-              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 }
+              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 2.6, cy: shape.cy + 2.4 }
               : shape.kind === 'text'
-                ? { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' }
+                ? { ...shape, id: crypto.randomUUID(), x: shape.x + 2.6, y: shape.y + 2.4 }
                 : shape
-      )
+        ),
+      ...objectPresets
+        .find((preset) => preset.id === 'callout')!
+        .shapes.map((shape) =>
+          shape.kind === 'rectangle'
+            ? { ...shape, id: crypto.randomUUID(), x: 1.8, y: -3.1 }
+            : shape.kind === 'line'
+              ? {
+                  ...shape,
+                  id: crypto.randomUUID(),
+                  from: { x: shape.from.x + 4.2, y: shape.from.y - 2.8 },
+                  to: { x: shape.to.x + 4.2, y: shape.to.y - 2.8 }
+                }
+              : shape.kind === 'circle'
+                ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 }
+                : shape.kind === 'text'
+                  ? { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' }
+                  : shape
+        )
     ])
   }
 ];

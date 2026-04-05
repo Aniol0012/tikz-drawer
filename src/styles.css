@@ -1,9 +1,7 @@
 :root {
   color-scheme: dark;
-  --font-sans:
-    Aptos, 'Segoe UI Variable Display', 'SF Pro Display', 'Segoe UI', sans-serif;
-  --font-mono:
-    'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
+  --font-sans: Aptos, 'Segoe UI Variable Display', 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
   --app-background: #f4f4f4;
   --app-foreground: #141414;
   --muted-foreground: #707070;

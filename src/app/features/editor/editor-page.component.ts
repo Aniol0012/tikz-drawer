@@ -21,7 +21,13 @@ import {
   type LanguageCode,
   type SharedScenePayload
 } from './editor-page.i18n';
-import { decodeSharePayload, encodeSharePayload, formatValue, highlightLatex, translateShapeBy } from './editor-page.utils';
+import {
+  decodeSharePayload,
+  encodeSharePayload,
+  formatValue,
+  highlightLatex,
+  translateShapeBy
+} from './editor-page.utils';
 import { sceneToStandaloneDocument } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
@@ -98,11 +104,7 @@ interface MarqueeInteractionState {
   readonly additive: boolean;
 }
 
-type InteractionState =
-  | MoveInteractionState
-  | PanInteractionState
-  | ResizeInteractionState
-  | MarqueeInteractionState;
+type InteractionState = MoveInteractionState | PanInteractionState | ResizeInteractionState | MarqueeInteractionState;
 
 interface ContextMenuState {
   readonly clientX: number;
@@ -214,7 +216,13 @@ export class EditorPageComponent {
     };
   });
   readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
-    { id: 'select', label: this.t('selection'), description: this.t('selection'), iconPath: getIconPath('select'), shortcut: 'V' },
+    {
+      id: 'select',
+      label: this.t('selection'),
+      description: this.t('selection'),
+      iconPath: getIconPath('select'),
+      shortcut: 'V'
+    },
     ...this.objectPresets
       .filter((preset) => preset.quickAccess)
       .map((preset) => ({
@@ -276,7 +284,12 @@ export class EditorPageComponent {
       { id: 'n', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.top), cursor: 'ns-resize' },
       { id: 'ne', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.top), cursor: 'nesw-resize' },
       { id: 'e', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(centerY), cursor: 'ew-resize' },
-      { id: 'se', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.bottom), cursor: 'nwse-resize' },
+      {
+        id: 'se',
+        x: this.toSvgX(selectionBounds.right),
+        y: this.toSvgY(selectionBounds.bottom),
+        cursor: 'nwse-resize'
+      },
       { id: 's', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.bottom), cursor: 'ns-resize' },
       { id: 'sw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.bottom), cursor: 'nesw-resize' },
       { id: 'w', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(centerY), cursor: 'ew-resize' }
@@ -606,19 +619,7 @@ export class EditorPageComponent {
   }
 
   updateShapeNumber(
-    key:
-      | 'strokeWidth'
-      | 'x'
-      | 'y'
-      | 'width'
-      | 'height'
-      | 'cornerRadius'
-      | 'cx'
-      | 'cy'
-      | 'r'
-      | 'rx'
-      | 'ry'
-      | 'fontSize',
+    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'fontSize',
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
@@ -881,10 +882,17 @@ export class EditorPageComponent {
   }
 
   shapeIcon(shape: CanvasShape): string {
-    return getIconPath(shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind);
+    return getIconPath(
+      shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind
+    );
   }
 
-  selectionOutline(): { readonly x: number; readonly y: number; readonly width: number; readonly height: number } | null {
+  selectionOutline(): {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  } | null {
     const selectionBounds = this.selectionBounds();
     if (!selectionBounds) return null;
     return {
@@ -1082,7 +1090,11 @@ export class EditorPageComponent {
 
   private setScaleFromViewportCenter(nextScale: number): void {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
-    this.setScaleAtClientPoint(nextScale, viewportRect.left + viewportRect.width / 2, viewportRect.top + viewportRect.height / 2);
+    this.setScaleAtClientPoint(
+      nextScale,
+      viewportRect.left + viewportRect.width / 2,
+      viewportRect.top + viewportRect.height / 2
+    );
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number): void {
@@ -1122,8 +1134,8 @@ export class EditorPageComponent {
   }
 
   private findShapesInsideBounds(bounds: SelectionBounds): string[] {
-    return this.scene().shapes
-      .filter((shape) => {
+    return this.scene()
+      .shapes.filter((shape) => {
         const shapeBounds = this.computeBounds([shape]);
         return (
           shapeBounds !== null &&
@@ -1159,9 +1171,19 @@ export class EditorPageComponent {
       case 'rectangle':
         return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
       case 'circle':
-        return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+        return {
+          left: shape.cx - shape.r,
+          right: shape.cx + shape.r,
+          bottom: shape.cy - shape.r,
+          top: shape.cy + shape.r
+        };
       case 'ellipse':
-        return { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry };
+        return {
+          left: shape.cx - shape.rx,
+          right: shape.cx + shape.rx,
+          bottom: shape.cy - shape.ry,
+          top: shape.cy + shape.ry
+        };
       case 'line':
         return {
           left: Math.min(shape.from.x, shape.to.x),
@@ -1197,7 +1219,11 @@ export class EditorPageComponent {
     }
   }
 
-  private resizeRectangle(shape: Extract<CanvasShape, { kind: 'rectangle' }>, handle: ResizeHandle, point: Point): CanvasShape {
+  private resizeRectangle(
+    shape: Extract<CanvasShape, { kind: 'rectangle' }>,
+    handle: ResizeHandle,
+    point: Point
+  ): CanvasShape {
     const resizedBounds = this.resizeBounds(
       { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
       handle,
@@ -1215,7 +1241,11 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeCircle(shape: Extract<CanvasShape, { kind: 'circle' }>, handle: ResizeHandle, point: Point): CanvasShape {
+  private resizeCircle(
+    shape: Extract<CanvasShape, { kind: 'circle' }>,
+    handle: ResizeHandle,
+    point: Point
+  ): CanvasShape {
     const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r },
       handle,
@@ -1224,7 +1254,11 @@ export class EditorPageComponent {
       0.2,
       1
     );
-    const radius = Math.max((resizedBounds.right - resizedBounds.left) / 2, (resizedBounds.top - resizedBounds.bottom) / 2, 0.1);
+    const radius = Math.max(
+      (resizedBounds.right - resizedBounds.left) / 2,
+      (resizedBounds.top - resizedBounds.bottom) / 2,
+      0.1
+    );
     return {
       ...shape,
       cx: (resizedBounds.left + resizedBounds.right) / 2,
@@ -1233,7 +1267,11 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeEllipse(shape: Extract<CanvasShape, { kind: 'ellipse' }>, handle: ResizeHandle, point: Point): CanvasShape {
+  private resizeEllipse(
+    shape: Extract<CanvasShape, { kind: 'ellipse' }>,
+    handle: ResizeHandle,
+    point: Point
+  ): CanvasShape {
     const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
     const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
