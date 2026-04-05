@@ -1,0 +1,93 @@
+name: Sync README Version Badge
+
+on:
+  push:
+    branches-ignore:
+      - gh-pages
+    paths:
+      - package.json
+      - README.md
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-version-badge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Detect package version change in push range
+        id: detect-version-change
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$AFTER^..$AFTER"
+          else
+            RANGE="$BEFORE..$AFTER"
+          fi
+
+          if git log --format= --patch "$RANGE" -- package.json | grep -Eq '^[+-][[:space:]]*"version"[[:space:]]*:'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version changed in package.json ($RANGE)."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No version change in package.json ($RANGE)."
+          fi
+
+      - name: Update README version badge
+        if: github.event_name == 'workflow_dispatch' || steps.detect-version-change.outputs.changed == 'true'
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const version = packageJson.version;
+          const encodedVersion = encodeURIComponent(version);
+          const badgeUrl = `https://img.shields.io/badge/version-${encodedVersion}-blue?style=flat-square&logo=git&logoColor=white`;
+
+          const readmePath = 'README.md';
+          const original = fs.readFileSync(readmePath, 'utf8');
+
+          const badgeRegex = /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[^)]*\)\]\(([^)]+)\)/;
+          const next = original.replace(badgeRegex, `[![Version](${badgeUrl})]($1)`);
+
+          if (next === original) {
+            console.log('No README badge changes detected.');
+          } else {
+            fs.writeFileSync(readmePath, next);
+            console.log(`README version badge updated to ${version}.`);
+          }
+          NODE
+
+      - name: Commit and push README changes
+        if: github.event_name == 'workflow_dispatch' || steps.detect-version-change.outputs.changed == 'true'
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain README.md)" ]; then
+            echo "No README changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          git commit -m "chore(ci): sync README version badge"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
