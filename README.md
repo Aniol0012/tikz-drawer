@@ -18,18 +18,13 @@
 
 ## Description
 
-`tikz-drawer` is a small Angular app for building diagrams visually and getting clean TikZ back out of them. It is meant for the common workflow: sketch a figure fast, tweak a few values, copy the code, and keep moving.
+[`tikz-drawer`](https://github.com/Aniol0012/tikz-drawer) is an [Angular](https://angular.dev/) app for visually building diagrams for the [TikZ](https://www.texample.net/tikz/) package. This application supports multiple features to make it easier to create and edit diagrams. Instead of reading this long and boring description, just check it out [here](https://aniol0012.github.io/tikz-drawer/).
 
-It also works the other way around. Paste supported TikZ into the import panel and the editor rebuilds the scene so you can keep editing it visually. The live preview is rendered locally with SVG, so it feels immediate. It is not a full LaTeX compiler, but it is good enough for day to day editing.
+> [!NOTE]
+> If you want to enhance the app, feel free to open a pull request or contact me via [email](mailto:aniol0012@gmail.com).
 
-## What it does
+## Preview
 
-- visual canvas for lines, arrows, rectangles, circles, ellipses, and text
-- scene presets and quick insert presets for common starting points
-- TikZ export, clipboard copy, and `.tex` download
-- TikZ import for the supported primitives
-- local settings saved in `localStorage`
-- light mode and dark mode
 
 ## Run it
 
