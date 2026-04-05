@@ -1,0 +1,545 @@
+<div class="editor-shell">
+  <header class="app-header">
+    <div class="brand-block">
+      <div class="brand-mark" aria-hidden="true">T</div>
+      <div>
+        <p class="eyebrow">TikZ drawer</p>
+        <h1>Draw now, tune later, export clean TikZ.</h1>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <a
+        class="icon-link"
+        href="https://github.com/Aniol0012/tikz-drawer"
+        target="_blank"
+        rel="noopener"
+        aria-label="Open GitHub repository">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 1.5a10.5 10.5 0 0 0-3.32 20.47c.52.1.71-.22.71-.5v-1.75c-2.9.63-3.51-1.22-3.51-1.22-.48-1.2-1.17-1.53-1.17-1.53-.96-.66.08-.65.08-.65 1.06.07 1.62 1.08 1.62 1.08.94 1.61 2.46 1.14 3.06.87.1-.68.37-1.15.67-1.41-2.31-.26-4.75-1.15-4.75-5.13 0-1.13.4-2.05 1.06-2.77-.11-.26-.46-1.31.1-2.73 0 0 .87-.28 2.85 1.05a9.96 9.96 0 0 1 5.2 0c1.98-1.33 2.85-1.05 2.85-1.05.56 1.42.21 2.47.1 2.73.66.72 1.06 1.64 1.06 2.77 0 3.99-2.45 4.87-4.79 5.12.38.33.71.97.71 1.96v2.91c0 .28.19.61.72.5A10.5 10.5 0 0 0 12 1.5Z" />
+        </svg>
+      </a>
+
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="themeToggleLabel()">
+        {{ preferences().theme === 'dark' ? 'Dark' : 'Light' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="overview-strip">
+    <div>
+      <p class="overview-label">Scene</p>
+      <input
+        class="scene-name"
+        type="text"
+        [value]="scene().name"
+        (input)="onSceneNameInput($event)"
+        aria-label="Scene name" />
+    </div>
+    <div>
+      <p class="overview-label">Objects</p>
+      <strong>{{ objectCount() }}</strong>
+    </div>
+    <div>
+      <p class="overview-label">Selection</p>
+      <strong>{{ selectedSummary() }}</strong>
+    </div>
+    <div class="overview-note">
+      Local preview renders the supported TikZ primitives directly in SVG. It is fast, but it is not a full TeX compiler.
+    </div>
+  </section>
+
+  <main class="workspace-grid">
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Scene presets</p>
+          <h2>Start from something useful</h2>
+        </div>
+
+        <div class="preset-list">
+          @for (preset of scenePresets; track preset.id) {
+            <button class="preset-item" type="button" (click)="applyScenePreset(preset.id)">
+              <span>{{ preset.title }}</span>
+              <small>{{ preset.description }}</small>
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Quick insert</p>
+          <h2>Common building blocks</h2>
+        </div>
+
+        <div class="preset-list">
+          @for (preset of objectPresets; track preset.id) {
+            <button class="preset-item" type="button" (click)="addPreset(preset.id)">
+              <span>{{ preset.title }}</span>
+              <small>{{ preset.description }}</small>
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="panel compact-panel">
+        <div class="section-heading">
+          <p class="eyebrow">Canvas</p>
+          <h2>Working settings</h2>
+        </div>
+
+        <label class="setting-row">
+          <span>Show grid</span>
+          <input
+            type="checkbox"
+            [checked]="preferences().showGrid"
+            (change)="onBooleanPreferenceChange('showGrid', $event)" />
+        </label>
+        <label class="setting-row">
+          <span>Show axes</span>
+          <input
+            type="checkbox"
+            [checked]="preferences().showAxes"
+            (change)="onBooleanPreferenceChange('showAxes', $event)" />
+        </label>
+        <label class="setting-row">
+          <span>Snap to grid</span>
+          <input
+            type="checkbox"
+            [checked]="preferences().snapToGrid"
+            (change)="onBooleanPreferenceChange('snapToGrid', $event)" />
+        </label>
+
+        <label class="range-setting" for="scale-range">
+          <span>Zoom</span>
+          <strong>{{ preferences().scale }} px</strong>
+        </label>
+        <input
+          id="scale-range"
+          type="range"
+          min="24"
+          max="72"
+          step="2"
+          [value]="preferences().scale"
+          (input)="onScaleChange($event)" />
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Objects</p>
+          <h2>Scene layers</h2>
+        </div>
+
+        @if (scene().shapes.length) {
+          <div class="object-list">
+            @for (shape of scene().shapes; track shape.id) {
+              <button
+                class="object-item"
+                type="button"
+                [class.is-active]="selectedShape()?.id === shape.id"
+                (click)="selectShape(shape.id)">
+                <span>{{ shape.name }}</span>
+                <small>{{ shape.kind }}</small>
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="empty-state">This scene is still empty. Start from a preset or insert a shape.</p>
+        }
+      </section>
+    </aside>
+
+    <section class="canvas-column">
+      <div class="panel canvas-panel">
+        <div class="canvas-toolbar">
+          <div>
+            <p class="eyebrow">Canvas</p>
+            <h2>Drag shapes directly on the board</h2>
+          </div>
+
+          <div class="toolbar-actions">
+            <button type="button" class="secondary-action" (click)="duplicateSelected()">Duplicate</button>
+            <button type="button" class="danger-action" (click)="removeSelected()">Delete</button>
+          </div>
+        </div>
+
+        <svg
+          #canvasSvg
+          class="canvas-surface"
+          [attr.viewBox]="'0 0 ' + canvasWidth() + ' ' + canvasHeight()"
+          (pointermove)="onCanvasPointerMove($event)"
+          (pointerup)="endDrag($event)"
+          (pointercancel)="endDrag($event)"
+          (click)="selectShape(null)">
+          <defs>
+            <marker
+              id="arrow-end"
+              markerWidth="10"
+              markerHeight="10"
+              refX="8"
+              refY="3"
+              orient="auto"
+              markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L8,3 z" class="arrow-head"></path>
+            </marker>
+            <marker
+              id="arrow-start"
+              markerWidth="10"
+              markerHeight="10"
+              refX="2"
+              refY="3"
+              orient="auto-start-reverse"
+              markerUnits="strokeWidth">
+              <path d="M8,0 L8,6 L0,3 z" class="arrow-head"></path>
+            </marker>
+          </defs>
+
+          @if (preferences().showGrid) {
+            <g class="grid-layer">
+              @for (column of gridColumns(); track column) {
+                <line
+                  [attr.x1]="toSvgX(column)"
+                  y1="0"
+                  [attr.x2]="toSvgX(column)"
+                  [attr.y2]="canvasHeight()"></line>
+              }
+              @for (row of gridRows(); track row) {
+                <line
+                  x1="0"
+                  [attr.y1]="toSvgY(row)"
+                  [attr.x2]="canvasWidth()"
+                  [attr.y2]="toSvgY(row)"></line>
+              }
+            </g>
+          }
+
+          @if (preferences().showAxes) {
+            <g class="axis-layer">
+              <line
+                [attr.x1]="toSvgX(-100)"
+                [attr.y1]="toSvgY(0)"
+                [attr.x2]="toSvgX(100)"
+                [attr.y2]="toSvgY(0)"></line>
+              <line
+                [attr.x1]="toSvgX(0)"
+                [attr.y1]="toSvgY(-100)"
+                [attr.x2]="toSvgX(0)"
+                [attr.y2]="toSvgY(100)"></line>
+            </g>
+          }
+
+          @for (shape of scene().shapes; track shapeTrackBy($index, shape)) {
+            <g
+              class="shape-layer"
+              [class.is-selected]="selectedShape()?.id === shape.id"
+              (pointerdown)="startDrag($event, shape)">
+              @switch (shape.kind) {
+                @case ('line') {
+                  <line
+                    [attr.x1]="toSvgX(shape.from.x)"
+                    [attr.y1]="toSvgY(shape.from.y)"
+                    [attr.x2]="toSvgX(shape.to.x)"
+                    [attr.y2]="toSvgY(shape.to.y)"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-width]="shape.strokeWidth * preferences().scale * 0.05"
+                    [attr.marker-start]="shape.arrowStart ? 'url(#arrow-start)' : null"
+                    [attr.marker-end]="shape.arrowEnd ? 'url(#arrow-end)' : null"></line>
+                }
+                @case ('rectangle') {
+                  <rect
+                    [attr.x]="toSvgX(shape.x)"
+                    [attr.y]="toSvgY(shape.y)"
+                    [attr.width]="shape.width * preferences().scale"
+                    [attr.height]="shape.height * preferences().scale"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-width]="shape.strokeWidth * preferences().scale * 0.05"
+                    [attr.fill]="shape.fill"
+                    [attr.rx]="shape.cornerRadius * preferences().scale"></rect>
+                }
+                @case ('circle') {
+                  <circle
+                    [attr.cx]="toSvgX(shape.cx)"
+                    [attr.cy]="toSvgY(shape.cy)"
+                    [attr.r]="shape.r * preferences().scale"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-width]="shape.strokeWidth * preferences().scale * 0.05"
+                    [attr.fill]="shape.fill"></circle>
+                }
+                @case ('ellipse') {
+                  <ellipse
+                    [attr.cx]="toSvgX(shape.cx)"
+                    [attr.cy]="toSvgY(shape.cy)"
+                    [attr.rx]="shape.rx * preferences().scale"
+                    [attr.ry]="shape.ry * preferences().scale"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-width]="shape.strokeWidth * preferences().scale * 0.05"
+                    [attr.fill]="shape.fill"></ellipse>
+                }
+                @case ('text') {
+                  <text
+                    [attr.x]="toSvgX(shape.x)"
+                    [attr.y]="toSvgY(shape.y)"
+                    [attr.font-size]="shape.fontSize * preferences().scale"
+                    [attr.fill]="shape.color">
+                    {{ shape.text }}
+                  </text>
+                }
+              }
+            </g>
+          }
+        </svg>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Inspector</p>
+          <h2>Selected object</h2>
+        </div>
+
+        @if (selectedShape(); as shape) {
+          <div class="field-grid">
+            <label class="field">
+              <span>Name</span>
+              <input type="text" [value]="shape.name" (input)="updateShapeText('name', $event)" />
+            </label>
+
+            <label class="field">
+              <span>Stroke</span>
+              <input
+                type="color"
+                [value]="shape.stroke === 'none' ? '#000000' : shape.stroke"
+                (input)="updateShapeText('stroke', $event)" />
+            </label>
+
+            <label class="field">
+              <span>Stroke width</span>
+              <input
+                type="number"
+                min="0"
+                step="0.02"
+                [value]="shape.strokeWidth"
+                (input)="updateShapeNumber('strokeWidth', $event)" />
+            </label>
+
+            @switch (shape.kind) {
+              @case ('line') {
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>From X</span>
+                    <input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>From Y</span>
+                    <input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>To X</span>
+                    <input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>To Y</span>
+                    <input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="setting-row">
+                    <span>Arrow start</span>
+                    <input type="checkbox" [checked]="shape.arrowStart" (change)="updateShapeBoolean('arrowStart', $event)" />
+                  </label>
+                  <label class="setting-row">
+                    <span>Arrow end</span>
+                    <input type="checkbox" [checked]="shape.arrowEnd" (change)="updateShapeBoolean('arrowEnd', $event)" />
+                  </label>
+                </div>
+              }
+              @case ('rectangle') {
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>X</span>
+                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Y</span>
+                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Width</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.width"
+                      (input)="updateShapeNumber('width', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Height</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.height"
+                      (input)="updateShapeNumber('height', $event)" />
+                  </label>
+                </div>
+                <label class="field">
+                  <span>Fill</span>
+                  <input
+                    type="color"
+                    [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
+                    (input)="updateShapeText('fill', $event)" />
+                </label>
+                <label class="field">
+                  <span>Corner radius</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.05"
+                    [value]="shape.cornerRadius"
+                    (input)="updateShapeNumber('cornerRadius', $event)" />
+                </label>
+              }
+              @case ('circle') {
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Center X</span>
+                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Center Y</span>
+                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Radius</span>
+                    <input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Fill</span>
+                    <input
+                      type="color"
+                      [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
+                      (input)="updateShapeText('fill', $event)" />
+                  </label>
+                </div>
+              }
+              @case ('ellipse') {
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Center X</span>
+                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Center Y</span>
+                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Radius X</span>
+                    <input type="number" min="0.1" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Radius Y</span>
+                    <input type="number" min="0.1" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" />
+                  </label>
+                </div>
+                <label class="field">
+                  <span>Fill</span>
+                  <input
+                    type="color"
+                    [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
+                    (input)="updateShapeText('fill', $event)" />
+                </label>
+              }
+              @case ('text') {
+                <label class="field">
+                  <span>Text</span>
+                  <input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" />
+                </label>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>X</span>
+                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Y</span>
+                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                  </label>
+                </div>
+                <div class="inline-pair">
+                  <label class="field">
+                    <span>Font size</span>
+                    <input
+                      type="number"
+                      min="0.2"
+                      step="0.05"
+                      [value]="shape.fontSize"
+                      (input)="updateShapeNumber('fontSize', $event)" />
+                  </label>
+                  <label class="field">
+                    <span>Color</span>
+                    <input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" />
+                  </label>
+                </div>
+              }
+            }
+          </div>
+        } @else {
+          <p class="empty-state">Pick an object on the canvas or add one from the preset list.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Export</p>
+          <h2>TikZ generated from the current scene</h2>
+        </div>
+
+        <div class="stack-actions">
+          <button class="secondary-action" type="button" (click)="copyExportedCode()">Copy TikZ</button>
+          <button class="secondary-action" type="button" (click)="downloadStandaloneFile()">Download .tex</button>
+          <button class="secondary-action" type="button" (click)="syncImportWithExport()">Send to import</button>
+        </div>
+
+        <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <p class="eyebrow">Import</p>
+          <h2>Paste supported TikZ and rebuild the scene</h2>
+        </div>
+
+        <textarea
+          class="code-input"
+          [value]="store.importCode()"
+          (input)="onImportCodeInput($event)"
+          spellcheck="false"></textarea>
+
+        <div class="stack-actions">
+          <button class="primary-action" type="button" (click)="applyImportCode()">Apply TikZ</button>
+        </div>
+
+        @if (parserWarnings().length) {
+          <div class="warning-box">
+            <p>Some lines were skipped:</p>
+            <ul>
+              @for (warning of parserWarnings(); track warning) {
+                <li>{{ warning }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+    </aside>
+  </main>
+</div>
