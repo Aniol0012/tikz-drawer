@@ -1,165 +1,104 @@
 <div class="editor-shell">
-  <header class="app-header">
-    <div class="brand-block">
-      <div class="brand-mark" aria-hidden="true">T</div>
-      <div>
-        <p class="eyebrow">TikZ drawer</p>
-        <h1>Draw now, tune later, export clean TikZ.</h1>
-      </div>
+  <aside class="tool-rail" aria-label="Primary tools">
+    <div class="rail-group">
+      <div class="brand-badge" aria-hidden="true">T</div>
+
+      <button class="scene-chip" type="button" (click)="clearScene()">
+        <span class="scene-chip__label">Scene</span>
+        <strong>{{ scene().name }}</strong>
+      </button>
     </div>
 
-    <div class="header-actions">
+    <div class="rail-group">
+      <app-tool-button
+        label="Templates"
+        [iconPath]="iconPaths.templates"
+        [active]="dockPanel() === 'templates'"
+        (pressed)="openTemplates()" />
+      <app-tool-button
+        label="Layers"
+        [iconPath]="iconPaths.layers"
+        [active]="dockPanel() === 'layers'"
+        (pressed)="openLayers()" />
+      <app-tool-button
+        label="TikZ code"
+        [iconPath]="iconPaths.code"
+        [active]="dockPanel() === 'code'"
+        (pressed)="openCode()" />
+      <app-tool-button
+        label="Canvas settings"
+        [iconPath]="iconPaths.settings"
+        [active]="dockPanel() === 'settings'"
+        (pressed)="openSettings()" />
+    </div>
+
+    <div class="rail-divider"></div>
+
+    <div class="rail-group">
+      @for (tool of primaryTools(); track tool.id) {
+        <app-tool-button
+          [label]="tool.label"
+          [iconPath]="tool.iconPath"
+          (pressed)="addPreset(tool.id)" />
+      }
+    </div>
+
+    <div class="rail-spacer"></div>
+
+    <div class="rail-group">
+      <app-tool-button
+        [label]="themeToggleLabel()"
+        [iconPath]="preferences().theme === 'dark' ? iconPaths.sun : iconPaths.moon"
+        (pressed)="toggleTheme()" />
       <a
-        class="icon-link"
+        class="rail-link"
         href="https://github.com/Aniol0012/tikz-drawer"
         target="_blank"
         rel="noopener"
-        aria-label="Open GitHub repository">
+        aria-label="Open GitHub repository"
+        title="Open GitHub repository">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 1.5a10.5 10.5 0 0 0-3.32 20.47c.52.1.71-.22.71-.5v-1.75c-2.9.63-3.51-1.22-3.51-1.22-.48-1.2-1.17-1.53-1.17-1.53-.96-.66.08-.65.08-.65 1.06.07 1.62 1.08 1.62 1.08.94 1.61 2.46 1.14 3.06.87.1-.68.37-1.15.67-1.41-2.31-.26-4.75-1.15-4.75-5.13 0-1.13.4-2.05 1.06-2.77-.11-.26-.46-1.31.1-2.73 0 0 .87-.28 2.85 1.05a9.96 9.96 0 0 1 5.2 0c1.98-1.33 2.85-1.05 2.85-1.05.56 1.42.21 2.47.1 2.73.66.72 1.06 1.64 1.06 2.77 0 3.99-2.45 4.87-4.79 5.12.38.33.71.97.71 1.96v2.91c0 .28.19.61.72.5A10.5 10.5 0 0 0 12 1.5Z" />
+          <path [attr.d]="iconPaths.github"></path>
         </svg>
       </a>
+    </div>
+  </aside>
 
-      <button
-        class="theme-toggle"
-        type="button"
-        (click)="toggleTheme()"
-        [attr.aria-label]="themeToggleLabel()">
-        {{ preferences().theme === 'dark' ? 'Dark' : 'Light' }}
-      </button>
-    </div>
-  </header>
+  <div class="workspace-shell">
+    <header class="topbar">
+      <div class="topbar__title">
+        <p class="topbar__eyebrow">TikZ drawer</p>
+        <h1>Full canvas. Fast tools. Less clutter.</h1>
+      </div>
 
-  <section class="overview-strip">
-    <div>
-      <p class="overview-label">Scene</p>
-      <input
-        class="scene-name"
-        type="text"
-        [value]="scene().name"
-        (input)="onSceneNameInput($event)"
-        aria-label="Scene name" />
-    </div>
-    <div>
-      <p class="overview-label">Objects</p>
-      <strong>{{ objectCount() }}</strong>
-    </div>
-    <div>
-      <p class="overview-label">Selection</p>
-      <strong>{{ selectedSummary() }}</strong>
-    </div>
-    <div class="overview-note">
-      Local preview renders the supported TikZ primitives directly in SVG. It is fast, but it is not
-      a full TeX compiler.
-    </div>
-  </section>
+      <div class="topbar__meta">
+        <div class="meta-pill">
+          <span>Objects</span>
+          <strong>{{ objectCount() }}</strong>
+        </div>
+        <div class="meta-pill">
+          <span>Selection</span>
+          <strong>{{ selectedSummary() }}</strong>
+        </div>
+      </div>
+    </header>
 
-  <main class="workspace-grid">
-    <aside class="sidebar">
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Scene presets</p>
-          <h2>Start from something useful</h2>
+    <section class="stage-area">
+      <div class="stage-toolbar">
+        <div class="stage-toolbar__left">
+          <button class="ghost-button" type="button" (click)="openTemplates()">Templates</button>
+          <button class="ghost-button" type="button" (click)="openLayers()">Layers</button>
+          <button class="ghost-button" type="button" (click)="openCode()">Code</button>
         </div>
 
-        <app-preset-list [items]="scenePresets" (selected)="applyScenePreset($event)" />
-      </section>
-
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Quick insert</p>
-          <h2>Common building blocks</h2>
+        <div class="stage-toolbar__right">
+          <span class="shortcut-hint">G grid</span>
+          <span class="shortcut-hint">L layers</span>
+          <span class="shortcut-hint">C code</span>
         </div>
+      </div>
 
-        <app-preset-list [items]="objectPresets" (selected)="addPreset($event)" />
-      </section>
-
-      <section class="panel compact-panel">
-        <div class="section-heading">
-          <p class="eyebrow">Canvas</p>
-          <h2>Working settings</h2>
-        </div>
-
-        <label class="setting-row">
-          <span>Show grid</span>
-          <input
-            type="checkbox"
-            [checked]="preferences().showGrid"
-            (change)="onBooleanPreferenceChange('showGrid', $event)" />
-        </label>
-        <label class="setting-row">
-          <span>Show axes</span>
-          <input
-            type="checkbox"
-            [checked]="preferences().showAxes"
-            (change)="onBooleanPreferenceChange('showAxes', $event)" />
-        </label>
-        <label class="setting-row">
-          <span>Snap to grid</span>
-          <input
-            type="checkbox"
-            [checked]="preferences().snapToGrid"
-            (change)="onBooleanPreferenceChange('snapToGrid', $event)" />
-        </label>
-
-        <label class="range-setting" for="scale-range">
-          <span>Zoom</span>
-          <strong>{{ preferences().scale }} px</strong>
-        </label>
-        <input
-          id="scale-range"
-          type="range"
-          min="24"
-          max="72"
-          step="2"
-          [value]="preferences().scale"
-          (input)="onScaleChange($event)" />
-      </section>
-
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Objects</p>
-          <h2>Scene layers</h2>
-        </div>
-
-        @if (scene().shapes.length) {
-          <div class="object-list">
-            @for (shape of scene().shapes; track shape.id) {
-              <button
-                class="object-item"
-                type="button"
-                [class.is-active]="selectedShape()?.id === shape.id"
-                (click)="selectShape(shape.id)">
-                <span>{{ shape.name }}</span>
-                <small>{{ shape.kind }}</small>
-              </button>
-            }
-          </div>
-        } @else {
-          <p class="empty-state">
-            This scene is still empty. Start from a preset or insert a shape.
-          </p>
-        }
-      </section>
-    </aside>
-
-    <section class="canvas-column">
-      <div class="panel canvas-panel">
-        <div class="canvas-toolbar">
-          <div>
-            <p class="eyebrow">Canvas</p>
-            <h2>Drag shapes directly on the board</h2>
-          </div>
-
-          <div class="toolbar-actions">
-            <button type="button" class="secondary-action" (click)="duplicateSelected()">
-              Duplicate
-            </button>
-            <button type="button" class="danger-action" (click)="removeSelected()">Delete</button>
-          </div>
-        </div>
-
+      <div class="stage-surface">
         <svg
           #canvasSvg
           class="canvas-surface"
@@ -194,34 +133,18 @@
           @if (preferences().showGrid) {
             <g class="grid-layer">
               @for (column of gridColumns(); track column) {
-                <line
-                  [attr.x1]="toSvgX(column)"
-                  y1="0"
-                  [attr.x2]="toSvgX(column)"
-                  [attr.y2]="canvasHeight()"></line>
+                <line [attr.x1]="toSvgX(column)" y1="0" [attr.x2]="toSvgX(column)" [attr.y2]="canvasHeight()"></line>
               }
               @for (row of gridRows(); track row) {
-                <line
-                  x1="0"
-                  [attr.y1]="toSvgY(row)"
-                  [attr.x2]="canvasWidth()"
-                  [attr.y2]="toSvgY(row)"></line>
+                <line x1="0" [attr.y1]="toSvgY(row)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(row)"></line>
               }
             </g>
           }
 
           @if (preferences().showAxes) {
             <g class="axis-layer">
-              <line
-                [attr.x1]="toSvgX(-100)"
-                [attr.y1]="toSvgY(0)"
-                [attr.x2]="toSvgX(100)"
-                [attr.y2]="toSvgY(0)"></line>
-              <line
-                [attr.x1]="toSvgX(0)"
-                [attr.y1]="toSvgY(-100)"
-                [attr.x2]="toSvgX(0)"
-                [attr.y2]="toSvgY(100)"></line>
+              <line [attr.x1]="toSvgX(-100)" [attr.y1]="toSvgY(0)" [attr.x2]="toSvgX(100)" [attr.y2]="toSvgY(0)"></line>
+              <line [attr.x1]="toSvgX(0)" [attr.y1]="toSvgY(-100)" [attr.x2]="toSvgX(0)" [attr.y2]="toSvgY(100)"></line>
             </g>
           }
 
@@ -245,7 +168,7 @@
                 @case ('rectangle') {
                   <rect
                     [attr.x]="toSvgX(shape.x)"
-                    [attr.y]="toSvgY(shape.y)"
+                    [attr.y]="toSvgY(shape.y) - shape.height * preferences().scale"
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
                     [attr.stroke]="shape.stroke"
@@ -285,24 +208,207 @@
             </g>
           }
         </svg>
+
+        @if (!scene().shapes.length) {
+          <div class="canvas-empty">
+            <h2>Start with a shape or a template.</h2>
+            <p>Use the left rail to drop in building blocks. The canvas stays clear until you need a panel.</p>
+          </div>
+        }
+
+        @if (hasSelection()) {
+          <div class="selection-actions">
+            <button class="ghost-button" type="button" (click)="duplicateSelected()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.copy"></path></svg>
+              Duplicate
+            </button>
+            <button class="ghost-button danger-ghost" type="button" (click)="removeSelected()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.trash"></path></svg>
+              Delete
+            </button>
+          </div>
+        }
       </div>
-    </section>
 
-    <aside class="sidebar">
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Inspector</p>
-          <h2>Selected object</h2>
-        </div>
+      @if (dockPanel(); as panel) {
+        <section class="dock-panel">
+          <header class="dock-header">
+            <div>
+              <p class="topbar__eyebrow">Workspace</p>
+              <h2>{{ activeDockTitle() }}</h2>
+            </div>
+            <app-tool-button
+              label="Close panel"
+              [iconPath]="iconPaths.close"
+              [subtle]="true"
+              (pressed)="closeDock()" />
+          </header>
 
-        @if (selectedShape(); as shape) {
-          <div class="field-grid">
-            <label class="field">
+          @switch (panel) {
+            @case ('templates') {
+              <div class="dock-content">
+                <div class="template-grid">
+                  @for (preset of scenePresets; track presetTrackBy($index, preset)) {
+                    <button class="template-card" type="button" (click)="applyScenePreset(preset.id)">
+                      <span class="template-card__icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path [attr.d]="presetIconPath(preset.icon)"></path>
+                        </svg>
+                      </span>
+                      <strong>{{ preset.title }}</strong>
+                      <small>{{ preset.description }}</small>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @case ('layers') {
+              <div class="dock-content">
+                <div class="layer-list">
+                  @for (shape of scene().shapes; track shape.id) {
+                    <button
+                      class="layer-row"
+                      type="button"
+                      [class.is-active]="selectedShape()?.id === shape.id"
+                      (click)="selectShape(shape.id)">
+                      <span class="layer-row__icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path [attr.d]="shapeIcon(shape)"></path>
+                        </svg>
+                      </span>
+                      <span class="layer-row__meta">
+                        <strong>{{ shape.name }}</strong>
+                        <small>{{ shape.kind }}</small>
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @case ('code') {
+              <div class="dock-content">
+                <div class="mode-switch">
+                  <button
+                    type="button"
+                    class="mode-switch__button"
+                    [class.is-active]="codePanelMode() === 'export'"
+                    (click)="setCodePanelMode('export')">
+                    Export
+                  </button>
+                  <button
+                    type="button"
+                    class="mode-switch__button"
+                    [class.is-active]="codePanelMode() === 'import'"
+                    (click)="setCodePanelMode('import')">
+                    Import
+                  </button>
+                </div>
+
+                @if (codePanelMode() === 'export') {
+                  <div class="stack-actions">
+                    <button class="ghost-button" type="button" (click)="copyExportedCode()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.copy"></path></svg>
+                      Copy
+                    </button>
+                    <button class="ghost-button" type="button" (click)="downloadStandaloneFile()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.download"></path></svg>
+                      Download
+                    </button>
+                    <button class="ghost-button" type="button" (click)="syncImportWithExport()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.upload"></path></svg>
+                      Send to import
+                    </button>
+                  </div>
+                  <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
+                } @else {
+                  <textarea
+                    class="code-input"
+                    [value]="store.importCode()"
+                    (input)="onImportCodeInput($event)"
+                    spellcheck="false"></textarea>
+
+                  <div class="stack-actions">
+                    <button class="primary-button" type="button" (click)="applyImportCode()">
+                      Apply TikZ
+                    </button>
+                  </div>
+
+                  @if (parserWarnings().length) {
+                    <div class="warning-box">
+                      <p>Some lines were skipped:</p>
+                      <ul>
+                        @for (warning of parserWarnings(); track warning) {
+                          <li>{{ warning }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                }
+              </div>
+            }
+            @case ('settings') {
+              <div class="dock-content">
+                <label class="toggle-row">
+                  <span>Show grid</span>
+                  <input
+                    type="checkbox"
+                    [checked]="preferences().showGrid"
+                    (change)="onBooleanPreferenceChange('showGrid', $event)" />
+                </label>
+                <label class="toggle-row">
+                  <span>Show axes</span>
+                  <input
+                    type="checkbox"
+                    [checked]="preferences().showAxes"
+                    (change)="onBooleanPreferenceChange('showAxes', $event)" />
+                </label>
+                <label class="toggle-row">
+                  <span>Snap to grid</span>
+                  <input
+                    type="checkbox"
+                    [checked]="preferences().snapToGrid"
+                    (change)="onBooleanPreferenceChange('snapToGrid', $event)" />
+                </label>
+
+                <label class="slider-block" for="scale-range">
+                  <span>Zoom</span>
+                  <strong>{{ preferences().scale }} px</strong>
+                </label>
+                <input
+                  id="scale-range"
+                  type="range"
+                  min="24"
+                  max="72"
+                  step="2"
+                  [value]="preferences().scale"
+                  (input)="onScaleChange($event)" />
+
+                <div class="stack-actions">
+                  <button class="ghost-button" type="button" (click)="resetZoom()">Reset zoom</button>
+                </div>
+              </div>
+            }
+          }
+        </section>
+      }
+
+      @if (selectedShape(); as shape) {
+        <section class="selection-hud">
+          <header class="selection-hud__header">
+            <div>
+              <p class="topbar__eyebrow">Inspector</p>
+              <h2>{{ shape.name }}</h2>
+            </div>
+            <span class="selection-hud__kind">{{ shape.kind }}</span>
+          </header>
+
+          <div class="inspector-grid">
+            <label class="mini-field">
               <span>Name</span>
               <input type="text" [value]="shape.name" (input)="updateShapeText('name', $event)" />
             </label>
 
-            <label class="field">
+            <label class="mini-field">
               <span>Stroke</span>
               <input
                 type="color"
@@ -310,7 +416,7 @@
                 (input)="updateShapeText('stroke', $event)" />
             </label>
 
-            <label class="field">
+            <label class="mini-field">
               <span>Stroke width</span>
               <input
                 type="number"
@@ -322,51 +428,35 @@
 
             @switch (shape.kind) {
               @case ('line') {
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>From X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.from.x"
-                      (input)="updateLinePoint('from', 'x', $event)" />
+                    <input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>From Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.from.y"
-                      (input)="updateLinePoint('from', 'y', $event)" />
+                    <input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>To X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.to.x"
-                      (input)="updateLinePoint('to', 'x', $event)" />
+                    <input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>To Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.to.y"
-                      (input)="updateLinePoint('to', 'y', $event)" />
+                    <input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="setting-row">
+                <div class="mini-pair">
+                  <label class="toggle-row toggle-row--compact">
                     <span>Arrow start</span>
                     <input
                       type="checkbox"
                       [checked]="shape.arrowStart"
                       (change)="updateShapeBoolean('arrowStart', $event)" />
                   </label>
-                  <label class="setting-row">
+                  <label class="toggle-row toggle-row--compact">
                     <span>Arrow end</span>
                     <input
                       type="checkbox"
@@ -376,139 +466,79 @@
                 </div>
               }
               @case ('rectangle') {
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.x"
-                      (input)="updateShapeNumber('x', $event)" />
+                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.y"
-                      (input)="updateShapeNumber('y', $event)" />
+                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>Width</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      [value]="shape.width"
-                      (input)="updateShapeNumber('width', $event)" />
+                    <input type="number" min="0.1" step="0.1" [value]="shape.width" (input)="updateShapeNumber('width', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>Height</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      [value]="shape.height"
-                      (input)="updateShapeNumber('height', $event)" />
+                    <input type="number" min="0.1" step="0.1" [value]="shape.height" (input)="updateShapeNumber('height', $event)" />
                   </label>
                 </div>
-                <label class="field">
+                <label class="mini-field">
                   <span>Fill</span>
                   <input
                     type="color"
                     [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
                     (input)="updateShapeText('fill', $event)" />
                 </label>
-                <label class="field">
-                  <span>Corner radius</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.05"
-                    [value]="shape.cornerRadius"
-                    (input)="updateShapeNumber('cornerRadius', $event)" />
-                </label>
               }
               @case ('circle') {
-                <div class="inline-pair">
-                  <label class="field">
-                    <span>Center X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.cx"
-                      (input)="updateShapeNumber('cx', $event)" />
+                <div class="mini-pair">
+                  <label class="mini-field">
+                    <span>CX</span>
+                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
                   </label>
-                  <label class="field">
-                    <span>Center Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.cy"
-                      (input)="updateShapeNumber('cy', $event)" />
+                  <label class="mini-field">
+                    <span>CY</span>
+                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="field">
-                    <span>Radius</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      [value]="shape.r"
-                      (input)="updateShapeNumber('r', $event)" />
-                  </label>
-                  <label class="field">
-                    <span>Fill</span>
-                    <input
-                      type="color"
-                      [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
-                      (input)="updateShapeText('fill', $event)" />
-                  </label>
-                </div>
+                <label class="mini-field">
+                  <span>Radius</span>
+                  <input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" />
+                </label>
+                <label class="mini-field">
+                  <span>Fill</span>
+                  <input
+                    type="color"
+                    [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
+                    (input)="updateShapeText('fill', $event)" />
+                </label>
               }
               @case ('ellipse') {
-                <div class="inline-pair">
-                  <label class="field">
-                    <span>Center X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.cx"
-                      (input)="updateShapeNumber('cx', $event)" />
+                <div class="mini-pair">
+                  <label class="mini-field">
+                    <span>CX</span>
+                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
                   </label>
-                  <label class="field">
-                    <span>Center Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.cy"
-                      (input)="updateShapeNumber('cy', $event)" />
+                  <label class="mini-field">
+                    <span>CY</span>
+                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="field">
-                    <span>Radius X</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      [value]="shape.rx"
-                      (input)="updateShapeNumber('rx', $event)" />
+                <div class="mini-pair">
+                  <label class="mini-field">
+                    <span>RX</span>
+                    <input type="number" min="0.1" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" />
                   </label>
-                  <label class="field">
-                    <span>Radius Y</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      [value]="shape.ry"
-                      (input)="updateShapeNumber('ry', $event)" />
+                  <label class="mini-field">
+                    <span>RY</span>
+                    <input type="number" min="0.1" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" />
                   </label>
                 </div>
-                <label class="field">
+                <label class="mini-field">
                   <span>Fill</span>
                   <input
                     type="color"
@@ -517,33 +547,22 @@
                 </label>
               }
               @case ('text') {
-                <label class="field">
+                <label class="mini-field mini-field--full">
                   <span>Text</span>
-                  <input
-                    type="text"
-                    [value]="shape.text"
-                    (input)="updateShapeText('text', $event)" />
+                  <input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" />
                 </label>
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>X</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.x"
-                      (input)="updateShapeNumber('x', $event)" />
+                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>Y</span>
-                    <input
-                      type="number"
-                      step="0.1"
-                      [value]="shape.y"
-                      (input)="updateShapeNumber('y', $event)" />
+                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
-                <div class="inline-pair">
-                  <label class="field">
+                <div class="mini-pair">
+                  <label class="mini-field">
                     <span>Font size</span>
                     <input
                       type="number"
@@ -552,72 +571,16 @@
                       [value]="shape.fontSize"
                       (input)="updateShapeNumber('fontSize', $event)" />
                   </label>
-                  <label class="field">
+                  <label class="mini-field">
                     <span>Color</span>
-                    <input
-                      type="color"
-                      [value]="shape.color"
-                      (input)="updateShapeText('color', $event)" />
+                    <input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" />
                   </label>
                 </div>
               }
             }
           </div>
-        } @else {
-          <p class="empty-state">Pick an object on the canvas or add one from the preset list.</p>
-        }
-      </section>
-
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Export</p>
-          <h2>TikZ generated from the current scene</h2>
-        </div>
-
-        <div class="stack-actions">
-          <button class="secondary-action" type="button" (click)="copyExportedCode()">
-            Copy TikZ
-          </button>
-          <button class="secondary-action" type="button" (click)="downloadStandaloneFile()">
-            Download .tex
-          </button>
-          <button class="secondary-action" type="button" (click)="syncImportWithExport()">
-            Send to import
-          </button>
-        </div>
-
-        <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
-      </section>
-
-      <section class="panel">
-        <div class="section-heading">
-          <p class="eyebrow">Import</p>
-          <h2>Paste supported TikZ and rebuild the scene</h2>
-        </div>
-
-        <textarea
-          class="code-input"
-          [value]="store.importCode()"
-          (input)="onImportCodeInput($event)"
-          spellcheck="false"></textarea>
-
-        <div class="stack-actions">
-          <button class="primary-action" type="button" (click)="applyImportCode()">
-            Apply TikZ
-          </button>
-        </div>
-
-        @if (parserWarnings().length) {
-          <div class="warning-box">
-            <p>Some lines were skipped:</p>
-            <ul>
-              @for (warning of parserWarnings(); track warning) {
-                <li>{{ warning }}</li>
-              }
-            </ul>
-          </div>
-        }
-      </section>
-    </aside>
-  </main>
+        </section>
+      }
+    </section>
+  </div>
 </div>

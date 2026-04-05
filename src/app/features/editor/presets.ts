@@ -86,6 +86,7 @@ export const defaultPreferences: EditorPreferences = {
 export const objectPresets: readonly ObjectPreset[] = [
   {
     id: 'segment',
+    icon: 'segment',
     title: 'Segment',
     description: 'A simple segment to sketch geometry fast.',
     shape: createLine({
@@ -95,6 +96,7 @@ export const objectPresets: readonly ObjectPreset[] = [
   },
   {
     id: 'arrow',
+    icon: 'arrow',
     title: 'Arrow',
     description: 'Useful for vectors, flows, and diagram direction.',
     shape: createLine({
@@ -105,6 +107,7 @@ export const objectPresets: readonly ObjectPreset[] = [
   },
   {
     id: 'box',
+    icon: 'rectangle',
     title: 'Box',
     description: 'A rounded rectangle for blocks or annotations.',
     shape: createRectangle({
@@ -114,18 +117,21 @@ export const objectPresets: readonly ObjectPreset[] = [
   },
   {
     id: 'circle',
+    icon: 'circle',
     title: 'Circle',
     description: 'A circle for nodes, disks, or highlights.',
     shape: createCircle()
   },
   {
     id: 'ellipse',
+    icon: 'ellipse',
     title: 'Ellipse',
     description: 'A softer shape for state diagrams and callouts.',
     shape: createEllipse()
   },
   {
     id: 'label',
+    icon: 'text',
     title: 'Label',
     description: 'Plain text positioned directly on the canvas.',
     shape: createText()
@@ -144,12 +150,14 @@ const createScene = (name: string, shapes: readonly CanvasShape[]): TikzScene =>
 export const scenePresets: readonly ScenePreset[] = [
   {
     id: 'blank',
+    icon: 'blank',
     title: 'Blank board',
     description: 'Start with an empty scene and build the figure piece by piece.',
     scene: createScene('Blank board', [])
   },
   {
     id: 'triangle-diagram',
+    icon: 'triangle',
     title: 'Triangle diagram',
     description: 'A quick geometry starter with labels on each vertex.',
     scene: createScene('Triangle diagram', [
@@ -163,6 +171,7 @@ export const scenePresets: readonly ScenePreset[] = [
   },
   {
     id: 'flow-starter',
+    icon: 'flow',
     title: 'Flow starter',
     description: 'A tiny flowchart skeleton with two blocks and a decision.',
     scene: createScene('Flow starter', [
@@ -178,6 +187,7 @@ export const scenePresets: readonly ScenePreset[] = [
   },
   {
     id: 'plot-callout',
+    icon: 'plot',
     title: 'Plot callout',
     description: 'A simple chart-like composition with a callout label.',
     scene: createScene('Plot callout', [

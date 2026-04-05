@@ -87,6 +87,7 @@ export interface PersistedEditorState {
 
 export interface ObjectPreset {
   readonly id: string;
+  readonly icon: string;
   readonly title: string;
   readonly description: string;
   readonly shape: CanvasShape;
@@ -94,6 +95,7 @@ export interface ObjectPreset {
 
 export interface ScenePreset {
   readonly id: string;
+  readonly icon: string;
   readonly title: string;
   readonly description: string;
   readonly scene: TikzScene;

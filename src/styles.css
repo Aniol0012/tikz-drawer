@@ -2,45 +2,59 @@
 
 :root {
   color-scheme: dark;
-  --app-background: #0b0f13;
-  --app-foreground: #f5f7fa;
-  --muted-foreground: #8f9dad;
-  --surface: #121920;
-  --surface-muted: #18222d;
-  --border: #243241;
-  --border-strong: #40607b;
-  --accent: #66d9ef;
-  --accent-soft: rgba(102, 217, 239, 0.14);
-  --danger: #ff7a6f;
-  --warning: #ffcc66;
-  --canvas-background: #0d1319;
-  --canvas-noise: rgba(255, 255, 255, 0.02);
-  --grid-line: rgba(148, 163, 184, 0.12);
-  --axis-line: rgba(102, 217, 239, 0.42);
-  --selection-glow: rgba(102, 217, 239, 0.5);
-  --panel-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+  --app-background: #0a0d10;
+  --app-foreground: #eef3f8;
+  --muted-foreground: #8693a3;
+  --border: rgba(150, 168, 190, 0.16);
+  --accent: #54c7ec;
+  --accent-strong: #8fe4ff;
+  --accent-contrast: #062430;
+  --danger: #ff8578;
+  --warning: #f2c15e;
+  --rail-background: rgba(8, 11, 15, 0.92);
+  --float-surface: rgba(12, 18, 24, 0.72);
+  --dock-surface: rgba(10, 14, 19, 0.82);
+  --tool-surface: rgba(16, 23, 30, 0.88);
+  --tool-border: rgba(150, 168, 190, 0.18);
+  --tool-border-strong: rgba(150, 168, 190, 0.34);
+  --tool-foreground: #dbe6f2;
+  --stage-background: #0b1016;
+  --stage-border: rgba(150, 168, 190, 0.16);
+  --canvas-background: #0c1218;
+  --canvas-glow: #8fe4ff;
+  --grid-line: rgba(143, 164, 186, 0.08);
+  --axis-line: rgba(84, 199, 236, 0.32);
+  --selection-glow: rgba(84, 199, 236, 0.36);
+  --panel-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
   font-family: 'IBM Plex Sans', 'Segoe UI Variable Text', sans-serif;
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --app-background: #eef3f7;
+  --app-background: #edf2f7;
   --app-foreground: #0f172a;
-  --muted-foreground: #5b6473;
-  --surface: #ffffff;
-  --surface-muted: #f3f6f9;
-  --border: #d5dde6;
-  --border-strong: #93a4b7;
-  --accent: #0ea5b7;
-  --accent-soft: rgba(14, 165, 183, 0.1);
+  --muted-foreground: #667085;
+  --border: rgba(100, 116, 139, 0.18);
+  --accent: #1395b3;
+  --accent-strong: #0b6d84;
+  --accent-contrast: #f7fdff;
   --danger: #c2410c;
-  --warning: #ca8a04;
-  --canvas-background: #f8fbfd;
-  --canvas-noise: rgba(15, 23, 42, 0.02);
+  --warning: #b7791f;
+  --rail-background: rgba(244, 247, 250, 0.94);
+  --float-surface: rgba(255, 255, 255, 0.78);
+  --dock-surface: rgba(255, 255, 255, 0.86);
+  --tool-surface: rgba(248, 250, 252, 0.96);
+  --tool-border: rgba(100, 116, 139, 0.18);
+  --tool-border-strong: rgba(100, 116, 139, 0.32);
+  --tool-foreground: #0f172a;
+  --stage-background: #f4f7fb;
+  --stage-border: rgba(100, 116, 139, 0.16);
+  --canvas-background: #f9fbfd;
+  --canvas-glow: #1395b3;
   --grid-line: rgba(71, 85, 105, 0.08);
-  --axis-line: rgba(14, 165, 183, 0.45);
-  --selection-glow: rgba(14, 165, 183, 0.28);
-  --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  --axis-line: rgba(19, 149, 179, 0.34);
+  --selection-glow: rgba(19, 149, 179, 0.22);
+  --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
 }
 
 * {
