@@ -413,7 +413,9 @@
               </svg>
             </button>
           </div>
-          <div class="canvas-control-group canvas-control-group--zoom" (pointerdown)="$event.stopPropagation()">
+          <div
+            class="canvas-control-group canvas-control-group--zoom"
+            (pointerdown)="$event.stopPropagation()">
             <button class="icon-button" type="button" [title]="t('zoomOut')" (click)="zoomOut()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.minus"></path>
@@ -444,9 +446,19 @@
               [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
               aria-hidden="true">
               @for (shape of minimap.shapes; track $index) {
-                <rect class="minimap__shape" [attr.x]="shape.x" [attr.y]="shape.y" [attr.width]="shape.width" [attr.height]="shape.height"></rect>
+                <rect
+                  class="minimap__shape"
+                  [attr.x]="shape.x"
+                  [attr.y]="shape.y"
+                  [attr.width]="shape.width"
+                  [attr.height]="shape.height"></rect>
               }
-              <rect class="minimap__viewport" [attr.x]="minimap.viewportRect.x" [attr.y]="minimap.viewportRect.y" [attr.width]="minimap.viewportRect.width" [attr.height]="minimap.viewportRect.height"></rect>
+              <rect
+                class="minimap__viewport"
+                [attr.x]="minimap.viewportRect.x"
+                [attr.y]="minimap.viewportRect.y"
+                [attr.width]="minimap.viewportRect.width"
+                [attr.height]="minimap.viewportRect.height"></rect>
             </svg>
           </div>
         }
@@ -850,17 +862,47 @@
                         ><textarea
                           rows="3"
                           [value]="shape.text"
-                          (input)="updateShapeText('text', $event)"
-                      ></textarea></label>
+                          (input)="updateShapeText('text', $event)"></textarea>
+                      </label>
                       <div class="field field--full">
                         <span>{{ t('fontSize') }}</span>
                         <div class="chip-row">
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.42)">S</button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.72)">M</button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(1.08)">L</button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('uppercase')">AA</button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('lowercase')">aa</button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="transformSelectedText('titlecase')">Aa</button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextPresetSize(0.42)">
+                            S
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextPresetSize(0.72)">
+                            M
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextPresetSize(1.08)">
+                            L
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="transformSelectedText('uppercase')">
+                            AA
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="transformSelectedText('lowercase')">
+                            aa
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="transformSelectedText('titlecase')">
+                            Aa
+                          </button>
                         </div>
                       </div>
                       <label class="field"

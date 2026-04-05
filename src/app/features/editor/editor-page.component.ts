@@ -263,8 +263,7 @@ export class EditorPageComponent {
       viewBoxHeight: mapSize,
       viewportRect: toMapRect(visibleBounds),
       shapes: this.scene()
-        .shapes
-        .map((shape) => this.shapeBounds(shape))
+        .shapes.map((shape) => this.shapeBounds(shape))
         .filter((shapeBounds): shapeBounds is SelectionBounds => shapeBounds !== null)
         .map((shapeBounds) => toMapRect(shapeBounds))
     };
@@ -711,9 +710,7 @@ export class EditorPageComponent {
   }
 
   setTextPresetSize(fontSize: number): void {
-    this.store.patchSelectedShape((shape) =>
-      shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape
-    );
+    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape));
   }
 
   transformSelectedText(mode: 'uppercase' | 'lowercase' | 'titlecase'): void {

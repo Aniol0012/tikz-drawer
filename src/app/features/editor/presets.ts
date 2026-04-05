@@ -546,11 +546,41 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Simple table block for data layouts and comparisons.',
     [
       createRectangle({ name: 'Table frame', width: 5.2, height: 3.2, fill: '#fafafa', cornerRadius: 0.08 }),
-      createLine({ name: 'Table row 1', from: { x: -2.6, y: 0.6 }, to: { x: 2.6, y: 0.6 }, stroke: '#767676', strokeWidth: 0.05 }),
-      createLine({ name: 'Table row 2', from: { x: -2.6, y: -0.2 }, to: { x: 2.6, y: -0.2 }, stroke: '#767676', strokeWidth: 0.05 }),
-      createLine({ name: 'Table row 3', from: { x: -2.6, y: -1 }, to: { x: 2.6, y: -1 }, stroke: '#767676', strokeWidth: 0.05 }),
-      createLine({ name: 'Table col 1', from: { x: -0.9, y: 1.6 }, to: { x: -0.9, y: -1.6 }, stroke: '#767676', strokeWidth: 0.05 }),
-      createLine({ name: 'Table col 2', from: { x: 0.9, y: 1.6 }, to: { x: 0.9, y: -1.6 }, stroke: '#767676', strokeWidth: 0.05 })
+      createLine({
+        name: 'Table row 1',
+        from: { x: -2.6, y: 0.6 },
+        to: { x: 2.6, y: 0.6 },
+        stroke: '#767676',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Table row 2',
+        from: { x: -2.6, y: -0.2 },
+        to: { x: 2.6, y: -0.2 },
+        stroke: '#767676',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Table row 3',
+        from: { x: -2.6, y: -1 },
+        to: { x: 2.6, y: -1 },
+        stroke: '#767676',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Table col 1',
+        from: { x: -0.9, y: 1.6 },
+        to: { x: -0.9, y: -1.6 },
+        stroke: '#767676',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Table col 2',
+        from: { x: 0.9, y: 1.6 },
+        to: { x: 0.9, y: -1.6 },
+        stroke: '#767676',
+        strokeWidth: 0.05
+      })
     ],
     { searchTerms: ['table', 'grid', 'matrix', 'data'] }
   ),
@@ -562,9 +592,27 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Sticky note style block for quick annotations.',
     [
       createRectangle({ name: 'Note body', width: 3.4, height: 3.1, fill: '#fafafa', cornerRadius: 0.12 }),
-      createLine({ name: 'Note fold a', from: { x: 1, y: 1.55 }, to: { x: 1.7, y: 0.9 }, stroke: '#8b8b8b', strokeWidth: 0.05 }),
-      createLine({ name: 'Note fold b', from: { x: 1.7, y: 0.9 }, to: { x: 1.7, y: 1.55 }, stroke: '#8b8b8b', strokeWidth: 0.05 }),
-      createLine({ name: 'Note fold c', from: { x: 1, y: 1.55 }, to: { x: 1.7, y: 1.55 }, stroke: '#8b8b8b', strokeWidth: 0.05 }),
+      createLine({
+        name: 'Note fold a',
+        from: { x: 1, y: 1.55 },
+        to: { x: 1.7, y: 0.9 },
+        stroke: '#8b8b8b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Note fold b',
+        from: { x: 1.7, y: 0.9 },
+        to: { x: 1.7, y: 1.55 },
+        stroke: '#8b8b8b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Note fold c',
+        from: { x: 1, y: 1.55 },
+        to: { x: 1.7, y: 1.55 },
+        stroke: '#8b8b8b',
+        strokeWidth: 0.05
+      }),
       createText({ name: 'Note label', text: 'Note', y: 0 })
     ],
     { searchTerms: ['note', 'sticky', 'annotation'] }
@@ -577,9 +625,27 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Horizontal flow lane with grouped stages.',
     [
       createRectangle({ name: 'Swimlane frame', width: 7.6, height: 3.4, fill: '#fbfbfb', cornerRadius: 0.08 }),
-      createLine({ name: 'Swimlane divider 1', from: { x: -1.25, y: 1.7 }, to: { x: -1.25, y: -1.7 }, stroke: '#7e7e7e', strokeWidth: 0.05 }),
-      createLine({ name: 'Swimlane divider 2', from: { x: 1.25, y: 1.7 }, to: { x: 1.25, y: -1.7 }, stroke: '#7e7e7e', strokeWidth: 0.05 }),
-      createLine({ name: 'Swimlane divider 3', from: { x: 3.75, y: 1.7 }, to: { x: 3.75, y: -1.7 }, stroke: '#7e7e7e', strokeWidth: 0.05 }),
+      createLine({
+        name: 'Swimlane divider 1',
+        from: { x: -1.25, y: 1.7 },
+        to: { x: -1.25, y: -1.7 },
+        stroke: '#7e7e7e',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Swimlane divider 2',
+        from: { x: 1.25, y: 1.7 },
+        to: { x: 1.25, y: -1.7 },
+        stroke: '#7e7e7e',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Swimlane divider 3',
+        from: { x: 3.75, y: 1.7 },
+        to: { x: 3.75, y: -1.7 },
+        stroke: '#7e7e7e',
+        strokeWidth: 0.05
+      }),
       createText({ name: 'Swimlane title', text: 'Flow', x: -3.1, y: 0, fontSize: 0.36 })
     ],
     { searchTerms: ['swimlane', 'lane', 'workflow', 'process'] }
