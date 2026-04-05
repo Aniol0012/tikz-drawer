@@ -220,7 +220,7 @@ const translations: Record<LanguageCode, Record<TranslationKey, string>> = {
     applyTikz: 'Aplicar TikZ',
     sendToImport: "Enviar a l'importador",
     generatedCode: 'Codi generat',
-    importCode: "Importar codi",
+    importCode: 'Importar codi',
     name: 'Nom',
     stroke: 'Línia',
     strokeWidth: 'Gruix',
@@ -297,45 +297,37 @@ const localizedShapeKinds: Record<LanguageCode, Record<CanvasShape['kind'], stri
 };
 
 const iconPaths = {
-  select:
-    'M5 4.5 18 12l-5.5 1.7 2.1 5.3-2.1 1L10.4 14 6.9 18.6 5 17.1 8.5 12.7 5 4.5Z',
+  select: 'M5 4.5 18 12l-5.5 1.7 2.1 5.3-2.1 1L10.4 14 6.9 18.6 5 17.1 8.5 12.7 5 4.5Z',
   zoomOut: 'M4 11h10v2H4v-2Zm12.5 5.1 3.7 3.7-1.4 1.4-3.7-3.7 1.4-1.4ZM11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
   zoomIn:
     'M10 10V6h2v4h4v2h-4v4h-2v-4H6v-2h4Zm6.5 6.1 3.7 3.7-1.4 1.4-3.7-3.7 1.4-1.4ZM11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
-  undo:
-    'M7.4 7.4V4L1.9 9.5 7.4 15V11.6h5.4a3.6 3.6 0 1 1 0 7.2H8.5V21h4.3a5.8 5.8 0 1 0 0-11.6H7.4Z',
-  redo:
-    'M16.6 7.4V4l5.5 5.5-5.5 5.5v-3.4h-5.4a3.6 3.6 0 1 0 0 7.2h4.3V21h-4.3a5.8 5.8 0 1 1 0-11.6h5.4Z',
+  undo: 'M7.4 7.4V4L1.9 9.5 7.4 15V11.6h5.4a3.6 3.6 0 1 1 0 7.2H8.5V21h4.3a5.8 5.8 0 1 0 0-11.6H7.4Z',
+  redo: 'M16.6 7.4V4l5.5 5.5-5.5 5.5v-3.4h-5.4a3.6 3.6 0 1 0 0 7.2h4.3V21h-4.3a5.8 5.8 0 1 1 0-11.6h5.4Z',
   github:
     'M12 1.5a10.5 10.5 0 0 0-3.32 20.47c.52.1.71-.22.71-.5v-1.75c-2.9.63-3.51-1.22-3.51-1.22-.48-1.2-1.17-1.53-1.17-1.53-.96-.66.08-.65.08-.65 1.06.07 1.62 1.08 1.62 1.08.94 1.61 2.46 1.14 3.06.87.1-.68.37-1.15.67-1.41-2.31-.26-4.75-1.15-4.75-5.13 0-1.13.4-2.05 1.06-2.77-.11-.26-.46-1.31.1-2.73 0 0 .87-.28 2.85 1.05a9.96 9.96 0 0 1 5.2 0c1.98-1.33 2.85-1.05 2.85-1.05.56 1.42.21 2.47.1 2.73.66.72 1.06 1.64 1.06 2.77 0 3.99-2.45 4.87-4.79 5.12.38.33.71.97.71 1.96v2.91c0 .28.19.61.72.5A10.5 10.5 0 0 0 12 1.5Z',
   segment: 'M4 18 18 6l2 2-14 12-2-2Z',
   arrow: 'M4 12h11.17l-3.58-3.59L13 7l6 6-6 6-1.41-1.41L15.17 14H4v-2Z',
-  rectangle: 'M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z',
-  circle:
-    'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
+  rectangle:
+    'M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z',
+  circle: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
   ellipse:
     'M12 5c-4.97 0-9 3.13-9 7s4.03 7 9 7 9-3.13 9-7-4.03-7-9-7Zm0 2c3.93 0 7 2.24 7 5s-3.07 5-7 5-7-2.24-7-5 3.07-5 7-5Z',
   text: 'M5 5h14v2H13v12h-2V7H5V5Z',
   blank: 'M5 5h14v14H5z',
   triangle: 'M12 5 4 19h16L12 5Zm0 4.1 4.54 7.9H7.46L12 9.1Z',
   flow: 'M4 7h6v4H4V7Zm10 0h6v4h-6V7ZM9 13h6v4H9v-4Zm-1-4h8v2H8V9Zm3 4V9h2v4h-2Z',
-  plot:
-    'M5 5h2v12h12v2H5V5Zm3 8.5 2.8-2.8 2.2 2.2 4-4L18.4 10l-5.4 5.4-2.2-2.2L9.4 14.6 8 13.5Z',
-  sun:
-    'M12 4.5a1 1 0 0 1 1 1V7a1 1 0 1 1-2 0V5.5a1 1 0 0 1 1-1Zm0 12a1 1 0 0 1 1 1V19a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm7.5-5.5a1 1 0 0 1 0 2H18a1 1 0 1 1 0-2h1.5ZM7 12a1 1 0 0 1-1 1H4.5a1 1 0 1 1 0-2H6a1 1 0 0 1 1 1Zm8.3-4.89a1 1 0 0 1 1.4-1.41l1.06 1.06a1 1 0 1 1-1.41 1.41L15.3 7.11Zm-8.01 8.02a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 0 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 0-1.41Zm9.47.94a1 1 0 0 1 0-1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-1.06 1.06a1 1 0 0 1-1.41 0ZM8.35 8.17a1 1 0 0 1-1.41 0L5.88 7.11A1 1 0 0 1 7.3 5.7l1.06 1.06a1 1 0 0 1 0 1.41ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
-  moon:
-    'M14.7 3.1a8 8 0 1 0 6.2 11.8 8.5 8.5 0 1 1-6.2-11.8Z',
+  plot: 'M5 5h2v12h12v2H5V5Zm3 8.5 2.8-2.8 2.2 2.2 4-4L18.4 10l-5.4 5.4-2.2-2.2L9.4 14.6 8 13.5Z',
+  sun: 'M12 4.5a1 1 0 0 1 1 1V7a1 1 0 1 1-2 0V5.5a1 1 0 0 1 1-1Zm0 12a1 1 0 0 1 1 1V19a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm7.5-5.5a1 1 0 0 1 0 2H18a1 1 0 1 1 0-2h1.5ZM7 12a1 1 0 0 1-1 1H4.5a1 1 0 1 1 0-2H6a1 1 0 0 1 1 1Zm8.3-4.89a1 1 0 0 1 1.4-1.41l1.06 1.06a1 1 0 1 1-1.41 1.41L15.3 7.11Zm-8.01 8.02a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 0 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 0-1.41Zm9.47.94a1 1 0 0 1 0-1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-1.06 1.06a1 1 0 0 1-1.41 0ZM8.35 8.17a1 1 0 0 1-1.41 0L5.88 7.11A1 1 0 0 1 7.3 5.7l1.06 1.06a1 1 0 0 1 0 1.41ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
+  moon: 'M14.7 3.1a8 8 0 1 0 6.2 11.8 8.5 8.5 0 1 1-6.2-11.8Z',
   copy: 'M8 8h11v12H8V8Zm-3-4h11v2H7v10H5V4Z',
-  trash:
-    'M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v8h-2V9Zm4 0h2v8h-2V9ZM7 9h2v8H7V9Z',
-  upload:
-    'M12 3 7.5 7.5l1.4 1.4L11 6.8V16h2V6.8l2.1 2.1 1.4-1.4L12 3Zm-7 14h14v4H5v-4Z',
-  download:
-    'M11 4h2v9.17l2.09-2.08 1.41 1.41L12 17l-4.5-4.5 1.41-1.41L11 13.17V4Zm-6 14h14v2H5v-2Z'
+  trash: 'M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v8h-2V9Zm4 0h2v8h-2V9ZM7 9h2v8H7V9Z',
+  upload: 'M12 3 7.5 7.5l1.4 1.4L11 6.8V16h2V6.8l2.1 2.1 1.4-1.4L12 3Zm-7 14h14v4H5v-4Z',
+  download: 'M11 4h2v9.17l2.09-2.08 1.41 1.41L12 17l-4.5-4.5 1.41-1.41L11 13.17V4Zm-6 14h14v2H5v-2Z'
 } satisfies Record<string, string>;
 
 const getIconPath = (key: string): string => iconPaths[key as keyof typeof iconPaths] ?? iconPaths['rectangle'];
-const detectLanguage = (): LanguageCode => (globalThis.navigator?.language?.toLowerCase().startsWith('ca') ? 'ca' : 'en');
+const detectLanguage = (): LanguageCode =>
+  globalThis.navigator?.language?.toLowerCase().startsWith('ca') ? 'ca' : 'en';
 
 @Component({
   selector: 'app-editor-page',
@@ -408,7 +400,8 @@ export class EditorPageComponent {
     return !searchValue
       ? this.primaryTools()
       : this.primaryTools().filter(
-          (tool) => tool.label.toLowerCase().includes(searchValue) || tool.description.toLowerCase().includes(searchValue)
+          (tool) =>
+            tool.label.toLowerCase().includes(searchValue) || tool.description.toLowerCase().includes(searchValue)
         );
   });
   readonly layerShapes = computed(() => [...this.scene().shapes].reverse());
@@ -421,11 +414,26 @@ export class EditorPageComponent {
 
     switch (selectedShape.kind) {
       case 'rectangle':
-        return { left: selectedShape.x, right: selectedShape.x + selectedShape.width, bottom: selectedShape.y, top: selectedShape.y + selectedShape.height };
+        return {
+          left: selectedShape.x,
+          right: selectedShape.x + selectedShape.width,
+          bottom: selectedShape.y,
+          top: selectedShape.y + selectedShape.height
+        };
       case 'circle':
-        return { left: selectedShape.cx - selectedShape.r, right: selectedShape.cx + selectedShape.r, bottom: selectedShape.cy - selectedShape.r, top: selectedShape.cy + selectedShape.r };
+        return {
+          left: selectedShape.cx - selectedShape.r,
+          right: selectedShape.cx + selectedShape.r,
+          bottom: selectedShape.cy - selectedShape.r,
+          top: selectedShape.cy + selectedShape.r
+        };
       case 'ellipse':
-        return { left: selectedShape.cx - selectedShape.rx, right: selectedShape.cx + selectedShape.rx, bottom: selectedShape.cy - selectedShape.ry, top: selectedShape.cy + selectedShape.ry };
+        return {
+          left: selectedShape.cx - selectedShape.rx,
+          right: selectedShape.cx + selectedShape.rx,
+          bottom: selectedShape.cy - selectedShape.ry,
+          top: selectedShape.cy + selectedShape.ry
+        };
       case 'line':
         return {
           left: Math.min(selectedShape.from.x, selectedShape.to.x),
@@ -434,7 +442,10 @@ export class EditorPageComponent {
           top: Math.max(selectedShape.from.y, selectedShape.to.y)
         };
       case 'text': {
-        const estimatedWidth = Math.max(selectedShape.text.length * selectedShape.fontSize * 0.48, selectedShape.fontSize);
+        const estimatedWidth = Math.max(
+          selectedShape.text.length * selectedShape.fontSize * 0.48,
+          selectedShape.fontSize
+        );
         const estimatedHeight = selectedShape.fontSize * 0.72;
         return {
           left: selectedShape.x - estimatedWidth / 2,
@@ -477,7 +488,12 @@ export class EditorPageComponent {
       { id: 'n', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.top), cursor: 'ns-resize' },
       { id: 'ne', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.top), cursor: 'nesw-resize' },
       { id: 'e', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(centerY), cursor: 'ew-resize' },
-      { id: 'se', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.bottom), cursor: 'nwse-resize' },
+      {
+        id: 'se',
+        x: this.toSvgX(selectionBounds.right),
+        y: this.toSvgY(selectionBounds.bottom),
+        cursor: 'nwse-resize'
+      },
       { id: 's', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.bottom), cursor: 'ns-resize' },
       { id: 'sw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.bottom), cursor: 'nesw-resize' },
       { id: 'w', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(centerY), cursor: 'ew-resize' }
@@ -681,7 +697,12 @@ export class EditorPageComponent {
   openCanvasContextMenu(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.contextMenu.set({ clientX: event.clientX, clientY: event.clientY, target: 'canvas', shapeId: this.selectedShape()?.id ?? null });
+    this.contextMenu.set({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      target: 'canvas',
+      shapeId: this.selectedShape()?.id ?? null
+    });
   }
 
   openShapeContextMenu(event: MouseEvent, shape: CanvasShape): void {
@@ -872,7 +893,9 @@ export class EditorPageComponent {
   }
 
   shapeIcon(shape: CanvasShape): string {
-    return getIconPath(shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind);
+    return getIconPath(
+      shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind
+    );
   }
 
   presetIconPath(icon: string): string {
@@ -895,7 +918,12 @@ export class EditorPageComponent {
     return localizedShapeKinds[this.language()][kind];
   }
 
-  selectionOutline(): { readonly x: number; readonly y: number; readonly width: number; readonly height: number } | null {
+  selectionOutline(): {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+  } | null {
     const selectionBounds = this.selectionBounds();
 
     if (!selectionBounds) {
@@ -998,7 +1026,11 @@ export class EditorPageComponent {
 
   private setScaleFromViewportCenter(nextScale: number): void {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
-    this.setScaleAtClientPoint(nextScale, viewportRect.left + viewportRect.width / 2, viewportRect.top + viewportRect.height / 2);
+    this.setScaleAtClientPoint(
+      nextScale,
+      viewportRect.left + viewportRect.width / 2,
+      viewportRect.top + viewportRect.height / 2
+    );
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number): void {
@@ -1051,21 +1083,61 @@ export class EditorPageComponent {
     }
   }
 
-  private resizeRectangle(shape: Extract<CanvasShape, { kind: 'rectangle' }>, handle: ResizeHandle, point: { x: number; y: number }): CanvasShape {
-    const selectionBounds = this.resizeBounds({ left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height }, handle, point, 0.4, 0.4);
-    return { ...shape, x: selectionBounds.left, y: selectionBounds.bottom, width: selectionBounds.right - selectionBounds.left, height: selectionBounds.top - selectionBounds.bottom };
+  private resizeRectangle(
+    shape: Extract<CanvasShape, { kind: 'rectangle' }>,
+    handle: ResizeHandle,
+    point: { x: number; y: number }
+  ): CanvasShape {
+    const selectionBounds = this.resizeBounds(
+      { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
+      handle,
+      point,
+      0.4,
+      0.4
+    );
+    return {
+      ...shape,
+      x: selectionBounds.left,
+      y: selectionBounds.bottom,
+      width: selectionBounds.right - selectionBounds.left,
+      height: selectionBounds.top - selectionBounds.bottom
+    };
   }
 
-  private resizeCircle(shape: Extract<CanvasShape, { kind: 'circle' }>, handle: ResizeHandle, point: { x: number; y: number }): CanvasShape {
-    const selectionBounds = this.resizeBounds({ left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r }, handle, point, 0.2, 0.2);
+  private resizeCircle(
+    shape: Extract<CanvasShape, { kind: 'circle' }>,
+    handle: ResizeHandle,
+    point: { x: number; y: number }
+  ): CanvasShape {
+    const selectionBounds = this.resizeBounds(
+      { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r },
+      handle,
+      point,
+      0.2,
+      0.2
+    );
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
     const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
-    const radius = Math.max((selectionBounds.right - selectionBounds.left) / 2, (selectionBounds.top - selectionBounds.bottom) / 2, 0.1);
+    const radius = Math.max(
+      (selectionBounds.right - selectionBounds.left) / 2,
+      (selectionBounds.top - selectionBounds.bottom) / 2,
+      0.1
+    );
     return { ...shape, cx: centerX, cy: centerY, r: radius };
   }
 
-  private resizeEllipse(shape: Extract<CanvasShape, { kind: 'ellipse' }>, handle: ResizeHandle, point: { x: number; y: number }): CanvasShape {
-    const selectionBounds = this.resizeBounds({ left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry }, handle, point, 0.2, 0.2);
+  private resizeEllipse(
+    shape: Extract<CanvasShape, { kind: 'ellipse' }>,
+    handle: ResizeHandle,
+    point: { x: number; y: number }
+  ): CanvasShape {
+    const selectionBounds = this.resizeBounds(
+      { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
+      handle,
+      point,
+      0.2,
+      0.2
+    );
     return {
       ...shape,
       cx: (selectionBounds.left + selectionBounds.right) / 2,
@@ -1075,11 +1147,21 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeLine(shape: Extract<CanvasShape, { kind: 'line' }>, handle: ResizeHandle, point: { x: number; y: number }): CanvasShape {
+  private resizeLine(
+    shape: Extract<CanvasShape, { kind: 'line' }>,
+    handle: ResizeHandle,
+    point: { x: number; y: number }
+  ): CanvasShape {
     return handle === 'from' ? { ...shape, from: point } : handle === 'to' ? { ...shape, to: point } : shape;
   }
 
-  private resizeBounds(selectionBounds: SelectionBounds, handle: ResizeHandle, point: { x: number; y: number }, minimumWidth: number, minimumHeight: number): SelectionBounds {
+  private resizeBounds(
+    selectionBounds: SelectionBounds,
+    handle: ResizeHandle,
+    point: { x: number; y: number },
+    minimumWidth: number,
+    minimumHeight: number
+  ): SelectionBounds {
     let left = selectionBounds.left;
     let right = selectionBounds.right;
     let top = selectionBounds.top;

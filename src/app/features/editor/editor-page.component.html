@@ -6,28 +6,54 @@
     </div>
 
     <div class="topbar__controls">
-      <button class="icon-button" type="button" [disabled]="!canUndo()" [attr.aria-label]="t('undo')" (click)="undo()">
+      <button
+        class="icon-button"
+        type="button"
+        [disabled]="!canUndo()"
+        [attr.aria-label]="t('undo')"
+        (click)="undo()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.undo"></path></svg>
       </button>
-      <button class="icon-button" type="button" [disabled]="!canRedo()" [attr.aria-label]="t('redo')" (click)="redo()">
+      <button
+        class="icon-button"
+        type="button"
+        [disabled]="!canRedo()"
+        [attr.aria-label]="t('redo')"
+        (click)="redo()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.redo"></path></svg>
       </button>
 
       <div class="zoom-control">
-        <button class="icon-button" type="button" [attr.aria-label]="t('zoomOut')" (click)="zoomOut()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.zoomOut"></path></svg>
+        <button
+          class="icon-button"
+          type="button"
+          [attr.aria-label]="t('zoomOut')"
+          (click)="zoomOut()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconPaths.zoomOut"></path>
+          </svg>
         </button>
         <button class="zoom-value" type="button" (click)="resetZoom()">{{ zoomPercent() }}%</button>
-        <button class="icon-button" type="button" [attr.aria-label]="t('zoomIn')" (click)="zoomIn()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.zoomIn"></path></svg>
+        <button
+          class="icon-button"
+          type="button"
+          [attr.aria-label]="t('zoomIn')"
+          (click)="zoomIn()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconPaths.zoomIn"></path>
+          </svg>
         </button>
       </div>
     </div>
 
     <div class="topbar__actions">
       <div class="language-switch" [attr.aria-label]="t('language')">
-        <button type="button" [class.is-active]="language() === 'en'" (click)="setLanguage('en')">EN</button>
-        <button type="button" [class.is-active]="language() === 'ca'" (click)="setLanguage('ca')">CA</button>
+        <button type="button" [class.is-active]="language() === 'en'" (click)="setLanguage('en')">
+          EN
+        </button>
+        <button type="button" [class.is-active]="language() === 'ca'" (click)="setLanguage('ca')">
+          CA
+        </button>
       </div>
 
       <button class="icon-button" type="button" (click)="toggleTheme()">
@@ -36,7 +62,9 @@
         </svg>
       </button>
 
-      <button class="primary-button" type="button" (click)="downloadStandaloneFile()">{{ t('export') }}</button>
+      <button class="primary-button" type="button" (click)="downloadStandaloneFile()">
+        {{ t('export') }}
+      </button>
     </div>
   </header>
 
@@ -55,13 +83,21 @@
         <div class="section-header">{{ t('tools') }}</div>
         <div class="tool-grid">
           <button class="tool-tile" type="button" (click)="selectShape(null)">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.select"></path></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconPaths.select"></path>
+            </svg>
             <span>{{ t('select') }}</span>
           </button>
 
           @for (tool of filteredPrimaryTools(); track tool.id) {
-            <button class="tool-tile" type="button" [title]="tool.description" (click)="addPreset(tool.id)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
+            <button
+              class="tool-tile"
+              type="button"
+              [title]="tool.description"
+              (click)="addPreset(tool.id)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="tool.iconPath"></path>
+              </svg>
               <span>{{ tool.label }}</span>
             </button>
           }
@@ -110,11 +146,17 @@
 
         <div class="status-toggles">
           <label class="toggle-chip">
-            <input type="checkbox" [checked]="preferences().showGrid" (change)="onBooleanPreferenceChange('showGrid', $event)" />
+            <input
+              type="checkbox"
+              [checked]="preferences().showGrid"
+              (change)="onBooleanPreferenceChange('showGrid', $event)" />
             <span>{{ t('showGrid') }}</span>
           </label>
           <label class="toggle-chip">
-            <input type="checkbox" [checked]="preferences().showAxes" (change)="onBooleanPreferenceChange('showAxes', $event)" />
+            <input
+              type="checkbox"
+              [checked]="preferences().showAxes"
+              (change)="onBooleanPreferenceChange('showAxes', $event)" />
             <span>{{ t('showAxes') }}</span>
           </label>
           <label class="toggle-chip">
@@ -168,18 +210,34 @@
           @if (preferences().showGrid) {
             <g class="grid-layer">
               @for (column of gridColumns(); track column) {
-                <line [attr.x1]="toSvgX(column)" y1="0" [attr.x2]="toSvgX(column)" [attr.y2]="canvasHeight()"></line>
+                <line
+                  [attr.x1]="toSvgX(column)"
+                  y1="0"
+                  [attr.x2]="toSvgX(column)"
+                  [attr.y2]="canvasHeight()"></line>
               }
               @for (row of gridRows(); track row) {
-                <line x1="0" [attr.y1]="toSvgY(row)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(row)"></line>
+                <line
+                  x1="0"
+                  [attr.y1]="toSvgY(row)"
+                  [attr.x2]="canvasWidth()"
+                  [attr.y2]="toSvgY(row)"></line>
               }
             </g>
           }
 
           @if (preferences().showAxes) {
             <g class="axis-layer">
-              <line x1="0" [attr.y1]="toSvgY(0)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(0)"></line>
-              <line [attr.x1]="toSvgX(0)" y1="0" [attr.x2]="toSvgX(0)" [attr.y2]="canvasHeight()"></line>
+              <line
+                x1="0"
+                [attr.y1]="toSvgY(0)"
+                [attr.x2]="canvasWidth()"
+                [attr.y2]="toSvgY(0)"></line>
+              <line
+                [attr.x1]="toSvgX(0)"
+                y1="0"
+                [attr.x2]="toSvgX(0)"
+                [attr.y2]="canvasHeight()"></line>
             </g>
           }
 
@@ -279,10 +337,16 @@
 
     <aside class="right-sidebar">
       <div class="sidebar-tabs">
-        <button type="button" [class.is-active]="inspectorTab() === 'properties'" (click)="setInspectorTab('properties')">
+        <button
+          type="button"
+          [class.is-active]="inspectorTab() === 'properties'"
+          (click)="setInspectorTab('properties')">
           {{ t('properties') }}
         </button>
-        <button type="button" [class.is-active]="inspectorTab() === 'code'" (click)="setInspectorTab('code')">
+        <button
+          type="button"
+          [class.is-active]="inspectorTab() === 'code'"
+          (click)="setInspectorTab('code')">
           {{ t('tikzCode') }}
         </button>
       </div>
@@ -301,7 +365,10 @@
               <div class="form-grid">
                 <label class="field field--full">
                   <span>{{ t('name') }}</span>
-                  <input type="text" [value]="shape.name" (input)="updateShapeText('name', $event)" />
+                  <input
+                    type="text"
+                    [value]="shape.name"
+                    (input)="updateShapeText('name', $event)" />
                 </label>
 
                 <label class="field">
@@ -314,52 +381,97 @@
 
                 <label class="field">
                   <span>{{ t('strokeWidth') }}</span>
-                  <input type="number" min="0" step="0.02" [value]="shape.strokeWidth" (input)="updateShapeNumber('strokeWidth', $event)" />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.02"
+                    [value]="shape.strokeWidth"
+                    (input)="updateShapeNumber('strokeWidth', $event)" />
                 </label>
 
                 @switch (shape.kind) {
                   @case ('line') {
                     <label class="field">
                       <span>{{ t('fromX') }}</span>
-                      <input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.from.x"
+                        (input)="updateLinePoint('from', 'x', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('fromY') }}</span>
-                      <input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.from.y"
+                        (input)="updateLinePoint('from', 'y', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('toX') }}</span>
-                      <input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.to.x"
+                        (input)="updateLinePoint('to', 'x', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('toY') }}</span>
-                      <input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.to.y"
+                        (input)="updateLinePoint('to', 'y', $event)" />
                     </label>
                     <label class="checkbox-field">
-                      <input type="checkbox" [checked]="shape.arrowStart" (change)="updateShapeBoolean('arrowStart', $event)" />
+                      <input
+                        type="checkbox"
+                        [checked]="shape.arrowStart"
+                        (change)="updateShapeBoolean('arrowStart', $event)" />
                       <span>{{ t('arrowStart') }}</span>
                     </label>
                     <label class="checkbox-field">
-                      <input type="checkbox" [checked]="shape.arrowEnd" (change)="updateShapeBoolean('arrowEnd', $event)" />
+                      <input
+                        type="checkbox"
+                        [checked]="shape.arrowEnd"
+                        (change)="updateShapeBoolean('arrowEnd', $event)" />
                       <span>{{ t('arrowEnd') }}</span>
                     </label>
                   }
                   @case ('rectangle') {
                     <label class="field">
                       <span>{{ t('x') }}</span>
-                      <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.x"
+                        (input)="updateShapeNumber('x', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('y') }}</span>
-                      <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.y"
+                        (input)="updateShapeNumber('y', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('width') }}</span>
-                      <input type="number" min="0.1" step="0.1" [value]="shape.width" (input)="updateShapeNumber('width', $event)" />
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        [value]="shape.width"
+                        (input)="updateShapeNumber('width', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('height') }}</span>
-                      <input type="number" min="0.1" step="0.1" [value]="shape.height" (input)="updateShapeNumber('height', $event)" />
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        [value]="shape.height"
+                        (input)="updateShapeNumber('height', $event)" />
                     </label>
                     <label class="field field--full">
                       <span>{{ t('fill') }}</span>
@@ -372,15 +484,28 @@
                   @case ('circle') {
                     <label class="field">
                       <span>{{ t('cx') }}</span>
-                      <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.cx"
+                        (input)="updateShapeNumber('cx', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('cy') }}</span>
-                      <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.cy"
+                        (input)="updateShapeNumber('cy', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('radius') }}</span>
-                      <input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" />
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        [value]="shape.r"
+                        (input)="updateShapeNumber('r', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('fill') }}</span>
@@ -393,19 +518,37 @@
                   @case ('ellipse') {
                     <label class="field">
                       <span>{{ t('cx') }}</span>
-                      <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.cx"
+                        (input)="updateShapeNumber('cx', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('cy') }}</span>
-                      <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.cy"
+                        (input)="updateShapeNumber('cy', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('rx') }}</span>
-                      <input type="number" min="0.1" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" />
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        [value]="shape.rx"
+                        (input)="updateShapeNumber('rx', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('ry') }}</span>
-                      <input type="number" min="0.1" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" />
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        [value]="shape.ry"
+                        (input)="updateShapeNumber('ry', $event)" />
                     </label>
                     <label class="field field--full">
                       <span>{{ t('fill') }}</span>
@@ -418,23 +561,42 @@
                   @case ('text') {
                     <label class="field field--full">
                       <span>{{ t('text') }}</span>
-                      <input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" />
+                      <input
+                        type="text"
+                        [value]="shape.text"
+                        (input)="updateShapeText('text', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('x') }}</span>
-                      <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.x"
+                        (input)="updateShapeNumber('x', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('y') }}</span>
-                      <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                      <input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.y"
+                        (input)="updateShapeNumber('y', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('fontSize') }}</span>
-                      <input type="number" min="0.2" step="0.05" [value]="shape.fontSize" (input)="updateShapeNumber('fontSize', $event)" />
+                      <input
+                        type="number"
+                        min="0.2"
+                        step="0.05"
+                        [value]="shape.fontSize"
+                        (input)="updateShapeNumber('fontSize', $event)" />
                     </label>
                     <label class="field">
                       <span>{{ t('color') }}</span>
-                      <input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" />
+                      <input
+                        type="color"
+                        [value]="shape.color"
+                        (input)="updateShapeText('color', $event)" />
                     </label>
                   }
                 }
@@ -448,11 +610,17 @@
             <div class="section-header">{{ t('canvasSettings') }}</div>
             <div class="settings-grid">
               <label class="checkbox-field">
-                <input type="checkbox" [checked]="preferences().showGrid" (change)="onBooleanPreferenceChange('showGrid', $event)" />
+                <input
+                  type="checkbox"
+                  [checked]="preferences().showGrid"
+                  (change)="onBooleanPreferenceChange('showGrid', $event)" />
                 <span>{{ t('showGrid') }}</span>
               </label>
               <label class="checkbox-field">
-                <input type="checkbox" [checked]="preferences().showAxes" (change)="onBooleanPreferenceChange('showAxes', $event)" />
+                <input
+                  type="checkbox"
+                  [checked]="preferences().showAxes"
+                  (change)="onBooleanPreferenceChange('showAxes', $event)" />
                 <span>{{ t('showAxes') }}</span>
               </label>
               <label class="checkbox-field">
@@ -468,18 +636,31 @@
           <section class="sidebar-block">
             <div class="section-header">{{ t('generatedCode') }}</div>
             <div class="code-actions">
-              <button class="secondary-button" type="button" (click)="copyExportedCode()">{{ t('copy') }}</button>
-              <button class="secondary-button" type="button" (click)="downloadStandaloneFile()">{{ t('download') }}</button>
-              <button class="secondary-button" type="button" (click)="syncImportWithExport()">{{ t('sendToImport') }}</button>
+              <button class="secondary-button" type="button" (click)="copyExportedCode()">
+                {{ t('copy') }}
+              </button>
+              <button class="secondary-button" type="button" (click)="downloadStandaloneFile()">
+                {{ t('download') }}
+              </button>
+              <button class="secondary-button" type="button" (click)="syncImportWithExport()">
+                {{ t('sendToImport') }}
+              </button>
             </div>
             <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
           </section>
 
           <section class="sidebar-block">
             <div class="section-header">{{ t('importCode') }}</div>
-            <textarea class="code-input" [value]="store.importCode()" spellcheck="false" (input)="onImportCodeInput($event)"></textarea>
+            <textarea
+              class="code-input"
+              [value]="store.importCode()"
+              spellcheck="false"
+              (input)="onImportCodeInput($event)"></textarea>
             <div class="code-actions">
-              <button class="primary-button primary-button--wide" type="button" (click)="applyImportCode()">
+              <button
+                class="primary-button primary-button--wide"
+                type="button"
+                (click)="applyImportCode()">
                 {{ t('applyTikz') }}
               </button>
             </div>
@@ -501,9 +682,15 @@
           <div class="section-header">{{ t('objects') }}</div>
           <div class="object-list">
             @for (shape of layerShapes(); track shape.id) {
-              <button class="object-row" type="button" [class.is-active]="selectedShape()?.id === shape.id" (click)="selectShape(shape.id)">
+              <button
+                class="object-row"
+                type="button"
+                [class.is-active]="selectedShape()?.id === shape.id"
+                (click)="selectShape(shape.id)">
                 <span class="object-row__icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="shapeIcon(shape)"></path></svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="shapeIcon(shape)"></path>
+                  </svg>
                 </span>
                 <span class="object-row__content">
                   <strong>{{ shape.name }}</strong>
@@ -524,10 +711,18 @@
       [style.top.px]="menu.clientY"
       role="menu"
       (click)="$event.stopPropagation()">
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('duplicate')">{{ t('duplicate') }}</button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('delete')">{{ t('delete') }}</button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('front')">{{ t('bringToFront') }}</button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('back')">{{ t('sendToBack') }}</button>
+      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('duplicate')">
+        {{ t('duplicate') }}
+      </button>
+      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('delete')">
+        {{ t('delete') }}
+      </button>
+      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('front')">
+        {{ t('bringToFront') }}
+      </button>
+      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('back')">
+        {{ t('sendToBack') }}
+      </button>
     </div>
   }
 </div>

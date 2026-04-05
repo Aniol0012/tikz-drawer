@@ -32,7 +32,9 @@
 }
 
 .topbar__brand strong {
-  font: 700 0.82rem/1 'IBM Plex Mono', monospace;
+  font:
+    700 0.82rem/1 'IBM Plex Mono',
+    monospace;
   letter-spacing: 0.12em;
 }
 
@@ -94,7 +96,9 @@
 
 .section-header {
   color: var(--muted-foreground);
-  font: 600 0.68rem/1 'IBM Plex Mono', monospace;
+  font:
+    600 0.68rem/1 'IBM Plex Mono',
+    monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -289,7 +293,8 @@
   display: block;
   background:
     linear-gradient(var(--grid-line-strong), var(--grid-line-strong)) 50% 50% / 1px 100% no-repeat,
-    linear-gradient(90deg, var(--grid-line-strong), var(--grid-line-strong)) 50% 50% / 100% 1px no-repeat,
+    linear-gradient(90deg, var(--grid-line-strong), var(--grid-line-strong)) 50% 50% / 100% 1px
+      no-repeat,
     var(--canvas-background);
 }
 
@@ -471,7 +476,9 @@
 .code-input {
   margin: 0;
   padding: 10px;
-  font: 500 0.76rem/1.5 'IBM Plex Mono', monospace;
+  font:
+    500 0.76rem/1.5 'IBM Plex Mono',
+    monospace;
 }
 
 .code-block {
@@ -531,7 +538,9 @@
 
 .zoom-value {
   min-width: 56px;
-  font: 600 0.75rem/1 'IBM Plex Mono', monospace;
+  font:
+    600 0.75rem/1 'IBM Plex Mono',
+    monospace;
 }
 
 .language-switch {
