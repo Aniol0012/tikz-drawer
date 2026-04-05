@@ -1,13 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  computed,
-  inject,
-  signal,
-  viewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { sceneToStandaloneDocument } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type { CanvasShape, LineShape, ThemeMode } from './tikz.models';
@@ -47,7 +39,9 @@ export class EditorPageComponent {
 
   readonly canvasWidth = computed(() => this.scene().bounds.width);
   readonly canvasHeight = computed(() => this.scene().bounds.height);
-  readonly themeToggleLabel = computed(() => (this.preferences().theme === 'dark' ? 'Switch to light' : 'Switch to dark'));
+  readonly themeToggleLabel = computed(() =>
+    this.preferences().theme === 'dark' ? 'Switch to light' : 'Switch to dark'
+  );
   readonly selectedSummary = computed(() => this.selectedShape()?.name ?? 'Nothing selected');
 
   setTheme(theme: ThemeMode): void {
@@ -122,10 +116,7 @@ export class EditorPageComponent {
     this.store.duplicateSelected();
   }
 
-  updateShapeText(
-    key: 'name' | 'stroke' | 'fill' | 'text' | 'color',
-    event: Event
-  ): void {
+  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }

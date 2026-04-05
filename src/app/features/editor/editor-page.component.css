@@ -40,7 +40,9 @@
   border-radius: 16px;
   background: var(--accent-soft);
   color: var(--accent);
-  font: 700 1.45rem/1 'Space Grotesk', sans-serif;
+  font:
+    700 1.45rem/1 'Space Grotesk',
+    sans-serif;
 }
 
 .eyebrow {
@@ -113,7 +115,9 @@ h2 {
 .theme-toggle {
   width: auto;
   padding-inline: 16px;
-  font: 600 0.92rem/1 'IBM Plex Sans', sans-serif;
+  font:
+    600 0.92rem/1 'IBM Plex Sans',
+    sans-serif;
 }
 
 .overview-strip {
@@ -349,7 +353,9 @@ input[type='text'],
 input[type='number'],
 textarea {
   padding: 12px 14px;
-  font: 500 0.95rem/1.4 'IBM Plex Sans', sans-serif;
+  font:
+    500 0.95rem/1.4 'IBM Plex Sans',
+    sans-serif;
 }
 
 input[type='color'] {
@@ -362,7 +368,10 @@ input[type='color'] {
 .code-input {
   width: 100%;
   margin: 0;
-  font: 500 0.87rem/1.5 'IBM Plex Mono', 'Cascadia Code', monospace;
+  font:
+    500 0.87rem/1.5 'IBM Plex Mono',
+    'Cascadia Code',
+    monospace;
 }
 
 .code-block {
@@ -385,7 +394,9 @@ input[type='color'] {
   border: 1px solid var(--border);
   background: var(--surface-muted);
   color: var(--app-foreground);
-  font: 600 0.92rem/1 'IBM Plex Sans', sans-serif;
+  font:
+    600 0.92rem/1 'IBM Plex Sans',
+    sans-serif;
 }
 
 .primary-action {

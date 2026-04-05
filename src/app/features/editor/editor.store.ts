@@ -1,13 +1,7 @@
 import { computed, effect, Injectable, signal } from '@angular/core';
 import { defaultPreferences, defaultScene, objectPresets, scenePresets } from './presets';
 import { sceneToTikz } from './tikz.codegen';
-import type {
-  CanvasShape,
-  EditorPreferences,
-  ParsedTikzResult,
-  PersistedEditorState,
-  TikzScene
-} from './tikz.models';
+import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from './tikz.models';
 import { parseTikz } from './tikz.parser';
 
 const storageKey = 'tikz-drawer.state';

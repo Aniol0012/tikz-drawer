@@ -21,7 +21,11 @@
         </svg>
       </a>
 
-      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="themeToggleLabel()">
+      <button
+        class="theme-toggle"
+        type="button"
+        (click)="toggleTheme()"
+        [attr.aria-label]="themeToggleLabel()">
         {{ preferences().theme === 'dark' ? 'Dark' : 'Light' }}
       </button>
     </div>
@@ -46,7 +50,8 @@
       <strong>{{ selectedSummary() }}</strong>
     </div>
     <div class="overview-note">
-      Local preview renders the supported TikZ primitives directly in SVG. It is fast, but it is not a full TeX compiler.
+      Local preview renders the supported TikZ primitives directly in SVG. It is fast, but it is not
+      a full TeX compiler.
     </div>
   </section>
 
@@ -146,7 +151,9 @@
             }
           </div>
         } @else {
-          <p class="empty-state">This scene is still empty. Start from a preset or insert a shape.</p>
+          <p class="empty-state">
+            This scene is still empty. Start from a preset or insert a shape.
+          </p>
         }
       </section>
     </aside>
@@ -160,7 +167,9 @@
           </div>
 
           <div class="toolbar-actions">
-            <button type="button" class="secondary-action" (click)="duplicateSelected()">Duplicate</button>
+            <button type="button" class="secondary-action" (click)="duplicateSelected()">
+              Duplicate
+            </button>
             <button type="button" class="danger-action" (click)="removeSelected()">Delete</button>
           </div>
         </div>
@@ -330,31 +339,53 @@
                 <div class="inline-pair">
                   <label class="field">
                     <span>From X</span>
-                    <input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.from.x"
+                      (input)="updateLinePoint('from', 'x', $event)" />
                   </label>
                   <label class="field">
                     <span>From Y</span>
-                    <input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.from.y"
+                      (input)="updateLinePoint('from', 'y', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
                   <label class="field">
                     <span>To X</span>
-                    <input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.to.x"
+                      (input)="updateLinePoint('to', 'x', $event)" />
                   </label>
                   <label class="field">
                     <span>To Y</span>
-                    <input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.to.y"
+                      (input)="updateLinePoint('to', 'y', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
                   <label class="setting-row">
                     <span>Arrow start</span>
-                    <input type="checkbox" [checked]="shape.arrowStart" (change)="updateShapeBoolean('arrowStart', $event)" />
+                    <input
+                      type="checkbox"
+                      [checked]="shape.arrowStart"
+                      (change)="updateShapeBoolean('arrowStart', $event)" />
                   </label>
                   <label class="setting-row">
                     <span>Arrow end</span>
-                    <input type="checkbox" [checked]="shape.arrowEnd" (change)="updateShapeBoolean('arrowEnd', $event)" />
+                    <input
+                      type="checkbox"
+                      [checked]="shape.arrowEnd"
+                      (change)="updateShapeBoolean('arrowEnd', $event)" />
                   </label>
                 </div>
               }
@@ -362,11 +393,19 @@
                 <div class="inline-pair">
                   <label class="field">
                     <span>X</span>
-                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.x"
+                      (input)="updateShapeNumber('x', $event)" />
                   </label>
                   <label class="field">
                     <span>Y</span>
-                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.y"
+                      (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
@@ -410,17 +449,30 @@
                 <div class="inline-pair">
                   <label class="field">
                     <span>Center X</span>
-                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cx"
+                      (input)="updateShapeNumber('cx', $event)" />
                   </label>
                   <label class="field">
                     <span>Center Y</span>
-                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cy"
+                      (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
                   <label class="field">
                     <span>Radius</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.r"
+                      (input)="updateShapeNumber('r', $event)" />
                   </label>
                   <label class="field">
                     <span>Fill</span>
@@ -435,21 +487,39 @@
                 <div class="inline-pair">
                   <label class="field">
                     <span>Center X</span>
-                    <input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cx"
+                      (input)="updateShapeNumber('cx', $event)" />
                   </label>
                   <label class="field">
                     <span>Center Y</span>
-                    <input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.cy"
+                      (input)="updateShapeNumber('cy', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
                   <label class="field">
                     <span>Radius X</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.rx"
+                      (input)="updateShapeNumber('rx', $event)" />
                   </label>
                   <label class="field">
                     <span>Radius Y</span>
-                    <input type="number" min="0.1" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" />
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [value]="shape.ry"
+                      (input)="updateShapeNumber('ry', $event)" />
                   </label>
                 </div>
                 <label class="field">
@@ -463,16 +533,27 @@
               @case ('text') {
                 <label class="field">
                   <span>Text</span>
-                  <input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" />
+                  <input
+                    type="text"
+                    [value]="shape.text"
+                    (input)="updateShapeText('text', $event)" />
                 </label>
                 <div class="inline-pair">
                   <label class="field">
                     <span>X</span>
-                    <input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.x"
+                      (input)="updateShapeNumber('x', $event)" />
                   </label>
                   <label class="field">
                     <span>Y</span>
-                    <input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" />
+                    <input
+                      type="number"
+                      step="0.1"
+                      [value]="shape.y"
+                      (input)="updateShapeNumber('y', $event)" />
                   </label>
                 </div>
                 <div class="inline-pair">
@@ -487,7 +568,10 @@
                   </label>
                   <label class="field">
                     <span>Color</span>
-                    <input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" />
+                    <input
+                      type="color"
+                      [value]="shape.color"
+                      (input)="updateShapeText('color', $event)" />
                   </label>
                 </div>
               }
@@ -505,9 +589,15 @@
         </div>
 
         <div class="stack-actions">
-          <button class="secondary-action" type="button" (click)="copyExportedCode()">Copy TikZ</button>
-          <button class="secondary-action" type="button" (click)="downloadStandaloneFile()">Download .tex</button>
-          <button class="secondary-action" type="button" (click)="syncImportWithExport()">Send to import</button>
+          <button class="secondary-action" type="button" (click)="copyExportedCode()">
+            Copy TikZ
+          </button>
+          <button class="secondary-action" type="button" (click)="downloadStandaloneFile()">
+            Download .tex
+          </button>
+          <button class="secondary-action" type="button" (click)="syncImportWithExport()">
+            Send to import
+          </button>
         </div>
 
         <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
@@ -526,7 +616,9 @@
           spellcheck="false"></textarea>
 
         <div class="stack-actions">
-          <button class="primary-action" type="button" (click)="applyImportCode()">Apply TikZ</button>
+          <button class="primary-action" type="button" (click)="applyImportCode()">
+            Apply TikZ
+          </button>
         </div>
 
         @if (parserWarnings().length) {

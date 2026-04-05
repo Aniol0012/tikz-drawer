@@ -66,9 +66,7 @@ const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeW
 });
 
 const parseLine = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/
-  );
+  const match = line.match(/^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/);
 
   if (!match?.groups) {
     return null;
@@ -193,9 +191,7 @@ const parseEllipse = (line: string): CanvasShape | null => {
 };
 
 const parseNode = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\node(?:\[(?<styles>[^\]]*)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/
-  );
+  const match = line.match(/^\\node(?:\[(?<styles>[^\]]*)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/);
 
   if (!match?.groups) {
     return null;
@@ -236,7 +232,12 @@ export const parseTikz = (source: string): ParsedTikzResult => {
   for (const rawLine of source.split('\n')) {
     const line = rawLine.trim();
 
-    if (!line || line.startsWith('%') || line.startsWith('\\begin{tikzpicture}') || line.startsWith('\\end{tikzpicture}')) {
+    if (
+      !line ||
+      line.startsWith('%') ||
+      line.startsWith('\\begin{tikzpicture}') ||
+      line.startsWith('\\end{tikzpicture}')
+    ) {
       continue;
     }
 
