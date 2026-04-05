@@ -3,12 +3,12 @@
 }
 
 .tool-button {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border: 1px solid var(--tool-border);
-  border-radius: 16px;
+  border-radius: 4px;
   background: var(--tool-surface);
   color: var(--tool-foreground);
   transition:
@@ -19,8 +19,8 @@
 }
 
 .tool-button svg {
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   fill: currentColor;
 }
 

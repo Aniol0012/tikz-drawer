@@ -5,6 +5,7 @@ import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorS
 import { parseTikz } from './tikz.parser';
 
 const storageKey = 'tikz-drawer.state';
+const historyLimit = 80;
 
 const cloneShape = (shape: CanvasShape): CanvasShape => ({
   ...structuredClone(shape),
@@ -14,9 +15,59 @@ const cloneShape = (shape: CanvasShape): CanvasShape => ({
 
 const cloneScene = (scene: TikzScene): TikzScene => structuredClone(scene);
 
+interface EditorSnapshot {
+  readonly scene: TikzScene;
+  readonly preferences: EditorPreferences;
+  readonly importCode: string;
+  readonly selectedShapeId: string | null;
+}
+
+const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        from: {
+          x: shape.from.x + deltaX,
+          y: shape.from.y + deltaY
+        },
+        to: {
+          x: shape.to.x + deltaX,
+          y: shape.to.y + deltaY
+        }
+      };
+    case 'rectangle':
+      return {
+        ...shape,
+        x: shape.x + deltaX,
+        y: shape.y + deltaY
+      };
+    case 'circle':
+      return {
+        ...shape,
+        cx: shape.cx + deltaX,
+        cy: shape.cy + deltaY
+      };
+    case 'ellipse':
+      return {
+        ...shape,
+        cx: shape.cx + deltaX,
+        cy: shape.cy + deltaY
+      };
+    case 'text':
+      return {
+        ...shape,
+        x: shape.x + deltaX,
+        y: shape.y + deltaY
+      };
+  }
+};
+
 @Injectable()
 export class EditorStore {
   private readonly storage = typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;
+  private readonly undoSnapshots = signal<readonly EditorSnapshot[]>([]);
+  private readonly redoSnapshots = signal<readonly EditorSnapshot[]>([]);
 
   readonly preferences = signal<EditorPreferences>(defaultPreferences);
   readonly scene = signal<TikzScene>(cloneScene(defaultScene));
@@ -33,6 +84,8 @@ export class EditorStore {
   readonly objectPresets = objectPresets;
   readonly scenePresets = scenePresets;
   readonly objectCount = computed(() => this.scene().shapes.length);
+  readonly canUndo = computed(() => this.undoSnapshots().length > 0);
+  readonly canRedo = computed(() => this.redoSnapshots().length > 0);
 
   constructor() {
     this.restoreState();
@@ -46,6 +99,36 @@ export class EditorStore {
 
       this.storage?.setItem(storageKey, JSON.stringify(state));
     });
+  }
+
+  recordHistoryCheckpoint(): void {
+    const snapshot = this.createSnapshot();
+    this.undoSnapshots.update((snapshots) => [...snapshots.slice(-(historyLimit - 1)), snapshot]);
+    this.redoSnapshots.set([]);
+  }
+
+  undo(): void {
+    const snapshot = this.undoSnapshots().at(-1);
+
+    if (!snapshot) {
+      return;
+    }
+
+    this.undoSnapshots.update((snapshots) => snapshots.slice(0, -1));
+    this.redoSnapshots.update((snapshots) => [...snapshots, this.createSnapshot()]);
+    this.restoreSnapshot(snapshot);
+  }
+
+  redo(): void {
+    const snapshot = this.redoSnapshots().at(-1);
+
+    if (!snapshot) {
+      return;
+    }
+
+    this.redoSnapshots.update((snapshots) => snapshots.slice(0, -1));
+    this.undoSnapshots.update((snapshots) => [...snapshots, this.createSnapshot()]);
+    this.restoreSnapshot(snapshot);
   }
 
   selectShape(shapeId: string | null): void {
@@ -100,7 +183,7 @@ export class EditorStore {
       return;
     }
 
-    const duplicated = cloneShape(selected);
+    const duplicated = translateShape(cloneShape(selected), 0.6, -0.6);
     this.scene.update((scene) => ({
       ...scene,
       shapes: [...scene.shapes, duplicated]
@@ -143,45 +226,48 @@ export class EditorStore {
   }
 
   moveSelectedBy(deltaX: number, deltaY: number): void {
-    this.patchSelectedShape((selected) => {
-      switch (selected.kind) {
-        case 'line':
-          return {
-            ...selected,
-            from: {
-              x: selected.from.x + deltaX,
-              y: selected.from.y + deltaY
-            },
-            to: {
-              x: selected.to.x + deltaX,
-              y: selected.to.y + deltaY
-            }
-          };
-        case 'rectangle':
-          return {
-            ...selected,
-            x: selected.x + deltaX,
-            y: selected.y + deltaY
-          };
-        case 'circle':
-          return {
-            ...selected,
-            cx: selected.cx + deltaX,
-            cy: selected.cy + deltaY
-          };
-        case 'ellipse':
-          return {
-            ...selected,
-            cx: selected.cx + deltaX,
-            cy: selected.cy + deltaY
-          };
-        case 'text':
-          return {
-            ...selected,
-            x: selected.x + deltaX,
-            y: selected.y + deltaY
-          };
+    this.patchSelectedShape((selected) => translateShape(selected, deltaX, deltaY));
+  }
+
+  bringSelectedToFront(): void {
+    const selectedId = this.selectedShapeId();
+
+    if (!selectedId) {
+      return;
+    }
+
+    this.scene.update((scene) => {
+      const selectedShape = scene.shapes.find((shape) => shape.id === selectedId);
+
+      if (!selectedShape) {
+        return scene;
       }
+
+      return {
+        ...scene,
+        shapes: [...scene.shapes.filter((shape) => shape.id !== selectedId), selectedShape]
+      };
+    });
+  }
+
+  sendSelectedToBack(): void {
+    const selectedId = this.selectedShapeId();
+
+    if (!selectedId) {
+      return;
+    }
+
+    this.scene.update((scene) => {
+      const selectedShape = scene.shapes.find((shape) => shape.id === selectedId);
+
+      if (!selectedShape) {
+        return scene;
+      }
+
+      return {
+        ...scene,
+        shapes: [selectedShape, ...scene.shapes.filter((shape) => shape.id !== selectedId)]
+      };
     });
   }
 
@@ -230,6 +316,22 @@ export class EditorStore {
       this.preferences.set(defaultPreferences);
       this.importCode.set(sceneToTikz(defaultScene));
     }
+  }
+
+  private createSnapshot(): EditorSnapshot {
+    return {
+      scene: cloneScene(this.scene()),
+      preferences: structuredClone(this.preferences()),
+      importCode: this.importCode(),
+      selectedShapeId: this.selectedShapeId()
+    };
+  }
+
+  private restoreSnapshot(snapshot: EditorSnapshot): void {
+    this.scene.set(cloneScene(snapshot.scene));
+    this.preferences.set(structuredClone(snapshot.preferences));
+    this.importCode.set(snapshot.importCode);
+    this.selectedShapeId.set(snapshot.selectedShapeId);
   }
 
   private setScene(scene: TikzScene): void {

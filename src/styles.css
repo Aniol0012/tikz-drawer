@@ -1,60 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   color-scheme: dark;
-  --app-background: #0a0d10;
-  --app-foreground: #eef3f8;
-  --muted-foreground: #8693a3;
-  --border: rgba(150, 168, 190, 0.16);
-  --accent: #54c7ec;
-  --accent-strong: #8fe4ff;
-  --accent-contrast: #062430;
-  --danger: #ff8578;
-  --warning: #f2c15e;
-  --rail-background: rgba(8, 11, 15, 0.92);
-  --float-surface: rgba(12, 18, 24, 0.72);
-  --dock-surface: rgba(10, 14, 19, 0.82);
-  --tool-surface: rgba(16, 23, 30, 0.88);
-  --tool-border: rgba(150, 168, 190, 0.18);
-  --tool-border-strong: rgba(150, 168, 190, 0.34);
-  --tool-foreground: #dbe6f2;
-  --stage-background: #0b1016;
-  --stage-border: rgba(150, 168, 190, 0.16);
-  --canvas-background: #0c1218;
-  --canvas-glow: #8fe4ff;
-  --grid-line: rgba(143, 164, 186, 0.08);
-  --axis-line: rgba(84, 199, 236, 0.32);
-  --selection-glow: rgba(84, 199, 236, 0.36);
-  --panel-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  --app-background: #101419;
+  --app-foreground: #e6ecf2;
+  --muted-foreground: #86909c;
+  --border: rgba(144, 156, 173, 0.18);
+  --accent: #3ba6ff;
+  --accent-strong: #87c9ff;
+  --accent-contrast: #061a2f;
+  --danger: #ff7d7d;
+  --warning: #d7a54a;
+  --panel-background: #13181f;
+  --toolbar-background: #151b23;
+  --toolbar-background-hover: #1a222c;
+  --tool-surface: #171f29;
+  --tool-foreground: #e6ecf2;
+  --tool-border: rgba(144, 156, 173, 0.18);
+  --tool-border-strong: rgba(144, 156, 173, 0.4);
+  --input-background: #10161d;
+  --canvas-shell-background: #0e1319;
+  --canvas-background: #0f151c;
+  --grid-line: rgba(144, 156, 173, 0.08);
+  --grid-line-strong: rgba(144, 156, 173, 0.05);
+  --axis-line: rgba(59, 166, 255, 0.4);
+  --selection-glow: rgba(59, 166, 255, 0.28);
+  --handle-fill: #f8fbff;
   font-family: 'IBM Plex Sans', 'Segoe UI Variable Text', sans-serif;
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --app-background: #edf2f7;
-  --app-foreground: #0f172a;
-  --muted-foreground: #667085;
-  --border: rgba(100, 116, 139, 0.18);
-  --accent: #1395b3;
-  --accent-strong: #0b6d84;
-  --accent-contrast: #f7fdff;
+  --app-background: #e9edf2;
+  --app-foreground: #15202b;
+  --muted-foreground: #647182;
+  --border: rgba(116, 128, 144, 0.2);
+  --accent: #1570ef;
+  --accent-strong: #0f56c7;
+  --accent-contrast: #f7fbff;
   --danger: #c2410c;
   --warning: #b7791f;
-  --rail-background: rgba(244, 247, 250, 0.94);
-  --float-surface: rgba(255, 255, 255, 0.78);
-  --dock-surface: rgba(255, 255, 255, 0.86);
-  --tool-surface: rgba(248, 250, 252, 0.96);
-  --tool-border: rgba(100, 116, 139, 0.18);
-  --tool-border-strong: rgba(100, 116, 139, 0.32);
-  --tool-foreground: #0f172a;
-  --stage-background: #f4f7fb;
-  --stage-border: rgba(100, 116, 139, 0.16);
+  --panel-background: #f5f7fa;
+  --toolbar-background: #eef2f6;
+  --toolbar-background-hover: #e7edf4;
+  --tool-surface: #fdfefe;
+  --tool-foreground: #15202b;
+  --tool-border: rgba(116, 128, 144, 0.22);
+  --tool-border-strong: rgba(116, 128, 144, 0.42);
+  --input-background: #ffffff;
+  --canvas-shell-background: #e4e9ef;
   --canvas-background: #f9fbfd;
-  --canvas-glow: #1395b3;
-  --grid-line: rgba(71, 85, 105, 0.08);
-  --axis-line: rgba(19, 149, 179, 0.34);
-  --selection-glow: rgba(19, 149, 179, 0.22);
-  --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+  --grid-line: rgba(116, 128, 144, 0.1);
+  --grid-line-strong: rgba(116, 128, 144, 0.06);
+  --axis-line: rgba(21, 112, 239, 0.34);
+  --selection-glow: rgba(21, 112, 239, 0.18);
+  --handle-fill: #ffffff;
 }
 
 * {
@@ -70,6 +70,7 @@ body {
   margin: 0;
   background: var(--app-background);
   color: var(--app-foreground);
+  font-size: 14px;
 }
 
 button,
