@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: repo-writes-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   sync-version-badge:
     runs-on: ubuntu-latest
@@ -89,5 +93,18 @@ jobs:
 
           git add README.md
           git commit -m "chore(ci): sync README version badge"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "README badge update pushed successfully."
+              exit 0
+            fi
+
+            echo "Push rejected (attempt ${attempt}/3). Rebase and retry..."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+          done
+
+          echo "Failed to push README badge update after 3 attempts."
+          exit 1
 
