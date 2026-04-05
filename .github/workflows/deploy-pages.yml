@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,6 +23,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect version change in push range
+        id: detect-version-change
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$AFTER^..$AFTER"
+          else
+            RANGE="$BEFORE..$AFTER"
+          fi
+
+          if git log --format= --patch "$RANGE" -- package.json | grep -Eq '^[+-][[:space:]]*"version"[[:space:]]*:'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Version in package.json changed in push range ($RANGE)."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No package.json version change in push range ($RANGE)."
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -34,6 +58,27 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      - name: Bump package version (patch)
+        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        shell: bash
+        run: npm version patch --no-git-tag-version
+
+      - name: Commit and push bumped version
+        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain package.json)" ]; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add package.json
+          git commit -m "chore(ci): bump package version [skip ci]"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -60,4 +105,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
