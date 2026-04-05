@@ -13,9 +13,13 @@ const formatNumber = (value: number): string => {
   return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
 };
 
-const buildStyleEntries = (
-  shape: Pick<CanvasShape, 'stroke' | 'strokeWidth'> & Partial<RectangleShape | CircleShape | EllipseShape>
-): string[] => {
+interface ShapeStyleConfig {
+  readonly stroke: string;
+  readonly strokeWidth: number;
+  readonly fill?: string;
+}
+
+const buildStyleEntries = (shape: ShapeStyleConfig): string[] => {
   const entries = [`draw=${shape.stroke}`];
 
   if (shape.strokeWidth > 0) {

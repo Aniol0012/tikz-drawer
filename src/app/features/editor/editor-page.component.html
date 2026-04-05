@@ -63,14 +63,7 @@
           <h2>Start from something useful</h2>
         </div>
 
-        <div class="preset-list">
-          @for (preset of scenePresets; track preset.id) {
-            <button class="preset-item" type="button" (click)="applyScenePreset(preset.id)">
-              <span>{{ preset.title }}</span>
-              <small>{{ preset.description }}</small>
-            </button>
-          }
-        </div>
+        <app-preset-list [items]="scenePresets" (selected)="applyScenePreset($event)" />
       </section>
 
       <section class="panel">
@@ -79,14 +72,7 @@
           <h2>Common building blocks</h2>
         </div>
 
-        <div class="preset-list">
-          @for (preset of objectPresets; track preset.id) {
-            <button class="preset-item" type="button" (click)="addPreset(preset.id)">
-              <span>{{ preset.title }}</span>
-              <small>{{ preset.description }}</small>
-            </button>
-          }
-        </div>
+        <app-preset-list [items]="objectPresets" (selected)="addPreset($event)" />
       </section>
 
       <section class="panel compact-panel">

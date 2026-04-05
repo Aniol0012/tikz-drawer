@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { sceneToStandaloneDocument } from './tikz.codegen';
 import { EditorStore } from './editor.store';
+import { PresetListComponent } from './preset-list.component';
 import type { CanvasShape, LineShape, ThemeMode } from './tikz.models';
 
 interface DragState {
@@ -17,6 +18,7 @@ interface DragState {
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PresetListComponent],
   providers: [EditorStore],
   host: {
     '[attr.data-theme]': 'store.preferences().theme'

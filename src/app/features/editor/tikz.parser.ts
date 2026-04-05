@@ -61,7 +61,7 @@ const styleStrokeWidth = (styles: Record<string, string>): number => {
 };
 
 const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number } => ({
-  stroke: styles.draw ?? '#0f172a',
+  stroke: styles['draw'] ?? '#0f172a',
   strokeWidth: styleStrokeWidth(styles)
 });
 
@@ -72,14 +72,14 @@ const parseLine = (line: string): CanvasShape | null => {
     return null;
   }
 
-  const from = parsePoint(match.groups.from);
-  const to = parsePoint(match.groups.to);
+  const from = parsePoint(match.groups['from']);
+  const to = parsePoint(match.groups['to']);
 
   if (!from || !to) {
     return null;
   }
 
-  const styles = parseStyleMap(match.groups.styles);
+  const styles = parseStyleMap(match.groups['styles']);
 
   const shape: LineShape = {
     id: createId(),
@@ -104,14 +104,14 @@ const parseRectangle = (line: string): CanvasShape | null => {
     return null;
   }
 
-  const from = parsePoint(match.groups.from);
-  const to = parsePoint(match.groups.to);
+  const from = parsePoint(match.groups['from']);
+  const to = parsePoint(match.groups['to']);
 
   if (!from || !to) {
     return null;
   }
 
-  const styles = parseStyleMap(match.groups.styles);
+  const styles = parseStyleMap(match.groups['styles']);
 
   const shape: RectangleShape = {
     id: createId(),
@@ -122,7 +122,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
     y: Math.max(from.y, to.y),
     width: Math.abs(to.x - from.x),
     height: Math.abs(from.y - to.y),
-    fill: styles.fill ?? 'none',
+    fill: styles['fill'] ?? 'none',
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0
   };
 
@@ -138,13 +138,13 @@ const parseCircle = (line: string): CanvasShape | null => {
     return null;
   }
 
-  const center = parsePoint(match.groups.center);
+  const center = parsePoint(match.groups['center']);
 
   if (!center) {
     return null;
   }
 
-  const styles = parseStyleMap(match.groups.styles);
+  const styles = parseStyleMap(match.groups['styles']);
   const shape: CircleShape = {
     id: createId(),
     name: 'Imported circle',
@@ -152,8 +152,8 @@ const parseCircle = (line: string): CanvasShape | null => {
     ...sharedStroke(styles),
     cx: center.x,
     cy: center.y,
-    r: Number(match.groups.radius),
-    fill: styles.fill ?? 'none'
+    r: Number(match.groups['radius']),
+    fill: styles['fill'] ?? 'none'
   };
 
   return shape;
@@ -168,13 +168,13 @@ const parseEllipse = (line: string): CanvasShape | null => {
     return null;
   }
 
-  const center = parsePoint(match.groups.center);
+  const center = parsePoint(match.groups['center']);
 
   if (!center) {
     return null;
   }
 
-  const styles = parseStyleMap(match.groups.styles);
+  const styles = parseStyleMap(match.groups['styles']);
   const shape: EllipseShape = {
     id: createId(),
     name: 'Imported ellipse',
@@ -182,9 +182,9 @@ const parseEllipse = (line: string): CanvasShape | null => {
     ...sharedStroke(styles),
     cx: center.x,
     cy: center.y,
-    rx: Number(match.groups.rx),
-    ry: Number(match.groups.ry),
-    fill: styles.fill ?? 'none'
+    rx: Number(match.groups['rx']),
+    ry: Number(match.groups['ry']),
+    fill: styles['fill'] ?? 'none'
   };
 
   return shape;
@@ -197,14 +197,14 @@ const parseNode = (line: string): CanvasShape | null => {
     return null;
   }
 
-  const point = parsePoint(match.groups.point);
+  const point = parsePoint(match.groups['point']);
 
   if (!point) {
     return null;
   }
 
-  const styles = parseStyleMap(match.groups.styles);
-  const scale = Number.parseFloat(styles.scale ?? '1') || 1;
+  const styles = parseStyleMap(match.groups['styles']);
+  const scale = Number.parseFloat(styles['scale'] ?? '1') || 1;
 
   const shape: TextShape = {
     id: createId(),
@@ -214,9 +214,9 @@ const parseNode = (line: string): CanvasShape | null => {
     strokeWidth: 0,
     x: point.x,
     y: point.y,
-    text: match.groups.text.trim(),
+    text: match.groups['text'].trim(),
     fontSize: 0.42 * scale,
-    color: styles.text ?? '#0f172a'
+    color: styles['text'] ?? '#0f172a'
   };
 
   return shape;

@@ -1,0 +1,8 @@
+<div class="preset-list">
+  @for (item of items(); track item.id) {
+    <button class="preset-item" type="button" (click)="select(item.id)">
+      <span>{{ item.title }}</span>
+      <small>{{ item.description }}</small>
+    </button>
+  }
+</div>

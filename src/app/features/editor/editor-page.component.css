@@ -84,8 +84,7 @@ h2 {
 .theme-toggle,
 .primary-action,
 .secondary-action,
-.danger-action,
-.preset-item {
+.danger-action {
   transition:
     border-color 140ms ease,
     background-color 140ms ease,
@@ -181,34 +180,9 @@ h2 {
   margin-bottom: 16px;
 }
 
-.preset-list {
-  display: grid;
-  gap: 10px;
-}
-
 .object-list {
   display: grid;
   gap: 8px;
-}
-
-.preset-item {
-  display: grid;
-  gap: 6px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface-muted);
-  text-align: left;
-  color: inherit;
-}
-
-.preset-item span {
-  font-weight: 600;
-}
-
-.preset-item small {
-  color: var(--muted-foreground);
-  line-height: 1.35;
 }
 
 .object-item {
@@ -435,7 +409,6 @@ input[type='color'] {
 
 .icon-link:hover,
 .theme-toggle:hover,
-.preset-item:hover,
 .primary-action:hover,
 .secondary-action:hover,
 .danger-action:hover {
