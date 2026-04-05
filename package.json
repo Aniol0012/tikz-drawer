@@ -6,7 +6,11 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "lint": "prettier --check \"**/*.{ts,html,css,scss,json,md}\"",
+    "lint-fix": "prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
+    "format": "prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
+    "lint-format": "pnpm run lint-fix"
   },
   "private": true,
   "packageManager": "pnpm@10.17.1",
