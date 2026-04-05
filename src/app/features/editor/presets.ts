@@ -5,6 +5,7 @@ import type {
   EllipseShape,
   LineShape,
   ObjectPreset,
+  PresetCategory,
   RectangleShape,
   ScenePreset,
   TextShape,
@@ -15,7 +16,7 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Line',
   kind: 'line',
-  stroke: overrides.stroke ?? '#2563eb',
+  stroke: overrides.stroke ?? '#1f1f1f',
   strokeWidth: overrides.strokeWidth ?? 0.08,
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
@@ -27,39 +28,39 @@ const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShap
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Rectangle',
   kind: 'rectangle',
-  stroke: overrides.stroke ?? '#0f172a',
+  stroke: overrides.stroke ?? '#1f1f1f',
   strokeWidth: overrides.strokeWidth ?? 0.08,
   x: overrides.x ?? -2,
   y: overrides.y ?? 1.5,
   width: overrides.width ?? 4,
   height: overrides.height ?? 2.4,
-  fill: overrides.fill ?? '#dbeafe',
-  cornerRadius: overrides.cornerRadius ?? 0.12
+  fill: overrides.fill ?? '#f1f1f1',
+  cornerRadius: overrides.cornerRadius ?? 0.14
 });
 
 const createCircle = (overrides: Partial<CircleShape> = {}): CircleShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Circle',
   kind: 'circle',
-  stroke: overrides.stroke ?? '#0f172a',
+  stroke: overrides.stroke ?? '#1f1f1f',
   strokeWidth: overrides.strokeWidth ?? 0.08,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
   r: overrides.r ?? 1.4,
-  fill: overrides.fill ?? '#dcfce7'
+  fill: overrides.fill ?? '#f5f5f5'
 });
 
 const createEllipse = (overrides: Partial<EllipseShape> = {}): EllipseShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Ellipse',
   kind: 'ellipse',
-  stroke: overrides.stroke ?? '#7c3aed',
+  stroke: overrides.stroke ?? '#1f1f1f',
   strokeWidth: overrides.strokeWidth ?? 0.08,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
   rx: overrides.rx ?? 2,
   ry: overrides.ry ?? 1.1,
-  fill: overrides.fill ?? '#ede9fe'
+  fill: overrides.fill ?? '#f5f5f5'
 });
 
 const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
@@ -72,70 +73,366 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   y: overrides.y ?? 0,
   text: overrides.text ?? 'label',
   fontSize: overrides.fontSize ?? 0.42,
-  color: overrides.color ?? '#0f172a'
+  color: overrides.color ?? '#161616'
+});
+
+const createPreset = (
+  id: string,
+  category: PresetCategory,
+  icon: string,
+  title: string,
+  description: string,
+  shapes: readonly CanvasShape[],
+  options: { readonly quickAccess?: boolean; readonly searchTerms?: readonly string[] } = {}
+): ObjectPreset => ({
+  id,
+  category,
+  icon,
+  title,
+  description,
+  shapes,
+  quickAccess: options.quickAccess,
+  searchTerms: options.searchTerms
 });
 
 export const defaultPreferences: EditorPreferences = {
-  theme: 'dark',
+  theme: 'light',
   snapToGrid: true,
   showGrid: true,
   showAxes: true,
-  scale: 42
+  scale: 32,
+  snapStep: 0.25,
+  defaultStroke: '#1f1f1f',
+  defaultFill: '#f1f1f1',
+  defaultStrokeWidth: 0.08
 };
 
 export const objectPresets: readonly ObjectPreset[] = [
-  {
-    id: 'segment',
-    icon: 'segment',
-    title: 'Segment',
-    description: 'A simple segment to sketch geometry fast.',
-    shape: createLine({
-      name: 'Segment',
-      stroke: '#2563eb'
-    })
-  },
-  {
-    id: 'arrow',
-    icon: 'arrow',
-    title: 'Arrow',
-    description: 'Useful for vectors, flows, and diagram direction.',
-    shape: createLine({
-      name: 'Arrow',
-      stroke: '#dc2626',
-      arrowEnd: true
-    })
-  },
-  {
-    id: 'box',
-    icon: 'rectangle',
-    title: 'Box',
-    description: 'A rounded rectangle for blocks or annotations.',
-    shape: createRectangle({
-      name: 'Box',
-      fill: '#fef3c7'
-    })
-  },
-  {
-    id: 'circle',
-    icon: 'circle',
-    title: 'Circle',
-    description: 'A circle for nodes, disks, or highlights.',
-    shape: createCircle()
-  },
-  {
-    id: 'ellipse',
-    icon: 'ellipse',
-    title: 'Ellipse',
-    description: 'A softer shape for state diagrams and callouts.',
-    shape: createEllipse()
-  },
-  {
-    id: 'label',
-    icon: 'text',
-    title: 'Label',
-    description: 'Plain text positioned directly on the canvas.',
-    shape: createText()
-  }
+  createPreset(
+    'segment',
+    'essentials',
+    'segment',
+    'Line',
+    'Straight segment for geometry and diagrams.',
+    [createLine({ name: 'Line' })],
+    { quickAccess: true, searchTerms: ['line', 'segment', 'edge'] }
+  ),
+  createPreset(
+    'arrow',
+    'essentials',
+    'arrow',
+    'Arrow',
+    'Directional connector for flows and vectors.',
+    [createLine({ name: 'Arrow', arrowEnd: true, stroke: '#8a4d16' })],
+    { quickAccess: true, searchTerms: ['arrow', 'flow', 'connector'] }
+  ),
+  createPreset(
+    'box',
+    'essentials',
+    'rectangle',
+    'Rectangle',
+    'Rounded rectangle for blocks and notes.',
+    [createRectangle({ name: 'Rectangle', fill: '#f0f0f0' })],
+    { quickAccess: true, searchTerms: ['rectangle', 'box', 'process'] }
+  ),
+  createPreset(
+    'circle',
+    'essentials',
+    'circle',
+    'Circle',
+    'Circle for highlights and nodes.',
+    [createCircle({ name: 'Circle' })],
+    { quickAccess: true, searchTerms: ['circle', 'node', 'round'] }
+  ),
+  createPreset(
+    'ellipse',
+    'essentials',
+    'ellipse',
+    'Ellipse',
+    'Soft capsule-like form for labels and states.',
+    [createEllipse({ name: 'Ellipse', fill: '#f3f3f3' })],
+    { quickAccess: true, searchTerms: ['ellipse', 'state', 'pill'] }
+  ),
+  createPreset(
+    'node',
+    'essentials',
+    'node',
+    'Node',
+    'Compact connection point.',
+    [createCircle({ name: 'Node', r: 0.24, fill: '#1f1f1f', stroke: '#1f1f1f' })],
+    { quickAccess: true, searchTerms: ['node', 'point', 'dot'] }
+  ),
+  createPreset(
+    'label',
+    'essentials',
+    'text',
+    'Text',
+    'Simple text label positioned on the canvas.',
+    [createText({ name: 'Text', text: 'Text' })],
+    { quickAccess: true, searchTerms: ['label', 'text', 'annotation'] }
+  ),
+  createPreset(
+    'card',
+    'interface',
+    'card',
+    'Card',
+    'Wide rounded card for interface sketches.',
+    [createRectangle({ name: 'Card', width: 4.8, height: 2.8, cornerRadius: 0.28, fill: '#f7f7f7' })],
+    { searchTerms: ['card', 'panel', 'ui'] }
+  ),
+  createPreset(
+    'decision',
+    'flow',
+    'decision',
+    'Decision',
+    'Diamond node for decisions and branches.',
+    [
+      createLine({ name: 'Decision top-left', from: { x: 0, y: 1.6 }, to: { x: 1.9, y: 0 }, stroke: '#1f1f1f' }),
+      createLine({ name: 'Decision top-right', from: { x: 1.9, y: 0 }, to: { x: 0, y: -1.6 }, stroke: '#1f1f1f' }),
+      createLine({ name: 'Decision bottom-right', from: { x: 0, y: -1.6 }, to: { x: -1.9, y: 0 }, stroke: '#1f1f1f' }),
+      createLine({ name: 'Decision bottom-left', from: { x: -1.9, y: 0 }, to: { x: 0, y: 1.6 }, stroke: '#1f1f1f' }),
+      createText({ name: 'Decision label', text: 'Decision' })
+    ],
+    { searchTerms: ['decision', 'diamond', 'branch', 'flowchart'] }
+  ),
+  createPreset(
+    'terminator',
+    'flow',
+    'terminator',
+    'Terminator',
+    'Start/end shape for process diagrams.',
+    [
+      createEllipse({ name: 'Terminator', rx: 2.3, ry: 1.1, fill: '#f0f0f0' }),
+      createText({ name: 'Terminator label', text: 'Start' })
+    ],
+    { searchTerms: ['start', 'end', 'terminator', 'capsule'] }
+  ),
+  createPreset(
+    'input-output',
+    'flow',
+    'io',
+    'Input / Output',
+    'Parallelogram block for inputs and outputs.',
+    [
+      createLine({ name: 'IO top', from: { x: -1.8, y: 1.1 }, to: { x: 2.2, y: 1.1 } }),
+      createLine({ name: 'IO right', from: { x: 2.2, y: 1.1 }, to: { x: 1.4, y: -1.1 } }),
+      createLine({ name: 'IO bottom', from: { x: 1.4, y: -1.1 }, to: { x: -2.6, y: -1.1 } }),
+      createLine({ name: 'IO left', from: { x: -2.6, y: -1.1 }, to: { x: -1.8, y: 1.1 } }),
+      createText({ name: 'IO label', text: 'Input / Output', x: -0.2, y: 0 })
+    ],
+    { searchTerms: ['input', 'output', 'io', 'parallelogram'] }
+  ),
+  createPreset(
+    'document',
+    'flow',
+    'document',
+    'Document',
+    'Document block for reports and generated output.',
+    [
+      createRectangle({ name: 'Document frame', width: 4.2, height: 2.8, fill: '#fafafa' }),
+      createLine({ name: 'Document line 1', from: { x: -1.5, y: 0.8 }, to: { x: 1.4, y: 0.8 }, stroke: '#8a918b', strokeWidth: 0.05 }),
+      createLine({ name: 'Document line 2', from: { x: -1.5, y: 0.25 }, to: { x: 1.4, y: 0.25 }, stroke: '#8a918b', strokeWidth: 0.05 }),
+      createLine({ name: 'Document line 3', from: { x: -1.5, y: -0.3 }, to: { x: 1, y: -0.3 }, stroke: '#8a918b', strokeWidth: 0.05 })
+    ],
+    { searchTerms: ['document', 'report', 'paper'] }
+  ),
+  createPreset(
+    'database',
+    'data',
+    'database',
+    'Database',
+    'Cylinder-like database symbol.',
+    [
+      createEllipse({ name: 'Database top', cx: 0, cy: 1.2, rx: 2.1, ry: 0.6, fill: '#ededed' }),
+      createRectangle({ name: 'Database body', x: -2.1, y: -1.3, width: 4.2, height: 2.5, fill: '#ededed', cornerRadius: 0 }),
+      createEllipse({ name: 'Database bottom', cx: 0, cy: -1.3, rx: 2.1, ry: 0.6, fill: '#e2e2e2' }),
+      createText({ name: 'Database label', text: 'DB', y: 0 })
+    ],
+    { searchTerms: ['database', 'storage', 'db', 'cylinder'] }
+  ),
+  createPreset(
+    'bar-chart',
+    'data',
+    'bars',
+    'Bar Chart',
+    'Mini chart group for dashboards and reports.',
+    [
+      createLine({ name: 'Chart axis x', from: { x: -2.3, y: -1.4 }, to: { x: 2.5, y: -1.4 }, arrowEnd: true }),
+      createLine({ name: 'Chart axis y', from: { x: -2.3, y: -1.4 }, to: { x: -2.3, y: 1.8 }, arrowEnd: true }),
+      createRectangle({ name: 'Bar 1', x: -1.6, y: -1.4, width: 0.8, height: 1.2, fill: '#d8d8d8', cornerRadius: 0.08 }),
+      createRectangle({ name: 'Bar 2', x: -0.4, y: -1.4, width: 0.8, height: 2.1, fill: '#9cb9ff', cornerRadius: 0.08 }),
+      createRectangle({ name: 'Bar 3', x: 0.8, y: -1.4, width: 0.8, height: 2.7, fill: '#2f66f3', cornerRadius: 0.08 }),
+    ],
+    { searchTerms: ['bar', 'chart', 'graph', 'analytics'] }
+  ),
+  createPreset(
+    'timeline',
+    'data',
+    'timeline',
+    'Timeline',
+    'Timeline lane with milestones.',
+    [
+      createLine({ name: 'Timeline axis', from: { x: -3.2, y: 0 }, to: { x: 3.2, y: 0 }, stroke: '#6d706b' }),
+      createCircle({ name: 'Milestone 1', cx: -2.2, cy: 0, r: 0.24, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createCircle({ name: 'Milestone 2', cx: 0, cy: 0, r: 0.24, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createCircle({ name: 'Milestone 3', cx: 2.2, cy: 0, r: 0.24, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createText({ name: 'Label 1', text: 'Kickoff', x: -2.2, y: 0.72, fontSize: 0.34 }),
+      createText({ name: 'Label 2', text: 'Review', x: 0, y: -0.78, fontSize: 0.34 }),
+      createText({ name: 'Label 3', text: 'Launch', x: 2.2, y: 0.72, fontSize: 0.34 })
+    ],
+    { searchTerms: ['timeline', 'milestone', 'roadmap'] }
+  ),
+  createPreset(
+    'axes',
+    'geometry',
+    'axes',
+    'Axes',
+    'Coordinate system with labels.',
+    [
+      createLine({ name: 'X axis', from: { x: -3.5, y: 0 }, to: { x: 3.8, y: 0 }, arrowEnd: true }),
+      createLine({ name: 'Y axis', from: { x: 0, y: -2.8 }, to: { x: 0, y: 3.3 }, arrowEnd: true }),
+      createText({ name: 'X label', text: 'x', x: 4.1, y: 0.22, fontSize: 0.34 }),
+      createText({ name: 'Y label', text: 'y', x: 0.26, y: 3.55, fontSize: 0.34 })
+    ],
+    { searchTerms: ['axes', 'plane', 'math', 'graph'] }
+  ),
+  createPreset(
+    'triangle',
+    'geometry',
+    'triangle',
+    'Triangle',
+    'Three-edge geometry starter.',
+    [
+      createLine({ name: 'Triangle A-B', from: { x: -2.4, y: -1.6 }, to: { x: 0, y: 2.2 } }),
+      createLine({ name: 'Triangle B-C', from: { x: 0, y: 2.2 }, to: { x: 2.6, y: -1.2 } }),
+      createLine({ name: 'Triangle C-A', from: { x: 2.6, y: -1.2 }, to: { x: -2.4, y: -1.6 } })
+    ],
+    { searchTerms: ['triangle', 'geometry', 'polygon'] }
+  ),
+  createPreset(
+    'venn',
+    'geometry',
+    'venn',
+    'Venn Pair',
+    'Two overlapping sets with labels.',
+    [
+      createCircle({ name: 'Set A', cx: -0.8, cy: 0, r: 1.6, fill: '#ececec' }),
+      createCircle({ name: 'Set B', cx: 0.8, cy: 0, r: 1.6, fill: '#f5f5f5' }),
+      createText({ name: 'A label', text: 'A', x: -1.5, y: 0 }),
+      createText({ name: 'B label', text: 'B', x: 1.5, y: 0 })
+    ],
+    { searchTerms: ['venn', 'sets', 'overlap'] }
+  ),
+  createPreset(
+    'browser',
+    'interface',
+    'browser',
+    'Browser Window',
+    'Quick browser frame for UI sketches.',
+    [
+      createRectangle({ name: 'Browser frame', width: 5.2, height: 3.4, cornerRadius: 0.24, fill: '#fbfbfb' }),
+      createLine({ name: 'Browser divider', from: { x: -2.6, y: 1.1 }, to: { x: 2.6, y: 1.1 }, stroke: '#9ea39e', strokeWidth: 0.05 }),
+      createCircle({ name: 'Browser dot 1', cx: -2.1, cy: 1.55, r: 0.12, fill: '#d9a16f', stroke: '#d9a16f' }),
+      createCircle({ name: 'Browser dot 2', cx: -1.7, cy: 1.55, r: 0.12, fill: '#d7c28d', stroke: '#d7c28d' }),
+      createCircle({ name: 'Browser dot 3', cx: -1.3, cy: 1.55, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' })
+    ],
+    { searchTerms: ['browser', 'window', 'web', 'ui'] }
+  ),
+  createPreset(
+    'phone',
+    'interface',
+    'phone',
+    'Phone Screen',
+    'Mobile device frame.',
+    [
+      createRectangle({ name: 'Phone body', width: 2.6, height: 5, cornerRadius: 0.4, fill: '#fbfbfb' }),
+      createRectangle({ name: 'Phone screen', x: -1.05, y: -1.85, width: 2.1, height: 3.95, cornerRadius: 0.18, fill: '#f3f3f3' }),
+      createCircle({ name: 'Phone camera', cx: 0, cy: 2.1, r: 0.08, fill: '#8b8f89', stroke: '#8b8f89' })
+    ],
+    { searchTerms: ['phone', 'mobile', 'device', 'app'] }
+  ),
+  createPreset(
+    'server-stack',
+    'interface',
+    'server',
+    'Server Stack',
+    'Stack of server units for architecture diagrams.',
+    [
+      createRectangle({ name: 'Server 1', x: -2.2, y: 1.6, width: 4.4, height: 0.8, fill: '#f5f5f5', cornerRadius: 0.12 }),
+      createRectangle({ name: 'Server 2', x: -2.2, y: 0.4, width: 4.4, height: 0.8, fill: '#ececec', cornerRadius: 0.12 }),
+      createRectangle({ name: 'Server 3', x: -2.2, y: -0.8, width: 4.4, height: 0.8, fill: '#e2e2e2', cornerRadius: 0.12 }),
+      createCircle({ name: 'Indicator 1', cx: 1.5, cy: 2, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createCircle({ name: 'Indicator 2', cx: 1.5, cy: 0.8, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createCircle({ name: 'Indicator 3', cx: 1.5, cy: -0.4, r: 0.08, fill: '#2f66f3', stroke: '#2f66f3' })
+    ],
+    { searchTerms: ['server', 'rack', 'backend', 'infrastructure'] }
+  ),
+  createPreset(
+    'callout',
+    'concepts',
+    'callout',
+    'Callout',
+    'Annotation card with a leader line.',
+    [
+      createRectangle({ name: 'Callout body', x: -0.4, y: 0.3, width: 4.4, height: 2, fill: '#fbfbfb', cornerRadius: 0.24 }),
+      createLine({ name: 'Callout leader', from: { x: -0.4, y: 0.9 }, to: { x: -2.4, y: -1.1 }, stroke: '#6d706b' }),
+      createCircle({ name: 'Callout target', cx: -2.4, cy: -1.1, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' }),
+      createText({ name: 'Callout text', x: 1.8, y: 1.35, text: 'Annotation', fontSize: 0.36 })
+    ],
+    { searchTerms: ['callout', 'annotation', 'note'] }
+  ),
+  createPreset(
+    'cloud',
+    'concepts',
+    'cloud',
+    'Cloud',
+    'Soft cloud cluster for services and networks.',
+    [
+      createCircle({ name: 'Cloud left', cx: -1.3, cy: -0.15, r: 1.15, fill: '#f4f4f4' }),
+      createCircle({ name: 'Cloud center', cx: 0, cy: 0.45, r: 1.4, fill: '#f4f4f4' }),
+      createCircle({ name: 'Cloud right', cx: 1.4, cy: -0.1, r: 1.1, fill: '#f4f4f4' }),
+      createEllipse({ name: 'Cloud base', cx: 0, cy: -0.65, rx: 2.4, ry: 0.95, fill: '#f4f4f4' }),
+      createText({ name: 'Cloud label', text: 'Cloud', y: -0.1 })
+    ],
+    { searchTerms: ['cloud', 'network', 'infra', 'service'] }
+  ),
+  createPreset(
+    'pipeline',
+    'concepts',
+    'pipeline',
+    'Pipeline',
+    'Three-stage pipeline with connectors.',
+    [
+      createRectangle({ name: 'Stage 1', x: -4.8, y: -0.8, width: 2.2, height: 1.6, fill: '#ececec' }),
+      createRectangle({ name: 'Stage 2', x: -1.1, y: -0.8, width: 2.2, height: 1.6, fill: '#dbe6ff' }),
+      createRectangle({ name: 'Stage 3', x: 2.6, y: -0.8, width: 2.2, height: 1.6, fill: '#f4f4f4' }),
+      createLine({ name: 'Stage 1 to 2', from: { x: -2.6, y: 0 }, to: { x: -1.1, y: 0 }, arrowEnd: true }),
+      createLine({ name: 'Stage 2 to 3', from: { x: 1.1, y: 0 }, to: { x: 2.6, y: 0 }, arrowEnd: true }),
+      createText({ name: 'Stage 1 label', text: 'Input', x: -3.7, y: 0 }),
+      createText({ name: 'Stage 2 label', text: 'Transform', x: 0, y: 0 }),
+      createText({ name: 'Stage 3 label', text: 'Output', x: 3.7, y: 0 })
+    ],
+    { searchTerms: ['pipeline', 'stages', 'process', 'flow'] }
+  ),
+  createPreset(
+    'hub',
+    'concepts',
+    'hub',
+    'Hub & Spoke',
+    'Central concept linked to surrounding nodes.',
+    [
+      createCircle({ name: 'Hub center', cx: 0, cy: 0, r: 0.9, fill: '#dbe6ff' }),
+      createCircle({ name: 'Hub north', cx: 0, cy: 2.5, r: 0.55, fill: '#f5f5f5' }),
+      createCircle({ name: 'Hub east', cx: 2.5, cy: 0, r: 0.55, fill: '#f5f5f5' }),
+      createCircle({ name: 'Hub south', cx: 0, cy: -2.5, r: 0.55, fill: '#f5f5f5' }),
+      createCircle({ name: 'Hub west', cx: -2.5, cy: 0, r: 0.55, fill: '#f5f5f5' }),
+      createLine({ name: 'Hub to north', from: { x: 0, y: 0.9 }, to: { x: 0, y: 1.95 } }),
+      createLine({ name: 'Hub to east', from: { x: 0.9, y: 0 }, to: { x: 1.95, y: 0 } }),
+      createLine({ name: 'Hub to south', from: { x: 0, y: -0.9 }, to: { x: 0, y: -1.95 } }),
+      createLine({ name: 'Hub to west', from: { x: -0.9, y: 0 }, to: { x: -1.95, y: 0 } })
+    ],
+    { searchTerms: ['hub', 'spoke', 'mindmap', 'concept'] }
+  )
 ];
 
 const createScene = (name: string, shapes: readonly CanvasShape[]): TikzScene => ({
@@ -152,62 +449,124 @@ export const scenePresets: readonly ScenePreset[] = [
     id: 'blank',
     icon: 'blank',
     title: 'Blank board',
-    description: 'Start with an empty scene and build the figure piece by piece.',
+    description: 'Empty canvas for free-form composition.',
     scene: createScene('Blank board', [])
-  },
-  {
-    id: 'triangle-diagram',
-    icon: 'triangle',
-    title: 'Triangle diagram',
-    description: 'A quick geometry starter with labels on each vertex.',
-    scene: createScene('Triangle diagram', [
-      createLine({ name: 'AB', from: { x: -3, y: -2 }, to: { x: 0, y: 3 } }),
-      createLine({ name: 'BC', from: { x: 0, y: 3 }, to: { x: 3.2, y: -1.8 } }),
-      createLine({ name: 'CA', from: { x: 3.2, y: -1.8 }, to: { x: -3, y: -2 } }),
-      createText({ name: 'A', x: -3.3, y: -2.3, text: 'A' }),
-      createText({ name: 'B', x: 0, y: 3.45, text: 'B' }),
-      createText({ name: 'C', x: 3.45, y: -2.15, text: 'C' })
-    ])
   },
   {
     id: 'flow-starter',
     icon: 'flow',
     title: 'Flow starter',
-    description: 'A tiny flowchart skeleton with two blocks and a decision.',
+    description: 'Input, process, decision and outputs ready to edit.',
     scene: createScene('Flow starter', [
-      createRectangle({ name: 'Input', x: -5.6, y: 2.1, width: 3.2, height: 1.7, fill: '#dbeafe' }),
-      createText({ name: 'Input label', x: -4, y: 2.95, text: 'Input' }),
-      createRectangle({ name: 'Process', x: -1.2, y: 2.1, width: 3.4, height: 1.7, fill: '#e2e8f0' }),
-      createText({ name: 'Process label', x: 0.5, y: 2.95, text: 'Process' }),
-      createEllipse({ name: 'Decision', cx: 5, cy: 2.95, rx: 1.9, ry: 1.1, fill: '#fee2e2' }),
-      createText({ name: 'Decision label', x: 5, y: 2.95, text: 'Check' }),
-      createLine({ name: 'Input to process', from: { x: -2.4, y: 2.95 }, to: { x: -1.2, y: 2.95 }, arrowEnd: true }),
-      createLine({ name: 'Process to decision', from: { x: 2.2, y: 2.95 }, to: { x: 3.1, y: 2.95 }, arrowEnd: true })
+      ...objectPresets.find((preset) => preset.id === 'input-output')!.shapes,
+      ...objectPresets.find((preset) => preset.id === 'box')!.shapes.map((shape) =>
+        shape.kind === 'rectangle'
+          ? { ...shape, id: crypto.randomUUID(), x: 2.3, y: -1.2, width: 3.2, height: 2.4, name: 'Process block', fill: '#ebebeb' }
+          : shape
+      ),
+      createText({ name: 'Process label', x: 3.9, y: 0, text: 'Process' }),
+      ...objectPresets.find((preset) => preset.id === 'decision')!.shapes.map((shape) =>
+        shape.kind === 'text'
+          ? { ...shape, id: crypto.randomUUID(), x: 8.1, y: 0, text: 'Check' }
+          : shape.kind === 'line'
+            ? {
+                ...shape,
+                id: crypto.randomUUID(),
+                from: { x: shape.from.x + 8.1, y: shape.from.y },
+                to: { x: shape.to.x + 8.1, y: shape.to.y }
+              }
+            : shape
+      ),
+      createLine({ name: 'Input to process', from: { x: 2.2, y: 0 }, to: { x: 2.3, y: 0 }, arrowEnd: true }),
+      createLine({ name: 'Process to decision', from: { x: 5.5, y: 0 }, to: { x: 6.2, y: 0 }, arrowEnd: true })
     ])
   },
   {
-    id: 'plot-callout',
-    icon: 'plot',
-    title: 'Plot callout',
-    description: 'A simple chart-like composition with a callout label.',
-    scene: createScene('Plot callout', [
-      createLine({ name: 'XAxis', from: { x: -6, y: -3 }, to: { x: 6, y: -3 }, arrowEnd: true, stroke: '#0f172a' }),
-      createLine({
-        name: 'YAxis',
-        from: { x: -5.5, y: -3.8 },
-        to: { x: -5.5, y: 3.6 },
-        arrowEnd: true,
-        stroke: '#0f172a'
-      }),
-      createLine({ name: 'Trend 1', from: { x: -4.5, y: -1.8 }, to: { x: -2.1, y: -0.3 }, stroke: '#2563eb' }),
-      createLine({ name: 'Trend 2', from: { x: -2.1, y: -0.3 }, to: { x: 0.5, y: 1.1 }, stroke: '#2563eb' }),
-      createLine({ name: 'Trend 3', from: { x: 0.5, y: 1.1 }, to: { x: 4.2, y: 2.2 }, stroke: '#2563eb' }),
-      createCircle({ name: 'Highlight', cx: 0.5, cy: 1.1, r: 0.22, fill: '#2563eb', stroke: '#2563eb' }),
-      createRectangle({ name: 'Callout', x: 1.6, y: 1.7, width: 3.1, height: 1.4, fill: '#f8fafc' }),
-      createText({ name: 'Callout text', x: 3.15, y: 2.45, text: 'Peak point' }),
-      createLine({ name: 'Callout leader', from: { x: 1.6, y: 1.95 }, to: { x: 0.7, y: 1.2 }, stroke: '#475569' })
+    id: 'system-map',
+    icon: 'server',
+    title: 'System map',
+    description: 'Client, API and database starter scene.',
+    scene: createScene('System map', [
+      ...objectPresets.find((preset) => preset.id === 'browser')!.shapes.map((shape) =>
+        shape.kind === 'rectangle'
+          ? { ...shape, id: crypto.randomUUID(), x: -7.4, y: -1.7, name: shape.name }
+          : shape.kind === 'line'
+            ? {
+                ...shape,
+                id: crypto.randomUUID(),
+                from: { x: shape.from.x - 4.8, y: shape.from.y },
+                to: { x: shape.to.x - 4.8, y: shape.to.y }
+              }
+            : shape.kind === 'circle'
+              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx - 4.8, cy: shape.cy }
+              : shape
+      ),
+      createText({ name: 'Client label', x: -4.8, y: -2.5, text: 'Client' }),
+      createRectangle({ name: 'API', x: -1.5, y: -1, width: 3, height: 2, fill: '#ececec' }),
+      createText({ name: 'API label', text: 'API', x: 0, y: 0 }),
+      ...objectPresets.find((preset) => preset.id === 'database')!.shapes.map((shape) =>
+        shape.kind === 'rectangle'
+          ? { ...shape, id: crypto.randomUUID(), x: 4.4, y: -1.3 }
+          : shape.kind === 'ellipse'
+            ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 6.5, cy: shape.cy }
+            : shape.kind === 'text'
+              ? { ...shape, id: crypto.randomUUID(), x: 6.5, y: 0, text: 'Database' }
+              : shape
+      ),
+      createLine({ name: 'Client to API', from: { x: -2.2, y: 0 }, to: { x: -1.5, y: 0 }, arrowEnd: true }),
+      createLine({ name: 'API to database', from: { x: 1.5, y: 0 }, to: { x: 4.4, y: 0 }, arrowEnd: true })
+    ])
+  },
+  {
+    id: 'metrics-board',
+    icon: 'bars',
+    title: 'Metrics board',
+    description: 'Dashboard-like scene mixing charts and callouts.',
+    scene: createScene('Metrics board', [
+      ...objectPresets.find((preset) => preset.id === 'bar-chart')!.shapes.map((shape) =>
+        shape.kind === 'line'
+          ? {
+              ...shape,
+              id: crypto.randomUUID(),
+              from: { x: shape.from.x - 4.5, y: shape.from.y - 0.6 },
+              to: { x: shape.to.x - 4.5, y: shape.to.y - 0.6 }
+            }
+          : shape.kind === 'rectangle'
+            ? { ...shape, id: crypto.randomUUID(), x: shape.x - 4.5, y: shape.y - 0.6 }
+            : shape
+      ),
+      ...objectPresets.find((preset) => preset.id === 'timeline')!.shapes.map((shape) =>
+        shape.kind === 'line'
+          ? {
+              ...shape,
+              id: crypto.randomUUID(),
+              from: { x: shape.from.x + 2.6, y: shape.from.y + 2.4 },
+              to: { x: shape.to.x + 2.6, y: shape.to.y + 2.4 }
+            }
+          : shape.kind === 'circle'
+            ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 2.6, cy: shape.cy + 2.4 }
+            : shape.kind === 'text'
+              ? { ...shape, id: crypto.randomUUID(), x: shape.x + 2.6, y: shape.y + 2.4 }
+              : shape
+      ),
+      ...objectPresets.find((preset) => preset.id === 'callout')!.shapes.map((shape) =>
+        shape.kind === 'rectangle'
+          ? { ...shape, id: crypto.randomUUID(), x: 1.8, y: -3.1 }
+          : shape.kind === 'line'
+            ? {
+                ...shape,
+                id: crypto.randomUUID(),
+                from: { x: shape.from.x + 4.2, y: shape.from.y - 2.8 },
+                to: { x: shape.to.x + 4.2, y: shape.to.y - 2.8 }
+              }
+            : shape.kind === 'circle'
+              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 }
+              : shape.kind === 'text'
+                ? { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' }
+                : shape
+      )
     ])
   }
 ];
 
-export const defaultScene = scenePresets[1].scene;
+export const defaultScene = scenePresets[0].scene;

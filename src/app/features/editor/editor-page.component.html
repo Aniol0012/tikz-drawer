@@ -1,178 +1,168 @@
-<div class="editor-shell" (click)="closeContextMenu()">
+<div
+  class="editor-shell"
+  [style.--left-sidebar-width.px]="leftSidebarWidth()"
+  [style.--right-sidebar-width.px]="rightSidebarWidth()"
+  (click)="closeContextMenu(); closeFileMenu()">
   <header class="topbar">
-    <div class="topbar__brand">
-      <strong>{{ t('brand') }}</strong>
-      <span>{{ t('version') }} {{ appVersion }}</span>
-    </div>
+    <div class="topbar__left">
+      <div class="brand-lockup">
+        <strong>{{ t('brand') }}</strong>
+        <span>{{ t('version') }} {{ appVersion }}</span>
+      </div>
 
-    <div class="topbar__controls">
-      <button
-        class="icon-button"
-        type="button"
-        [disabled]="!canUndo()"
-        [attr.aria-label]="t('undo')"
-        (click)="undo()">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.undo"></path></svg>
-      </button>
-      <button
-        class="icon-button"
-        type="button"
-        [disabled]="!canRedo()"
-        [attr.aria-label]="t('redo')"
-        (click)="redo()">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.redo"></path></svg>
-      </button>
+      <label class="scene-input">
+        <input type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
+      </label>
 
-      <div class="zoom-control">
-        <button
-          class="icon-button"
-          type="button"
-          [attr.aria-label]="t('zoomOut')"
-          (click)="zoomOut()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconPaths.zoomOut"></path>
-          </svg>
+      <div class="menu-cluster">
+        <button class="menu-button" type="button" (click)="toggleFileMenu(); $event.stopPropagation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.file"></path></svg>
+          <span>{{ t('file') }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg>
         </button>
-        <button class="zoom-value" type="button" (click)="resetZoom()">{{ zoomPercent() }}%</button>
-        <button
-          class="icon-button"
-          type="button"
-          [attr.aria-label]="t('zoomIn')"
-          (click)="zoomIn()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconPaths.zoomIn"></path>
-          </svg>
-        </button>
+
+        @if (fileMenuOpen()) {
+          <div class="dropdown-menu" (click)="$event.stopPropagation()">
+            <div class="dropdown-menu__group">
+              <div class="dropdown-menu__label">{{ t('fileActions') }}</div>
+              <button class="dropdown-row" type="button" (click)="resetScene()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.plus"></path></svg>
+                <span>{{ t('newScene') }}</span>
+              </button>
+              <button class="dropdown-row" type="button" (click)="resetViewport()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.scene"></path></svg>
+                <span>{{ t('centerView') }}</span>
+              </button>
+              <button class="dropdown-row" type="button" (click)="copyShareLink()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.share"></path></svg>
+                <span>{{ t('copyLink') }}</span>
+              </button>
+              <button class="dropdown-row" type="button" (click)="openExportModal()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg>
+                <span>{{ t('openExport') }}</span>
+              </button>
+            </div>
+
+            <div class="dropdown-menu__group">
+              <div class="dropdown-menu__label">{{ t('templates') }}</div>
+              @for (preset of scenePresets; track presetTrackBy($index, preset)) {
+                <button class="dropdown-row dropdown-row--stacked" type="button" (click)="applyScenePreset(preset.id)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="presetIconPath(preset.icon)"></path></svg>
+                  <span>
+                    <strong>{{ scenePresetTitle(preset) }}</strong>
+                    <small>{{ scenePresetDescription(preset) }}</small>
+                  </span>
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
     </div>
 
-    <div class="topbar__actions">
+    <div class="topbar__center">
+      <div class="tool-cluster">
+        @for (tool of toolbarTools(); track tool.id) {
+          <button
+            class="tool-button"
+            type="button"
+            [class.is-active]="activeTool() === tool.id"
+            [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            (click)="setActiveTool(tool.id)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
+            <span>{{ tool.label }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="topbar__right">
       <div class="language-switch" [attr.aria-label]="t('language')">
-        <button type="button" [class.is-active]="language() === 'en'" (click)="setLanguage('en')">
-          EN
-        </button>
-        <button type="button" [class.is-active]="language() === 'ca'" (click)="setLanguage('ca')">
-          CA
-        </button>
+        <button type="button" [class.is-active]="language() === 'en'" (click)="setLanguage('en')">En</button>
+        <button type="button" [class.is-active]="language() === 'ca'" (click)="setLanguage('ca')">Ca</button>
+        <button type="button" [class.is-active]="language() === 'es'" (click)="setLanguage('es')">Es</button>
       </div>
 
-      <button class="icon-button" type="button" (click)="toggleTheme()">
+      <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="preferences().theme === 'dark' ? iconPaths.sun : iconPaths.moon"></path>
+          <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
         </svg>
       </button>
 
-      <button class="primary-button" type="button" (click)="downloadStandaloneFile()">
-        {{ t('export') }}
+      <button class="primary-button" type="button" (click)="openExportModal()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg>
+        <span>{{ t('export') }}</span>
       </button>
     </div>
   </header>
 
   <div class="workspace">
     <aside class="left-sidebar">
-      <div class="sidebar-section sidebar-section--search">
-        <input
-          class="search-input"
-          type="text"
-          [value]="toolSearchValue()"
-          [placeholder]="t('searchComponents')"
-          (input)="onToolSearchInput($event)" />
-      </div>
+      <section class="sidebar-block sidebar-block--intro">
+        <div class="section-header section-header--static">
+          <span>{{ t('library') }}</span>
+          <div class="stat-pill">{{ objectPresets.length }}</div>
+        </div>
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.search"></path></svg>
+          <input type="search" [value]="libraryQuery()" [placeholder]="t('searchLibrary')" (input)="setLibraryQuery($any($event.target).value)" />
+        </label>
+      </section>
 
-      <div class="sidebar-section">
-        <div class="section-header">{{ t('tools') }}</div>
-        <div class="tool-grid">
-          <button class="tool-tile" type="button" (click)="selectShape(null)">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconPaths.select"></path>
-            </svg>
-            <span>{{ t('select') }}</span>
+      <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('scenePresets')">
+        <button class="section-header" type="button" (click)="toggleSection('scenePresets')">
+          <span>{{ t('scenePresets') }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg>
+        </button>
+        @if (!isSectionCollapsed('scenePresets')) {
+          <div class="preset-list preset-list--compact">
+            @for (preset of scenePresets; track presetTrackBy($index, preset)) {
+              <button class="preset-card preset-card--scene" type="button" (click)="applyScenePreset(preset.id)">
+                <span class="preset-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="presetIconPath(preset.icon)"></path></svg></span>
+                <span class="preset-card__body">
+                  <strong>{{ scenePresetTitle(preset) }}</strong>
+                  <small>{{ scenePresetDescription(preset) }}</small>
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      @for (section of librarySections(); track section.category) {
+        <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed(section.category)">
+          <button class="section-header" type="button" (click)="toggleSection(section.category)">
+            <span>{{ section.title }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg>
           </button>
-
-          @for (tool of filteredPrimaryTools(); track tool.id) {
-            <button
-              class="tool-tile"
-              type="button"
-              [title]="tool.description"
-              (click)="addPreset(tool.id)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="tool.iconPath"></path>
-              </svg>
-              <span>{{ tool.label }}</span>
-            </button>
+          @if (!isSectionCollapsed(section.category)) {
+            <div class="preset-list">
+              @for (preset of section.presets; track presetTrackBy($index, preset)) {
+                <button class="preset-card" type="button" [class.is-active]="activeTool() === preset.id" (click)="setActiveTool(preset.id)">
+                  <span class="preset-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="presetIconPath(preset.icon)"></path></svg></span>
+                  <span class="preset-card__body">
+                    <strong>{{ preset.title }}</strong>
+                    <small>{{ preset.description }}</small>
+                  </span>
+                  @if (toolShortcut(preset.id); as shortcut) {
+                    <kbd>{{ shortcut }}</kbd>
+                  }
+                </button>
+              }
+            </div>
           }
-        </div>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="section-header">{{ t('templates') }}</div>
-        <div class="template-list">
-          @for (preset of scenePresets; track presetTrackBy($index, preset)) {
-            <button class="template-row" type="button" (click)="applyScenePreset(preset.id)">
-              <span class="template-row__icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="presetIconPath(preset.icon)"></path>
-                </svg>
-              </span>
-              <span class="template-row__content">
-                <strong>{{ localizedScenePresetTitle(preset) }}</strong>
-                <small>{{ localizedScenePresetDescription(preset) }}</small>
-              </span>
-            </button>
-          }
-        </div>
-      </div>
-
-      <a
-        class="sidebar-link"
-        href="https://github.com/Aniol0012/tikz-drawer"
-        target="_blank"
-        rel="noopener"
-        aria-label="Open GitHub repository">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconPaths.github"></path></svg>
-      </a>
+        </section>
+      }
     </aside>
 
+    <div class="sidebar-resizer sidebar-resizer--left" (pointerdown)="startSidebarResize($event, 'left')"></div>
+
     <section class="canvas-panel">
-      <div class="canvas-statusbar">
-        <div class="status-group">
-          <label class="status-field">
-            <span>{{ t('scene') }}</span>
-            <input type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
-          </label>
-          <div class="status-pill">{{ t('objects') }} {{ objectCount() }}</div>
-          <div class="status-pill">{{ t('selection') }} {{ selectedSummary() }}</div>
-        </div>
-
-        <div class="status-toggles">
-          <label class="toggle-chip">
-            <input
-              type="checkbox"
-              [checked]="preferences().showGrid"
-              (change)="onBooleanPreferenceChange('showGrid', $event)" />
-            <span>{{ t('showGrid') }}</span>
-          </label>
-          <label class="toggle-chip">
-            <input
-              type="checkbox"
-              [checked]="preferences().showAxes"
-              (change)="onBooleanPreferenceChange('showAxes', $event)" />
-            <span>{{ t('showAxes') }}</span>
-          </label>
-          <label class="toggle-chip">
-            <input
-              type="checkbox"
-              [checked]="preferences().snapToGrid"
-              (change)="onBooleanPreferenceChange('snapToGrid', $event)" />
-            <span>{{ t('snapToGrid') }}</span>
-          </label>
-        </div>
-      </div>
-
       <div
         #canvasViewport
         class="canvas-viewport"
         [class.is-panning]="interactionState()?.kind === 'pan'"
+        [class.is-insert]="activeTool() !== 'select'"
         (pointerdown)="onCanvasViewportPointerDown($event)"
         (wheel)="onCanvasWheel($event)"
         (contextmenu)="openCanvasContextMenu($event)">
@@ -183,26 +173,12 @@
           (pointermove)="onCanvasPointerMove($event)"
           (pointerup)="endInteraction($event)"
           (pointercancel)="endInteraction($event)"
-          (click)="onCanvasBackgroundClick()">
+          (click)="onCanvasBackgroundClick($event)">
           <defs>
-            <marker
-              id="arrow-end"
-              markerWidth="10"
-              markerHeight="10"
-              refX="8"
-              refY="3"
-              orient="auto"
-              markerUnits="strokeWidth">
+            <marker id="arrow-end" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
               <path d="M0,0 L0,6 L8,3 z" class="arrow-head"></path>
             </marker>
-            <marker
-              id="arrow-start"
-              markerWidth="10"
-              markerHeight="10"
-              refX="2"
-              refY="3"
-              orient="auto-start-reverse"
-              markerUnits="strokeWidth">
+            <marker id="arrow-start" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
               <path d="M8,0 L8,6 L0,3 z" class="arrow-head"></path>
             </marker>
           </defs>
@@ -210,41 +186,25 @@
           @if (preferences().showGrid) {
             <g class="grid-layer">
               @for (column of gridColumns(); track column) {
-                <line
-                  [attr.x1]="toSvgX(column)"
-                  y1="0"
-                  [attr.x2]="toSvgX(column)"
-                  [attr.y2]="canvasHeight()"></line>
+                <line [attr.x1]="toSvgX(column)" y1="0" [attr.x2]="toSvgX(column)" [attr.y2]="canvasHeight()"></line>
               }
               @for (row of gridRows(); track row) {
-                <line
-                  x1="0"
-                  [attr.y1]="toSvgY(row)"
-                  [attr.x2]="canvasWidth()"
-                  [attr.y2]="toSvgY(row)"></line>
+                <line x1="0" [attr.y1]="toSvgY(row)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(row)"></line>
               }
             </g>
           }
 
           @if (preferences().showAxes) {
             <g class="axis-layer">
-              <line
-                x1="0"
-                [attr.y1]="toSvgY(0)"
-                [attr.x2]="canvasWidth()"
-                [attr.y2]="toSvgY(0)"></line>
-              <line
-                [attr.x1]="toSvgX(0)"
-                y1="0"
-                [attr.x2]="toSvgX(0)"
-                [attr.y2]="canvasHeight()"></line>
+              <line x1="0" [attr.y1]="toSvgY(0)" [attr.x2]="canvasWidth()" [attr.y2]="toSvgY(0)"></line>
+              <line [attr.x1]="toSvgX(0)" y1="0" [attr.x2]="toSvgX(0)" [attr.y2]="canvasHeight()"></line>
             </g>
           }
 
           @for (shape of scene().shapes; track shapeTrackBy($index, shape)) {
             <g
               class="shape-layer"
-              [class.is-selected]="selectedShape()?.id === shape.id"
+              [class.is-selected]="selectionContainsShape(shape.id)"
               (click)="$event.stopPropagation()"
               (pointerdown)="startMove($event, shape)"
               (contextmenu)="openShapeContextMenu($event, shape)">
@@ -291,11 +251,7 @@
                     [attr.fill]="shape.fill"></ellipse>
                 }
                 @case ('text') {
-                  <text
-                    [attr.x]="toSvgX(shape.x)"
-                    [attr.y]="toSvgY(shape.y)"
-                    [attr.font-size]="shape.fontSize * preferences().scale"
-                    [attr.fill]="shape.color">
+                  <text [attr.x]="toSvgX(shape.x)" [attr.y]="toSvgY(shape.y)" [attr.font-size]="shape.fontSize * preferences().scale" [attr.fill]="shape.color">
                     {{ shape.text }}
                   </text>
                 }
@@ -303,26 +259,27 @@
             </g>
           }
 
-          @if (selectedShape()?.kind === 'line' && lineSelectionPath(); as selectionPath) {
+          @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [attr.d]="selectionPath"></path>
           } @else if (selectionOutline(); as outline) {
-            <rect
-              class="selection-outline"
-              [attr.x]="outline.x"
-              [attr.y]="outline.y"
-              [attr.width]="outline.width"
-              [attr.height]="outline.height"></rect>
+            <rect class="selection-outline" [attr.x]="outline.x" [attr.y]="outline.y" [attr.width]="outline.width" [attr.height]="outline.height"></rect>
           }
 
-          @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
-            <rect
-              class="selection-handle"
-              [attr.x]="handle.x - 4"
-              [attr.y]="handle.y - 4"
-              width="8"
-              height="8"
-              [attr.style]="'cursor:' + handle.cursor"
-              (pointerdown)="startResize($event, handle.id)"></rect>
+          @if (marqueeBounds(); as marquee) {
+            <rect class="marquee-rect" [attr.x]="marquee.x" [attr.y]="marquee.y" [attr.width]="marquee.width" [attr.height]="marquee.height"></rect>
+          }
+
+          @if (selectionCount() === 1) {
+            @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
+              <rect
+                class="selection-handle"
+                [attr.x]="handle.x - 5"
+                [attr.y]="handle.y - 5"
+                width="10"
+                height="10"
+                [attr.style]="'cursor:' + handle.cursor"
+                (pointerdown)="startResize($event, handle.id)"></rect>
+            }
           }
         </svg>
 
@@ -332,397 +289,243 @@
             <p>{{ t('startDrawingHint') }}</p>
           </div>
         }
+
+        <div class="canvas-corner canvas-corner--top">
+          <button class="canvas-chip" type="button" [title]="t('objects')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.layers"></path></svg>
+            <span>{{ objectCount() }}</span>
+          </button>
+          <button class="canvas-chip" type="button" [title]="selectionLabel()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.select"></path></svg>
+            <span>{{ selectionCount() }}</span>
+          </button>
+          <button class="canvas-chip" type="button" [title]="activeToolLabel()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="activeTool() === 'select' ? iconMap.select : presetIconPath(activePreset()?.icon ?? 'rectangle')"></path></svg>
+          </button>
+        </div>
+
+        <div class="canvas-corner canvas-corner--bottom">
+          <div class="canvas-control-group">
+            <button class="icon-button" type="button" [disabled]="!canUndo()" [title]="t('undo')" (click)="undo()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.undo"></path></svg>
+            </button>
+            <button class="icon-button" type="button" [disabled]="!canRedo()" [title]="t('redo')" (click)="redo()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.redo"></path></svg>
+            </button>
+            <button class="icon-button" type="button" [title]="t('centerView')" (click)="resetViewport()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.scene"></path></svg>
+            </button>
+          </div>
+          <div class="canvas-control-group canvas-control-group--zoom">
+            <button class="icon-button" type="button" [title]="t('zoomOut')" (click)="zoomOut()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.minus"></path></svg>
+            </button>
+            <input type="range" min="16" max="120" step="4" [value]="preferences().scale" (input)="updatePreferenceNumber('scale', $event, 16, 120)" />
+            <button class="zoom-chip" type="button" (click)="resetZoom()">{{ zoomPercent() }}%</button>
+            <button class="icon-button" type="button" [title]="t('zoomIn')" (click)="zoomIn()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.plus"></path></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
+    <div class="sidebar-resizer sidebar-resizer--right" (pointerdown)="startSidebarResize($event, 'right')"></div>
+
     <aside class="right-sidebar">
       <div class="sidebar-tabs">
-        <button
-          type="button"
-          [class.is-active]="inspectorTab() === 'properties'"
-          (click)="setInspectorTab('properties')">
-          {{ t('properties') }}
-        </button>
-        <button
-          type="button"
-          [class.is-active]="inspectorTab() === 'code'"
-          (click)="setInspectorTab('code')">
-          {{ t('tikzCode') }}
-        </button>
+        <button type="button" [class.is-active]="inspectorTab() === 'properties'" (click)="setInspectorTab('properties')">{{ t('properties') }}</button>
+        <button type="button" [class.is-active]="inspectorTab() === 'scene'" (click)="setInspectorTab('scene')">{{ t('sceneTab') }}</button>
+        <button type="button" [class.is-active]="inspectorTab() === 'code'" (click)="setInspectorTab('code')">{{ t('code') }}</button>
       </div>
 
       <div class="sidebar-scroll">
         @if (inspectorTab() === 'properties') {
-          <section class="sidebar-block">
-            <div class="section-header">{{ t('selectedObject') }}</div>
+          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('properties')">
+            <button class="section-header" type="button" (click)="toggleSection('properties')">
+              <span>{{ t('selectedObject') }}</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg>
+            </button>
 
-            @if (selectedShape(); as shape) {
-              <div class="selection-summary">
-                <strong>{{ shape.name }}</strong>
-                <span>{{ localizedShapeKind(shape.kind) }}</span>
-              </div>
+            @if (!isSectionCollapsed('properties')) {
+              @if (selectedShape(); as shape) {
+                <div class="selection-summary">
+                  <div>
+                    <strong>{{ shape.name }}</strong>
+                    <span>{{ localizedShapeKind(shape.kind) }}</span>
+                  </div>
+                  <span class="badge">{{ selectionCount() }}</span>
+                </div>
 
-              <div class="form-grid">
-                <label class="field field--full">
-                  <span>{{ t('name') }}</span>
-                  <input
-                    type="text"
-                    [value]="shape.name"
-                    (input)="updateShapeText('name', $event)" />
-                </label>
-
-                <label class="field">
-                  <span>{{ t('stroke') }}</span>
-                  <input
-                    type="color"
-                    [value]="shape.stroke === 'none' ? '#111827' : shape.stroke"
-                    (input)="updateShapeText('stroke', $event)" />
-                </label>
-
-                <label class="field">
-                  <span>{{ t('strokeWidth') }}</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.02"
-                    [value]="shape.strokeWidth"
-                    (input)="updateShapeNumber('strokeWidth', $event)" />
-                </label>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" (click)="duplicateSelected()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg><span>{{ t('duplicate') }}</span></button>
+                  <button class="secondary-button" type="button" (click)="bringSelectedToFront()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.front"></path></svg><span>{{ t('bringToFront') }}</span></button>
+                  <button class="secondary-button" type="button" (click)="sendSelectedToBack()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.back"></path></svg><span>{{ t('sendToBack') }}</span></button>
+                </div>
+                <div class="form-grid">
+                <label class="field field--full"><span>{{ t('name') }}</span><input type="text" [value]="shape.name" (input)="updateShapeText('name', $event)" /></label>
+                <label class="field"><span>{{ t('stroke') }}</span><input type="color" [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke" (input)="updateShapeText('stroke', $event)" /></label>
+                <label class="field"><span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span><div class="range-field"><input type="range" min="0" max="1" step="0.02" [value]="shape.strokeWidth" (input)="updateShapeNumber('strokeWidth', $event)" /><input type="number" min="0" max="1" step="0.02" [value]="shape.strokeWidth" (input)="updateShapeNumber('strokeWidth', $event)" /></div></label>
 
                 @switch (shape.kind) {
                   @case ('line') {
-                    <label class="field">
-                      <span>{{ t('fromX') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.from.x"
-                        (input)="updateLinePoint('from', 'x', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('fromY') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.from.y"
-                        (input)="updateLinePoint('from', 'y', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('toX') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.to.x"
-                        (input)="updateLinePoint('to', 'x', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('toY') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.to.y"
-                        (input)="updateLinePoint('to', 'y', $event)" />
-                    </label>
-                    <label class="checkbox-field">
-                      <input
-                        type="checkbox"
-                        [checked]="shape.arrowStart"
-                        (change)="updateShapeBoolean('arrowStart', $event)" />
-                      <span>{{ t('arrowStart') }}</span>
-                    </label>
-                    <label class="checkbox-field">
-                      <input
-                        type="checkbox"
-                        [checked]="shape.arrowEnd"
-                        (change)="updateShapeBoolean('arrowEnd', $event)" />
-                      <span>{{ t('arrowEnd') }}</span>
-                    </label>
+                    <label class="field"><span>{{ t('fromX') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" /><input type="number" step="0.1" [value]="shape.from.x" (input)="updateLinePoint('from', 'x', $event)" /></div></label>
+                    <label class="field"><span>{{ t('fromY') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" /><input type="number" step="0.1" [value]="shape.from.y" (input)="updateLinePoint('from', 'y', $event)" /></div></label>
+                    <label class="field"><span>{{ t('toX') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" /><input type="number" step="0.1" [value]="shape.to.x" (input)="updateLinePoint('to', 'x', $event)" /></div></label>
+                    <label class="field"><span>{{ t('toY') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" /><input type="number" step="0.1" [value]="shape.to.y" (input)="updateLinePoint('to', 'y', $event)" /></div></label>
+                    <label class="toggle-field"><input type="checkbox" [checked]="shape.arrowStart" (change)="updateShapeBoolean('arrowStart', $event)" /><span>{{ t('arrowStart') }}</span></label>
+                    <label class="toggle-field"><input type="checkbox" [checked]="shape.arrowEnd" (change)="updateShapeBoolean('arrowEnd', $event)" /><span>{{ t('arrowEnd') }}</span></label>
                   }
                   @case ('rectangle') {
-                    <label class="field">
-                      <span>{{ t('x') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('y') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('width') }}</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        [value]="shape.width"
-                        (input)="updateShapeNumber('width', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('height') }}</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        [value]="shape.height"
-                        (input)="updateShapeNumber('height', $event)" />
-                    </label>
-                    <label class="field field--full">
-                      <span>{{ t('fill') }}</span>
-                      <input
-                        type="color"
-                        [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
-                        (input)="updateShapeText('fill', $event)" />
-                    </label>
+                    <label class="field"><span>{{ t('x') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" /><input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" /></div></label>
+                    <label class="field"><span>{{ t('y') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" /><input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" /></div></label>
+                    <label class="field"><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span><div class="range-field"><input type="range" min="0.2" max="12" step="0.1" [value]="shape.width" (input)="updateShapeNumber('width', $event)" /><input type="number" min="0.2" step="0.1" [value]="shape.width" (input)="updateShapeNumber('width', $event)" /></div></label>
+                    <label class="field"><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span><div class="range-field"><input type="range" min="0.2" max="12" step="0.1" [value]="shape.height" (input)="updateShapeNumber('height', $event)" /><input type="number" min="0.2" step="0.1" [value]="shape.height" (input)="updateShapeNumber('height', $event)" /></div></label>
+                    <label class="field"><span>{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span><div class="range-field"><input type="range" min="0" max="1.5" step="0.02" [value]="shape.cornerRadius" (input)="updateShapeNumber('cornerRadius', $event)" /><input type="number" min="0" max="1.5" step="0.02" [value]="shape.cornerRadius" (input)="updateShapeNumber('cornerRadius', $event)" /></div></label>
+                    <label class="field"><span>{{ t('fill') }}</span><input type="color" [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill" (input)="updateShapeText('fill', $event)" /></label>
                   }
                   @case ('circle') {
-                    <label class="field">
-                      <span>{{ t('cx') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.cx"
-                        (input)="updateShapeNumber('cx', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('cy') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.cy"
-                        (input)="updateShapeNumber('cy', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('radius') }}</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        [value]="shape.r"
-                        (input)="updateShapeNumber('r', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('fill') }}</span>
-                      <input
-                        type="color"
-                        [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
-                        (input)="updateShapeText('fill', $event)" />
-                    </label>
+                    <label class="field"><span>{{ t('cx') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" /><input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" /></div></label>
+                    <label class="field"><span>{{ t('cy') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" /><input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" /></div></label>
+                    <label class="field"><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span><div class="range-field"><input type="range" min="0.1" max="8" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" /><input type="number" min="0.1" step="0.1" [value]="shape.r" (input)="updateShapeNumber('r', $event)" /></div></label>
+                    <label class="field"><span>{{ t('fill') }}</span><input type="color" [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill" (input)="updateShapeText('fill', $event)" /></label>
                   }
                   @case ('ellipse') {
-                    <label class="field">
-                      <span>{{ t('cx') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.cx"
-                        (input)="updateShapeNumber('cx', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('cy') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.cy"
-                        (input)="updateShapeNumber('cy', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('rx') }}</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        [value]="shape.rx"
-                        (input)="updateShapeNumber('rx', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('ry') }}</span>
-                      <input
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        [value]="shape.ry"
-                        (input)="updateShapeNumber('ry', $event)" />
-                    </label>
-                    <label class="field field--full">
-                      <span>{{ t('fill') }}</span>
-                      <input
-                        type="color"
-                        [value]="shape.fill === 'none' ? '#ffffff' : shape.fill"
-                        (input)="updateShapeText('fill', $event)" />
-                    </label>
+                    <label class="field"><span>{{ t('cx') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" /><input type="number" step="0.1" [value]="shape.cx" (input)="updateShapeNumber('cx', $event)" /></div></label>
+                    <label class="field"><span>{{ t('cy') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" /><input type="number" step="0.1" [value]="shape.cy" (input)="updateShapeNumber('cy', $event)" /></div></label>
+                    <label class="field"><span>{{ t('rx') }} · {{ formatValue(shape.rx) }}</span><div class="range-field"><input type="range" min="0.2" max="10" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" /><input type="number" min="0.2" step="0.1" [value]="shape.rx" (input)="updateShapeNumber('rx', $event)" /></div></label>
+                    <label class="field"><span>{{ t('ry') }} · {{ formatValue(shape.ry) }}</span><div class="range-field"><input type="range" min="0.2" max="10" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" /><input type="number" min="0.2" step="0.1" [value]="shape.ry" (input)="updateShapeNumber('ry', $event)" /></div></label>
+                    <label class="field field--full"><span>{{ t('fill') }}</span><input type="color" [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill" (input)="updateShapeText('fill', $event)" /></label>
                   }
                   @case ('text') {
-                    <label class="field field--full">
-                      <span>{{ t('text') }}</span>
-                      <input
-                        type="text"
-                        [value]="shape.text"
-                        (input)="updateShapeText('text', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('x') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('y') }}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('fontSize') }}</span>
-                      <input
-                        type="number"
-                        min="0.2"
-                        step="0.05"
-                        [value]="shape.fontSize"
-                        (input)="updateShapeNumber('fontSize', $event)" />
-                    </label>
-                    <label class="field">
-                      <span>{{ t('color') }}</span>
-                      <input
-                        type="color"
-                        [value]="shape.color"
-                        (input)="updateShapeText('color', $event)" />
-                    </label>
+                    <label class="field field--full"><span>{{ t('text') }}</span><input type="text" [value]="shape.text" (input)="updateShapeText('text', $event)" /></label>
+                    <label class="field"><span>{{ t('x') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" /><input type="number" step="0.1" [value]="shape.x" (input)="updateShapeNumber('x', $event)" /></div></label>
+                    <label class="field"><span>{{ t('y') }}</span><div class="range-field"><input type="range" min="-20" max="20" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" /><input type="number" step="0.1" [value]="shape.y" (input)="updateShapeNumber('y', $event)" /></div></label>
+                    <label class="field"><span>{{ t('fontSize') }} · {{ formatValue(shape.fontSize) }}</span><div class="range-field"><input type="range" min="0.2" max="2" step="0.05" [value]="shape.fontSize" (input)="updateShapeNumber('fontSize', $event)" /><input type="number" min="0.2" step="0.05" [value]="shape.fontSize" (input)="updateShapeNumber('fontSize', $event)" /></div></label>
+                    <label class="field"><span>{{ t('color') }}</span><input type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" /></label>
                   }
                 }
+                </div>
+              } @else if (selectionCount() > 1) {
+                <div class="empty-panel">{{ selectionCount() }} {{ t('objects').toLowerCase() }}</div>
+              } @else {
+                <div class="empty-panel">{{ t('noneSelected') }}</div>
+              }
+            }
+          </section>
+        } @else if (inspectorTab() === 'scene') {
+          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('sceneSettings')">
+            <button class="section-header" type="button" (click)="toggleSection('sceneSettings')"><span>{{ t('canvasSettings') }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg></button>
+            @if (!isSectionCollapsed('sceneSettings')) {
+              <div class="form-grid">
+              <label class="field"><span>{{ t('gridSize') }} · {{ preferences().scale }}</span><div class="range-field"><input type="range" min="16" max="120" step="4" [value]="preferences().scale" (input)="updatePreferenceNumber('scale', $event, 16, 120)" /><input type="number" min="16" max="120" step="4" [value]="preferences().scale" (input)="updatePreferenceNumber('scale', $event, 16, 120)" /></div></label>
+              <label class="field"><span>{{ t('snapTolerance') }} · {{ formatValue(preferences().snapStep) }}</span><div class="range-field"><input type="range" min="0.05" max="2" step="0.05" [value]="preferences().snapStep" (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /><input type="number" min="0.05" max="2" step="0.05" [value]="preferences().snapStep" (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /></div></label>
+              <label class="field"><span>{{ t('defaultStroke') }}</span><input type="color" [value]="preferences().defaultStroke" (input)="updatePreferenceText('defaultStroke', $event)" /></label>
+              <label class="field"><span>{{ t('defaultFill') }}</span><input type="color" [value]="preferences().defaultFill" (input)="updatePreferenceText('defaultFill', $event)" /></label>
+              <label class="field field--full"><span>{{ t('defaultLineWidth') }} · {{ formatValue(preferences().defaultStrokeWidth) }}</span><div class="range-field"><input type="range" min="0.02" max="1" step="0.02" [value]="preferences().defaultStrokeWidth" (input)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 1)" /><input type="number" min="0.02" max="1" step="0.02" [value]="preferences().defaultStrokeWidth" (input)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 1)" /></div></label>
+              <label class="toggle-field"><input type="checkbox" [checked]="preferences().showGrid" (change)="onBooleanPreferenceChange('showGrid', $event)" /><span>{{ t('showGrid') }}</span></label>
+              <label class="toggle-field"><input type="checkbox" [checked]="preferences().showAxes" (change)="onBooleanPreferenceChange('showAxes', $event)" /><span>{{ t('showAxes') }}</span></label>
+              <label class="toggle-field field--full"><input type="checkbox" [checked]="preferences().snapToGrid" (change)="onBooleanPreferenceChange('snapToGrid', $event)" /><span>{{ t('snapToGrid') }}</span></label>
               </div>
-            } @else {
-              <div class="empty-panel">{{ t('nothingSelected') }}</div>
             }
           </section>
 
-          <section class="sidebar-block">
-            <div class="section-header">{{ t('canvasSettings') }}</div>
-            <div class="settings-grid">
-              <label class="checkbox-field">
-                <input
-                  type="checkbox"
-                  [checked]="preferences().showGrid"
-                  (change)="onBooleanPreferenceChange('showGrid', $event)" />
-                <span>{{ t('showGrid') }}</span>
-              </label>
-              <label class="checkbox-field">
-                <input
-                  type="checkbox"
-                  [checked]="preferences().showAxes"
-                  (change)="onBooleanPreferenceChange('showAxes', $event)" />
-                <span>{{ t('showAxes') }}</span>
-              </label>
-              <label class="checkbox-field">
-                <input
-                  type="checkbox"
-                  [checked]="preferences().snapToGrid"
-                  (change)="onBooleanPreferenceChange('snapToGrid', $event)" />
-                <span>{{ t('snapToGrid') }}</span>
-              </label>
-            </div>
+          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('layers')">
+            <button class="section-header" type="button" (click)="toggleSection('layers')"><span>{{ t('layers') }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg></button>
+            @if (!isSectionCollapsed('layers')) {
+              <div class="object-list">
+                @for (shape of scene().shapes; track shape.id) {
+                  <button class="object-row" type="button" [class.is-active]="selectionContainsShape(shape.id)" (click)="selectShape(shape.id)">
+                    <span class="object-row__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="shapeIcon(shape)"></path></svg></span>
+                    <span class="object-row__content">
+                      <strong>{{ shape.name }}</strong>
+                      <small>{{ localizedShapeKind(shape.kind) }}</small>
+                    </span>
+                  </button>
+                }
+              </div>
+            }
           </section>
         } @else {
-          <section class="sidebar-block">
-            <div class="section-header">{{ t('generatedCode') }}</div>
-            <div class="code-actions">
-              <button class="secondary-button" type="button" (click)="copyExportedCode()">
-                {{ t('copy') }}
-              </button>
-              <button class="secondary-button" type="button" (click)="downloadStandaloneFile()">
-                {{ t('download') }}
-              </button>
-              <button class="secondary-button" type="button" (click)="syncImportWithExport()">
-                {{ t('sendToImport') }}
-              </button>
-            </div>
-            <pre class="code-block"><code>{{ exportedCode() }}</code></pre>
+          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('generatedCode')">
+            <button class="section-header" type="button" (click)="toggleSection('generatedCode')"><span>{{ t('generatedCode') }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg></button>
+            @if (!isSectionCollapsed('generatedCode')) {
+              <div class="inline-actions">
+                <button class="secondary-button" type="button" (click)="copyExportedCode()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg><span>{{ t('copyTikz') }}</span></button>
+                <button class="secondary-button" type="button" (click)="openExportModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg><span>{{ t('openExport') }}</span></button>
+              </div>
+              <pre class="code-block"><code [innerHTML]="highlightedSnippetCode()"></code></pre>
+            }
           </section>
 
-          <section class="sidebar-block">
-            <div class="section-header">{{ t('importCode') }}</div>
-            <textarea
-              class="code-input"
-              [value]="store.importCode()"
-              spellcheck="false"
-              (input)="onImportCodeInput($event)"></textarea>
-            <div class="code-actions">
-              <button
-                class="primary-button primary-button--wide"
-                type="button"
-                (click)="applyImportCode()">
-                {{ t('applyTikz') }}
-              </button>
-            </div>
-
-            @if (parserWarnings().length) {
-              <div class="warning-box">
-                <p>{{ t('codeWarnings') }}</p>
-                <ul>
-                  @for (warning of parserWarnings(); track warning) {
-                    <li>{{ warning }}</li>
-                  }
-                </ul>
-              </div>
+          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('importCode')">
+            <button class="section-header" type="button" (click)="toggleSection('importCode')"><span>{{ t('importCode') }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.chevronDown"></path></svg></button>
+            @if (!isSectionCollapsed('importCode')) {
+              <textarea class="code-input" [value]="store.importCode()" spellcheck="false" (input)="onImportCodeInput($event)"></textarea>
+              <button class="primary-button primary-button--wide" type="button" (click)="applyImportCode()">{{ t('applyTikz') }}</button>
+              @if (parserWarnings().length) {
+                <div class="warning-box">
+                  <p>{{ t('codeWarnings') }}</p>
+                  <ul>
+                    @for (warning of parserWarnings(); track warning) {
+                      <li>{{ warning }}</li>
+                    }
+                  </ul>
+                </div>
+              }
             }
           </section>
         }
-
-        <section class="sidebar-block">
-          <div class="section-header">{{ t('objects') }}</div>
-          <div class="object-list">
-            @for (shape of layerShapes(); track shape.id) {
-              <button
-                class="object-row"
-                type="button"
-                [class.is-active]="selectedShape()?.id === shape.id"
-                (click)="selectShape(shape.id)">
-                <span class="object-row__icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="shapeIcon(shape)"></path>
-                  </svg>
-                </span>
-                <span class="object-row__content">
-                  <strong>{{ shape.name }}</strong>
-                  <small>{{ localizedShapeKind(shape.kind) }}</small>
-                </span>
-              </button>
-            }
-          </div>
-        </section>
       </div>
     </aside>
   </div>
 
   @if (contextMenu(); as menu) {
-    <div
-      class="context-menu"
-      [style.left.px]="menu.clientX"
-      [style.top.px]="menu.clientY"
-      role="menu"
-      (click)="$event.stopPropagation()">
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('duplicate')">
-        {{ t('duplicate') }}
-      </button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('delete')">
-        {{ t('delete') }}
-      </button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('front')">
-        {{ t('bringToFront') }}
-      </button>
-      <button type="button" [disabled]="!selectedShape()" (click)="runContextAction('back')">
-        {{ t('sendToBack') }}
-      </button>
+    <div class="context-menu" [style.left.px]="menu.clientX" [style.top.px]="menu.clientY" role="menu" (click)="$event.stopPropagation()">
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('duplicate')">{{ t('duplicate') }}</button>
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('delete')">{{ t('delete') }}</button>
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('front')">{{ t('bringToFront') }}</button>
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('back')">{{ t('sendToBack') }}</button>
+    </div>
+  }
+
+  @if (exportModalOpen()) {
+    <div class="modal-backdrop" (click)="closeExportModal()">
+      <section class="export-modal" (click)="$event.stopPropagation()">
+        <header class="export-modal__header">
+          <div>
+            <p>{{ t('exportTitle') }}</p>
+            <h2>{{ t('export') }}</h2>
+            <span>{{ t('exportDescription') }}</span>
+          </div>
+          <button class="icon-button" type="button" (click)="closeExportModal()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg></button>
+        </header>
+        <div class="export-toolbar">
+          <div class="mode-switch">
+            <button type="button" [class.is-active]="exportMode() === 'snippet'" (click)="exportMode.set('snippet')">{{ t('snippet') }}</button>
+            <button type="button" [class.is-active]="exportMode() === 'standalone'" (click)="exportMode.set('standalone')">{{ t('standalone') }}</button>
+          </div>
+          <div class="inline-actions">
+            <button class="secondary-button" type="button" (click)="copyExportedCode()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg><span>{{ t('copyTikz') }}</span></button>
+            <button class="secondary-button" type="button" (click)="copyStandaloneCode()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg><span>{{ t('copyStandalone') }}</span></button>
+            <button class="secondary-button" type="button" (click)="downloadStandaloneFile()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.download"></path></svg><span>{{ t('downloadTex') }}</span></button>
+          </div>
+        </div>
+        <div class="share-panel">
+          <label class="field field--full">
+            <span>{{ t('shareLink') }}</span>
+            <div class="share-field">
+              <input type="text" readonly [value]="shareUrl()" />
+              <button class="secondary-button" type="button" (click)="copyShareLink()"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.share"></path></svg><span>{{ t('copyLink') }}</span></button>
+              <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.open"></path></svg><span>{{ t('openSharedLink') }}</span></a>
+            </div>
+          </label>
+          @if (shareFeedback()) {
+            <div class="copy-feedback">{{ shareFeedback() }}</div>
+          }
+        </div>
+        <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+      </section>
     </div>
   }
 </div>

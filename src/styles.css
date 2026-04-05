@@ -1,60 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-
 :root {
   color-scheme: dark;
-  --app-background: #101419;
-  --app-foreground: #e6ecf2;
-  --muted-foreground: #86909c;
-  --border: rgba(144, 156, 173, 0.18);
-  --accent: #3ba6ff;
-  --accent-strong: #87c9ff;
-  --accent-contrast: #061a2f;
-  --danger: #ff7d7d;
-  --warning: #d7a54a;
-  --panel-background: #13181f;
-  --toolbar-background: #151b23;
-  --toolbar-background-hover: #1a222c;
-  --tool-surface: #171f29;
-  --tool-foreground: #e6ecf2;
-  --tool-border: rgba(144, 156, 173, 0.18);
-  --tool-border-strong: rgba(144, 156, 173, 0.4);
-  --input-background: #10161d;
-  --canvas-shell-background: #0e1319;
-  --canvas-background: #0f151c;
-  --grid-line: rgba(144, 156, 173, 0.08);
-  --grid-line-strong: rgba(144, 156, 173, 0.05);
-  --axis-line: rgba(59, 166, 255, 0.4);
-  --selection-glow: rgba(59, 166, 255, 0.28);
-  --handle-fill: #f8fbff;
-  font-family: 'IBM Plex Sans', 'Segoe UI Variable Text', sans-serif;
+  --font-sans:
+    Aptos, 'Segoe UI Variable Display', 'SF Pro Display', 'Segoe UI', sans-serif;
+  --font-mono:
+    'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
+  --app-background: #f4f4f4;
+  --app-foreground: #141414;
+  --muted-foreground: #707070;
+  --border: rgba(17, 17, 17, 0.1);
+  --accent: #2f66f3;
+  --accent-strong: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(47, 102, 243, 0.1);
+  --accent-soft-border: rgba(47, 102, 243, 0.22);
+  --danger: #bf4b46;
+  --warning: #9d7428;
+  --panel-background: rgba(251, 251, 251, 0.96);
+  --toolbar-background: rgba(244, 244, 244, 0.96);
+  --toolbar-background-hover: #efefef;
+  --tool-surface: #ffffff;
+  --tool-foreground: #141414;
+  --tool-border: rgba(17, 17, 17, 0.12);
+  --tool-border-strong: rgba(17, 17, 17, 0.22);
+  --input-background: #ffffff;
+  --canvas-shell-background: #efefef;
+  --canvas-background: #ffffff;
+  --canvas-crosshair: rgba(20, 20, 20, 0.06);
+  --grid-line: rgba(20, 20, 20, 0.05);
+  --axis-line: rgba(20, 20, 20, 0.12);
+  --selection-glow: rgba(47, 102, 243, 0.18);
+  --handle-fill: #ffffff;
+  --app-gradient: transparent;
+  --floating-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  font-family: var(--font-sans);
 }
 
 [data-theme='light'] {
   color-scheme: light;
-  --app-background: #e9edf2;
-  --app-foreground: #15202b;
-  --muted-foreground: #647182;
-  --border: rgba(116, 128, 144, 0.2);
-  --accent: #1570ef;
-  --accent-strong: #0f56c7;
-  --accent-contrast: #f7fbff;
-  --danger: #c2410c;
-  --warning: #b7791f;
-  --panel-background: #f5f7fa;
-  --toolbar-background: #eef2f6;
-  --toolbar-background-hover: #e7edf4;
-  --tool-surface: #fdfefe;
-  --tool-foreground: #15202b;
-  --tool-border: rgba(116, 128, 144, 0.22);
-  --tool-border-strong: rgba(116, 128, 144, 0.42);
+  --app-background: #f4f4f4;
+  --app-foreground: #141414;
+  --muted-foreground: #707070;
+  --border: rgba(17, 17, 17, 0.1);
+  --accent: #2f66f3;
+  --accent-strong: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(47, 102, 243, 0.1);
+  --accent-soft-border: rgba(47, 102, 243, 0.22);
+  --danger: #bf4b46;
+  --warning: #9d7428;
+  --panel-background: rgba(251, 251, 251, 0.96);
+  --toolbar-background: rgba(244, 244, 244, 0.96);
+  --toolbar-background-hover: #efefef;
+  --tool-surface: #ffffff;
+  --tool-foreground: #141414;
+  --tool-border: rgba(17, 17, 17, 0.12);
+  --tool-border-strong: rgba(17, 17, 17, 0.22);
   --input-background: #ffffff;
-  --canvas-shell-background: #e4e9ef;
-  --canvas-background: #f9fbfd;
-  --grid-line: rgba(116, 128, 144, 0.1);
-  --grid-line-strong: rgba(116, 128, 144, 0.06);
-  --axis-line: rgba(21, 112, 239, 0.34);
-  --selection-glow: rgba(21, 112, 239, 0.18);
+  --canvas-shell-background: #efefef;
+  --canvas-background: #ffffff;
+  --canvas-crosshair: rgba(20, 20, 20, 0.06);
+  --grid-line: rgba(20, 20, 20, 0.05);
+  --axis-line: rgba(20, 20, 20, 0.12);
+  --selection-glow: rgba(47, 102, 243, 0.18);
   --handle-fill: #ffffff;
+  --app-gradient: transparent;
+  --floating-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --app-background: #131313;
+  --app-foreground: #f4f4f4;
+  --muted-foreground: #9b9b9b;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #5d8cff;
+  --accent-strong: #8ab0ff;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(93, 140, 255, 0.16);
+  --accent-soft-border: rgba(93, 140, 255, 0.28);
+  --danger: #ff8a7d;
+  --warning: #d6ac58;
+  --panel-background: rgba(24, 24, 24, 0.96);
+  --toolbar-background: rgba(20, 20, 20, 0.96);
+  --toolbar-background-hover: #242424;
+  --tool-surface: #1d1d1d;
+  --tool-foreground: #f4f4f4;
+  --tool-border: rgba(255, 255, 255, 0.12);
+  --tool-border-strong: rgba(255, 255, 255, 0.22);
+  --input-background: #171717;
+  --canvas-shell-background: #121212;
+  --canvas-background: #161616;
+  --canvas-crosshair: rgba(255, 255, 255, 0.06);
+  --grid-line: rgba(255, 255, 255, 0.05);
+  --axis-line: rgba(255, 255, 255, 0.12);
+  --selection-glow: rgba(93, 140, 255, 0.22);
+  --handle-fill: #ffffff;
+  --app-gradient: transparent;
+  --floating-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
 }
 
 * {
@@ -71,11 +113,14 @@ body {
   background: var(--app-background);
   color: var(--app-foreground);
   font-size: 14px;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 

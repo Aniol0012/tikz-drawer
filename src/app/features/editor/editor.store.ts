@@ -15,11 +15,64 @@ const cloneShape = (shape: CanvasShape): CanvasShape => ({
 
 const cloneScene = (scene: TikzScene): TikzScene => structuredClone(scene);
 
+const shapeBounds = (
+  shape: CanvasShape
+): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
+  switch (shape.kind) {
+    case 'rectangle':
+      return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+    case 'circle':
+      return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+    case 'ellipse':
+      return { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry };
+    case 'line':
+      return {
+        left: Math.min(shape.from.x, shape.to.x),
+        right: Math.max(shape.from.x, shape.to.x),
+        bottom: Math.min(shape.from.y, shape.to.y),
+        top: Math.max(shape.from.y, shape.to.y)
+      };
+    case 'text': {
+      const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
+      const height = shape.fontSize * 0.72;
+      return {
+        left: shape.x - width / 2,
+        right: shape.x + width / 2,
+        bottom: shape.y - height / 2,
+        top: shape.y + height / 2
+      };
+    }
+  }
+};
+
+const centerShapesOnPoint = (shapes: readonly CanvasShape[], point: { x: number; y: number }): readonly CanvasShape[] => {
+  if (!shapes.length) {
+    return shapes;
+  }
+
+  const bounds = shapes.reduce(
+    (currentBounds, shape) => {
+      const nextBounds = shapeBounds(shape);
+      return {
+        left: Math.min(currentBounds.left, nextBounds.left),
+        right: Math.max(currentBounds.right, nextBounds.right),
+        top: Math.max(currentBounds.top, nextBounds.top),
+        bottom: Math.min(currentBounds.bottom, nextBounds.bottom)
+      };
+    },
+    { left: Number.POSITIVE_INFINITY, right: Number.NEGATIVE_INFINITY, top: Number.NEGATIVE_INFINITY, bottom: Number.POSITIVE_INFINITY }
+  );
+
+  const centerX = (bounds.left + bounds.right) / 2;
+  const centerY = (bounds.top + bounds.bottom) / 2;
+  return shapes.map((shape) => translateShape(shape, point.x - centerX, point.y - centerY));
+};
+
 interface EditorSnapshot {
   readonly scene: TikzScene;
   readonly preferences: EditorPreferences;
   readonly importCode: string;
-  readonly selectedShapeId: string | null;
+  readonly selectedShapeIds: readonly string[];
 }
 
 const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
@@ -63,6 +116,62 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
   }
 };
 
+const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferences): CanvasShape => {
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        stroke: shape.stroke,
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+      };
+    case 'rectangle':
+    case 'circle':
+    case 'ellipse':
+      return {
+        ...shape,
+        stroke: shape.stroke,
+        fill: shape.fill,
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+      };
+    case 'text':
+      return shape;
+  }
+};
+
+const moveShapeToPoint = (shape: CanvasShape, point: { x: number; y: number }): CanvasShape => {
+  switch (shape.kind) {
+    case 'line': {
+      const centerX = (shape.from.x + shape.to.x) / 2;
+      const centerY = (shape.from.y + shape.to.y) / 2;
+      return translateShape(shape, point.x - centerX, point.y - centerY);
+    }
+    case 'rectangle':
+      return {
+        ...shape,
+        x: point.x - shape.width / 2,
+        y: point.y - shape.height / 2
+      };
+    case 'circle':
+      return {
+        ...shape,
+        cx: point.x,
+        cy: point.y
+      };
+    case 'ellipse':
+      return {
+        ...shape,
+        cx: point.x,
+        cy: point.y
+      };
+    case 'text':
+      return {
+        ...shape,
+        x: point.x,
+        y: point.y
+      };
+  }
+};
+
 @Injectable()
 export class EditorStore {
   private readonly storage = typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;
@@ -71,14 +180,24 @@ export class EditorStore {
 
   readonly preferences = signal<EditorPreferences>(defaultPreferences);
   readonly scene = signal<TikzScene>(cloneScene(defaultScene));
-  readonly selectedShapeId = signal<string | null>(null);
+  readonly selectedShapeIds = signal<readonly string[]>([]);
   readonly importCode = signal(sceneToTikz(defaultScene));
   readonly parserWarnings = signal<readonly string[]>([]);
 
   readonly selectedShape = computed<CanvasShape | null>(() => {
-    const id = this.selectedShapeId();
-    return this.scene().shapes.find((shape) => shape.id === id) ?? null;
+    const selectedShapeIds = this.selectedShapeIds();
+
+    if (selectedShapeIds.length !== 1) {
+      return null;
+    }
+
+    return this.scene().shapes.find((shape) => shape.id === selectedShapeIds[0]) ?? null;
   });
+  readonly selectedShapes = computed<readonly CanvasShape[]>(() => {
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
+    return this.scene().shapes.filter((shape) => selectedShapeIdSet.has(shape.id));
+  });
+  readonly selectionCount = computed(() => this.selectedShapeIds().length);
 
   readonly exportedCode = computed(() => sceneToTikz(this.scene()));
   readonly objectPresets = objectPresets;
@@ -132,7 +251,19 @@ export class EditorStore {
   }
 
   selectShape(shapeId: string | null): void {
-    this.selectedShapeId.set(shapeId);
+    this.selectedShapeIds.set(shapeId ? [shapeId] : []);
+  }
+
+  setSelectedShapes(shapeIds: readonly string[]): void {
+    this.selectedShapeIds.set([...new Set(shapeIds)]);
+  }
+
+  toggleShapeInSelection(shapeId: string): void {
+    this.selectedShapeIds.update((selectedShapeIds) =>
+      selectedShapeIds.includes(shapeId)
+        ? selectedShapeIds.filter((selectedShapeId) => selectedShapeId !== shapeId)
+        : [...selectedShapeIds, shapeId]
+    );
   }
 
   applyScenePreset(presetId: string): void {
@@ -147,48 +278,62 @@ export class EditorStore {
     this.parserWarnings.set([]);
   }
 
-  addShapeFromPreset(presetId: string): void {
+  addPreset(presetId: string): readonly CanvasShape[] {
     const preset = this.objectPresets.find((entry) => entry.id === presetId);
 
     if (!preset) {
-      return;
+      return [];
     }
 
-    const shape = cloneShape(preset.shape);
+    const shapes = preset.shapes.map((shape) => applyDefaultShapeStyle(cloneShape(shape), this.preferences()));
     this.scene.update((scene) => ({
       ...scene,
-      shapes: [...scene.shapes, shape]
+      shapes: [...scene.shapes, ...shapes]
     }));
-    this.selectedShapeId.set(shape.id);
+    this.selectedShapeIds.set(shapes.map((shape) => shape.id));
+    return shapes;
+  }
+
+  addPresetAt(presetId: string, point: { x: number; y: number }): readonly CanvasShape[] {
+    const shapes = this.addPreset(presetId);
+
+    if (!shapes.length) {
+      return [];
+    }
+
+    const movedShapes = centerShapesOnPoint(shapes, point);
+    this.replaceShapes(movedShapes);
+    this.selectedShapeIds.set(movedShapes.map((shape) => shape.id));
+    return movedShapes;
   }
 
   removeSelected(): void {
-    const selectedId = this.selectedShapeId();
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
 
-    if (!selectedId) {
+    if (selectedShapeIdSet.size === 0) {
       return;
     }
 
     this.scene.update((scene) => ({
       ...scene,
-      shapes: scene.shapes.filter((shape) => shape.id !== selectedId)
+      shapes: scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id))
     }));
-    this.selectedShapeId.set(null);
+    this.selectedShapeIds.set([]);
   }
 
   duplicateSelected(): void {
-    const selected = this.selectedShape();
+    const selectedShapes = this.selectedShapes();
 
-    if (!selected) {
+    if (!selectedShapes.length) {
       return;
     }
 
-    const duplicated = translateShape(cloneShape(selected), 0.6, -0.6);
+    const duplicatedShapes = selectedShapes.map((shape) => translateShape(cloneShape(shape), 0.6, -0.6));
     this.scene.update((scene) => ({
       ...scene,
-      shapes: [...scene.shapes, duplicated]
+      shapes: [...scene.shapes, ...duplicatedShapes]
     }));
-    this.selectedShapeId.set(duplicated.id);
+    this.selectedShapeIds.set(duplicatedShapes.map((shape) => shape.id));
   }
 
   renameScene(name: string): void {
@@ -213,60 +358,75 @@ export class EditorStore {
   }
 
   patchSelectedShape(mutator: (shape: CanvasShape) => CanvasShape): void {
-    const selectedId = this.selectedShapeId();
+    const selectedShape = this.selectedShape();
 
-    if (!selectedId) {
+    if (!selectedShape) {
       return;
     }
 
     this.scene.update((scene) => ({
       ...scene,
-      shapes: scene.shapes.map((shape) => (shape.id === selectedId ? mutator(shape) : shape))
+      shapes: scene.shapes.map((shape) => (shape.id === selectedShape.id ? mutator(shape) : shape))
+    }));
+  }
+
+  replaceShapes(nextShapes: readonly CanvasShape[]): void {
+    const nextShapeMap = new Map(nextShapes.map((shape) => [shape.id, shape]));
+    if (nextShapeMap.size === 0) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.map((shape) => nextShapeMap.get(shape.id) ?? shape)
     }));
   }
 
   moveSelectedBy(deltaX: number, deltaY: number): void {
-    this.patchSelectedShape((selected) => translateShape(selected, deltaX, deltaY));
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
+
+    if (selectedShapeIdSet.size === 0) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? translateShape(shape, deltaX, deltaY) : shape))
+    }));
   }
 
   bringSelectedToFront(): void {
-    const selectedId = this.selectedShapeId();
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
 
-    if (!selectedId) {
+    if (selectedShapeIdSet.size === 0) {
       return;
     }
 
     this.scene.update((scene) => {
-      const selectedShape = scene.shapes.find((shape) => shape.id === selectedId);
-
-      if (!selectedShape) {
-        return scene;
-      }
-
       return {
         ...scene,
-        shapes: [...scene.shapes.filter((shape) => shape.id !== selectedId), selectedShape]
+        shapes: [
+          ...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id)),
+          ...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id))
+        ]
       };
     });
   }
 
   sendSelectedToBack(): void {
-    const selectedId = this.selectedShapeId();
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
 
-    if (!selectedId) {
+    if (selectedShapeIdSet.size === 0) {
       return;
     }
 
     this.scene.update((scene) => {
-      const selectedShape = scene.shapes.find((shape) => shape.id === selectedId);
-
-      if (!selectedShape) {
-        return scene;
-      }
-
       return {
         ...scene,
-        shapes: [selectedShape, ...scene.shapes.filter((shape) => shape.id !== selectedId)]
+        shapes: [
+          ...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id)),
+          ...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id))
+        ]
       };
     });
   }
@@ -285,6 +445,19 @@ export class EditorStore {
 
   useExportedCodeAsImport(): void {
     this.importCode.set(this.exportedCode());
+  }
+
+  restoreSharedState(state: PersistedEditorState): void {
+    this.scene.set(cloneScene(state.scene));
+    this.preferences.set({
+      ...defaultPreferences,
+      ...structuredClone(state.preferences)
+    });
+    this.importCode.set(typeof state.importCode === 'string' ? state.importCode : sceneToTikz(state.scene));
+    this.parserWarnings.set([]);
+    this.selectedShapeIds.set([]);
+    this.undoSnapshots.set([]);
+    this.redoSnapshots.set([]);
   }
 
   private restoreState(): void {
@@ -323,7 +496,7 @@ export class EditorStore {
       scene: cloneScene(this.scene()),
       preferences: structuredClone(this.preferences()),
       importCode: this.importCode(),
-      selectedShapeId: this.selectedShapeId()
+      selectedShapeIds: structuredClone(this.selectedShapeIds())
     };
   }
 
@@ -331,11 +504,11 @@ export class EditorStore {
     this.scene.set(cloneScene(snapshot.scene));
     this.preferences.set(structuredClone(snapshot.preferences));
     this.importCode.set(snapshot.importCode);
-    this.selectedShapeId.set(snapshot.selectedShapeId);
+    this.selectedShapeIds.set(snapshot.selectedShapeIds);
   }
 
   private setScene(scene: TikzScene): void {
     this.scene.set(cloneScene(scene));
-    this.selectedShapeId.set(scene.shapes[0]?.id ?? null);
+    this.selectedShapeIds.set(scene.shapes[0] ? [scene.shapes[0].id] : []);
   }
 }

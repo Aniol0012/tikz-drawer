@@ -77,6 +77,10 @@ export interface EditorPreferences {
   readonly showGrid: boolean;
   readonly showAxes: boolean;
   readonly scale: number;
+  readonly snapStep: number;
+  readonly defaultStroke: string;
+  readonly defaultFill: string;
+  readonly defaultStrokeWidth: number;
 }
 
 export interface PersistedEditorState {
@@ -85,12 +89,17 @@ export interface PersistedEditorState {
   readonly importCode: string;
 }
 
+export type PresetCategory = 'essentials' | 'flow' | 'geometry' | 'data' | 'interface' | 'concepts';
+
 export interface ObjectPreset {
   readonly id: string;
+  readonly category: PresetCategory;
   readonly icon: string;
   readonly title: string;
   readonly description: string;
-  readonly shape: CanvasShape;
+  readonly quickAccess?: boolean;
+  readonly searchTerms?: readonly string[];
+  readonly shapes: readonly CanvasShape[];
 }
 
 export interface ScenePreset {

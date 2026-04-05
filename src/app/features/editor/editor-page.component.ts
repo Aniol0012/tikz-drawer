@@ -11,20 +11,49 @@ import {
   viewChild
 } from '@angular/core';
 import packageManifest from '../../../../package.json';
+import { iconPaths, getIconPath } from './editor-icons';
+import {
+  categoryOrder,
+  categoryTranslationKey,
+  detectLanguage,
+  localizedShapeKinds,
+  translations,
+  type LanguageCode,
+  type SharedScenePayload
+} from './editor-page.i18n';
+import { decodeSharePayload, encodeSharePayload, formatValue, highlightLatex, translateShapeBy } from './editor-page.utils';
 import { sceneToStandaloneDocument } from './tikz.codegen';
 import { EditorStore } from './editor.store';
-import type { CanvasShape, LineShape, ObjectPreset, ScenePreset, ThemeMode } from './tikz.models';
+import type {
+  CanvasShape,
+  EditorPreferences,
+  LineShape,
+  ObjectPreset,
+  Point,
+  PresetCategory,
+  ScenePreset,
+  ThemeMode
+} from './tikz.models';
 
-type InspectorTab = 'properties' | 'code';
-type LanguageCode = 'en' | 'ca';
+type InspectorTab = 'properties' | 'scene' | 'code';
+type ExportMode = 'snippet' | 'standalone';
+type ToolId = 'select' | string;
 type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to';
 type ContextTarget = 'canvas' | 'shape';
 
 interface ToolDescriptor {
-  readonly id: string;
+  readonly id: ToolId;
   readonly label: string;
   readonly description: string;
   readonly iconPath: string;
+  readonly shortcut?: string;
+}
+
+interface LibrarySection {
+  readonly category: PresetCategory;
+  readonly title: string;
+  readonly iconPath: string;
+  readonly presets: readonly ObjectPreset[];
 }
 
 interface SelectionBounds {
@@ -44,19 +73,14 @@ interface HandleDescriptor {
 interface MoveInteractionState {
   readonly kind: 'move';
   readonly pointerId: number;
-  readonly lastWorldPoint: {
-    readonly x: number;
-    readonly y: number;
-  };
+  readonly startWorldPoint: Point;
+  readonly initialShapes: readonly CanvasShape[];
 }
 
 interface PanInteractionState {
   readonly kind: 'pan';
   readonly pointerId: number;
-  readonly lastClientPoint: {
-    readonly x: number;
-    readonly y: number;
-  };
+  readonly lastClientPoint: Point;
 }
 
 interface ResizeInteractionState {
@@ -66,7 +90,19 @@ interface ResizeInteractionState {
   readonly initialShape: CanvasShape;
 }
 
-type InteractionState = MoveInteractionState | PanInteractionState | ResizeInteractionState;
+interface MarqueeInteractionState {
+  readonly kind: 'marquee';
+  readonly pointerId: number;
+  readonly startWorldPoint: Point;
+  readonly currentWorldPoint: Point;
+  readonly additive: boolean;
+}
+
+type InteractionState =
+  | MoveInteractionState
+  | PanInteractionState
+  | ResizeInteractionState
+  | MarqueeInteractionState;
 
 interface ContextMenuState {
   readonly clientX: number;
@@ -75,259 +111,11 @@ interface ContextMenuState {
   readonly shapeId: string | null;
 }
 
-type TranslationKey =
-  | 'brand'
-  | 'searchComponents'
-  | 'tools'
-  | 'templates'
-  | 'select'
-  | 'properties'
-  | 'tikzCode'
-  | 'objects'
-  | 'scene'
-  | 'selectedObject'
-  | 'noneSelected'
-  | 'zoomOut'
-  | 'zoomIn'
-  | 'undo'
-  | 'redo'
-  | 'export'
-  | 'copy'
-  | 'download'
-  | 'applyTikz'
-  | 'sendToImport'
-  | 'generatedCode'
-  | 'importCode'
-  | 'name'
-  | 'stroke'
-  | 'strokeWidth'
-  | 'fill'
-  | 'text'
-  | 'fontSize'
-  | 'color'
-  | 'radius'
-  | 'width'
-  | 'height'
-  | 'x'
-  | 'y'
-  | 'cx'
-  | 'cy'
-  | 'rx'
-  | 'ry'
-  | 'fromX'
-  | 'fromY'
-  | 'toX'
-  | 'toY'
-  | 'arrowStart'
-  | 'arrowEnd'
-  | 'showGrid'
-  | 'showAxes'
-  | 'snapToGrid'
-  | 'canvasSettings'
-  | 'startDrawing'
-  | 'startDrawingHint'
-  | 'duplicate'
-  | 'delete'
-  | 'bringToFront'
-  | 'sendToBack'
-  | 'nothingSelected'
-  | 'selection'
-  | 'codeWarnings'
-  | 'language'
-  | 'version';
-
-const translations: Record<LanguageCode, Record<TranslationKey, string>> = {
-  en: {
-    brand: 'TIKZ DRAWER',
-    searchComponents: 'Search component',
-    tools: 'Tools',
-    templates: 'Templates',
-    select: 'Select',
-    properties: 'Properties',
-    tikzCode: 'TikZ code',
-    objects: 'Objects',
-    scene: 'Scene',
-    selectedObject: 'Selected object',
-    noneSelected: 'None',
-    zoomOut: 'Zoom out',
-    zoomIn: 'Zoom in',
-    undo: 'Undo',
-    redo: 'Redo',
-    export: 'Export',
-    copy: 'Copy',
-    download: 'Download',
-    applyTikz: 'Apply TikZ',
-    sendToImport: 'Send to import',
-    generatedCode: 'Generated code',
-    importCode: 'Import code',
-    name: 'Name',
-    stroke: 'Stroke',
-    strokeWidth: 'Stroke width',
-    fill: 'Fill',
-    text: 'Text',
-    fontSize: 'Font size',
-    color: 'Color',
-    radius: 'Radius',
-    width: 'Width',
-    height: 'Height',
-    x: 'X',
-    y: 'Y',
-    cx: 'CX',
-    cy: 'CY',
-    rx: 'RX',
-    ry: 'RY',
-    fromX: 'From X',
-    fromY: 'From Y',
-    toX: 'To X',
-    toY: 'To Y',
-    arrowStart: 'Arrow start',
-    arrowEnd: 'Arrow end',
-    showGrid: 'Show grid',
-    showAxes: 'Show axes',
-    snapToGrid: 'Snap to grid',
-    canvasSettings: 'Canvas settings',
-    startDrawing: 'Start drawing on the canvas',
-    startDrawingHint: 'Pick a tool or template and place elements directly on the workspace.',
-    duplicate: 'Duplicate',
-    delete: 'Delete',
-    bringToFront: 'Bring to front',
-    sendToBack: 'Send to back',
-    nothingSelected: 'Nothing selected',
-    selection: 'Selection',
-    codeWarnings: 'Some lines were skipped:',
-    language: 'Language',
-    version: 'Version'
-  },
-  ca: {
-    brand: 'TIKZ DRAWER',
-    searchComponents: 'Cercar component',
-    tools: 'Eines',
-    templates: 'Plantilles',
-    select: 'Seleccionar',
-    properties: 'Propietats',
-    tikzCode: 'Codi TikZ',
-    objects: 'Objectes',
-    scene: 'Escena',
-    selectedObject: 'Objecte seleccionat',
-    noneSelected: 'Cap',
-    zoomOut: 'Allunyar',
-    zoomIn: 'Apropar',
-    undo: 'Desfer',
-    redo: 'Refer',
-    export: 'Exportar',
-    copy: 'Copiar',
-    download: 'Descarregar',
-    applyTikz: 'Aplicar TikZ',
-    sendToImport: "Enviar a l'importador",
-    generatedCode: 'Codi generat',
-    importCode: 'Importar codi',
-    name: 'Nom',
-    stroke: 'Línia',
-    strokeWidth: 'Gruix',
-    fill: 'Farcit',
-    text: 'Text',
-    fontSize: 'Mida font',
-    color: 'Color',
-    radius: 'Radi',
-    width: 'Amplada',
-    height: 'Alçada',
-    x: 'X',
-    y: 'Y',
-    cx: 'CX',
-    cy: 'CY',
-    rx: 'RX',
-    ry: 'RY',
-    fromX: 'Origen X',
-    fromY: 'Origen Y',
-    toX: 'Destí X',
-    toY: 'Destí Y',
-    arrowStart: 'Fletxa inici',
-    arrowEnd: 'Fletxa final',
-    showGrid: 'Mostrar graella',
-    showAxes: 'Mostrar eixos',
-    snapToGrid: 'Ajustar a graella',
-    canvasSettings: 'Paràmetres del llenç',
-    startDrawing: 'Comença a dibuixar al llenç',
-    startDrawingHint: "Escull una eina o una plantilla i col·loca elements directament a l'espai de treball.",
-    duplicate: 'Duplicar',
-    delete: 'Eliminar',
-    bringToFront: 'Portar al davant',
-    sendToBack: 'Enviar al fons',
-    nothingSelected: 'Res seleccionat',
-    selection: 'Selecció',
-    codeWarnings: "S'han ignorat algunes línies:",
-    language: 'Idioma',
-    version: 'Versió'
-  }
-};
-
-const localizedPresetLabels: Record<
-  LanguageCode,
-  Record<string, { readonly title: string; readonly description: string }>
-> = {
-  en: {
-    segment: { title: 'Segment', description: 'Straight line segment' },
-    arrow: { title: 'Arrow', description: 'Directional line' },
-    box: { title: 'Rectangle', description: 'Block or container' },
-    circle: { title: 'Circle', description: 'Circular node' },
-    ellipse: { title: 'Ellipse', description: 'Elliptic node' },
-    label: { title: 'Text', description: 'Text label' },
-    blank: { title: 'Blank board', description: 'Empty drawing surface' },
-    'triangle-diagram': { title: 'Triangle diagram', description: 'Basic geometry scaffold' },
-    'flow-starter': { title: 'Flow starter', description: 'Small flowchart starter' },
-    'plot-callout': { title: 'Plot callout', description: 'Chart with annotation' }
-  },
-  ca: {
-    segment: { title: 'Segment', description: 'Segment recte' },
-    arrow: { title: 'Fletxa', description: 'Línia direccional' },
-    box: { title: 'Rectangle', description: 'Bloc o contenidor' },
-    circle: { title: 'Cercle', description: 'Node circular' },
-    ellipse: { title: 'El·lipse', description: 'Node el·líptic' },
-    label: { title: 'Text', description: 'Etiqueta de text' },
-    blank: { title: 'Tauler buit', description: 'Superfície de dibuix buida' },
-    'triangle-diagram': { title: 'Diagrama triangle', description: 'Base geomètrica simple' },
-    'flow-starter': { title: 'Flux inicial', description: 'Esquelet de flux' },
-    'plot-callout': { title: 'Gràfica anotada', description: 'Gràfica amb anotació' }
-  }
-};
-
-const localizedShapeKinds: Record<LanguageCode, Record<CanvasShape['kind'], string>> = {
-  en: { line: 'Line', rectangle: 'Rectangle', circle: 'Circle', ellipse: 'Ellipse', text: 'Text' },
-  ca: { line: 'Línia', rectangle: 'Rectangle', circle: 'Cercle', ellipse: 'El·lipse', text: 'Text' }
-};
-
-const iconPaths = {
-  select: 'M5 4.5 18 12l-5.5 1.7 2.1 5.3-2.1 1L10.4 14 6.9 18.6 5 17.1 8.5 12.7 5 4.5Z',
-  zoomOut: 'M4 11h10v2H4v-2Zm12.5 5.1 3.7 3.7-1.4 1.4-3.7-3.7 1.4-1.4ZM11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
-  zoomIn:
-    'M10 10V6h2v4h4v2h-4v4h-2v-4H6v-2h4Zm6.5 6.1 3.7 3.7-1.4 1.4-3.7-3.7 1.4-1.4ZM11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
-  undo: 'M7.4 7.4V4L1.9 9.5 7.4 15V11.6h5.4a3.6 3.6 0 1 1 0 7.2H8.5V21h4.3a5.8 5.8 0 1 0 0-11.6H7.4Z',
-  redo: 'M16.6 7.4V4l5.5 5.5-5.5 5.5v-3.4h-5.4a3.6 3.6 0 1 0 0 7.2h4.3V21h-4.3a5.8 5.8 0 1 1 0-11.6h5.4Z',
-  github:
-    'M12 1.5a10.5 10.5 0 0 0-3.32 20.47c.52.1.71-.22.71-.5v-1.75c-2.9.63-3.51-1.22-3.51-1.22-.48-1.2-1.17-1.53-1.17-1.53-.96-.66.08-.65.08-.65 1.06.07 1.62 1.08 1.62 1.08.94 1.61 2.46 1.14 3.06.87.1-.68.37-1.15.67-1.41-2.31-.26-4.75-1.15-4.75-5.13 0-1.13.4-2.05 1.06-2.77-.11-.26-.46-1.31.1-2.73 0 0 .87-.28 2.85 1.05a9.96 9.96 0 0 1 5.2 0c1.98-1.33 2.85-1.05 2.85-1.05.56 1.42.21 2.47.1 2.73.66.72 1.06 1.64 1.06 2.77 0 3.99-2.45 4.87-4.79 5.12.38.33.71.97.71 1.96v2.91c0 .28.19.61.72.5A10.5 10.5 0 0 0 12 1.5Z',
-  segment: 'M4 18 18 6l2 2-14 12-2-2Z',
-  arrow: 'M4 12h11.17l-3.58-3.59L13 7l6 6-6 6-1.41-1.41L15.17 14H4v-2Z',
-  rectangle:
-    'M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z',
-  circle: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
-  ellipse:
-    'M12 5c-4.97 0-9 3.13-9 7s4.03 7 9 7 9-3.13 9-7-4.03-7-9-7Zm0 2c3.93 0 7 2.24 7 5s-3.07 5-7 5-7-2.24-7-5 3.07-5 7-5Z',
-  text: 'M5 5h14v2H13v12h-2V7H5V5Z',
-  blank: 'M5 5h14v14H5z',
-  triangle: 'M12 5 4 19h16L12 5Zm0 4.1 4.54 7.9H7.46L12 9.1Z',
-  flow: 'M4 7h6v4H4V7Zm10 0h6v4h-6V7ZM9 13h6v4H9v-4Zm-1-4h8v2H8V9Zm3 4V9h2v4h-2Z',
-  plot: 'M5 5h2v12h12v2H5V5Zm3 8.5 2.8-2.8 2.2 2.2 4-4L18.4 10l-5.4 5.4-2.2-2.2L9.4 14.6 8 13.5Z',
-  sun: 'M12 4.5a1 1 0 0 1 1 1V7a1 1 0 1 1-2 0V5.5a1 1 0 0 1 1-1Zm0 12a1 1 0 0 1 1 1V19a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm7.5-5.5a1 1 0 0 1 0 2H18a1 1 0 1 1 0-2h1.5ZM7 12a1 1 0 0 1-1 1H4.5a1 1 0 1 1 0-2H6a1 1 0 0 1 1 1Zm8.3-4.89a1 1 0 0 1 1.4-1.41l1.06 1.06a1 1 0 1 1-1.41 1.41L15.3 7.11Zm-8.01 8.02a1 1 0 0 1 1.41 0l1.06 1.06a1 1 0 0 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 0-1.41Zm9.47.94a1 1 0 0 1 0-1.41l1.06-1.06a1 1 0 1 1 1.41 1.41l-1.06 1.06a1 1 0 0 1-1.41 0ZM8.35 8.17a1 1 0 0 1-1.41 0L5.88 7.11A1 1 0 0 1 7.3 5.7l1.06 1.06a1 1 0 0 1 0 1.41ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
-  moon: 'M14.7 3.1a8 8 0 1 0 6.2 11.8 8.5 8.5 0 1 1-6.2-11.8Z',
-  copy: 'M8 8h11v12H8V8Zm-3-4h11v2H7v10H5V4Z',
-  trash: 'M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v8h-2V9Zm4 0h2v8h-2V9ZM7 9h2v8H7V9Z',
-  upload: 'M12 3 7.5 7.5l1.4 1.4L11 6.8V16h2V6.8l2.1 2.1 1.4-1.4L12 3Zm-7 14h14v4H5v-4Z',
-  download: 'M11 4h2v9.17l2.09-2.08 1.41 1.41L12 17l-4.5-4.5 1.41-1.41L11 13.17V4Zm-6 14h14v2H5v-2Z'
-} satisfies Record<string, string>;
-
-const getIconPath = (key: string): string => iconPaths[key as keyof typeof iconPaths] ?? iconPaths['rectangle'];
-const detectLanguage = (): LanguageCode =>
-  globalThis.navigator?.language?.toLowerCase().startsWith('ca') ? 'ca' : 'en';
+interface SidebarResizeState {
+  readonly side: 'left' | 'right';
+  readonly startX: number;
+  readonly startWidth: number;
+}
 
 @Component({
   selector: 'app-editor-page',
@@ -339,7 +127,9 @@ const detectLanguage = (): LanguageCode =>
     '[attr.data-theme]': 'store.preferences().theme',
     '(window:keydown)': 'handleWindowKeydown($event)',
     '(window:keyup)': 'handleWindowKeyup($event)',
-    '(window:blur)': 'handleWindowBlur()'
+    '(window:blur)': 'handleWindowBlur()',
+    '(window:pointermove)': 'handleWindowPointerMove($event)',
+    '(window:pointerup)': 'handleWindowPointerUp()'
   }
 })
 export class EditorPageComponent {
@@ -354,6 +144,8 @@ export class EditorPageComponent {
   readonly scene = this.store.scene;
   readonly preferences = this.store.preferences;
   readonly selectedShape = this.store.selectedShape;
+  readonly selectedShapes = this.store.selectedShapes;
+  readonly selectionCount = this.store.selectionCount;
   readonly exportedCode = this.store.exportedCode;
   readonly parserWarnings = this.store.parserWarnings;
   readonly objectPresets = this.store.objectPresets;
@@ -364,22 +156,56 @@ export class EditorPageComponent {
 
   readonly language = signal<LanguageCode>(detectLanguage());
   readonly inspectorTab = signal<InspectorTab>('properties');
-  readonly toolSearchValue = signal('');
-  readonly viewportCenter = signal({ x: 0, y: 0 });
+  readonly activeTool = signal<ToolId>('select');
+  readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
   readonly canvasWidth = signal(1280);
   readonly canvasHeight = signal(840);
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
+  readonly fileMenuOpen = signal(false);
+  readonly exportModalOpen = signal(false);
+  readonly exportMode = signal<ExportMode>('standalone');
+  readonly libraryQuery = signal('');
+  readonly shareFeedback = signal('');
+  readonly leftSidebarWidth = signal(288);
+  readonly rightSidebarWidth = signal(340);
+  readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
+  readonly collapsedSections = signal<Record<string, boolean>>({
+    scenePresets: false,
+    essentials: false,
+    flow: false,
+    geometry: false,
+    data: true,
+    interface: true,
+    concepts: true,
+    properties: false,
+    sceneSettings: false,
+    layers: false,
+    generatedCode: false,
+    importCode: true
+  });
   readonly spacePressed = signal(false);
+  readonly shiftPressed = signal(false);
+  readonly altPressed = signal(false);
+  readonly ignoreNextCanvasClick = signal(false);
+  readonly iconMap = iconPaths;
 
-  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / 42) * 100));
-  readonly selectedSummary = computed(() => this.selectedShape()?.name ?? this.t('nothingSelected'));
+  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / 32) * 100));
+  readonly selectionLabel = computed(() => {
+    if (this.selectionCount() === 0) return this.t('noneSelected');
+    if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
+    return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
+  });
+  readonly activePreset = computed(() => this.objectPresets.find((preset) => preset.id === this.activeTool()) ?? null);
+  readonly activeToolLabel = computed(() => {
+    const preset = this.activePreset();
+    return preset ? this.presetTitle(preset) : this.t('selection');
+  });
   readonly visibleWorldBounds = computed(() => {
     const scale = this.preferences().scale;
     const halfWidth = this.canvasWidth() / 2 / scale;
     const halfHeight = this.canvasHeight() / 2 / scale;
     const viewportCenter = this.viewportCenter();
-
     return {
       left: viewportCenter.x - halfWidth,
       right: viewportCenter.x + halfWidth,
@@ -387,141 +213,204 @@ export class EditorPageComponent {
       bottom: viewportCenter.y - halfHeight
     };
   });
-  readonly primaryTools = computed<readonly ToolDescriptor[]>(() =>
-    this.objectPresets.map((preset) => ({
-      id: preset.id,
-      label: this.localizedPresetTitle(preset.id, preset.title),
-      description: this.localizedPresetDescription(preset.id, preset.description),
-      iconPath: getIconPath(preset.icon)
-    }))
-  );
-  readonly filteredPrimaryTools = computed(() => {
-    const searchValue = this.toolSearchValue().trim().toLowerCase();
-    return !searchValue
-      ? this.primaryTools()
-      : this.primaryTools().filter(
-          (tool) =>
-            tool.label.toLowerCase().includes(searchValue) || tool.description.toLowerCase().includes(searchValue)
-        );
+  readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
+    { id: 'select', label: this.t('selection'), description: this.t('selection'), iconPath: getIconPath('select'), shortcut: 'V' },
+    ...this.objectPresets
+      .filter((preset) => preset.quickAccess)
+      .map((preset) => ({
+        id: preset.id,
+        label: this.presetTitle(preset),
+        description: this.presetDescription(preset),
+        iconPath: getIconPath(preset.icon),
+        shortcut: this.toolShortcut(preset.id)
+      }))
+  ]);
+  readonly librarySections = computed<readonly LibrarySection[]>(() => {
+    const query = this.libraryQuery().trim().toLowerCase();
+    return categoryOrder
+      .map((category) => {
+        const presets = this.objectPresets.filter((preset) => {
+          if (preset.category !== category) return false;
+          if (!query) return true;
+          const haystack = [
+            this.presetTitle(preset),
+            this.presetDescription(preset),
+            preset.title,
+            preset.description,
+            ...(preset.searchTerms ?? [])
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(query);
+        });
+        return {
+          category,
+          title: this.t(categoryTranslationKey[category]),
+          iconPath: getIconPath(this.iconForCategory(category)),
+          presets: presets.map((preset) => ({
+            ...preset,
+            title: this.presetTitle(preset),
+            description: this.presetDescription(preset)
+          }))
+        };
+      })
+      .filter((section) => section.presets.length > 0);
   });
-  readonly layerShapes = computed(() => [...this.scene().shapes].reverse());
-  readonly selectionBounds = computed<SelectionBounds | null>(() => {
-    const selectedShape = this.selectedShape();
-
-    if (!selectedShape) {
-      return null;
-    }
-
-    switch (selectedShape.kind) {
-      case 'rectangle':
-        return {
-          left: selectedShape.x,
-          right: selectedShape.x + selectedShape.width,
-          bottom: selectedShape.y,
-          top: selectedShape.y + selectedShape.height
-        };
-      case 'circle':
-        return {
-          left: selectedShape.cx - selectedShape.r,
-          right: selectedShape.cx + selectedShape.r,
-          bottom: selectedShape.cy - selectedShape.r,
-          top: selectedShape.cy + selectedShape.r
-        };
-      case 'ellipse':
-        return {
-          left: selectedShape.cx - selectedShape.rx,
-          right: selectedShape.cx + selectedShape.rx,
-          bottom: selectedShape.cy - selectedShape.ry,
-          top: selectedShape.cy + selectedShape.ry
-        };
-      case 'line':
-        return {
-          left: Math.min(selectedShape.from.x, selectedShape.to.x),
-          right: Math.max(selectedShape.from.x, selectedShape.to.x),
-          bottom: Math.min(selectedShape.from.y, selectedShape.to.y),
-          top: Math.max(selectedShape.from.y, selectedShape.to.y)
-        };
-      case 'text': {
-        const estimatedWidth = Math.max(
-          selectedShape.text.length * selectedShape.fontSize * 0.48,
-          selectedShape.fontSize
-        );
-        const estimatedHeight = selectedShape.fontSize * 0.72;
-        return {
-          left: selectedShape.x - estimatedWidth / 2,
-          right: selectedShape.x + estimatedWidth / 2,
-          bottom: selectedShape.y - estimatedHeight / 2,
-          top: selectedShape.y + estimatedHeight / 2
-        };
-      }
-    }
-  });
+  readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShape = this.selectedShape();
-
-    if (!selectedShape) {
-      return [];
-    }
-
+    if (!selectedShape) return [];
     if (selectedShape.kind === 'line') {
       return [
         { id: 'from', x: this.toSvgX(selectedShape.from.x), y: this.toSvgY(selectedShape.from.y), cursor: 'crosshair' },
         { id: 'to', x: this.toSvgX(selectedShape.to.x), y: this.toSvgY(selectedShape.to.y), cursor: 'crosshair' }
       ];
     }
-
-    if (selectedShape.kind === 'text') {
-      return [];
-    }
-
+    if (selectedShape.kind === 'text') return [];
     const selectionBounds = this.selectionBounds();
-
-    if (!selectionBounds) {
-      return [];
-    }
-
+    if (!selectionBounds) return [];
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
     const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
-
     return [
       { id: 'nw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.top), cursor: 'nwse-resize' },
       { id: 'n', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.top), cursor: 'ns-resize' },
       { id: 'ne', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.top), cursor: 'nesw-resize' },
       { id: 'e', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(centerY), cursor: 'ew-resize' },
-      {
-        id: 'se',
-        x: this.toSvgX(selectionBounds.right),
-        y: this.toSvgY(selectionBounds.bottom),
-        cursor: 'nwse-resize'
-      },
+      { id: 'se', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.bottom), cursor: 'nwse-resize' },
       { id: 's', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.bottom), cursor: 'ns-resize' },
       { id: 'sw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.bottom), cursor: 'nesw-resize' },
       { id: 'w', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(centerY), cursor: 'ew-resize' }
     ];
   });
-  readonly iconPaths = iconPaths;
+  readonly marqueeBounds = computed(() => {
+    const interactionState = this.interactionState();
+    if (!interactionState || interactionState.kind !== 'marquee') return null;
+    const left = Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x);
+    const right = Math.max(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x);
+    const bottom = Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y);
+    const top = Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y);
+    return {
+      x: this.toSvgX(left),
+      y: this.toSvgY(top),
+      width: (right - left) * this.preferences().scale,
+      height: (top - bottom) * this.preferences().scale
+    };
+  });
+  readonly standaloneDocument = computed(() => sceneToStandaloneDocument(this.scene()));
+  readonly displayedExportCode = computed(() =>
+    this.exportMode() === 'snippet' ? this.exportedCode() : this.standaloneDocument()
+  );
+  readonly highlightedSnippetCode = computed(() => highlightLatex(this.exportedCode()));
+  readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
+  readonly shareUrl = computed(() => this.buildShareUrl());
 
   constructor() {
     afterNextRender(() => {
+      const viewport = this.canvasViewport().nativeElement;
       const updateCanvasSize = () => {
-        const hostElement = this.canvasViewport().nativeElement;
-        this.canvasWidth.set(Math.max(320, Math.round(hostElement.clientWidth)));
-        this.canvasHeight.set(Math.max(320, Math.round(hostElement.clientHeight)));
+        this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
+        this.canvasHeight.set(Math.max(320, Math.round(viewport.clientHeight)));
       };
 
       const resizeObserver = new ResizeObserver(() => updateCanvasSize());
-      resizeObserver.observe(this.canvasViewport().nativeElement);
+      resizeObserver.observe(viewport);
       updateCanvasSize();
+      this.restoreSharedSceneFromUrl();
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
   }
 
-  t(key: TranslationKey): string {
-    return translations[this.language()][key];
+  t(key: string): string {
+    return translations[this.language()][key] ?? key;
+  }
+
+  tOrFallback(key: string, fallback: string): string {
+    return translations[this.language()][key] ?? fallback;
+  }
+
+  localizedShapeKind(kind: CanvasShape['kind']): string {
+    return localizedShapeKinds[this.language()][kind];
+  }
+
+  presetTitle(preset: ObjectPreset): string {
+    return this.tOrFallback(`preset.${preset.id}.title`, preset.title);
+  }
+
+  presetDescription(preset: ObjectPreset): string {
+    return this.tOrFallback(`preset.${preset.id}.description`, preset.description);
+  }
+
+  scenePresetTitle(preset: ScenePreset): string {
+    return this.tOrFallback(`scenePreset.${preset.id}.title`, preset.title);
+  }
+
+  scenePresetDescription(preset: ScenePreset): string {
+    return this.tOrFallback(`scenePreset.${preset.id}.description`, preset.description);
+  }
+
+  toolShortcut(toolId: ToolId): string | undefined {
+    switch (toolId) {
+      case 'select':
+        return 'V';
+      case 'label':
+        return 'T';
+      case 'box':
+        return 'R';
+      case 'circle':
+        return 'C';
+      case 'segment':
+        return 'L';
+      case 'arrow':
+        return 'A';
+      case 'node':
+        return 'N';
+      case 'ellipse':
+        return 'E';
+      default:
+        return undefined;
+    }
+  }
+
+  iconForCategory(category: PresetCategory): string {
+    switch (category) {
+      case 'essentials':
+        return 'library';
+      case 'flow':
+        return 'pipeline';
+      case 'geometry':
+        return 'triangle';
+      case 'data':
+        return 'bars';
+      case 'interface':
+        return 'browser';
+      case 'concepts':
+        return 'hub';
+    }
   }
 
   setLanguage(language: LanguageCode): void {
     this.language.set(language);
+  }
+
+  isSectionCollapsed(sectionId: string): boolean {
+    return this.collapsedSections()[sectionId] ?? false;
+  }
+
+  toggleSection(sectionId: string): void {
+    this.collapsedSections.update((sections) => ({
+      ...sections,
+      [sectionId]: !(sections[sectionId] ?? false)
+    }));
+  }
+
+  startSidebarResize(event: PointerEvent, side: 'left' | 'right'): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.sidebarResizeState.set({
+      side,
+      startX: event.clientX,
+      startWidth: side === 'left' ? this.leftSidebarWidth() : this.rightSidebarWidth()
+    });
   }
 
   setTheme(theme: ThemeMode): void {
@@ -532,57 +421,80 @@ export class EditorPageComponent {
     this.setTheme(this.preferences().theme === 'dark' ? 'light' : 'dark');
   }
 
-  selectShape(shapeId: string | null): void {
-    this.closeContextMenu();
-    this.inspectorTab.set('properties');
-    this.store.selectShape(shapeId);
+  toggleFileMenu(): void {
+    this.fileMenuOpen.update((isOpen) => !isOpen);
   }
 
-  addPreset(presetId: string): void {
-    this.runSceneMutation(() => {
-      this.store.addShapeFromPreset(presetId);
-      this.inspectorTab.set('properties');
-    });
+  closeFileMenu(): void {
+    this.fileMenuOpen.set(false);
   }
 
-  applyScenePreset(presetId: string): void {
-    this.runSceneMutation(() => {
-      this.store.applyScenePreset(presetId);
-      this.inspectorTab.set('properties');
-      this.viewportCenter.set({ x: 0, y: 0 });
-    });
+  openExportModal(mode: ExportMode = 'standalone'): void {
+    this.closeFileMenu();
+    this.exportMode.set(mode);
+    this.exportModalOpen.set(true);
+    this.shareFeedback.set('');
+  }
+
+  closeExportModal(): void {
+    this.exportModalOpen.set(false);
+    this.shareFeedback.set('');
   }
 
   setInspectorTab(tab: InspectorTab): void {
     this.inspectorTab.set(tab);
   }
 
-  onToolSearchInput(event: Event): void {
-    this.toolSearchValue.set((event.target as HTMLInputElement).value);
+  setLibraryQuery(value: string): void {
+    this.libraryQuery.set(value);
   }
 
-  onSceneNameInput(event: Event): void {
+  setActiveTool(toolId: ToolId): void {
+    this.activeTool.set(toolId);
+    this.closeContextMenu();
+    this.closeFileMenu();
+  }
+
+  selectShape(shapeId: string | null): void {
+    this.closeContextMenu();
+    this.store.selectShape(shapeId);
+    if (shapeId) {
+      this.setInspectorTab('properties');
+    }
+  }
+
+  applyScenePreset(presetId: string): void {
     this.runSceneMutation(() => {
-      this.store.renameScene((event.target as HTMLInputElement).value);
+      const preset = this.scenePresets.find((entry) => entry.id === presetId);
+      this.store.applyScenePreset(presetId);
+      if (preset) {
+        this.store.renameScene(this.scenePresetTitle(preset));
+      }
+      this.viewportCenter.set({ x: 0, y: 0 });
+      this.activeTool.set('select');
+      this.inspectorTab.set('scene');
+      this.closeFileMenu();
     });
   }
 
-  onBooleanPreferenceChange(key: 'snapToGrid' | 'showGrid' | 'showAxes', event: Event): void {
+  resetScene(): void {
+    this.applyScenePreset('blank');
+  }
+
+  resetViewport(): void {
+    this.viewportCenter.set({ x: 0, y: 0 });
+  }
+
+  addShapeAt(point: Point): void {
+    const activeTool = this.activeTool();
+    if (activeTool === 'select') {
+      return;
+    }
+
     this.runSceneMutation(() => {
-      this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked });
+      this.store.addPresetAt(activeTool, this.snapScenePoint(point));
+      this.inspectorTab.set('properties');
     });
-  }
-
-  zoomIn(): void {
-    this.setScaleFromViewportCenter(this.preferences().scale + 6);
-  }
-
-  zoomOut(): void {
-    this.setScaleFromViewportCenter(this.preferences().scale - 6);
-  }
-
-  resetZoom(): void {
-    this.setScaleFromViewportCenter(42);
   }
 
   undo(): void {
@@ -595,73 +507,43 @@ export class EditorPageComponent {
     this.store.redo();
   }
 
-  removeSelected(): void {
-    this.runSceneMutation(() => {
-      this.store.removeSelected();
-    });
+  zoomIn(): void {
+    this.setScaleFromViewportCenter(this.preferences().scale + 4);
   }
 
-  duplicateSelected(): void {
-    this.runSceneMutation(() => {
-      this.store.duplicateSelected();
-    });
+  zoomOut(): void {
+    this.setScaleFromViewportCenter(this.preferences().scale - 4);
   }
 
-  bringSelectedToFront(): void {
-    this.runSceneMutation(() => {
-      this.store.bringSelectedToFront();
-    });
+  resetZoom(): void {
+    this.setScaleFromViewportCenter(32);
   }
 
-  sendSelectedToBack(): void {
-    this.runSceneMutation(() => {
-      this.store.sendSelectedToBack();
-    });
+  downloadStandaloneFile(): void {
+    const blob = new Blob([this.standaloneDocument()], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${this.scene().name || 'figure'}.tex`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
-  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.runSceneMutation(() => {
-      this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
-    });
+  copyExportedCode(): void {
+    void navigator.clipboard?.writeText(this.exportedCode());
   }
 
-  updateShapeNumber(
-    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'fontSize',
-    event: Event
-  ): void {
-    const value = Number((event.target as HTMLInputElement).value);
-    this.runSceneMutation(() => {
-      this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
-    });
+  copyStandaloneCode(): void {
+    void navigator.clipboard?.writeText(this.standaloneDocument());
   }
 
-  updateShapeBoolean(key: 'arrowStart' | 'arrowEnd', event: Event): void {
-    const value = (event.target as HTMLInputElement).checked;
-    this.runSceneMutation(() => {
-      this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
-    });
-  }
+  async copyShareLink(): Promise<void> {
+    if (!navigator.clipboard) {
+      return;
+    }
 
-  updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
-    const value = Number((event.target as HTMLInputElement).value);
-
-    this.runSceneMutation(() => {
-      this.store.patchSelectedShape((shape) => {
-        if (shape.kind !== 'line') {
-          return shape;
-        }
-
-        const currentPoint = shape[target];
-        return {
-          ...shape,
-          [target]: {
-            ...currentPoint,
-            [axis]: value
-          }
-        } as LineShape;
-      });
-    });
+    await navigator.clipboard.writeText(this.shareUrl());
+    this.shareFeedback.set(this.t('copied'));
   }
 
   onImportCodeInput(event: Event): void {
@@ -671,27 +553,102 @@ export class EditorPageComponent {
   applyImportCode(): void {
     this.runSceneMutation(() => {
       this.store.applyImportCode();
+      this.viewportCenter.set({ x: 0, y: 0 });
       this.inspectorTab.set('code');
     });
   }
 
-  syncImportWithExport(): void {
-    this.store.useExportedCodeAsImport();
-    this.inspectorTab.set('code');
+  removeSelected(): void {
+    this.runSceneMutation(() => this.store.removeSelected());
   }
 
-  copyExportedCode(): void {
-    void navigator.clipboard?.writeText(this.exportedCode());
+  duplicateSelected(): void {
+    this.runSceneMutation(() => this.store.duplicateSelected());
   }
 
-  downloadStandaloneFile(): void {
-    const blob = new Blob([sceneToStandaloneDocument(this.scene())], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = this.document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'figure.tex';
-    anchor.click();
-    URL.revokeObjectURL(url);
+  bringSelectedToFront(): void {
+    this.runSceneMutation(() => this.store.bringSelectedToFront());
+  }
+
+  sendSelectedToBack(): void {
+    this.runSceneMutation(() => this.store.sendSelectedToBack());
+  }
+
+  updatePreferenceNumber(
+    key: 'scale' | 'snapStep' | 'defaultStrokeWidth',
+    event: Event,
+    minimumValue: number,
+    maximumValue?: number
+  ): void {
+    const rawValue = Number((event.target as HTMLInputElement).value);
+    const clampedValue =
+      maximumValue === undefined
+        ? Math.max(minimumValue, rawValue)
+        : Math.min(maximumValue, Math.max(minimumValue, rawValue));
+    this.store.patchPreferences({ [key]: clampedValue } as Partial<EditorPreferences>);
+  }
+
+  updatePreferenceText(key: 'defaultStroke' | 'defaultFill', event: Event): void {
+    this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
+  }
+
+  onBooleanPreferenceChange(key: 'snapToGrid' | 'showGrid' | 'showAxes', event: Event): void {
+    this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
+  }
+
+  onSceneNameInput(event: Event): void {
+    this.store.renameScene((event.target as HTMLInputElement).value);
+  }
+
+  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateShapeNumber(
+    key:
+      | 'strokeWidth'
+      | 'x'
+      | 'y'
+      | 'width'
+      | 'height'
+      | 'cornerRadius'
+      | 'cx'
+      | 'cy'
+      | 'r'
+      | 'rx'
+      | 'ry'
+      | 'fontSize',
+    event: Event
+  ): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateShapeBoolean(key: 'arrowStart' | 'arrowEnd', event: Event): void {
+    const value = (event.target as HTMLInputElement).checked;
+    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'line') {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        [target]: {
+          ...shape[target],
+          [axis]: value
+        }
+      } as LineShape;
+    });
+  }
+
+  selectionContainsShape(shapeId: string): boolean {
+    return this.selectedShapes().some((shape) => shape.id === shapeId);
   }
 
   openCanvasContextMenu(event: MouseEvent): void {
@@ -708,9 +665,16 @@ export class EditorPageComponent {
   openShapeContextMenu(event: MouseEvent, shape: CanvasShape): void {
     event.preventDefault();
     event.stopPropagation();
-    this.store.selectShape(shape.id);
-    this.inspectorTab.set('properties');
-    this.contextMenu.set({ clientX: event.clientX, clientY: event.clientY, target: 'shape', shapeId: shape.id });
+    if (!this.selectionContainsShape(shape.id)) {
+      this.store.selectShape(shape.id);
+    }
+    this.setInspectorTab('properties');
+    this.contextMenu.set({
+      clientX: event.clientX,
+      clientY: event.clientY,
+      target: 'shape',
+      shapeId: shape.id
+    });
   }
 
   closeContextMenu(): void {
@@ -718,11 +682,6 @@ export class EditorPageComponent {
   }
 
   runContextAction(action: 'duplicate' | 'delete' | 'front' | 'back'): void {
-    if (!this.selectedShape()) {
-      this.closeContextMenu();
-      return;
-    }
-
     switch (action) {
       case 'duplicate':
         this.duplicateSelected();
@@ -737,12 +696,12 @@ export class EditorPageComponent {
         this.sendSelectedToBack();
         break;
     }
-
     this.closeContextMenu();
   }
 
   onCanvasViewportPointerDown(event: PointerEvent): void {
     this.closeContextMenu();
+    this.closeFileMenu();
 
     if (event.button === 1 || (event.button === 0 && this.spacePressed())) {
       event.preventDefault();
@@ -752,31 +711,52 @@ export class EditorPageComponent {
         lastClientPoint: { x: event.clientX, y: event.clientY }
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
+
+    if (event.button === 0 && this.activeTool() === 'select') {
+      this.interactionState.set({
+        kind: 'marquee',
+        pointerId: event.pointerId,
+        startWorldPoint: this.toScenePoint(event.clientX, event.clientY),
+        currentWorldPoint: this.toScenePoint(event.clientX, event.clientY),
+        additive: event.shiftKey
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
     }
   }
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
-    if (event.button !== 0 || this.spacePressed()) {
+    if (this.activeTool() !== 'select' || event.button !== 0 || this.spacePressed()) {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (event.shiftKey) {
+      this.store.toggleShapeInSelection(shape.id);
+      return;
+    }
+
+    if (!this.selectionContainsShape(shape.id)) {
+      this.store.selectShape(shape.id);
+    }
+    this.setInspectorTab('properties');
+
     this.store.recordHistoryCheckpoint();
-    this.store.selectShape(shape.id);
-    this.inspectorTab.set('properties');
     this.interactionState.set({
       kind: 'move',
       pointerId: event.pointerId,
-      lastWorldPoint: this.toScenePoint(event.clientX, event.clientY)
+      startWorldPoint: this.toScenePoint(event.clientX, event.clientY),
+      initialShapes: structuredClone(this.selectedShapes())
     });
     this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
   }
 
   startResize(event: PointerEvent, handle: ResizeHandle): void {
     const selectedShape = this.selectedShape();
-
-    if (!selectedShape || event.button !== 0) {
+    if (!selectedShape || this.activeTool() !== 'select' || event.button !== 0) {
       return;
     }
 
@@ -794,21 +774,16 @@ export class EditorPageComponent {
 
   onCanvasPointerMove(event: PointerEvent): void {
     const interactionState = this.interactionState();
-
     if (!interactionState || interactionState.pointerId !== event.pointerId) {
       return;
     }
 
     if (interactionState.kind === 'move') {
       const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
-      const deltaX = this.snap(nextWorldPoint.x - interactionState.lastWorldPoint.x);
-      const deltaY = this.snap(nextWorldPoint.y - interactionState.lastWorldPoint.y);
-
-      if (deltaX !== 0 || deltaY !== 0) {
-        this.store.moveSelectedBy(deltaX, deltaY);
-        this.interactionState.set({ ...interactionState, lastWorldPoint: nextWorldPoint });
-      }
-
+      const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
+      const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
+      const nextShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
+      this.store.replaceShapes(nextShapes);
       return;
     }
 
@@ -816,7 +791,6 @@ export class EditorPageComponent {
       const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
       const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
       const scale = this.preferences().scale;
-
       this.viewportCenter.update((viewportCenter) => ({
         x: viewportCenter.x - deltaClientX / scale,
         y: viewportCenter.y + deltaClientY / scale
@@ -825,37 +799,69 @@ export class EditorPageComponent {
       return;
     }
 
+    if (interactionState.kind === 'marquee') {
+      this.interactionState.set({
+        ...interactionState,
+        currentWorldPoint: this.toScenePoint(event.clientX, event.clientY)
+      });
+      return;
+    }
+
     const resizedShape = this.resizeShape(
       interactionState.initialShape,
       interactionState.handle,
       this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
     );
-
     this.store.patchSelectedShape(() => resizedShape);
   }
 
   endInteraction(event: PointerEvent): void {
     const interactionState = this.interactionState();
-
     if (!interactionState || interactionState.pointerId !== event.pointerId) {
       return;
+    }
+
+    if (interactionState.kind === 'marquee') {
+      const marqueeShapeIds = this.findShapesInsideBounds({
+        left: Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
+        right: Math.max(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
+        bottom: Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y),
+        top: Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y)
+      });
+      this.store.setSelectedShapes(
+        interactionState.additive
+          ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds]
+          : marqueeShapeIds
+      );
     }
 
     if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
       this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
     }
 
+    this.ignoreNextCanvasClick.set(true);
     this.interactionState.set(null);
   }
 
   onCanvasWheel(event: WheelEvent): void {
     event.preventDefault();
-    const nextScale = this.preferences().scale + (event.deltaY < 0 ? 4 : -4);
-    this.setScaleAtClientPoint(nextScale, event.clientX, event.clientY);
+    this.setScaleAtClientPoint(this.preferences().scale + (event.deltaY < 0 ? 4 : -4), event.clientX, event.clientY);
   }
 
-  onCanvasBackgroundClick(): void {
-    this.selectShape(null);
+  onCanvasBackgroundClick(event: MouseEvent): void {
+    if (this.ignoreNextCanvasClick()) {
+      this.ignoreNextCanvasClick.set(false);
+      return;
+    }
+
+    if (this.activeTool() === 'select') {
+      if (!this.interactionState()) {
+        this.store.selectShape(null);
+      }
+      return;
+    }
+
+    this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
   }
 
   toSvgX(x: number): number {
@@ -864,6 +870,51 @@ export class EditorPageComponent {
 
   toSvgY(y: number): number {
     return this.canvasHeight() / 2 - (y - this.viewportCenter().y) * this.preferences().scale;
+  }
+
+  scaledStrokeWidth(strokeWidth: number): number {
+    return Math.max(strokeWidth * this.preferences().scale * 0.05, 1);
+  }
+
+  presetIconPath(icon: string): string {
+    return getIconPath(icon);
+  }
+
+  shapeIcon(shape: CanvasShape): string {
+    return getIconPath(shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind);
+  }
+
+  selectionOutline(): { readonly x: number; readonly y: number; readonly width: number; readonly height: number } | null {
+    const selectionBounds = this.selectionBounds();
+    if (!selectionBounds) return null;
+    return {
+      x: this.toSvgX(selectionBounds.left),
+      y: this.toSvgY(selectionBounds.top),
+      width: (selectionBounds.right - selectionBounds.left) * this.preferences().scale,
+      height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale
+    };
+  }
+
+  lineSelectionPath(): string | null {
+    const selectedShape = this.selectedShape();
+    if (!selectedShape || selectedShape.kind !== 'line') return null;
+    return `M ${this.toSvgX(selectedShape.from.x)} ${this.toSvgY(selectedShape.from.y)} L ${this.toSvgX(selectedShape.to.x)} ${this.toSvgY(selectedShape.to.y)}`;
+  }
+
+  gridColumns(): number[] {
+    const visibleWorldBounds = this.visibleWorldBounds();
+    const gridStep = 1;
+    const start = Math.floor(visibleWorldBounds.left / gridStep) - 1;
+    const end = Math.ceil(visibleWorldBounds.right / gridStep) + 1;
+    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
+  }
+
+  gridRows(): number[] {
+    const visibleWorldBounds = this.visibleWorldBounds();
+    const gridStep = 1;
+    const start = Math.floor(visibleWorldBounds.bottom / gridStep) - 1;
+    const end = Math.ceil(visibleWorldBounds.top / gridStep) + 1;
+    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
   }
 
   shapeTrackBy(_: number, shape: CanvasShape): string {
@@ -878,71 +929,8 @@ export class EditorPageComponent {
     return handle.id;
   }
 
-  gridColumns(): number[] {
-    const visibleWorldBounds = this.visibleWorldBounds();
-    const start = Math.floor(visibleWorldBounds.left) - 1;
-    const end = Math.ceil(visibleWorldBounds.right) + 1;
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }
-
-  gridRows(): number[] {
-    const visibleWorldBounds = this.visibleWorldBounds();
-    const start = Math.floor(visibleWorldBounds.bottom) - 1;
-    const end = Math.ceil(visibleWorldBounds.top) + 1;
-    return Array.from({ length: end - start + 1 }, (_, index) => start + index);
-  }
-
-  shapeIcon(shape: CanvasShape): string {
-    return getIconPath(
-      shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind
-    );
-  }
-
-  presetIconPath(icon: string): string {
-    return getIconPath(icon);
-  }
-
-  scaledStrokeWidth(strokeWidth: number): number {
-    return Math.max(strokeWidth * this.preferences().scale * 0.05, 1);
-  }
-
-  localizedScenePresetTitle(preset: ScenePreset): string {
-    return this.localizedPresetTitle(preset.id, preset.title);
-  }
-
-  localizedScenePresetDescription(preset: ScenePreset): string {
-    return this.localizedPresetDescription(preset.id, preset.description);
-  }
-
-  localizedShapeKind(kind: CanvasShape['kind']): string {
-    return localizedShapeKinds[this.language()][kind];
-  }
-
-  selectionOutline(): {
-    readonly x: number;
-    readonly y: number;
-    readonly width: number;
-    readonly height: number;
-  } | null {
-    const selectionBounds = this.selectionBounds();
-
-    if (!selectionBounds) {
-      return null;
-    }
-
-    return {
-      x: this.toSvgX(selectionBounds.left),
-      y: this.toSvgY(selectionBounds.top),
-      width: (selectionBounds.right - selectionBounds.left) * this.preferences().scale,
-      height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale
-    };
-  }
-
-  lineSelectionPath(): string | null {
-    const selectedShape = this.selectedShape();
-    return selectedShape && selectedShape.kind === 'line'
-      ? `M ${this.toSvgX(selectedShape.from.x)} ${this.toSvgY(selectedShape.from.y)} L ${this.toSvgX(selectedShape.to.x)} ${this.toSvgY(selectedShape.to.y)}`
-      : null;
+  formatValue(value: number): string {
+    return formatValue(value);
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {
@@ -952,6 +940,8 @@ export class EditorPageComponent {
         event.preventDefault();
       }
     }
+    if (event.key === 'Shift') this.shiftPressed.set(true);
+    if (event.key === 'Alt') this.altPressed.set(true);
 
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
       return;
@@ -963,26 +953,52 @@ export class EditorPageComponent {
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === 'y' || event.key.toLowerCase() === 'z')) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
       event.preventDefault();
-      event.shiftKey ? this.redo() : this.undo();
+      this.redo();
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault();
-      this.duplicateSelected();
+      this.undo();
       return;
     }
 
     switch (event.key.toLowerCase()) {
+      case 'v':
+        this.setActiveTool('select');
+        return;
+      case 't':
+        this.setActiveTool('label');
+        return;
+      case 'r':
+        this.setActiveTool('box');
+        return;
+      case 'c':
+        this.setActiveTool('circle');
+        return;
+      case 'l':
+        this.setActiveTool('segment');
+        return;
+      case 'a':
+        this.setActiveTool('arrow');
+        return;
+      case 'n':
+        this.setActiveTool('node');
+        return;
+      case 'e':
+        this.setActiveTool('ellipse');
+        return;
       case 'delete':
       case 'backspace':
         this.removeSelected();
         return;
       case 'escape':
-        this.selectShape(null);
+        this.store.selectShape(null);
         this.closeContextMenu();
+        this.closeFileMenu();
+        this.closeExportModal();
         return;
       case '=':
       case '+':
@@ -991,23 +1007,39 @@ export class EditorPageComponent {
       case '-':
         this.zoomOut();
         return;
-      case 'g':
-        this.runSceneMutation(() => {
-          this.store.patchPreferences({ showGrid: !this.preferences().showGrid });
-        });
-        return;
     }
   }
 
   handleWindowKeyup(event: KeyboardEvent): void {
-    if (event.key === ' ') {
-      this.spacePressed.set(false);
-    }
+    if (event.key === ' ') this.spacePressed.set(false);
+    if (event.key === 'Shift') this.shiftPressed.set(false);
+    if (event.key === 'Alt') this.altPressed.set(false);
   }
 
   handleWindowBlur(): void {
     this.spacePressed.set(false);
+    this.shiftPressed.set(false);
+    this.altPressed.set(false);
     this.interactionState.set(null);
+    this.sidebarResizeState.set(null);
+  }
+
+  handleWindowPointerMove(event: PointerEvent): void {
+    const resizeState = this.sidebarResizeState();
+    if (!resizeState) return;
+
+    if (resizeState.side === 'left') {
+      const delta = event.clientX - resizeState.startX;
+      this.leftSidebarWidth.set(Math.min(420, Math.max(220, resizeState.startWidth + delta)));
+      return;
+    }
+
+    const delta = resizeState.startX - event.clientX;
+    this.rightSidebarWidth.set(Math.min(460, Math.max(260, resizeState.startWidth + delta)));
+  }
+
+  handleWindowPointerUp(): void {
+    this.sidebarResizeState.set(null);
   }
 
   private runSceneMutation(action: () => void): void {
@@ -1016,30 +1048,47 @@ export class EditorPageComponent {
     action();
   }
 
-  private localizedPresetTitle(id: string, fallback: string): string {
-    return localizedPresetLabels[this.language()][id]?.title ?? fallback;
+  private buildShareUrl(): string {
+    const location = globalThis.location;
+    if (!location) {
+      return '';
+    }
+
+    const payload: SharedScenePayload = {
+      scene: this.scene(),
+      preferences: this.preferences(),
+      importCode: this.store.importCode(),
+      viewportCenter: this.viewportCenter()
+    };
+    const url = new URL(location.href);
+    url.searchParams.set('share', encodeSharePayload(payload));
+    return url.toString();
   }
 
-  private localizedPresetDescription(id: string, fallback: string): string {
-    return localizedPresetLabels[this.language()][id]?.description ?? fallback;
+  private restoreSharedSceneFromUrl(): void {
+    const location = globalThis.location;
+    if (!location) {
+      return;
+    }
+
+    const sharedState = decodeSharePayload(new URL(location.href).searchParams.get('share') ?? '');
+    if (!sharedState) {
+      return;
+    }
+
+    this.store.restoreSharedState(sharedState);
+    this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
   }
 
   private setScaleFromViewportCenter(nextScale: number): void {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
-    this.setScaleAtClientPoint(
-      nextScale,
-      viewportRect.left + viewportRect.width / 2,
-      viewportRect.top + viewportRect.height / 2
-    );
+    this.setScaleAtClientPoint(nextScale, viewportRect.left + viewportRect.width / 2, viewportRect.top + viewportRect.height / 2);
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number): void {
-    const clampedScale = Math.min(144, Math.max(18, Math.round(nextScale)));
+    const clampedScale = Math.min(120, Math.max(16, Math.round(nextScale)));
     const currentScale = this.preferences().scale;
-
-    if (clampedScale === currentScale) {
-      return;
-    }
+    if (clampedScale === currentScale) return;
 
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
     const offsetX = clientX - viewportRect.left - viewportRect.width / 2;
@@ -1052,7 +1101,7 @@ export class EditorPageComponent {
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
   }
 
-  private toScenePoint(clientX: number, clientY: number): { x: number; y: number } {
+  private toScenePoint(clientX: number, clientY: number): Point {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
     return {
       x: this.viewportCenter().x + (clientX - viewportRect.left - viewportRect.width / 2) / this.preferences().scale,
@@ -1061,14 +1110,79 @@ export class EditorPageComponent {
   }
 
   private snap(value: number): number {
-    return this.preferences().snapToGrid ? Math.round(value * 2) / 2 : value;
+    if (!this.preferences().snapToGrid || this.altPressed()) {
+      return value;
+    }
+    const snapStep = Math.max(this.preferences().snapStep, 0.01);
+    return Math.round(value / snapStep) * snapStep;
   }
 
-  private snapScenePoint(point: { x: number; y: number }): { x: number; y: number } {
+  private snapScenePoint(point: Point): Point {
     return { x: this.snap(point.x), y: this.snap(point.y) };
   }
 
-  private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: { x: number; y: number }): CanvasShape {
+  private findShapesInsideBounds(bounds: SelectionBounds): string[] {
+    return this.scene().shapes
+      .filter((shape) => {
+        const shapeBounds = this.computeBounds([shape]);
+        return (
+          shapeBounds !== null &&
+          shapeBounds.left <= bounds.right &&
+          shapeBounds.right >= bounds.left &&
+          shapeBounds.bottom <= bounds.top &&
+          shapeBounds.top >= bounds.bottom
+        );
+      })
+      .map((shape) => shape.id);
+  }
+
+  private computeBounds(shapes: readonly CanvasShape[]): SelectionBounds | null {
+    if (!shapes.length) {
+      return null;
+    }
+
+    return shapes.reduce<SelectionBounds | null>((currentBounds, shape) => {
+      const nextBounds = this.shapeBounds(shape);
+      if (!nextBounds) return currentBounds;
+      if (!currentBounds) return nextBounds;
+      return {
+        left: Math.min(currentBounds.left, nextBounds.left),
+        right: Math.max(currentBounds.right, nextBounds.right),
+        top: Math.max(currentBounds.top, nextBounds.top),
+        bottom: Math.min(currentBounds.bottom, nextBounds.bottom)
+      };
+    }, null);
+  }
+
+  private shapeBounds(shape: CanvasShape): SelectionBounds | null {
+    switch (shape.kind) {
+      case 'rectangle':
+        return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+      case 'circle':
+        return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+      case 'ellipse':
+        return { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry };
+      case 'line':
+        return {
+          left: Math.min(shape.from.x, shape.to.x),
+          right: Math.max(shape.from.x, shape.to.x),
+          bottom: Math.min(shape.from.y, shape.to.y),
+          top: Math.max(shape.from.y, shape.to.y)
+        };
+      case 'text': {
+        const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
+        const height = shape.fontSize * 0.72;
+        return {
+          left: shape.x - width / 2,
+          right: shape.x + width / 2,
+          bottom: shape.y - height / 2,
+          top: shape.y + height / 2
+        };
+      }
+    }
+  }
+
+  private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     switch (shape.kind) {
       case 'rectangle':
         return this.resizeRectangle(shape, handle, point);
@@ -1083,84 +1197,72 @@ export class EditorPageComponent {
     }
   }
 
-  private resizeRectangle(
-    shape: Extract<CanvasShape, { kind: 'rectangle' }>,
-    handle: ResizeHandle,
-    point: { x: number; y: number }
-  ): CanvasShape {
-    const selectionBounds = this.resizeBounds(
+  private resizeRectangle(shape: Extract<CanvasShape, { kind: 'rectangle' }>, handle: ResizeHandle, point: Point): CanvasShape {
+    const resizedBounds = this.resizeBounds(
       { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
       handle,
       point,
-      0.4,
-      0.4
+      0.2,
+      0.2,
+      shape.width / shape.height
     );
     return {
       ...shape,
-      x: selectionBounds.left,
-      y: selectionBounds.bottom,
-      width: selectionBounds.right - selectionBounds.left,
-      height: selectionBounds.top - selectionBounds.bottom
+      x: resizedBounds.left,
+      y: resizedBounds.bottom,
+      width: resizedBounds.right - resizedBounds.left,
+      height: resizedBounds.top - resizedBounds.bottom
     };
   }
 
-  private resizeCircle(
-    shape: Extract<CanvasShape, { kind: 'circle' }>,
-    handle: ResizeHandle,
-    point: { x: number; y: number }
-  ): CanvasShape {
-    const selectionBounds = this.resizeBounds(
+  private resizeCircle(shape: Extract<CanvasShape, { kind: 'circle' }>, handle: ResizeHandle, point: Point): CanvasShape {
+    const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r },
       handle,
       point,
       0.2,
-      0.2
+      0.2,
+      1
     );
-    const centerX = (selectionBounds.left + selectionBounds.right) / 2;
-    const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
-    const radius = Math.max(
-      (selectionBounds.right - selectionBounds.left) / 2,
-      (selectionBounds.top - selectionBounds.bottom) / 2,
-      0.1
-    );
-    return { ...shape, cx: centerX, cy: centerY, r: radius };
+    const radius = Math.max((resizedBounds.right - resizedBounds.left) / 2, (resizedBounds.top - resizedBounds.bottom) / 2, 0.1);
+    return {
+      ...shape,
+      cx: (resizedBounds.left + resizedBounds.right) / 2,
+      cy: (resizedBounds.top + resizedBounds.bottom) / 2,
+      r: radius
+    };
   }
 
-  private resizeEllipse(
-    shape: Extract<CanvasShape, { kind: 'ellipse' }>,
-    handle: ResizeHandle,
-    point: { x: number; y: number }
-  ): CanvasShape {
-    const selectionBounds = this.resizeBounds(
+  private resizeEllipse(shape: Extract<CanvasShape, { kind: 'ellipse' }>, handle: ResizeHandle, point: Point): CanvasShape {
+    const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
+    const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
       handle,
       point,
       0.2,
-      0.2
+      0.2,
+      aspectRatio
     );
     return {
       ...shape,
-      cx: (selectionBounds.left + selectionBounds.right) / 2,
-      cy: (selectionBounds.top + selectionBounds.bottom) / 2,
-      rx: Math.max((selectionBounds.right - selectionBounds.left) / 2, 0.1),
-      ry: Math.max((selectionBounds.top - selectionBounds.bottom) / 2, 0.1)
+      cx: (resizedBounds.left + resizedBounds.right) / 2,
+      cy: (resizedBounds.top + resizedBounds.bottom) / 2,
+      rx: Math.max((resizedBounds.right - resizedBounds.left) / 2, 0.1),
+      ry: Math.max((resizedBounds.top - resizedBounds.bottom) / 2, 0.1)
     };
   }
 
-  private resizeLine(
-    shape: Extract<CanvasShape, { kind: 'line' }>,
-    handle: ResizeHandle,
-    point: { x: number; y: number }
-  ): CanvasShape {
+  private resizeLine(shape: Extract<CanvasShape, { kind: 'line' }>, handle: ResizeHandle, point: Point): CanvasShape {
     return handle === 'from' ? { ...shape, from: point } : handle === 'to' ? { ...shape, to: point } : shape;
   }
 
   private resizeBounds(
     selectionBounds: SelectionBounds,
     handle: ResizeHandle,
-    point: { x: number; y: number },
+    point: Point,
     minimumWidth: number,
-    minimumHeight: number
+    minimumHeight: number,
+    aspectRatio?: number
   ): SelectionBounds {
     let left = selectionBounds.left;
     let right = selectionBounds.right;
@@ -1171,6 +1273,27 @@ export class EditorPageComponent {
     if (handle.includes('e')) right = Math.max(point.x, left + minimumWidth);
     if (handle.includes('n')) top = Math.max(point.y, bottom + minimumHeight);
     if (handle.includes('s')) bottom = Math.min(point.y, top - minimumHeight);
+
+    if (this.shiftPressed() && aspectRatio) {
+      const currentWidth = Math.max(right - left, minimumWidth);
+      const currentHeight = Math.max(top - bottom, minimumHeight);
+      const nextHeight = currentWidth / aspectRatio;
+      const nextWidth = currentHeight * aspectRatio;
+
+      if (handle === 'n' || handle === 's') {
+        const adjustedWidth = Math.max(nextWidth, minimumWidth);
+        const centerX = (left + right) / 2;
+        left = centerX - adjustedWidth / 2;
+        right = centerX + adjustedWidth / 2;
+      } else {
+        const adjustedHeight = Math.max(nextHeight, minimumHeight);
+        if (handle.includes('n')) {
+          top = bottom + adjustedHeight;
+        } else {
+          bottom = top - adjustedHeight;
+        }
+      }
+    }
 
     return { left, right, top, bottom };
   }
