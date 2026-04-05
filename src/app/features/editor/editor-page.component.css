@@ -32,6 +32,7 @@
 .topbar__left,
 .topbar__center,
 .topbar__right,
+.topbar-actions,
 .tool-cluster,
 .language-switch,
 .inline-actions,
@@ -291,19 +292,27 @@
   background: var(--tool-surface);
 }
 
+.topbar-actions {
+  padding-left: 4px;
+  flex-wrap: wrap;
+}
+
 .tool-button {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  padding: 0;
+  min-width: 58px;
+  height: 42px;
+  padding: 4px 8px;
   display: grid;
   place-items: center;
+  gap: 2px;
   border-color: transparent;
   background: transparent;
 }
 
 .tool-button span {
-  display: none;
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .tool-button.is-active,
@@ -336,6 +345,12 @@
   background: var(--tool-surface);
 }
 
+.language-switch {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+}
+
 .language-switch button,
 .mode-switch button,
 .sidebar-tabs button {
@@ -348,9 +363,22 @@
 }
 
 .language-switch button.is-active {
-  background: var(--app-foreground);
-  color: var(--panel-background);
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
   font-weight: 700;
+}
+
+.icon-button--github {
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
+}
+
+.icon-button--github:hover {
+  background: #222222;
+  border-color: #222222;
 }
 
 .sidebar-tabs {
@@ -460,10 +488,6 @@
 
 .left-sidebar .preset-card__body strong {
   font-size: 0.92rem;
-}
-
-.preset-card--scene .preset-card__body small {
-  display: block;
 }
 
 .preset-card__body strong,
@@ -666,6 +690,16 @@ kbd {
 
 .canvas-chip span {
   font-weight: 700;
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.secondary-button--toolbar {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
 }
 
 .minimap {
@@ -688,14 +722,9 @@ kbd {
   display: block;
 }
 
-.minimap__scene {
-  fill: color-mix(in srgb, var(--app-foreground) 4%, transparent);
-  stroke: color-mix(in srgb, var(--app-foreground) 12%, transparent);
-}
-
 .minimap__shape {
-  fill: color-mix(in srgb, var(--accent) 28%, white);
-  stroke: color-mix(in srgb, var(--accent) 66%, black 6%);
+  fill: rgba(24, 24, 24, 0.12);
+  stroke: rgba(24, 24, 24, 0.24);
   stroke-width: 0.8;
 }
 
@@ -808,8 +837,8 @@ kbd {
 }
 
 .field input[type='color'] {
-  width: 48px;
-  min-width: 48px;
+  width: 76px;
+  min-width: 76px;
   min-height: 40px;
   padding: 3px;
   cursor: pointer;

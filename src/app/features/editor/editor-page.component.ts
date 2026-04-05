@@ -129,7 +129,6 @@ interface MinimapRect {
 interface MinimapOverview {
   readonly viewBoxWidth: number;
   readonly viewBoxHeight: number;
-  readonly sceneRect: MinimapRect;
   readonly viewportRect: MinimapRect;
   readonly shapes: readonly MinimapRect[];
 }
@@ -262,7 +261,6 @@ export class EditorPageComponent {
     return {
       viewBoxWidth: mapSize,
       viewBoxHeight: mapSize,
-      sceneRect: toMapRect(sceneBounds),
       viewportRect: toMapRect(visibleBounds),
       shapes: this.scene()
         .shapes
@@ -552,6 +550,10 @@ export class EditorPageComponent {
   }
 
   applyScenePreset(presetId: string): void {
+    if (!this.confirmSceneReplacement()) {
+      return;
+    }
+
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === presetId);
       this.store.applyScenePreset(presetId);
@@ -567,7 +569,21 @@ export class EditorPageComponent {
   }
 
   resetScene(): void {
-    this.applyScenePreset('blank');
+    if (!this.confirmSceneReplacement()) {
+      return;
+    }
+    this.runSceneMutation(() => {
+      const preset = this.scenePresets.find((entry) => entry.id === 'blank');
+      this.store.applyScenePreset('blank');
+      this.store.patchPreferences({ scale: this.defaultScale });
+      if (preset) {
+        this.store.renameScene(this.scenePresetTitle(preset));
+      }
+      this.viewportCenter.set({ x: 0, y: 0 });
+      this.activeTool.set('select');
+      this.inspectorTab.set('scene');
+      this.closeFileMenu();
+    });
   }
 
   resetViewport(): void {
@@ -1149,6 +1165,14 @@ export class EditorPageComponent {
     this.closeContextMenu();
     this.store.recordHistoryCheckpoint();
     action();
+  }
+
+  private confirmSceneReplacement(): boolean {
+    if (this.scene().shapes.length === 0) {
+      return true;
+    }
+
+    return globalThis.confirm?.(this.t('confirmReplaceScene')) ?? true;
   }
 
   private buildShareUrl(): string {

@@ -14,67 +14,42 @@
         <input type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
       </label>
 
-      <div class="menu-cluster">
+      <div class="topbar-actions">
         <button
-          class="menu-button"
+          class="secondary-button secondary-button--toolbar"
           type="button"
-          (click)="toggleFileMenu(); $event.stopPropagation()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.file"></path></svg>
-          <span>{{ t('file') }}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.chevronDown"></path>
-          </svg>
+          [title]="t('newScene')"
+          (click)="resetScene()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.plus"></path></svg>
+          <span>{{ t('newScene') }}</span>
         </button>
-
-        @if (fileMenuOpen()) {
-          <div class="dropdown-menu" (click)="$event.stopPropagation()">
-            <div class="dropdown-menu__group">
-              <div class="dropdown-menu__label">{{ t('fileActions') }}</div>
-              <button class="dropdown-row" type="button" (click)="resetScene()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.plus"></path>
-                </svg>
-                <span>{{ t('newScene') }}</span>
-              </button>
-              <button class="dropdown-row" type="button" (click)="resetViewport()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.scene"></path>
-                </svg>
-                <span>{{ t('centerView') }}</span>
-              </button>
-              <button class="dropdown-row" type="button" (click)="copyShareLink()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.share"></path>
-                </svg>
-                <span>{{ t('copyLink') }}</span>
-              </button>
-              <button class="dropdown-row" type="button" (click)="openExportModal()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.export"></path>
-                </svg>
-                <span>{{ t('openExport') }}</span>
-              </button>
-            </div>
-
-            <div class="dropdown-menu__group">
-              <div class="dropdown-menu__label">{{ t('templates') }}</div>
-              @for (preset of scenePresets; track presetTrackBy($index, preset)) {
-                <button
-                  class="dropdown-row dropdown-row--stacked"
-                  type="button"
-                  (click)="applyScenePreset(preset.id)">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="presetIconPath(preset.icon)"></path>
-                  </svg>
-                  <span>
-                    <strong>{{ scenePresetTitle(preset) }}</strong>
-                    <small>{{ scenePresetDescription(preset) }}</small>
-                  </span>
-                </button>
-              }
-            </div>
-          </div>
-        }
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [title]="t('centerView')"
+          (click)="resetViewport()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.scene"></path></svg>
+          <span>{{ t('centerView') }}</span>
+        </button>
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [title]="t('copyLink')"
+          (click)="copyShareLink()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.link"></path></svg>
+          <span>{{ t('copyLink') }}</span>
+        </button>
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [class.is-active]="inspectorTab() === 'scene'"
+          [title]="t('canvasSettings')"
+          (click)="setInspectorTab('scene')">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.settings"></path>
+          </svg>
+          <span>{{ t('settings') }}</span>
+        </button>
       </div>
     </div>
 
@@ -107,16 +82,16 @@
         </button>
       </div>
 
-      <button
-        class="icon-button"
-        type="button"
-        [class.is-active]="inspectorTab() === 'scene'"
-        [title]="t('canvasSettings')"
-        (click)="setInspectorTab('scene')">
+      <a
+        class="icon-button icon-button--github"
+        href="https://github.com/Aniol0012/tikz-drawer/"
+        target="_blank"
+        rel="noopener"
+        title="GitHub">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="iconMap.settings"></path>
+          <path [attr.d]="iconMap.github"></path>
         </svg>
-      </button>
+      </a>
 
       <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -161,7 +136,7 @@
               <button
                 class="preset-card preset-card--scene"
                 type="button"
-                [title]="scenePresetDescription(preset)"
+                [title]="scenePresetTitle(preset)"
                 (click)="applyScenePreset(preset.id)">
                 <span class="preset-card__icon"
                   ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -169,7 +144,6 @@
                 ></span>
                 <span class="preset-card__body">
                   <strong>{{ scenePresetTitle(preset) }}</strong>
-                  <small>{{ scenePresetDescription(preset) }}</small>
                 </span>
               </button>
             }
@@ -194,7 +168,7 @@
                   class="preset-card preset-card--library"
                   type="button"
                   [class.is-active]="activeTool() === preset.id"
-                  [title]="preset.description"
+                  [title]="preset.title"
                   (click)="setActiveTool(preset.id)">
                   <span class="preset-card__icon"
                     ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -202,7 +176,6 @@
                   ></span>
                   <span class="preset-card__body">
                     <strong>{{ preset.title }}</strong>
-                    <small>{{ preset.description }}</small>
                   </span>
                   @if (toolShortcut(preset.id); as shortcut) {
                     <kbd>{{ shortcut }}</kbd>
@@ -403,21 +376,8 @@
             </svg>
             <span>{{ objectCount() }}</span>
           </button>
-          <button class="canvas-chip" type="button" [title]="selectionLabel()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.select"></path>
-            </svg>
-            <span>{{ selectionCount() }}</span>
-          </button>
           <button class="canvas-chip" type="button" [title]="activeToolLabel()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                [attr.d]="
-                  activeTool() === 'select'
-                    ? iconMap.select
-                    : presetIconPath(activePreset()?.icon ?? 'rectangle')
-                "></path>
-            </svg>
+            <span>{{ activeToolLabel() }}</span>
           </button>
         </div>
 
@@ -483,7 +443,6 @@
               class="minimap__svg"
               [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
               aria-hidden="true">
-              <rect class="minimap__scene" [attr.x]="minimap.sceneRect.x" [attr.y]="minimap.sceneRect.y" [attr.width]="minimap.sceneRect.width" [attr.height]="minimap.sceneRect.height"></rect>
               @for (shape of minimap.shapes; track $index) {
                 <rect class="minimap__shape" [attr.x]="shape.x" [attr.y]="shape.y" [attr.width]="shape.width" [attr.height]="shape.height"></rect>
               }
@@ -1251,7 +1210,7 @@
               <input type="text" readonly [value]="shareUrl()" />
               <button class="secondary-button" type="button" (click)="copyShareLink()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.share"></path></svg
+                  <path [attr.d]="iconMap.link"></path></svg
                 ><span>{{ t('copyLink') }}</span>
               </button>
               <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"
