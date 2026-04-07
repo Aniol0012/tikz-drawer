@@ -14,6 +14,11 @@
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.1-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.17.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
+
+
+
+<div align="center">
+  <img width="150" height="150" alt="tikz-drawer" src="https://github.com/user-attachments/assets/505031a2-ebfa-4339-a4f8-0dac3717d3bf" />
 </div>
 
 ## Description
