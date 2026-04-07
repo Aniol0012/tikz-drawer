@@ -1688,3 +1688,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+.export-btn {
+  min-width: 200px;
+}

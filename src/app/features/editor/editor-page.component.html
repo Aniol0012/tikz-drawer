@@ -1713,13 +1713,13 @@
               {{ t('standalone') }}
             </button>
           </div>
-          <div class="inline-actions">
-            <button class="secondary-button" type="button" (click)="openExportSettingsModal()">
+          <div class="share-field">
+            <button class="secondary-button export-btn" type="button" (click)="openExportSettingsModal()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.settings"></path></svg
               ><span>{{ t('latexSettings') }}</span>
             </button>
-            <button class="secondary-button" type="button" (click)="downloadStandaloneFile()">
+            <button class="secondary-button export-btn" type="button" (click)="downloadStandaloneFile()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.download"></path></svg
               ><span>{{ t('downloadTex') }}</span>
