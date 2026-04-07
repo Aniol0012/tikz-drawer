@@ -87,8 +87,10 @@
         href="https://github.com/Aniol0012/tikz-drawer/"
         target="_blank"
         rel="noopener"
+        aria-label="GitHub"
         title="GitHub">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
+        <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="4"></rect>
           <path [attr.d]="iconMap.github"></path>
         </svg>
       </a>
@@ -1214,6 +1216,27 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg>
           </button>
         </header>
+        <div class="share-panel share-panel--top">
+          <label class="field field--full">
+            <span>{{ t('shareLink') }}</span>
+            <div class="share-field">
+              <input type="text" readonly [value]="shareUrl()" />
+              <button class="secondary-button" type="button" (click)="copyShareLink()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.link"></path></svg
+                ><span>{{ t('copyLink') }}</span>
+              </button>
+              <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"
+                ><svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.open"></path></svg
+                ><span>{{ t('openSharedLink') }}</span></a
+              >
+            </div>
+          </label>
+          @if (shareFeedback()) {
+            <div class="copy-feedback">{{ shareFeedback() }}</div>
+          }
+        </div>
         <div class="export-toolbar">
           <div class="mode-switch">
             <button
@@ -1245,29 +1268,20 @@
             </button>
           </div>
         </div>
-        <div class="share-panel">
-          <label class="field field--full">
-            <span>{{ t('shareLink') }}</span>
-            <div class="share-field">
-              <input type="text" readonly [value]="shareUrl()" />
-              <button class="secondary-button" type="button" (click)="copyShareLink()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.link"></path></svg
-                ><span>{{ t('copyLink') }}</span>
-              </button>
-              <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"
-                ><svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.open"></path></svg
-                ><span>{{ t('openSharedLink') }}</span></a
-              >
+        @if (exportMode() === 'snippet') {
+          <section class="export-section">
+            <div class="export-section__header">
+              <h3>{{ t('latexImports') }}</h3>
             </div>
-          </label>
-          @if (shareFeedback()) {
-            <div class="copy-feedback">{{ shareFeedback() }}</div>
-          }
-        </div>
-        <pre
-          class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+            <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
+          </section>
+        }
+        <section class="export-section">
+          <div class="export-section__header">
+            <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
+          </div>
+          <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+        </section>
       </section>
     </div>
   }

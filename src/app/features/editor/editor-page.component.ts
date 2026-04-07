@@ -28,7 +28,7 @@ import {
   highlightLatex,
   translateShapeBy
 } from './editor-page.utils';
-import { sceneToStandaloneDocument } from './tikz.codegen';
+import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
   CanvasShape,
@@ -373,11 +373,16 @@ export class EditorPageComponent {
       height: (top - bottom) * this.preferences().scale
     };
   });
+  readonly tikzExportBundle = computed(() => sceneToTikzBundle(this.scene()));
   readonly standaloneDocument = computed(() => sceneToStandaloneDocument(this.scene()));
   readonly displayedExportCode = computed(() =>
-    this.exportMode() === 'snippet' ? this.exportedCode() : this.standaloneDocument()
+    this.exportMode() === 'snippet' ? this.tikzExportBundle().code : this.standaloneDocument()
   );
-  readonly highlightedSnippetCode = computed(() => highlightLatex(this.exportedCode()));
+  readonly displayedExportImports = computed(() =>
+    this.exportMode() === 'snippet' ? this.tikzExportBundle().imports : ''
+  );
+  readonly highlightedSnippetCode = computed(() => highlightLatex(this.tikzExportBundle().code));
+  readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly shareUrl = computed(() => this.buildShareUrl());
 
@@ -634,7 +639,7 @@ export class EditorPageComponent {
   }
 
   copyExportedCode(): void {
-    void navigator.clipboard?.writeText(this.exportedCode());
+    void navigator.clipboard?.writeText(this.tikzExportBundle().code);
   }
 
   copyStandaloneCode(): void {

@@ -369,16 +369,45 @@
   font-weight: 700;
 }
 
-.icon-button--github {
-  border-radius: 999px;
-  background: #111111;
-  color: #ffffff;
-  border-color: #111111;
+
+.icon-button--github .icon-button__github-mark {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: 0 0 auto;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
 }
 
-.icon-button--github:hover {
-  background: #222222;
-  border-color: #222222;
+.icon-button--github .icon-button__github-mark rect {
+  stroke-width: 1;
+}
+
+.icon-button--github .icon-button__github-mark path {
+  stroke: none;
+}
+
+:host([data-theme='dark']) .icon-button--github .icon-button__github-mark rect {
+  fill: #111111;
+  stroke: var(--tool-border-strong);
+}
+
+:host([data-theme='dark']) .icon-button--github .icon-button__github-mark path {
+  fill: #ffffff;
+}
+
+:host([data-theme='light']) .icon-button--github .icon-button__github-mark rect {
+  fill: #ffffff;
+  stroke: var(--tool-border);
+}
+
+:host([data-theme='light']) .icon-button--github .icon-button__github-mark path {
+  fill: #111111;
+}
+
+.icon-button--github:hover .icon-button__github-mark {
+  transform: translateY(-0.5px) scale(1.03);
 }
 
 .sidebar-tabs {
@@ -878,7 +907,7 @@ kbd {
 }
 
 .code-block--modal {
-  min-height: 360px;
+  min-height: 220px;
 }
 
 .code-input {
@@ -954,9 +983,17 @@ kbd {
 }
 
 .share-panel,
-.copy-feedback {
+.copy-feedback,
+.export-section {
   display: grid;
   gap: 10px;
+}
+
+.share-panel--top {
+  padding: 14px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tool-surface) 92%, transparent);
 }
 
 .copy-feedback {
@@ -971,6 +1008,18 @@ kbd {
 
 .share-field input {
   flex: 1 1 280px;
+}
+
+.export-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.export-section__header h3 {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .tok-command {
@@ -1183,5 +1232,9 @@ button:disabled {
   .export-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .export-section__header {
+    align-items: flex-start;
   }
 }

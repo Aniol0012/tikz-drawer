@@ -8,6 +8,11 @@ import type {
   TikzScene
 } from './tikz.models';
 
+export interface TikzExportBundle {
+  readonly imports: string;
+  readonly code: string;
+}
+
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
@@ -19,22 +24,60 @@ interface ShapeStyleConfig {
   readonly fill?: string;
 }
 
-const buildStyleEntries = (shape: ShapeStyleConfig): string[] => {
-  const entries = [`draw=${shape.stroke}`];
+interface TikzGenerationContext {
+  readonly colorMap: Map<string, string>;
+  readonly registerColor: (color: string) => string;
+}
+
+const sanitizeColorKey = (color: string): string => color.trim().toLowerCase();
+
+const normalizeHexColor = (color: string): string | null => {
+  const trimmed = color.trim();
+  const match = trimmed.match(/^#?([0-9a-fA-F]{6})$/);
+  return match ? match[1].toUpperCase() : null;
+};
+
+const createTikzGenerationContext = (): TikzGenerationContext => {
+  const colorMap = new Map<string, string>();
+  let colorIndex = 1;
+
+  return {
+    colorMap,
+    registerColor: (color: string): string => {
+      const normalizedHex = normalizeHexColor(color);
+      if (!normalizedHex) {
+        return color;
+      }
+
+      const key = sanitizeColorKey(normalizedHex);
+      const existing = colorMap.get(key);
+      if (existing) {
+        return existing;
+      }
+
+      const colorName = `tikzdrawercolor${colorIndex++}`;
+      colorMap.set(key, colorName);
+      return colorName;
+    }
+  };
+};
+
+const buildStyleEntries = (shape: ShapeStyleConfig, context: TikzGenerationContext): string[] => {
+  const entries = [`draw=${context.registerColor(shape.stroke)}`];
 
   if (shape.strokeWidth > 0) {
     entries.push(`line width=${formatNumber(shape.strokeWidth)}pt`);
   }
 
   if ('fill' in shape && shape.fill && shape.fill !== 'none') {
-    entries.push(`fill=${shape.fill}`);
+    entries.push(`fill=${context.registerColor(shape.fill)}`);
   }
 
   return entries;
 };
 
-const lineToTikz = (shape: LineShape): string => {
-  const entries = buildStyleEntries(shape);
+const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string => {
+  const entries = buildStyleEntries(shape, context);
 
   if (shape.arrowStart && shape.arrowEnd) {
     entries.push('<->');
@@ -47,8 +90,8 @@ const lineToTikz = (shape: LineShape): string => {
   return `\\draw[${entries.join(', ')}] (${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)});`;
 };
 
-const rectangleToTikz = (shape: RectangleShape): string => {
-  const entries = buildStyleEntries(shape);
+const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
+  const entries = buildStyleEntries(shape, context);
 
   if (shape.cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
@@ -57,41 +100,47 @@ const rectangleToTikz = (shape: RectangleShape): string => {
   return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y - shape.height)});`;
 };
 
-const circleToTikz = (shape: CircleShape): string =>
-  `\\draw[${buildStyleEntries(shape).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
+const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string =>
+  `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
 
-const ellipseToTikz = (shape: EllipseShape): string =>
-  `\\draw[${buildStyleEntries(shape).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
+const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string =>
+  `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
 
-const textToTikz = (shape: TextShape): string =>
-  `\\node[text=${shape.color}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
+const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
+  `\\node[text=${context.registerColor(shape.color)}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
 
-export const shapeToTikz = (shape: CanvasShape): string => {
+export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext): string => {
   switch (shape.kind) {
     case 'line':
-      return lineToTikz(shape);
+      return lineToTikz(shape, context);
     case 'rectangle':
-      return rectangleToTikz(shape);
+      return rectangleToTikz(shape, context);
     case 'circle':
-      return circleToTikz(shape);
+      return circleToTikz(shape, context);
     case 'ellipse':
-      return ellipseToTikz(shape);
+      return ellipseToTikz(shape, context);
     case 'text':
-      return textToTikz(shape);
+      return textToTikz(shape, context);
   }
 };
 
-export const sceneToTikz = (scene: TikzScene): string => {
-  const lines = scene.shapes.map((shape) => shapeToTikz(shape));
+export const sceneToTikzBundle = (scene: TikzScene): TikzExportBundle => {
+  const context = createTikzGenerationContext();
+  const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
+  const imports = ['\\usepackage{tikz}', ...Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)];
 
-  return ['\\begin{tikzpicture}', ...lines.map((line) => `  ${line}`), '\\end{tikzpicture}'].join('\n');
+  return {
+    imports: imports.join('\n'),
+    code: ['\\begin{tikzpicture}', ...lines.map((line) => `  ${line}`), '\\end{tikzpicture}'].join('\n')
+  };
 };
 
+export const sceneToTikz = (scene: TikzScene): string => sceneToTikzBundle(scene).code;
+
 export const sceneToStandaloneDocument = (scene: TikzScene): string =>
-  [
-    '\\documentclass[tikz]{standalone}',
-    '\\usepackage{tikz}',
-    '\\begin{document}',
-    sceneToTikz(scene),
-    '\\end{document}'
-  ].join('\n');
+  (() => {
+    const bundle = sceneToTikzBundle(scene);
+    return ['\\documentclass[tikz]{standalone}', bundle.imports, '\\begin{document}', bundle.code, '\\end{document}'].join(
+      '\n'
+    );
+  })();
