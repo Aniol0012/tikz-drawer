@@ -10,8 +10,8 @@
         <span>{{ t('version') }} {{ appVersion }}</span>
       </div>
 
-      <label class="scene-input">
-        <input type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
+      <label class="scene-input" htmlFor="scene-name-input">
+        <input id="scene-name-input" type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
       </label>
 
       <div class="topbar-actions">
@@ -26,29 +26,12 @@
         <button
           class="secondary-button secondary-button--toolbar"
           type="button"
-          [title]="t('centerView')"
-          (click)="resetViewport()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.scene"></path></svg>
-          <span>{{ t('centerView') }}</span>
-        </button>
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
           [title]="t('copyLink')"
           (click)="copyShareLink()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.link"></path></svg>
-          <span>{{ t('copyLink') }}</span>
-        </button>
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
-          [class.is-active]="inspectorTab() === 'scene'"
-          [title]="t('canvasSettings')"
-          (click)="setInspectorTab('scene')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.settings"></path>
+            <path [attr.d]="iconMap.link"></path>
           </svg>
-          <span>{{ t('settings') }}</span>
+          <span>{{ t('copyLink') }}</span>
         </button>
       </div>
     </div>

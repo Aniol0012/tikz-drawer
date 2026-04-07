@@ -113,8 +113,9 @@
 }
 
 .scene-input {
-  width: min(220px, 100%);
-  flex: 1 1 220px;
+  width: min(150px, 100%);
+  flex: 1 1 150px;
+  max-width: 300px;
 }
 
 .scene-input input,
