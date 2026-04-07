@@ -1428,7 +1428,8 @@ export class EditorPageComponent {
       scene: this.scene(),
       preferences: this.preferences(),
       importCode: this.store.importCode(),
-      viewportCenter: this.viewportCenter()
+      viewportCenter: this.viewportCenter(),
+      latexExportConfig: this.latexExportConfig()
     };
     const url = new URL(location.href);
     url.searchParams.set('share', encodeSharePayload(payload));
@@ -1448,6 +1449,12 @@ export class EditorPageComponent {
 
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
+    if (sharedState.latexExportConfig) {
+      this.latexExportConfig.set({
+        ...this.defaultLatexExportConfig,
+        ...sharedState.latexExportConfig
+      });
+    }
   }
 
   private setScaleFromViewportCenter(nextScale: number): void {

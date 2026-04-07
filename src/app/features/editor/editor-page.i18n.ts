@@ -8,6 +8,18 @@ export type TranslationDictionary = Record<string, string>;
 
 export interface SharedScenePayload extends PersistedEditorState {
   readonly viewportCenter: Point;
+  readonly latexExportConfig?: {
+    readonly colorMode?: 'direct-rgb' | 'define-colors';
+    readonly wrapInFigure?: boolean;
+    readonly figurePlacement?: string;
+    readonly alignment?: 'center' | 'left' | 'right';
+    readonly maxWidthPercent?: number;
+    readonly fontSize?: 'tiny' | 'scriptsize' | 'footnotesize' | 'small' | 'normalsize' | 'large';
+    readonly includeCaption?: boolean;
+    readonly caption?: string;
+    readonly includeLabel?: boolean;
+    readonly label?: string;
+  };
 }
 
 export const translations: Record<LanguageCode, TranslationDictionary> = {

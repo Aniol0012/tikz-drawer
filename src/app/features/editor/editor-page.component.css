@@ -938,6 +938,10 @@ kbd {
   min-height: 220px;
 }
 
+.code-block--imports {
+  min-height: 160px;
+}
+
 .code-input {
   min-height: 180px;
   resize: vertical;
