@@ -464,6 +464,29 @@
             }
           }
 
+          @if (inlineTextEditorLayout(); as editorLayout) {
+            <foreignObject
+              [attr.x]="editorLayout.left - editorLayout.width / 2"
+              [attr.y]="editorLayout.top - editorLayout.height / 2"
+              [attr.width]="editorLayout.width"
+              [attr.height]="editorLayout.height"
+              (pointerdown)="$event.stopPropagation()">
+              <div class="inline-text-editor__shell" xmlns="http://www.w3.org/1999/xhtml">
+                <input
+                  #inlineTextInput
+                  class="inline-text-editor"
+                  type="text"
+                  [value]="inlineTextEditor()?.value ?? ''"
+                  [style.fontSize.px]="editorLayout.fontSize"
+                  (input)="updateInlineTextEditor($event)"
+                  (blur)="commitInlineTextEditor()"
+                  (keydown)="onInlineTextEditorKeydown($event)"
+                  (pointerdown)="$event.stopPropagation()"
+                  (click)="$event.stopPropagation()" />
+              </div>
+            </foreignObject>
+          }
+
           @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [attr.d]="selectionPath"></path>
           } @else if (selectionOutline(); as outline) {
@@ -497,23 +520,6 @@
             }
           }
         </svg>
-
-        @if (inlineTextEditorLayout(); as editorLayout) {
-          <input
-            #inlineTextInput
-            class="inline-text-editor"
-            type="text"
-            [value]="inlineTextEditor()?.value ?? ''"
-            [style.left.px]="editorLayout.left"
-            [style.top.px]="editorLayout.top"
-            [style.width.px]="editorLayout.width"
-            [style.fontSize.px]="editorLayout.fontSize"
-            (input)="updateInlineTextEditor($event)"
-            (blur)="commitInlineTextEditor()"
-            (keydown)="onInlineTextEditorKeydown($event)"
-            (pointerdown)="$event.stopPropagation()"
-            (click)="$event.stopPropagation()" />
-        }
 
         @if (!scene().shapes.length) {
           <div class="canvas-empty">
@@ -716,15 +722,7 @@
 
       <div class="sidebar-scroll">
         @if (inspectorTab() === 'properties') {
-          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('properties')">
-            <button class="section-header" type="button" (click)="toggleSection('properties')">
-              <span>{{ t('selectedObject') }}</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.chevronDown"></path>
-              </svg>
-            </button>
-
-            @if (!isSectionCollapsed('properties')) {
+          <section class="sidebar-section">
               @if (selectedShape(); as shape) {
                 <div class="selection-title">
                   <strong>{{ shape.name }}</strong>
@@ -1345,7 +1343,6 @@
               } @else {
                 <div class="empty-panel">{{ t('noneSelected') }}</div>
               }
-            }
           </section>
         } @else if (inspectorTab() === 'scene') {
           <section

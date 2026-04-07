@@ -458,10 +458,12 @@ export class EditorPageComponent {
 
     const fontSize = Math.max(shape.fontSize * this.preferences().scale, 14);
     const width = Math.max(editor.value.length * fontSize * 0.58, fontSize * 3.2, 88);
+    const height = Math.max(fontSize * 1.9, 36);
     return {
       left: this.toSvgX(shape.x),
       top: this.toSvgY(shape.y),
       width,
+      height,
       fontSize
     };
   });
@@ -1440,6 +1442,14 @@ export class EditorPageComponent {
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
     if (this.activeTool() !== 'select' || event.button !== 0 || this.spacePressed()) {
+      return;
+    }
+
+    if (shape.kind === 'text' && event.detail >= 2) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.selectShape(shape.id);
+      this.openInlineTextEditor(shape);
       return;
     }
 
