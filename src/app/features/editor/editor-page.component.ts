@@ -2040,7 +2040,7 @@ export class EditorPageComponent {
     const preset = presetId === 'blank' ? null : this.scenePresets.find((entry) => entry.id === presetId);
     this.sceneReplaceDialog.set({
       presetId,
-      title: presetId === 'blank' ? this.t('newScene') : (preset ? this.scenePresetTitle(preset) : this.t('newScene'))
+      title: presetId === 'blank' ? this.t('newScene') : preset ? this.scenePresetTitle(preset) : this.t('newScene')
     });
   }
 
