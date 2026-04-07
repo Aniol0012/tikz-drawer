@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - gh-pages
     paths:
+      - src/**/*
       - package.json
       - README.md
   workflow_dispatch:
