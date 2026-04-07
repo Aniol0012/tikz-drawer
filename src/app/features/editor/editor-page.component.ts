@@ -651,10 +651,7 @@ export class EditorPageComponent {
     }));
   }
 
-  updateLatexExportText(
-    key: 'figurePlacement' | 'caption' | 'label',
-    event: Event
-  ): void {
+  updateLatexExportText(key: 'figurePlacement' | 'caption' | 'label', event: Event): void {
     this.patchLatexExportConfig({
       [key]: (event.target as HTMLInputElement | HTMLSelectElement).value
     } as Partial<LatexExportConfig>);
@@ -671,10 +668,7 @@ export class EditorPageComponent {
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportBoolean(
-    key: 'wrapInFigure' | 'includeCaption' | 'includeLabel',
-    event: Event
-  ): void {
+  updateLatexExportBoolean(key: 'wrapInFigure' | 'includeCaption' | 'includeLabel', event: Event): void {
     this.patchLatexExportConfig({
       [key]: (event.target as HTMLInputElement).checked
     } as Partial<LatexExportConfig>);
