@@ -371,11 +371,19 @@ export class EditorPageComponent {
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
   readonly selectedMergeIds = computed(() =>
-    Array.from(new Set(this.selectedShapes().map((shape) => shape.mergeId).filter((mergeId): mergeId is string => !!mergeId)))
+    Array.from(
+      new Set(
+        this.selectedShapes()
+          .map((shape) => shape.mergeId)
+          .filter((mergeId): mergeId is string => !!mergeId)
+      )
+    )
   );
   readonly canGroupSelection = computed(() => this.selectionCount() > 1 && this.selectedMergeIds().length === 0);
   readonly canUngroupSelection = computed(() => this.selectedMergeIds().length > 0);
-  readonly activePreset = computed(() => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null);
+  readonly activePreset = computed(
+    () => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null
+  );
   readonly activeToolLabel = computed(() => {
     const preset = this.activePreset();
     return preset ? this.presetTitle(preset) : this.t('selection');
@@ -870,7 +878,7 @@ export class EditorPageComponent {
     const existing = this.savedTemplates().find((template) => template.id === this.editingTemplateId());
     const sourceShapes =
       mode === 'edit' && !this.templateUseCurrentSelection()
-        ? existing?.shapes ?? []
+        ? (existing?.shapes ?? [])
         : structuredClone(this.selectedShapes());
 
     if (!sourceShapes.length) {
@@ -1340,9 +1348,7 @@ export class EditorPageComponent {
     const selectedIds = new Set(this.selectedShapes().map((shape) => shape.id));
     const alreadySelected = groupedIds.every((id) => selectedIds.has(id));
     this.store.setSelectedShapes(
-      alreadySelected
-        ? [...selectedIds].filter((id) => !groupedIds.includes(id))
-        : [...selectedIds, ...groupedIds]
+      alreadySelected ? [...selectedIds].filter((id) => !groupedIds.includes(id)) : [...selectedIds, ...groupedIds]
     );
   }
 
@@ -2041,11 +2047,7 @@ export class EditorPageComponent {
     }
   }
 
-  private buildInsertionPreviewShapes(
-    toolId: ToolId,
-    startPoint: Point,
-    currentPoint: Point
-  ): readonly CanvasShape[] {
+  private buildInsertionPreviewShapes(toolId: ToolId, startPoint: Point, currentPoint: Point): readonly CanvasShape[] {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
       return [];
@@ -2215,7 +2217,11 @@ export class EditorPageComponent {
     if (!firstShape) {
       return 'library';
     }
-    return firstShape.kind === 'line' && firstShape.arrowEnd ? 'arrow' : firstShape.kind === 'line' ? 'segment' : firstShape.kind;
+    return firstShape.kind === 'line' && firstShape.arrowEnd
+      ? 'arrow'
+      : firstShape.kind === 'line'
+        ? 'segment'
+        : firstShape.kind;
   }
 
   private restoreSavedTemplates(): void {
