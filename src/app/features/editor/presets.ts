@@ -674,7 +674,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Folder-style block for files, groups and collections.',
     [
       createRectangle({ name: 'Folder body', width: 4.8, height: 2.7, fill: '#faf7e8', cornerRadius: 0.12 }),
-      createRectangle({ name: 'Folder tab', x: -1.8, y: 1.55, width: 1.6, height: 0.55, fill: '#f3e5a3', cornerRadius: 0.08 }),
+      createRectangle({
+        name: 'Folder tab',
+        x: -1.8,
+        y: 1.55,
+        width: 1.6,
+        height: 0.55,
+        fill: '#f3e5a3',
+        cornerRadius: 0.08
+      }),
       createText({ name: 'Folder label', text: 'Folder', y: 0.05 })
     ],
     { searchTerms: ['folder', 'files', 'directory', 'collection'] }
@@ -701,8 +709,20 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Three-column board for workflows and task planning.',
     [
       createRectangle({ name: 'Kanban frame', width: 7.2, height: 3.8, fill: '#fbfbfb', cornerRadius: 0.14 }),
-      createLine({ name: 'Kanban divider 1', from: { x: -1.2, y: 1.9 }, to: { x: -1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
-      createLine({ name: 'Kanban divider 2', from: { x: 1.2, y: 1.9 }, to: { x: 1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
+      createLine({
+        name: 'Kanban divider 1',
+        from: { x: -1.2, y: 1.9 },
+        to: { x: -1.2, y: -1.9 },
+        stroke: '#90959a',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Kanban divider 2',
+        from: { x: 1.2, y: 1.9 },
+        to: { x: 1.2, y: -1.9 },
+        stroke: '#90959a',
+        strokeWidth: 0.05
+      }),
       createText({ name: 'Kanban todo', text: 'To do', x: -2.4, y: 1.2, fontSize: 0.3 }),
       createText({ name: 'Kanban doing', text: 'Doing', x: 0, y: 1.2, fontSize: 0.3 }),
       createText({ name: 'Kanban done', text: 'Done', x: 2.4, y: 1.2, fontSize: 0.3 })
