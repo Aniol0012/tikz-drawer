@@ -11,7 +11,11 @@
       </div>
 
       <label class="scene-input" htmlFor="scene-name-input">
-        <input id="scene-name-input" type="text" [value]="scene().name" (input)="onSceneNameInput($event)" />
+        <input
+          id="scene-name-input"
+          type="text"
+          [value]="scene().name"
+          (input)="onSceneNameInput($event)" />
       </label>
 
       <div class="topbar-actions">
@@ -338,6 +342,80 @@
             </g>
           }
 
+          @if (insertionPreviewShape(); as previewShape) {
+            <g class="shape-layer shape-layer--preview">
+              @switch (previewShape.kind) {
+                @case ('line') {
+                  <line
+                    [attr.x1]="toSvgX(previewShape.from.x)"
+                    [attr.y1]="toSvgY(previewShape.from.y)"
+                    [attr.x2]="toSvgX(previewShape.to.x)"
+                    [attr.y2]="toSvgY(previewShape.to.y)"
+                    [attr.stroke]="previewShape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                    [attr.marker-start]="previewShape.arrowStart ? 'url(#arrow-start)' : null"
+                    [attr.marker-end]="previewShape.arrowEnd ? 'url(#arrow-end)' : null"></line>
+                }
+                @case ('rectangle') {
+                  <rect
+                    [attr.x]="toSvgX(previewShape.x)"
+                    [attr.y]="toSvgY(previewShape.y + previewShape.height)"
+                    [attr.width]="previewShape.width * preferences().scale"
+                    [attr.height]="previewShape.height * preferences().scale"
+                    [attr.stroke]="previewShape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                    [attr.fill]="previewShape.fill"
+                    [attr.rx]="previewShape.cornerRadius * preferences().scale"></rect>
+                }
+                @case ('circle') {
+                  <circle
+                    [attr.cx]="toSvgX(previewShape.cx)"
+                    [attr.cy]="toSvgY(previewShape.cy)"
+                    [attr.r]="previewShape.r * preferences().scale"
+                    [attr.stroke]="previewShape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                    [attr.fill]="previewShape.fill"></circle>
+                }
+                @case ('ellipse') {
+                  <ellipse
+                    [attr.cx]="toSvgX(previewShape.cx)"
+                    [attr.cy]="toSvgY(previewShape.cy)"
+                    [attr.rx]="previewShape.rx * preferences().scale"
+                    [attr.ry]="previewShape.ry * preferences().scale"
+                    [attr.stroke]="previewShape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                    [attr.fill]="previewShape.fill"></ellipse>
+                }
+                @case ('text') {
+                  <text
+                    [attr.x]="toSvgX(previewShape.x)"
+                    [attr.y]="toSvgY(previewShape.y)"
+                    [attr.font-size]="previewShape.fontSize * preferences().scale"
+                    [attr.fill]="previewShape.color">
+                    {{ previewShape.text }}
+                  </text>
+                }
+                @case ('image') {
+                  <image
+                    [attr.x]="toSvgX(previewShape.x)"
+                    [attr.y]="toSvgY(previewShape.y + previewShape.height)"
+                    [attr.width]="previewShape.width * preferences().scale"
+                    [attr.height]="previewShape.height * preferences().scale"
+                    [attr.href]="previewShape.src"
+                    preserveAspectRatio="xMidYMid meet"></image>
+                  <rect
+                    [attr.x]="toSvgX(previewShape.x)"
+                    [attr.y]="toSvgY(previewShape.y + previewShape.height)"
+                    [attr.width]="previewShape.width * preferences().scale"
+                    [attr.height]="previewShape.height * preferences().scale"
+                    [attr.stroke]="previewShape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                    fill="none"></rect>
+                }
+              }
+            </g>
+          }
+
           @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [attr.d]="selectionPath"></path>
           } @else if (selectionOutline(); as outline) {
@@ -512,6 +590,25 @@
                       [attr.stroke]="shape.stroke"
                       [attr.stroke-width]="shape.strokeWidth"></rect>
                   }
+                  @case ('image') {
+                    <image
+                      class="minimap__shape"
+                      [attr.x]="shape.x"
+                      [attr.y]="shape.y"
+                      [attr.width]="shape.width"
+                      [attr.height]="shape.height"
+                      [attr.href]="shape.href"
+                      preserveAspectRatio="xMidYMid meet"></image>
+                    <rect
+                      class="minimap__shape"
+                      [attr.x]="shape.x"
+                      [attr.y]="shape.y"
+                      [attr.width]="shape.width"
+                      [attr.height]="shape.height"
+                      [attr.fill]="'none'"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></rect>
+                  }
                 }
               }
               <rect
@@ -564,11 +661,8 @@
 
             @if (!isSectionCollapsed('properties')) {
               @if (selectedShape(); as shape) {
-                <div class="selection-summary">
-                  <div>
-                    <strong>{{ shape.name }}</strong>
-                  </div>
-                  <span class="badge">{{ selectionCount() }}</span>
+                <div class="selection-title">
+                  <strong>{{ shape.name }}</strong>
                 </div>
 
                 <div class="inline-actions">
@@ -1130,8 +1224,38 @@
                   }
                 </div>
               } @else if (selectionCount() > 1) {
-                <div class="empty-panel">
-                  {{ selectionCount() }} {{ t('objects').toLowerCase() }}
+                <div class="selection-title">
+                  <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>
+                </div>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.copy"></path></svg
+                    ><span>{{ t('duplicate') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.front"></path></svg
+                    ><span>{{ t('bringToFront') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.back"></path></svg
+                    ><span>{{ t('sendToBack') }}</span>
+                  </button>
+                </div>
+                <div class="selected-shape-list">
+                  @for (shape of selectedShapes(); track shape.id) {
+                    <button
+                      class="selected-shape-card"
+                      type="button"
+                      (click)="selectShape(shape.id)">
+                      <span class="selected-shape-card__title">{{ shape.name }}</span>
+                      <span class="selected-shape-card__meta">{{
+                        localizedShapeKind(shape.kind)
+                      }}</span>
+                    </button>
+                  }
                 </div>
               } @else {
                 <div class="empty-panel">{{ t('noneSelected') }}</div>

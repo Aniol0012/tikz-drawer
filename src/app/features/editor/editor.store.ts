@@ -345,6 +345,18 @@ export class EditorStore {
     return movedShapes;
   }
 
+  addShapes(shapes: readonly CanvasShape[]): void {
+    if (!shapes.length) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: [...scene.shapes, ...shapes]
+    }));
+    this.selectedShapeIds.set(shapes.map((shape) => shape.id));
+  }
+
   removeSelected(): void {
     const selectedShapeIdSet = new Set(this.selectedShapeIds());
 

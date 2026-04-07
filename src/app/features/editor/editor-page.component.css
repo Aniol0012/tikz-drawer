@@ -68,6 +68,10 @@
   gap: 8px;
 }
 
+.inline-actions {
+  flex-wrap: wrap;
+}
+
 .topbar__left {
   min-width: 0;
   flex-wrap: wrap;
@@ -448,6 +452,18 @@
   margin: 12px 12px 0;
 }
 
+.sidebar-tabs button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+  text-align: center;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .menu-cluster {
   position: relative;
 }
@@ -632,6 +648,11 @@ kbd {
 
 .shape-layer {
   cursor: grab;
+}
+
+.shape-layer--preview {
+  pointer-events: none;
+  opacity: 0.76;
 }
 
 .shape-layer line,
@@ -831,6 +852,43 @@ kbd {
 
 .selection-summary > div {
   min-width: 0;
+}
+
+.selection-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.selection-title strong {
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.selected-shape-list {
+  display: grid;
+  gap: 10px;
+}
+
+.selected-shape-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: var(--tool-surface);
+  text-align: left;
+}
+
+.selected-shape-card__title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.selected-shape-card__meta {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
 }
 
 .inline-actions .secondary-button,

@@ -130,7 +130,20 @@ interface MarqueeInteractionState {
   readonly additive: boolean;
 }
 
-type InteractionState = MoveInteractionState | PanInteractionState | ResizeInteractionState | MarqueeInteractionState;
+interface InsertInteractionState {
+  readonly kind: 'insert';
+  readonly pointerId: number;
+  readonly toolId: ToolId;
+  readonly startWorldPoint: Point;
+  readonly currentWorldPoint: Point;
+}
+
+type InteractionState =
+  | MoveInteractionState
+  | PanInteractionState
+  | ResizeInteractionState
+  | MarqueeInteractionState
+  | InsertInteractionState;
 
 interface ContextMenuState {
   readonly clientX: number;
@@ -202,12 +215,22 @@ interface MinimapTextShape extends MinimapShapeBase {
   readonly fill: string;
 }
 
+interface MinimapImageShape extends MinimapShapeBase {
+  readonly kind: 'image';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly href: string;
+}
+
 type MinimapShape =
   | MinimapLineShape
   | MinimapRectangleShape
   | MinimapCircleShape
   | MinimapEllipseShape
-  | MinimapTextShape;
+  | MinimapTextShape
+  | MinimapImageShape;
 
 interface MinimapOverview {
   readonly viewBoxWidth: number;
@@ -481,6 +504,18 @@ export class EditorPageComponent {
       width: (right - left) * this.preferences().scale,
       height: (top - bottom) * this.preferences().scale
     };
+  });
+  readonly insertionPreviewShape = computed<CanvasShape | null>(() => {
+    const interactionState = this.interactionState();
+    if (!interactionState || interactionState.kind !== 'insert') {
+      return null;
+    }
+
+    return this.buildInsertionPreviewShape(
+      interactionState.toolId,
+      interactionState.startWorldPoint,
+      interactionState.currentWorldPoint
+    );
   });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
@@ -856,7 +891,14 @@ export class EditorPageComponent {
     event.stopPropagation();
 
     if (this.activeTool() !== 'select') {
-      this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+      if (!this.canPreviewInsert(this.activeTool())) {
+        this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+      }
+      return;
+    }
+
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      this.setInspectorTab('properties');
       return;
     }
 
@@ -1104,13 +1146,26 @@ export class EditorPageComponent {
       return;
     }
 
+    if (event.button === 0 && this.activeTool() !== 'select' && this.canPreviewInsert(this.activeTool())) {
+      const worldPoint = this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY));
+      this.interactionState.set({
+        kind: 'insert',
+        pointerId: event.pointerId,
+        toolId: this.activeTool(),
+        startWorldPoint: worldPoint,
+        currentWorldPoint: worldPoint
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
+
     if (event.button === 0 && this.activeTool() === 'select') {
       this.interactionState.set({
         kind: 'marquee',
         pointerId: event.pointerId,
         startWorldPoint: this.toScenePoint(event.clientX, event.clientY),
         currentWorldPoint: this.toScenePoint(event.clientX, event.clientY),
-        additive: event.shiftKey
+        additive: event.shiftKey || event.ctrlKey || event.metaKey
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
     }
@@ -1124,8 +1179,9 @@ export class EditorPageComponent {
     event.preventDefault();
     event.stopPropagation();
 
-    if (event.shiftKey) {
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
       this.store.toggleShapeInSelection(shape.id);
+      this.setInspectorTab('properties');
       return;
     }
 
@@ -1197,6 +1253,14 @@ export class EditorPageComponent {
       return;
     }
 
+    if (interactionState.kind === 'insert') {
+      this.interactionState.set({
+        ...interactionState,
+        currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
+      });
+      return;
+    }
+
     const resizedShape = this.resizeShape(
       interactionState.initialShape,
       interactionState.handle,
@@ -1225,6 +1289,22 @@ export class EditorPageComponent {
       );
     }
 
+    if (interactionState.kind === 'insert') {
+      const previewShape = this.buildInsertionPreviewShape(
+        interactionState.toolId,
+        interactionState.startWorldPoint,
+        interactionState.currentWorldPoint,
+        true
+      );
+      if (previewShape) {
+        this.runSceneMutation(() => {
+          this.store.addShapes([previewShape]);
+          this.activeTool.set('select');
+          this.inspectorTab.set('properties');
+        });
+      }
+    }
+
     if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
       this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
     }
@@ -1251,7 +1331,9 @@ export class EditorPageComponent {
       return;
     }
 
-    this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+    if (!this.canPreviewInsert(this.activeTool())) {
+      this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+    }
   }
 
   toSvgX(x: number): number {
@@ -1633,6 +1715,106 @@ export class EditorPageComponent {
     return `${normalized}\\textwidth`;
   }
 
+  private canPreviewInsert(toolId: ToolId): boolean {
+    return this.objectPresets.some((preset) => preset.id === toolId && preset.shapes.length === 1);
+  }
+
+  private buildInsertionPreviewShape(
+    toolId: ToolId,
+    startPoint: Point,
+    currentPoint: Point,
+    commit = false
+  ): CanvasShape | null {
+    const preset = this.objectPresets.find((entry) => entry.id === toolId);
+    if (!preset || preset.shapes.length !== 1) {
+      return null;
+    }
+    const template = preset.shapes[0];
+
+    const deltaX = currentPoint.x - startPoint.x;
+    const deltaY = currentPoint.y - startPoint.y;
+    const hasDrag = Math.abs(deltaX) > 0.12 || Math.abs(deltaY) > 0.12;
+    const id = commit ? crypto.randomUUID() : 'preview-shape';
+
+    switch (template.kind) {
+      case 'line':
+        return {
+          ...structuredClone(template),
+          id,
+          from: startPoint,
+          to: hasDrag ? currentPoint : { x: startPoint.x + 2, y: startPoint.y }
+        };
+      case 'rectangle':
+        if (!hasDrag) {
+          return {
+            ...structuredClone(template),
+            id,
+            x: startPoint.x - template.width / 2,
+            y: startPoint.y - template.height / 2
+          };
+        }
+        return {
+          ...structuredClone(template),
+          id,
+          x: Math.min(startPoint.x, currentPoint.x),
+          y: Math.min(startPoint.y, currentPoint.y),
+          width: Math.max(Math.abs(deltaX), 0.2),
+          height: Math.max(Math.abs(deltaY), 0.2)
+        };
+      case 'circle': {
+        const radius = hasDrag ? Math.max(Math.max(Math.abs(deltaX), Math.abs(deltaY)) / 2, 0.1) : template.r;
+        return {
+          ...structuredClone(template),
+          id,
+          cx: hasDrag ? (startPoint.x + currentPoint.x) / 2 : startPoint.x,
+          cy: hasDrag ? (startPoint.y + currentPoint.y) / 2 : startPoint.y,
+          r: radius
+        };
+      }
+      case 'ellipse':
+        return {
+          ...structuredClone(template),
+          id,
+          cx: hasDrag ? (startPoint.x + currentPoint.x) / 2 : startPoint.x,
+          cy: hasDrag ? (startPoint.y + currentPoint.y) / 2 : startPoint.y,
+          rx: hasDrag ? Math.max(Math.abs(deltaX) / 2, 0.2) : template.rx,
+          ry: hasDrag ? Math.max(Math.abs(deltaY) / 2, 0.2) : template.ry
+        };
+      case 'text':
+        return {
+          ...structuredClone(template),
+          id,
+          x: startPoint.x,
+          y: startPoint.y
+        };
+      case 'image': {
+        const aspectRatio = template.aspectRatio || 1;
+        if (!hasDrag) {
+          return {
+            ...structuredClone(template),
+            id,
+            x: startPoint.x - template.width / 2,
+            y: startPoint.y - template.height / 2
+          };
+        }
+        const signX = deltaX >= 0 ? 1 : -1;
+        const signY = deltaY >= 0 ? 1 : -1;
+        const width = Math.max(Math.abs(deltaX), Math.abs(deltaY) * aspectRatio, 0.4);
+        const height = Math.max(width / aspectRatio, 0.4);
+        const x = signX >= 0 ? startPoint.x : startPoint.x - width;
+        const y = signY >= 0 ? startPoint.y : startPoint.y - height;
+        return {
+          ...structuredClone(template),
+          id,
+          x,
+          y,
+          width,
+          height
+        };
+      }
+    }
+  }
+
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
     const baseBundle = this.baseTikzExportBundle();
     const config = this.latexExportConfig();
@@ -1781,15 +1963,14 @@ export class EditorPageComponent {
       }
       case 'image':
         return {
-          kind: 'rectangle',
+          kind: 'image',
           stroke: shape.stroke,
           strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
-          fill: '#cbd5e1',
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
           width: Math.max(shape.width * scale, 1.4),
           height: Math.max(shape.height * scale, 1.4),
-          rx: 0.8
+          href: shape.src
         };
     }
   }
