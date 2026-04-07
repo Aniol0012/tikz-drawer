@@ -665,6 +665,84 @@ export const objectPresets: readonly ObjectPreset[] = [
       createText({ name: 'Actor label', text: 'User', y: -2.2, fontSize: 0.34 })
     ],
     { searchTerms: ['actor', 'user', 'person', 'use case'] }
+  ),
+  createPreset(
+    'folder',
+    'interface',
+    'document',
+    'Folder',
+    'Folder-style block for files, groups and collections.',
+    [
+      createRectangle({ name: 'Folder body', width: 4.8, height: 2.7, fill: '#faf7e8', cornerRadius: 0.12 }),
+      createRectangle({ name: 'Folder tab', x: -1.8, y: 1.55, width: 1.6, height: 0.55, fill: '#f3e5a3', cornerRadius: 0.08 }),
+      createText({ name: 'Folder label', text: 'Folder', y: 0.05 })
+    ],
+    { searchTerms: ['folder', 'files', 'directory', 'collection'] }
+  ),
+  createPreset(
+    'message',
+    'interface',
+    'callout',
+    'Message',
+    'Speech bubble for comments and chat flows.',
+    [
+      createRectangle({ name: 'Message bubble', width: 4.4, height: 2.2, fill: '#f7f9ff', cornerRadius: 0.24 }),
+      createLine({ name: 'Message tail a', from: { x: -1.1, y: -1.1 }, to: { x: -1.8, y: -1.8 }, strokeWidth: 0.06 }),
+      createLine({ name: 'Message tail b', from: { x: -0.4, y: -1.1 }, to: { x: -1.8, y: -1.8 }, strokeWidth: 0.06 }),
+      createText({ name: 'Message text', text: 'Message', y: 0.05 })
+    ],
+    { searchTerms: ['message', 'chat', 'comment', 'bubble'] }
+  ),
+  createPreset(
+    'kanban',
+    'interface',
+    'card',
+    'Kanban',
+    'Three-column board for workflows and task planning.',
+    [
+      createRectangle({ name: 'Kanban frame', width: 7.2, height: 3.8, fill: '#fbfbfb', cornerRadius: 0.14 }),
+      createLine({ name: 'Kanban divider 1', from: { x: -1.2, y: 1.9 }, to: { x: -1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
+      createLine({ name: 'Kanban divider 2', from: { x: 1.2, y: 1.9 }, to: { x: 1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
+      createText({ name: 'Kanban todo', text: 'To do', x: -2.4, y: 1.2, fontSize: 0.3 }),
+      createText({ name: 'Kanban doing', text: 'Doing', x: 0, y: 1.2, fontSize: 0.3 }),
+      createText({ name: 'Kanban done', text: 'Done', x: 2.4, y: 1.2, fontSize: 0.3 })
+    ],
+    { searchTerms: ['kanban', 'board', 'tasks', 'workflow'] }
+  ),
+  createPreset(
+    'funnel',
+    'data',
+    'triangle',
+    'Funnel',
+    'Simple funnel shape for conversion or filtering flows.',
+    [
+      createLine({ name: 'Funnel top', from: { x: -2.6, y: 1.5 }, to: { x: 2.6, y: 1.5 } }),
+      createLine({ name: 'Funnel left', from: { x: -2.6, y: 1.5 }, to: { x: -0.8, y: -0.2 } }),
+      createLine({ name: 'Funnel right', from: { x: 2.6, y: 1.5 }, to: { x: 0.8, y: -0.2 } }),
+      createLine({ name: 'Funnel stem left', from: { x: -0.8, y: -0.2 }, to: { x: -0.45, y: -1.8 } }),
+      createLine({ name: 'Funnel stem right', from: { x: 0.8, y: -0.2 }, to: { x: 0.45, y: -1.8 } }),
+      createLine({ name: 'Funnel bottom', from: { x: -0.45, y: -1.8 }, to: { x: 0.45, y: -1.8 } })
+    ],
+    { searchTerms: ['funnel', 'conversion', 'filter', 'pipeline'] }
+  ),
+  createPreset(
+    'network',
+    'concepts',
+    'hub',
+    'Network',
+    'Mini network map with interconnected nodes.',
+    [
+      createCircle({ name: 'Network center', cx: 0, cy: 0, r: 0.42, fill: '#dbe6ff', stroke: '#2f66f3' }),
+      createCircle({ name: 'Network north-west', cx: -1.8, cy: 1.2, r: 0.3, fill: '#f5f5f5' }),
+      createCircle({ name: 'Network north-east', cx: 1.8, cy: 1.2, r: 0.3, fill: '#f5f5f5' }),
+      createCircle({ name: 'Network south-west', cx: -1.8, cy: -1.2, r: 0.3, fill: '#f5f5f5' }),
+      createCircle({ name: 'Network south-east', cx: 1.8, cy: -1.2, r: 0.3, fill: '#f5f5f5' }),
+      createLine({ name: 'Network link 1', from: { x: -1.38, y: 0.9 }, to: { x: -0.32, y: 0.18 } }),
+      createLine({ name: 'Network link 2', from: { x: 1.38, y: 0.9 }, to: { x: 0.32, y: 0.18 } }),
+      createLine({ name: 'Network link 3', from: { x: -1.38, y: -0.9 }, to: { x: -0.32, y: -0.18 } }),
+      createLine({ name: 'Network link 4', from: { x: 1.38, y: -0.9 }, to: { x: 0.32, y: -0.18 } })
+    ],
+    { searchTerms: ['network', 'graph', 'topology', 'nodes'] }
   )
 ];
 
