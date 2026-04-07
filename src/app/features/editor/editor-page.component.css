@@ -731,6 +731,24 @@ kbd {
   user-select: none;
 }
 
+.inline-text-editor {
+  position: absolute;
+  z-index: 6;
+  min-width: 88px;
+  min-height: 34px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--tool-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-background) 96%, white 4%);
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  box-shadow: var(--floating-shadow);
+}
+
 .shape-layer.is-selected line,
 .shape-layer.is-selected rect,
 .shape-layer.is-selected circle,

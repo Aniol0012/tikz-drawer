@@ -313,6 +313,7 @@
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"
               (click)="onShapeClick($event, shape)"
+              (dblclick)="onShapeDoubleClick($event, shape)"
               (pointerdown)="startMove($event, shape)"
               (contextmenu)="openShapeContextMenu($event, shape)">
               @switch (shape.kind) {
@@ -496,6 +497,23 @@
             }
           }
         </svg>
+
+        @if (inlineTextEditorLayout(); as editorLayout) {
+          <input
+            #inlineTextInput
+            class="inline-text-editor"
+            type="text"
+            [value]="inlineTextEditor()?.value ?? ''"
+            [style.left.px]="editorLayout.left"
+            [style.top.px]="editorLayout.top"
+            [style.width.px]="editorLayout.width"
+            [style.fontSize.px]="editorLayout.fontSize"
+            (input)="updateInlineTextEditor($event)"
+            (blur)="commitInlineTextEditor()"
+            (keydown)="onInlineTextEditorKeydown($event)"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()" />
+        }
 
         @if (!scene().shapes.length) {
           <div class="canvas-empty">

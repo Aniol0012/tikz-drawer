@@ -160,6 +160,11 @@ interface ContextMenuState {
   readonly shapeId: string | null;
 }
 
+interface InlineTextEditorState {
+  readonly shapeId: string;
+  readonly value: string;
+}
+
 interface SidebarResizeState {
   readonly side: 'left' | 'right';
   readonly startX: number;
@@ -289,6 +294,7 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
+  readonly inlineTextInput = viewChild<ElementRef<HTMLInputElement>>('inlineTextInput');
 
   readonly appVersion = packageManifest.version;
   readonly scene = this.store.scene;
@@ -329,6 +335,7 @@ export class EditorPageComponent {
   readonly templateDescriptionInput = signal('');
   readonly templateUseCurrentSelection = signal(true);
   readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
+  readonly inlineTextEditor = signal<InlineTextEditorState | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
@@ -437,6 +444,26 @@ export class EditorPageComponent {
       sceneBounds.bottom >= visibleBounds.bottom &&
       sceneBounds.top <= visibleBounds.top;
     return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
+  });
+  readonly inlineTextEditorLayout = computed(() => {
+    const editor = this.inlineTextEditor();
+    if (!editor) {
+      return null;
+    }
+
+    const shape = this.scene().shapes.find((entry) => entry.id === editor.shapeId);
+    if (!shape || shape.kind !== 'text') {
+      return null;
+    }
+
+    const fontSize = Math.max(shape.fontSize * this.preferences().scale, 14);
+    const width = Math.max(editor.value.length * fontSize * 0.58, fontSize * 3.2, 88);
+    return {
+      left: this.toSvgX(shape.x),
+      top: this.toSvgY(shape.y),
+      width,
+      fontSize
+    };
   });
   readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
     {
@@ -1026,11 +1053,19 @@ export class EditorPageComponent {
     event.stopPropagation();
 
     if (this.activeTool() !== 'select') {
+      this.closeInlineTextEditor();
       if (!this.canPreviewInsert(this.activeTool())) {
         this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
       }
       return;
     }
+
+    if (shape.kind === 'text' && event.detail >= 2) {
+      this.openInlineTextEditor(shape);
+      return;
+    }
+
+    this.closeInlineTextEditor();
 
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
       if (shape.mergeId) {
@@ -1046,6 +1081,17 @@ export class EditorPageComponent {
       this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
+  }
+
+  onShapeDoubleClick(event: MouseEvent, shape: CanvasShape): void {
+    if (this.activeTool() !== 'select' || shape.kind !== 'text') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectShape(shape.id);
+    this.openInlineTextEditor(shape);
   }
 
   onImportCodeInput(event: Event): void {
@@ -1115,6 +1161,47 @@ export class EditorPageComponent {
   updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateInlineTextEditor(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.inlineTextEditor.update((editor) => (editor ? { ...editor, value } : null));
+  }
+
+  commitInlineTextEditor(): void {
+    const editor = this.inlineTextEditor();
+    if (!editor) {
+      return;
+    }
+
+    const shape = this.scene().shapes.find((entry) => entry.id === editor.shapeId);
+    if (!shape || shape.kind !== 'text') {
+      this.inlineTextEditor.set(null);
+      return;
+    }
+
+    const nextValue = editor.value;
+    this.runSceneMutation(() => {
+      this.store.replaceShapes([{ ...shape, text: nextValue }]);
+    });
+    this.inlineTextEditor.set(null);
+  }
+
+  onInlineTextEditorKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.commitInlineTextEditor();
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeInlineTextEditor();
+    }
+  }
+
+  closeInlineTextEditor(): void {
+    this.inlineTextEditor.set(null);
   }
 
   updateImageText(key: 'src' | 'latexSource', event: Event): void {
@@ -1502,6 +1589,7 @@ export class EditorPageComponent {
   }
 
   onCanvasBackgroundClick(event: MouseEvent): void {
+    this.closeInlineTextEditor();
     if (this.ignoreNextCanvasClick()) {
       this.ignoreNextCanvasClick.set(false);
       return;
@@ -1910,6 +1998,10 @@ export class EditorPageComponent {
     return this.allInsertablePresets().some((preset) => preset.id === toolId);
   }
 
+  private presetKeepsOwnStyle(toolId: ToolId): boolean {
+    return this.savedTemplates().some((template) => template.id === toolId);
+  }
+
   private applyInsertionDefaults(shape: CanvasShape): CanvasShape {
     const preferences = this.preferences();
     switch (shape.kind) {
@@ -1951,6 +2043,7 @@ export class EditorPageComponent {
     const deltaX = currentPoint.x - startPoint.x;
     const deltaY = currentPoint.y - startPoint.y;
     const hasDrag = Math.abs(deltaX) > 0.12 || Math.abs(deltaY) > 0.12;
+    const keepOwnStyle = this.presetKeepsOwnStyle(toolId);
     const templateShapes = structuredClone(preset.shapes);
     const templateBounds = this.computeBounds(templateShapes);
     if (!templateBounds) {
@@ -1961,7 +2054,7 @@ export class EditorPageComponent {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
       return templateShapes.map((shape, index) =>
-        this.applyInsertionDefaults(
+        this.applyPresetStyle(
           this.transformShape(
             shape,
             startPoint.x - centerX,
@@ -1971,7 +2064,8 @@ export class EditorPageComponent {
             templateBounds.left,
             templateBounds.bottom,
             `preview-${index}`
-          )
+          ),
+          keepOwnStyle
         )
       );
     }
@@ -1986,7 +2080,7 @@ export class EditorPageComponent {
     const scaleY = targetHeight / templateHeight;
 
     return templateShapes.map((shape, index) =>
-      this.applyInsertionDefaults(
+      this.applyPresetStyle(
         this.transformShape(
           shape,
           targetLeft - templateBounds.left * scaleX,
@@ -1996,7 +2090,8 @@ export class EditorPageComponent {
           0,
           0,
           `preview-${index}`
-        )
+        ),
+        keepOwnStyle
       )
     );
   }
@@ -2006,6 +2101,7 @@ export class EditorPageComponent {
     if (!preset) {
       return;
     }
+    const keepOwnStyle = this.presetKeepsOwnStyle(toolId);
 
     const templateBounds = this.computeBounds(preset.shapes);
     if (!templateBounds) {
@@ -2015,11 +2111,16 @@ export class EditorPageComponent {
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
     const shapes = structuredClone(preset.shapes).map((shape) =>
-      this.applyInsertionDefaults(
-        this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID())
+      this.applyPresetStyle(
+        this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
+        keepOwnStyle
       )
     );
     this.store.addShapes(shapes);
+  }
+
+  private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
+    return keepOwnStyle ? shape : this.applyInsertionDefaults(shape);
   }
 
   private transformShape(
@@ -2483,6 +2584,18 @@ export class EditorPageComponent {
       };
       image.onerror = () => resolve(null);
       image.src = src;
+    });
+  }
+
+  private openInlineTextEditor(shape: Extract<CanvasShape, { kind: 'text' }>): void {
+    this.inlineTextEditor.set({
+      shapeId: shape.id,
+      value: shape.text
+    });
+    afterNextRender(() => {
+      const input = this.inlineTextInput()?.nativeElement;
+      input?.focus();
+      input?.select();
     });
   }
 }
