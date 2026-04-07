@@ -18,7 +18,7 @@
 
 ## Description
 
-[`tikz-drawer`](https://github.com/Aniol0012/tikz-drawer) is an [Angular](https://angular.dev/) app for visually building diagrams for the [TikZ](https://www.texample.net/tikz/) package. This application supports multiple features to make it easier to create and edit diagrams. Instead of reading this long and boring description, just check it out [here](https://aniol0012.github.io/tikz-drawer/).
+[`tikz-drawer`](https://github.com/Aniol0012/tikz-drawer) is an [Angular](https://angular.dev/) app for visually building diagrams for the [TikZ](https://tikz.dev/) package. This application supports multiple features to make it easier to create and edit diagrams. Instead of reading this long and boring description, just check it out [here](https://aniol0012.github.io/tikz-drawer/).
 
 > [!NOTE]
 > If you want to enhance the app, feel free to open a pull request or contact me via [email](mailto:aniol0012@gmail.com).
@@ -27,6 +27,9 @@
 
 > <img width="2526" height="1251" alt="image" src="https://github.com/user-attachments/assets/1eccde29-2a32-406f-88ef-55e10ca44dc3" />
 > v0.2.1
+
+> [!TIP]
+> You can use the app [here](https://aniol0012.github.io/tikz-drawer/).
 
 ## Run it
 
