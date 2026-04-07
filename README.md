@@ -14,7 +14,7 @@
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.1-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.17.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
-
+</div>
 
 
 <div align="center">
