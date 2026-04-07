@@ -1173,7 +1173,10 @@
           </section>
         } @else {
           <section class="sidebar-section sidebar-section--code-tools">
-            <button class="secondary-button secondary-button--wide" type="button" (click)="openExportSettingsModal()">
+            <button
+              class="secondary-button secondary-button--wide"
+              type="button"
+              (click)="openExportSettingsModal()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.settings"></path></svg
               ><span>{{ t('latexSettings') }}</span>
@@ -1191,7 +1194,11 @@
             </button>
             @if (!isSectionCollapsed('generatedCode')) {
               <div class="code-panel">
-                <button class="icon-button code-copy-button" type="button" [title]="t('copyTikz')" (click)="copyExportedCode()">
+                <button
+                  class="icon-button code-copy-button"
+                  type="button"
+                  [title]="t('copyTikz')"
+                  (click)="copyExportedCode()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.copy"></path>
                   </svg>
@@ -1333,8 +1340,14 @@
               <h3>{{ t('latexImports') }}</h3>
             </div>
             <div class="code-panel">
-              <button class="icon-button code-copy-button" type="button" [title]="t('copy')" (click)="copySnippetImports()">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg>
+              <button
+                class="icon-button code-copy-button"
+                type="button"
+                [title]="t('copy')"
+                (click)="copySnippetImports()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.copy"></path>
+                </svg>
               </button>
               <pre
                 class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
@@ -1346,8 +1359,14 @@
             <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
           </div>
           <div class="code-panel">
-            <button class="icon-button code-copy-button" type="button" [title]="t('copy')" (click)="copyCurrentExportCode()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg>
+            <button
+              class="icon-button code-copy-button"
+              type="button"
+              [title]="t('copy')"
+              (click)="copyCurrentExportCode()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.copy"></path>
+              </svg>
             </button>
             <pre
               class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
@@ -1400,7 +1419,9 @@
               }
               <label class="field">
                 <span>{{ t('latexFontSize') }}</span>
-                <select [value]="latexExportConfig().fontSize" (change)="setLatexFontSize($any($event.target).value)">
+                <select
+                  [value]="latexExportConfig().fontSize"
+                  (change)="setLatexFontSize($any($event.target).value)">
                   <option value="tiny">tiny</option>
                   <option value="scriptsize">scriptsize</option>
                   <option value="footnotesize">footnotesize</option>
@@ -1420,13 +1441,22 @@
               <div class="field field--full">
                 <span>{{ t('latexAlignment') }}</span>
                 <div class="mode-switch mode-switch--full">
-                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'left'" (click)="setLatexAlignment('left')">
+                  <button
+                    type="button"
+                    [class.is-active]="latexExportConfig().alignment === 'left'"
+                    (click)="setLatexAlignment('left')">
                     {{ t('alignLeft') }}
                   </button>
-                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'center'" (click)="setLatexAlignment('center')">
+                  <button
+                    type="button"
+                    [class.is-active]="latexExportConfig().alignment === 'center'"
+                    (click)="setLatexAlignment('center')">
                     {{ t('alignCenter') }}
                   </button>
-                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'right'" (click)="setLatexAlignment('right')">
+                  <button
+                    type="button"
+                    [class.is-active]="latexExportConfig().alignment === 'right'"
+                    (click)="setLatexAlignment('right')">
                     {{ t('alignRight') }}
                   </button>
                 </div>
@@ -1456,7 +1486,10 @@
           <section class="sidebar-section">
             <div class="section-header section-header--static">
               <span>{{ t('latexCaptionLabel') }}</span>
-              <button class="secondary-button secondary-button--compact" type="button" (click)="applySuggestedCaptionAndLabel()">
+              <button
+                class="secondary-button secondary-button--compact"
+                type="button"
+                (click)="applySuggestedCaptionAndLabel()">
                 {{ t('latexSuggest') }}
               </button>
             </div>
