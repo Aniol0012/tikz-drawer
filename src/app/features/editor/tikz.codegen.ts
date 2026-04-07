@@ -13,6 +13,12 @@ export interface TikzExportBundle {
   readonly code: string;
 }
 
+export type LatexColorMode = 'direct-rgb' | 'define-colors';
+
+export interface TikzExportOptions {
+  readonly colorMode?: LatexColorMode;
+}
+
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
@@ -26,6 +32,7 @@ interface ShapeStyleConfig {
 
 interface TikzGenerationContext {
   readonly colorMap: Map<string, string>;
+  readonly colorMode: LatexColorMode;
   readonly registerColor: (color: string) => string;
 }
 
@@ -37,16 +44,25 @@ const normalizeHexColor = (color: string): string | null => {
   return match ? match[1].toUpperCase() : null;
 };
 
-const createTikzGenerationContext = (): TikzGenerationContext => {
+const createTikzGenerationContext = (options: TikzExportOptions = {}): TikzGenerationContext => {
   const colorMap = new Map<string, string>();
   let colorIndex = 1;
+  const colorMode = options.colorMode ?? 'direct-rgb';
 
   return {
     colorMap,
+    colorMode,
     registerColor: (color: string): string => {
       const normalizedHex = normalizeHexColor(color);
       if (!normalizedHex) {
         return color;
+      }
+
+      if (colorMode === 'direct-rgb') {
+        const red = Number.parseInt(normalizedHex.slice(0, 2), 16);
+        const green = Number.parseInt(normalizedHex.slice(2, 4), 16);
+        const blue = Number.parseInt(normalizedHex.slice(4, 6), 16);
+        return `{rgb,255:red,${red};green,${green};blue,${blue}}`;
       }
 
       const key = sanitizeColorKey(normalizedHex);
@@ -124,10 +140,15 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
   }
 };
 
-export const sceneToTikzBundle = (scene: TikzScene): TikzExportBundle => {
-  const context = createTikzGenerationContext();
+export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions = {}): TikzExportBundle => {
+  const context = createTikzGenerationContext(options);
   const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
-  const imports = ['\\usepackage{tikz}', ...Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)];
+  const imports = [
+    '\\usepackage{tikz}',
+    ...(context.colorMode === 'define-colors'
+      ? Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)
+      : [])
+  ];
 
   return {
     imports: imports.join('\n'),
@@ -135,11 +156,11 @@ export const sceneToTikzBundle = (scene: TikzScene): TikzExportBundle => {
   };
 };
 
-export const sceneToTikz = (scene: TikzScene): string => sceneToTikzBundle(scene).code;
+export const sceneToTikz = (scene: TikzScene, options: TikzExportOptions = {}): string => sceneToTikzBundle(scene, options).code;
 
-export const sceneToStandaloneDocument = (scene: TikzScene): string =>
+export const sceneToStandaloneDocument = (scene: TikzScene, options: TikzExportOptions = {}): string =>
   (() => {
-    const bundle = sceneToTikzBundle(scene);
+    const bundle = sceneToTikzBundle(scene, options);
     return ['\\documentclass[tikz]{standalone}', bundle.imports, '\\begin{document}', bundle.code, '\\end{document}'].join(
       '\n'
     );

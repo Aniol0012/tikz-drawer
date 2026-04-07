@@ -29,6 +29,30 @@
   background: var(--panel-background);
 }
 
+.toast-stack {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  z-index: 70;
+  display: grid;
+  gap: 10px;
+  width: min(420px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-background) 92%, white 8%);
+  box-shadow: var(--floating-shadow);
+  color: var(--app-foreground);
+  font-size: 0.84rem;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
 .topbar__left,
 .topbar__center,
 .topbar__right,
@@ -749,12 +773,15 @@ kbd {
   width: 100%;
   height: 100%;
   display: block;
+  cursor: grab;
 }
 
 .minimap__shape {
-  fill: rgba(24, 24, 24, 0.12);
-  stroke: rgba(24, 24, 24, 0.24);
-  stroke-width: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.minimap__shape--text {
+  opacity: 0.8;
 }
 
 .minimap__viewport {
@@ -974,6 +1001,17 @@ kbd {
   box-shadow: var(--floating-shadow);
 }
 
+.export-settings-modal {
+  width: min(640px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 12px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
 .export-modal__header,
 .export-toolbar {
   display: flex;
@@ -1022,28 +1060,60 @@ kbd {
   font-size: 0.9rem;
 }
 
-.tok-command {
+:host ::ng-deep .tok-command {
   color: #4a78dc;
 }
 
-.tok-option {
+:host ::ng-deep .tok-option {
   color: #5e7d3d;
 }
 
-.tok-punctuation {
+:host ::ng-deep .tok-punctuation {
   color: #6e6e6e;
 }
 
-.tok-number {
+:host ::ng-deep .tok-number {
   color: #b86a32;
 }
 
-.tok-color {
+:host ::ng-deep .tok-color {
   color: #bb4f72;
 }
 
-.tok-comment {
+:host ::ng-deep .tok-comment {
   color: #8b8b8b;
+}
+
+.export-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.export-option-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: var(--tool-surface);
+  text-align: left;
+}
+
+.export-option-card strong {
+  font-size: 0.95rem;
+}
+
+.export-option-card span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.export-option-card.is-active {
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .tool-button svg,
@@ -1236,5 +1306,9 @@ button:disabled {
 
   .export-section__header {
     align-items: flex-start;
+  }
+
+  .export-config-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -108,6 +108,14 @@
     </div>
   </header>
 
+  @if (notifications().length) {
+    <div class="toast-stack" aria-live="polite" aria-atomic="true">
+      @for (notification of notifications(); track notification.id) {
+        <div class="toast">{{ notification.message }}</div>
+      }
+    </div>
+  }
+
   <div class="workspace">
     <aside class="left-sidebar">
       <section class="sidebar-block sidebar-block--intro">
@@ -442,18 +450,69 @@
         </div>
 
         @if (showMinimap() && minimapOverview(); as minimap) {
-          <div class="minimap" (pointerdown)="$event.stopPropagation()">
+          <div class="minimap">
             <svg
               class="minimap__svg"
               [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
+              (pointerdown)="startMinimapPan($event, minimap)"
               aria-hidden="true">
               @for (shape of minimap.shapes; track $index) {
-                <rect
-                  class="minimap__shape"
-                  [attr.x]="shape.x"
-                  [attr.y]="shape.y"
-                  [attr.width]="shape.width"
-                  [attr.height]="shape.height"></rect>
+                @switch (shape.kind) {
+                  @case ('line') {
+                    <line
+                      class="minimap__shape"
+                      [attr.x1]="shape.x1"
+                      [attr.y1]="shape.y1"
+                      [attr.x2]="shape.x2"
+                      [attr.y2]="shape.y2"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></line>
+                  }
+                  @case ('rectangle') {
+                    <rect
+                      class="minimap__shape"
+                      [attr.x]="shape.x"
+                      [attr.y]="shape.y"
+                      [attr.width]="shape.width"
+                      [attr.height]="shape.height"
+                      [attr.rx]="shape.rx"
+                      [attr.fill]="shape.fill"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></rect>
+                  }
+                  @case ('circle') {
+                    <circle
+                      class="minimap__shape"
+                      [attr.cx]="shape.cx"
+                      [attr.cy]="shape.cy"
+                      [attr.r]="shape.r"
+                      [attr.fill]="shape.fill"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></circle>
+                  }
+                  @case ('ellipse') {
+                    <ellipse
+                      class="minimap__shape"
+                      [attr.cx]="shape.cx"
+                      [attr.cy]="shape.cy"
+                      [attr.rx]="shape.rx"
+                      [attr.ry]="shape.ry"
+                      [attr.fill]="shape.fill"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></ellipse>
+                  }
+                  @case ('text') {
+                    <rect
+                      class="minimap__shape minimap__shape--text"
+                      [attr.x]="shape.x"
+                      [attr.y]="shape.y"
+                      [attr.width]="shape.width"
+                      [attr.height]="shape.height"
+                      [attr.fill]="shape.fill"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></rect>
+                  }
+                }
               }
               <rect
                 class="minimap__viewport"
@@ -1253,6 +1312,11 @@
             </button>
           </div>
           <div class="inline-actions">
+            <button class="secondary-button" type="button" (click)="openExportSettingsModal()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.settings"></path></svg
+              ><span>{{ t('latexSettings') }}</span>
+            </button>
             <button class="secondary-button" type="button" (click)="copyExportedCode()">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg
               ><span>{{ t('copyTikz') }}</span>
@@ -1282,6 +1346,41 @@
           </div>
           <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
         </section>
+      </section>
+    </div>
+  }
+
+  @if (exportSettingsModalOpen()) {
+    <div class="modal-backdrop" (click)="closeExportSettingsModal()">
+      <section class="export-settings-modal" (click)="$event.stopPropagation()">
+        <header class="export-modal__header">
+          <div>
+            <p>{{ t('latexSettings') }}</p>
+            <h2>{{ t('latexColorMode') }}</h2>
+            <span>{{ t('latexColorModeDescription') }}</span>
+          </div>
+          <button class="icon-button" type="button" (click)="closeExportSettingsModal()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg>
+          </button>
+        </header>
+        <div class="export-config-grid">
+          <button
+            class="export-option-card"
+            type="button"
+            [class.is-active]="exportColorMode() === 'direct-rgb'"
+            (click)="setExportColorMode('direct-rgb')">
+            <strong>{{ t('latexColorDirect') }}</strong>
+            <span>{{ t('latexColorDirectDescription') }}</span>
+          </button>
+          <button
+            class="export-option-card"
+            type="button"
+            [class.is-active]="exportColorMode() === 'define-colors'"
+            (click)="setExportColorMode('define-colors')">
+            <strong>{{ t('latexColorDefined') }}</strong>
+            <span>{{ t('latexColorDefinedDescription') }}</span>
+          </button>
+        </div>
       </section>
     </div>
   }

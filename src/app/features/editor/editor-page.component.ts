@@ -28,7 +28,12 @@ import {
   highlightLatex,
   translateShapeBy
 } from './editor-page.utils';
-import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
+import {
+  sceneToStandaloneDocument,
+  sceneToTikzBundle,
+  type LatexColorMode,
+  type TikzExportOptions
+} from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
   CanvasShape,
@@ -46,6 +51,11 @@ type ExportMode = 'snippet' | 'standalone';
 type ToolId = 'select' | string;
 type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to';
 type ContextTarget = 'canvas' | 'shape';
+
+interface ToastNotification {
+  readonly id: string;
+  readonly message: string;
+}
 
 interface ToolDescriptor {
   readonly id: ToolId;
@@ -126,11 +136,68 @@ interface MinimapRect {
   readonly height: number;
 }
 
+interface MinimapShapeBase {
+  readonly kind: CanvasShape['kind'];
+  readonly stroke: string;
+  readonly strokeWidth: number;
+}
+
+interface MinimapLineShape extends MinimapShapeBase {
+  readonly kind: 'line';
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
+}
+
+interface MinimapRectangleShape extends MinimapShapeBase {
+  readonly kind: 'rectangle';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: string;
+  readonly rx: number;
+}
+
+interface MinimapCircleShape extends MinimapShapeBase {
+  readonly kind: 'circle';
+  readonly cx: number;
+  readonly cy: number;
+  readonly r: number;
+  readonly fill: string;
+}
+
+interface MinimapEllipseShape extends MinimapShapeBase {
+  readonly kind: 'ellipse';
+  readonly cx: number;
+  readonly cy: number;
+  readonly rx: number;
+  readonly ry: number;
+  readonly fill: string;
+}
+
+interface MinimapTextShape extends MinimapShapeBase {
+  readonly kind: 'text';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: string;
+}
+
+type MinimapShape = MinimapLineShape | MinimapRectangleShape | MinimapCircleShape | MinimapEllipseShape | MinimapTextShape;
+
 interface MinimapOverview {
   readonly viewBoxWidth: number;
   readonly viewBoxHeight: number;
   readonly viewportRect: MinimapRect;
-  readonly shapes: readonly MinimapRect[];
+  readonly worldLeft: number;
+  readonly worldTop: number;
+  readonly mapScale: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly shapes: readonly MinimapShape[];
 }
 
 @Component({
@@ -181,12 +248,16 @@ export class EditorPageComponent {
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
+  readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('standalone');
+  readonly exportColorMode = signal<LatexColorMode>('direct-rgb');
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
+  readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
+  readonly minimapPanPointerId = signal<number | null>(null);
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
     essentials: false,
@@ -251,9 +322,11 @@ export class EditorPageComponent {
     const contentHeight = height * scale;
     const offsetX = (mapSize - contentWidth) / 2;
     const offsetY = (mapSize - contentHeight) / 2;
+    const toMapX = (x: number): number => offsetX + (x - left) * scale;
+    const toMapY = (y: number): number => offsetY + (top - y) * scale;
     const toMapRect = (bounds: SelectionBounds): MinimapRect => ({
-      x: offsetX + (bounds.left - left) * scale,
-      y: offsetY + (top - bounds.top) * scale,
+      x: toMapX(bounds.left),
+      y: toMapY(bounds.top),
       width: Math.max((bounds.right - bounds.left) * scale, 1.6),
       height: Math.max((bounds.top - bounds.bottom) * scale, 1.6)
     });
@@ -261,11 +334,13 @@ export class EditorPageComponent {
     return {
       viewBoxWidth: mapSize,
       viewBoxHeight: mapSize,
+      worldLeft: left,
+      worldTop: top,
+      mapScale: scale,
+      offsetX,
+      offsetY,
       viewportRect: toMapRect(visibleBounds),
-      shapes: this.scene()
-        .shapes.map((shape) => this.shapeBounds(shape))
-        .filter((shapeBounds): shapeBounds is SelectionBounds => shapeBounds !== null)
-        .map((shapeBounds) => toMapRect(shapeBounds))
+      shapes: this.scene().shapes.map((shape) => this.toMinimapShape(shape, toMapX, toMapY, scale))
     };
   });
   readonly showMinimap = computed(() => {
@@ -373,8 +448,11 @@ export class EditorPageComponent {
       height: (top - bottom) * this.preferences().scale
     };
   });
-  readonly tikzExportBundle = computed(() => sceneToTikzBundle(this.scene()));
-  readonly standaloneDocument = computed(() => sceneToStandaloneDocument(this.scene()));
+  readonly exportOptions = computed<TikzExportOptions>(() => ({
+    colorMode: this.exportColorMode()
+  }));
+  readonly tikzExportBundle = computed(() => sceneToTikzBundle(this.scene(), this.exportOptions()));
+  readonly standaloneDocument = computed(() => sceneToStandaloneDocument(this.scene(), this.exportOptions()));
   readonly displayedExportCode = computed(() =>
     this.exportMode() === 'snippet' ? this.tikzExportBundle().code : this.standaloneDocument()
   );
@@ -520,7 +598,20 @@ export class EditorPageComponent {
 
   closeExportModal(): void {
     this.exportModalOpen.set(false);
+    this.exportSettingsModalOpen.set(false);
     this.shareFeedback.set('');
+  }
+
+  openExportSettingsModal(): void {
+    this.exportSettingsModalOpen.set(true);
+  }
+
+  closeExportSettingsModal(): void {
+    this.exportSettingsModalOpen.set(false);
+  }
+
+  setExportColorMode(mode: LatexColorMode): void {
+    this.exportColorMode.set(mode);
   }
 
   setInspectorTab(tab: InspectorTab): void {
@@ -653,6 +744,14 @@ export class EditorPageComponent {
 
     await navigator.clipboard.writeText(this.shareUrl());
     this.shareFeedback.set(this.t('copied'));
+    this.showNotification(this.t('shareLinkReady'));
+  }
+
+  startMinimapPan(event: PointerEvent, minimap: MinimapOverview): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.minimapPanPointerId.set(event.pointerId);
+    this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
   }
 
   onImportCodeInput(event: Event): void {
@@ -1116,10 +1215,27 @@ export class EditorPageComponent {
         this.removeSelected();
         return;
       case 'escape':
+        if (this.exportSettingsModalOpen()) {
+          this.closeExportSettingsModal();
+          return;
+        }
+        if (this.exportModalOpen()) {
+          this.closeExportModal();
+          return;
+        }
+        if (this.fileMenuOpen()) {
+          this.closeFileMenu();
+          return;
+        }
+        if (this.contextMenu()) {
+          this.closeContextMenu();
+          return;
+        }
+        if (this.activeTool() !== 'select') {
+          this.setActiveTool('select');
+          return;
+        }
         this.store.selectShape(null);
-        this.closeContextMenu();
-        this.closeFileMenu();
-        this.closeExportModal();
         return;
       case '=':
       case '+':
@@ -1143,9 +1259,19 @@ export class EditorPageComponent {
     this.altPressed.set(false);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
+    this.minimapPanPointerId.set(null);
   }
 
   handleWindowPointerMove(event: PointerEvent): void {
+    const minimapPanPointerId = this.minimapPanPointerId();
+    if (minimapPanPointerId === event.pointerId) {
+      const minimap = this.minimapOverview();
+      if (minimap) {
+        this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
+      }
+      return;
+    }
+
     const resizeState = this.sidebarResizeState();
     if (!resizeState) return;
 
@@ -1161,6 +1287,15 @@ export class EditorPageComponent {
 
   handleWindowPointerUp(): void {
     this.sidebarResizeState.set(null);
+    this.minimapPanPointerId.set(null);
+  }
+
+  private showNotification(message: string): void {
+    const id = crypto.randomUUID();
+    this.notifications.update((notifications) => [...notifications, { id, message }]);
+    globalThis.setTimeout(() => {
+      this.notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
+    }, 2400);
   }
 
   private runSceneMutation(action: () => void): void {
@@ -1234,6 +1369,29 @@ export class EditorPageComponent {
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
   }
 
+  private updateViewportFromMinimapPointer(clientX: number, clientY: number, minimap: MinimapOverview): void {
+    const target = this.document.elementFromPoint(clientX, clientY);
+    if (!(target instanceof SVGElement)) {
+      return;
+    }
+
+    const minimapSvg = target.closest('.minimap__svg');
+    if (!(minimapSvg instanceof SVGSVGElement)) {
+      return;
+    }
+
+    const rect = minimapSvg.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return;
+    }
+
+    const localX = ((clientX - rect.left) / rect.width) * minimap.viewBoxWidth;
+    const localY = ((clientY - rect.top) / rect.height) * minimap.viewBoxHeight;
+    const worldX = minimap.worldLeft + (localX - minimap.offsetX) / minimap.mapScale;
+    const worldY = minimap.worldTop - (localY - minimap.offsetY) / minimap.mapScale;
+    this.viewportCenter.set({ x: worldX, y: worldY });
+  }
+
   private toScenePoint(clientX: number, clientY: number): Point {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
     return {
@@ -1285,6 +1443,73 @@ export class EditorPageComponent {
         bottom: Math.min(currentBounds.bottom, nextBounds.bottom)
       };
     }, null);
+  }
+
+  private toMinimapShape(
+    shape: CanvasShape,
+    toMapX: (x: number) => number,
+    toMapY: (y: number) => number,
+    scale: number
+  ): MinimapShape {
+    switch (shape.kind) {
+      case 'line':
+        return {
+          kind: 'line',
+          stroke: shape.stroke,
+          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          x1: toMapX(shape.from.x),
+          y1: toMapY(shape.from.y),
+          x2: toMapX(shape.to.x),
+          y2: toMapY(shape.to.y)
+        };
+      case 'rectangle':
+        return {
+          kind: 'rectangle',
+          stroke: shape.stroke,
+          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          fill: shape.fill,
+          x: toMapX(shape.x),
+          y: toMapY(shape.y + shape.height),
+          width: Math.max(shape.width * scale, 1.4),
+          height: Math.max(shape.height * scale, 1.4),
+          rx: Math.max(shape.cornerRadius * scale, 0.6)
+        };
+      case 'circle':
+        return {
+          kind: 'circle',
+          stroke: shape.stroke,
+          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          fill: shape.fill,
+          cx: toMapX(shape.cx),
+          cy: toMapY(shape.cy),
+          r: Math.max(shape.r * scale, 0.9)
+        };
+      case 'ellipse':
+        return {
+          kind: 'ellipse',
+          stroke: shape.stroke,
+          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          fill: shape.fill,
+          cx: toMapX(shape.cx),
+          cy: toMapY(shape.cy),
+          rx: Math.max(shape.rx * scale, 0.9),
+          ry: Math.max(shape.ry * scale, 0.9)
+        };
+      case 'text': {
+        const width = Math.max(shape.text.length * shape.fontSize * 0.48 * scale, 1.6);
+        const height = Math.max(shape.fontSize * 0.72 * scale, 1.2);
+        return {
+          kind: 'text',
+          stroke: 'transparent',
+          strokeWidth: 0,
+          fill: shape.color,
+          x: toMapX(shape.x) - width / 2,
+          y: toMapY(shape.y) - height / 2,
+          width,
+          height
+        };
+      }
+    }
   }
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {
