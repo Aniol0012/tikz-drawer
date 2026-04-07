@@ -253,6 +253,8 @@
         [class.is-panning]="interactionState()?.kind === 'pan'"
         [class.is-insert]="activeTool() !== 'select'"
         (pointerdown)="onCanvasViewportPointerDown($event)"
+        (dragover)="onCanvasDragOver($event)"
+        (drop)="onCanvasDrop($event)"
         (wheel)="onCanvasWheel($event)"
         (contextmenu)="openCanvasContextMenu($event)">
         <svg

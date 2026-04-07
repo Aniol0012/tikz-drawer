@@ -1343,12 +1343,7 @@ export class EditorPageComponent {
     const file = input.files?.[0];
     if (!file) return;
 
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
+    const dataUrl = await this.readFileAsDataUrl(file);
     const dimensions = await this.loadImageDimensions(dataUrl);
     this.selectedImageFilename.set(file.name);
 
@@ -1535,6 +1530,31 @@ export class EditorPageComponent {
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
     }
+  }
+
+  onCanvasDragOver(event: DragEvent): void {
+    const hasImageFile = Array.from(event.dataTransfer?.items ?? []).some(
+      (item) => item.kind === 'file' && item.type.startsWith('image/')
+    );
+    if (!hasImageFile) {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  async onCanvasDrop(event: DragEvent): Promise<void> {
+    const imageFile = Array.from(event.dataTransfer?.files ?? []).find((file) => file.type.startsWith('image/'));
+    if (!imageFile) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    await this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY)));
   }
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
@@ -2754,6 +2774,45 @@ export class EditorPageComponent {
       };
       image.onerror = () => resolve(null);
       image.src = src;
+    });
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  private async insertImageFileAtPoint(file: File, point: Point): Promise<void> {
+    const dataUrl = await this.readFileAsDataUrl(file);
+    const dimensions = await this.loadImageDimensions(dataUrl);
+    const aspectRatio = dimensions && dimensions.height > 0 ? Math.max(dimensions.width / dimensions.height, 0.01) : 1;
+    const width = 8;
+    const height = Math.max(width / aspectRatio, 0.4);
+    const imageShape = this.applyInsertionDefaults({
+      id: crypto.randomUUID(),
+      name: file.name.replace(/\.[^/.]+$/, '') || 'Image',
+      kind: 'image',
+      stroke: this.preferences().defaultStroke,
+      strokeWidth: this.preferences().defaultStrokeWidth,
+      x: point.x - width / 2,
+      y: point.y - height / 2,
+      width,
+      height,
+      aspectRatio,
+      src: dataUrl,
+      latexSource: file.name
+    });
+
+    this.selectedImageFilename.set(file.name);
+    this.runSceneMutation(() => {
+      this.store.addShapes([imageShape]);
+      this.store.selectShape(imageShape.id);
+      this.activeTool.set('select');
+      this.inspectorTab.set('properties');
     });
   }
 
