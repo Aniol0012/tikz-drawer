@@ -57,6 +57,22 @@ interface ToastNotification {
   readonly message: string;
 }
 
+type LatexAlignment = 'center' | 'left' | 'right';
+type LatexFontSize = 'tiny' | 'scriptsize' | 'footnotesize' | 'small' | 'normalsize' | 'large';
+
+interface LatexExportConfig {
+  readonly colorMode: LatexColorMode;
+  readonly wrapInFigure: boolean;
+  readonly figurePlacement: string;
+  readonly alignment: LatexAlignment;
+  readonly maxWidthPercent: number;
+  readonly fontSize: LatexFontSize;
+  readonly includeCaption: boolean;
+  readonly caption: string;
+  readonly includeLabel: boolean;
+  readonly label: string;
+}
+
 interface ToolDescriptor {
   readonly id: ToolId;
   readonly label: string;
@@ -222,6 +238,18 @@ interface MinimapOverview {
 })
 export class EditorPageComponent {
   private readonly defaultScale = 24;
+  private readonly defaultLatexExportConfig = {
+    colorMode: 'direct-rgb',
+    wrapInFigure: false,
+    figurePlacement: 'H',
+    alignment: 'center',
+    maxWidthPercent: 100,
+    fontSize: 'footnotesize',
+    includeCaption: true,
+    caption: '',
+    includeLabel: true,
+    label: ''
+  } satisfies LatexExportConfig;
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -254,8 +282,8 @@ export class EditorPageComponent {
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
-  readonly exportMode = signal<ExportMode>('standalone');
-  readonly exportColorMode = signal<LatexColorMode>('direct-rgb');
+  readonly exportMode = signal<ExportMode>('snippet');
+  readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly notifications = signal<readonly ToastNotification[]>([]);
@@ -454,17 +482,18 @@ export class EditorPageComponent {
     };
   });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
-    colorMode: this.exportColorMode()
+    colorMode: this.latexExportConfig().colorMode
   }));
-  readonly tikzExportBundle = computed(() => sceneToTikzBundle(this.scene(), this.exportOptions()));
-  readonly standaloneDocument = computed(() => sceneToStandaloneDocument(this.scene(), this.exportOptions()));
+  readonly baseTikzExportBundle = computed(() => sceneToTikzBundle(this.scene(), this.exportOptions()));
+  readonly snippetExport = computed(() => this.buildSnippetExport());
+  readonly standaloneDocument = computed(() => this.buildStandaloneDocument());
   readonly displayedExportCode = computed(() =>
-    this.exportMode() === 'snippet' ? this.tikzExportBundle().code : this.standaloneDocument()
+    this.exportMode() === 'snippet' ? this.snippetExport().code : this.standaloneDocument()
   );
   readonly displayedExportImports = computed(() =>
-    this.exportMode() === 'snippet' ? this.tikzExportBundle().imports : ''
+    this.exportMode() === 'snippet' ? this.snippetExport().imports : ''
   );
-  readonly highlightedSnippetCode = computed(() => highlightLatex(this.tikzExportBundle().code));
+  readonly highlightedSnippetCode = computed(() => highlightLatex(this.snippetExport().combined));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly shareUrl = computed(() => this.buildShareUrl());
@@ -594,7 +623,7 @@ export class EditorPageComponent {
     this.fileMenuOpen.set(false);
   }
 
-  openExportModal(mode: ExportMode = 'standalone'): void {
+  openExportModal(mode: ExportMode = 'snippet'): void {
     this.closeFileMenu();
     this.exportMode.set(mode);
     this.exportModalOpen.set(true);
@@ -615,8 +644,59 @@ export class EditorPageComponent {
     this.exportSettingsModalOpen.set(false);
   }
 
+  patchLatexExportConfig(patch: Partial<LatexExportConfig>): void {
+    this.latexExportConfig.update((config) => ({
+      ...config,
+      ...patch
+    }));
+  }
+
+  updateLatexExportText(
+    key: 'figurePlacement' | 'caption' | 'label',
+    event: Event
+  ): void {
+    this.patchLatexExportConfig({
+      [key]: (event.target as HTMLInputElement | HTMLSelectElement).value
+    } as Partial<LatexExportConfig>);
+  }
+
+  updateLatexExportNumber(key: 'maxWidthPercent', event: Event, min: number, max: number): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number.parseFloat(input.value);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    this.patchLatexExportConfig({
+      [key]: Math.min(max, Math.max(min, value))
+    } as Partial<LatexExportConfig>);
+  }
+
+  updateLatexExportBoolean(
+    key: 'wrapInFigure' | 'includeCaption' | 'includeLabel',
+    event: Event
+  ): void {
+    this.patchLatexExportConfig({
+      [key]: (event.target as HTMLInputElement).checked
+    } as Partial<LatexExportConfig>);
+  }
+
   setExportColorMode(mode: LatexColorMode): void {
-    this.exportColorMode.set(mode);
+    this.patchLatexExportConfig({ colorMode: mode });
+  }
+
+  setLatexAlignment(alignment: LatexAlignment): void {
+    this.patchLatexExportConfig({ alignment });
+  }
+
+  setLatexFontSize(fontSize: LatexFontSize): void {
+    this.patchLatexExportConfig({ fontSize });
+  }
+
+  applySuggestedCaptionAndLabel(): void {
+    this.patchLatexExportConfig({
+      caption: this.suggestedCaption(),
+      label: this.suggestedLabel()
+    });
   }
 
   setInspectorTab(tab: InspectorTab): void {
@@ -735,11 +815,24 @@ export class EditorPageComponent {
   }
 
   copyExportedCode(): void {
-    void navigator.clipboard?.writeText(this.tikzExportBundle().code);
+    void navigator.clipboard?.writeText(this.snippetExport().code);
   }
 
   copyStandaloneCode(): void {
     void navigator.clipboard?.writeText(this.standaloneDocument());
+  }
+
+  copySnippetImports(): void {
+    void navigator.clipboard?.writeText(this.snippetExport().imports);
+  }
+
+  copyCurrentExportCode(): void {
+    if (this.exportMode() === 'snippet') {
+      this.copyExportedCode();
+      return;
+    }
+
+    this.copyStandaloneCode();
   }
 
   async copyShareLink(): Promise<void> {
@@ -757,6 +850,20 @@ export class EditorPageComponent {
     event.stopPropagation();
     this.minimapPanPointerId.set(event.pointerId);
     this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
+  }
+
+  onShapeClick(event: MouseEvent, shape: CanvasShape): void {
+    event.stopPropagation();
+
+    if (this.activeTool() !== 'select') {
+      this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+      return;
+    }
+
+    if (!this.selectionContainsShape(shape.id)) {
+      this.store.selectShape(shape.id);
+    }
+    this.setInspectorTab('properties');
   }
 
   onImportCodeInput(event: Event): void {
@@ -1415,6 +1522,89 @@ export class EditorPageComponent {
 
   private snapScenePoint(point: Point): Point {
     return { x: this.snap(point.x), y: this.snap(point.y) };
+  }
+
+  suggestedCaption(): string {
+    const name = this.scene().name.trim();
+    return name || 'TikZ figure';
+  }
+
+  suggestedLabel(): string {
+    const slug = this.scene()
+      .name.toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return `fig:${slug || 'tikz-figure'}`;
+  }
+
+  private latexAlignmentCommand(alignment: LatexAlignment): string {
+    switch (alignment) {
+      case 'center':
+        return '\\centering';
+      case 'left':
+        return '\\raggedright';
+      case 'right':
+        return '\\raggedleft';
+    }
+  }
+
+  private latexWidthExpression(percent: number): string {
+    if (percent >= 100) {
+      return '\\textwidth';
+    }
+
+    const normalized = Number.parseFloat((percent / 100).toFixed(2));
+    return `${normalized}\\textwidth`;
+  }
+
+  private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
+    const baseBundle = this.baseTikzExportBundle();
+    const config = this.latexExportConfig();
+    const caption = config.caption.trim() || this.suggestedCaption();
+    const label = config.label.trim() || this.suggestedLabel();
+    const imports = [baseBundle.imports, '\\usepackage{adjustbox}'];
+
+    if (config.wrapInFigure && config.figurePlacement.includes('H')) {
+      imports.push('\\usepackage{float}');
+    }
+
+    const contentLines = [
+      this.latexAlignmentCommand(config.alignment),
+      config.fontSize === 'normalsize' ? '' : `\\${config.fontSize}`,
+      `\\begin{adjustbox}{max width=${this.latexWidthExpression(config.maxWidthPercent)}${config.alignment === 'center' ? ',center' : ''}}`,
+      baseBundle.code,
+      '\\end{adjustbox}'
+    ].filter(Boolean);
+
+    const code = config.wrapInFigure
+      ? [
+          `\\begin{figure}[${config.figurePlacement || 'H'}]`,
+          ...contentLines.map((line) => `  ${line}`),
+          ...(config.includeCaption ? [`  \\caption{${caption}}`] : []),
+          ...(config.includeLabel ? [`  \\label{${label}}`] : []),
+          '\\end{figure}'
+        ].join('\n')
+      : contentLines.join('\n');
+
+    const normalizedImports = Array.from(new Set(imports.filter(Boolean))).join('\n');
+
+    return {
+      imports: normalizedImports,
+      code,
+      combined: [normalizedImports, code].filter(Boolean).join('\n\n')
+    };
+  }
+
+  private buildStandaloneDocument(): string {
+    const snippet = this.buildSnippetExport();
+    return [
+      '\\documentclass[tikz]{standalone}',
+      snippet.imports,
+      '\\begin{document}',
+      snippet.code,
+      '\\end{document}'
+    ].join('\n');
   }
 
   private findShapesInsideBounds(bounds: SelectionBounds): string[] {

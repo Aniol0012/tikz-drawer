@@ -280,7 +280,7 @@
             <g
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"
-              (click)="$event.stopPropagation()"
+              (click)="onShapeClick($event, shape)"
               (pointerdown)="startMove($event, shape)"
               (contextmenu)="openShapeContextMenu($event, shape)">
               @switch (shape.kind) {
@@ -1172,6 +1172,14 @@
             }
           </section>
         } @else {
+          <section class="sidebar-section sidebar-section--code-tools">
+            <button class="secondary-button secondary-button--wide" type="button" (click)="openExportSettingsModal()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.settings"></path></svg
+              ><span>{{ t('latexSettings') }}</span>
+            </button>
+          </section>
+
           <section
             class="sidebar-section"
             [class.is-collapsed]="isSectionCollapsed('generatedCode')">
@@ -1182,19 +1190,14 @@
               </svg>
             </button>
             @if (!isSectionCollapsed('generatedCode')) {
-              <div class="inline-actions">
-                <button class="secondary-button" type="button" (click)="copyExportedCode()">
+              <div class="code-panel">
+                <button class="icon-button code-copy-button" type="button" [title]="t('copyTikz')" (click)="copyExportedCode()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.copy"></path></svg
-                  ><span>{{ t('copyTikz') }}</span>
+                    <path [attr.d]="iconMap.copy"></path>
+                  </svg>
                 </button>
-                <button class="secondary-button" type="button" (click)="openExportModal()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.export"></path></svg
-                  ><span>{{ t('openExport') }}</span>
-                </button>
+                <pre class="code-block"><code [innerHTML]="highlightedSnippetCode()"></code></pre>
               </div>
-              <pre class="code-block"><code [innerHTML]="highlightedSnippetCode()"></code></pre>
             }
           </section>
 
@@ -1317,14 +1320,6 @@
                 <path [attr.d]="iconMap.settings"></path></svg
               ><span>{{ t('latexSettings') }}</span>
             </button>
-            <button class="secondary-button" type="button" (click)="copyExportedCode()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg
-              ><span>{{ t('copyTikz') }}</span>
-            </button>
-            <button class="secondary-button" type="button" (click)="copyStandaloneCode()">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg
-              ><span>{{ t('copyStandalone') }}</span>
-            </button>
             <button class="secondary-button" type="button" (click)="downloadStandaloneFile()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.download"></path></svg
@@ -1337,16 +1332,26 @@
             <div class="export-section__header">
               <h3>{{ t('latexImports') }}</h3>
             </div>
-            <pre
-              class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
+            <div class="code-panel">
+              <button class="icon-button code-copy-button" type="button" [title]="t('copy')" (click)="copySnippetImports()">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg>
+              </button>
+              <pre
+                class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
+            </div>
           </section>
         }
         <section class="export-section">
           <div class="export-section__header">
             <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
           </div>
-          <pre
-            class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+          <div class="code-panel">
+            <button class="icon-button code-copy-button" type="button" [title]="t('copy')" (click)="copyCurrentExportCode()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.copy"></path></svg>
+            </button>
+            <pre
+              class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+          </div>
         </section>
       </section>
     </div>
@@ -1358,30 +1363,166 @@
         <header class="export-modal__header">
           <div>
             <p>{{ t('latexSettings') }}</p>
-            <h2>{{ t('latexColorMode') }}</h2>
-            <span>{{ t('latexColorModeDescription') }}</span>
+            <h2>{{ t('latexSettingsTitle') }}</h2>
+            <span>{{ t('latexSettingsDescription') }}</span>
           </div>
           <button class="icon-button" type="button" (click)="closeExportSettingsModal()">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg>
           </button>
         </header>
-        <div class="export-config-grid">
-          <button
-            class="export-option-card"
-            type="button"
-            [class.is-active]="exportColorMode() === 'direct-rgb'"
-            (click)="setExportColorMode('direct-rgb')">
-            <strong>{{ t('latexColorDirect') }}</strong>
-            <span>{{ t('latexColorDirectDescription') }}</span>
-          </button>
-          <button
-            class="export-option-card"
-            type="button"
-            [class.is-active]="exportColorMode() === 'define-colors'"
-            (click)="setExportColorMode('define-colors')">
-            <strong>{{ t('latexColorDefined') }}</strong>
-            <span>{{ t('latexColorDefinedDescription') }}</span>
-          </button>
+        <div class="export-settings-layout">
+          <section class="sidebar-section">
+            <div class="section-header section-header--static">
+              <span>{{ t('latexEnvironment') }}</span>
+            </div>
+            <div class="form-grid">
+              <label class="toggle-field field--full"
+                ><input
+                  type="checkbox"
+                  [checked]="latexExportConfig().wrapInFigure"
+                  (change)="updateLatexExportBoolean('wrapInFigure', $event)" /><span>{{
+                  t('latexWrapFigure')
+                }}</span></label
+              >
+              @if (latexExportConfig().wrapInFigure) {
+                <label class="field">
+                  <span>{{ t('latexFigurePlacement') }}</span>
+                  <select
+                    [value]="latexExportConfig().figurePlacement"
+                    (change)="updateLatexExportText('figurePlacement', $event)">
+                    <option value="H">{{ t('latexPlacementH') }}</option>
+                    <option value="h">{{ t('latexPlacementh') }}</option>
+                    <option value="ht">{{ t('latexPlacementht') }}</option>
+                    <option value="htbp">{{ t('latexPlacementhtbp') }}</option>
+                    <option value="tbp">{{ t('latexPlacementtbp') }}</option>
+                  </select>
+                </label>
+              }
+              <label class="field">
+                <span>{{ t('latexFontSize') }}</span>
+                <select [value]="latexExportConfig().fontSize" (change)="setLatexFontSize($any($event.target).value)">
+                  <option value="tiny">tiny</option>
+                  <option value="scriptsize">scriptsize</option>
+                  <option value="footnotesize">footnotesize</option>
+                  <option value="small">small</option>
+                  <option value="normalsize">normalsize</option>
+                  <option value="large">large</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="sidebar-section">
+            <div class="section-header section-header--static">
+              <span>{{ t('latexLayout') }}</span>
+            </div>
+            <div class="form-grid">
+              <div class="field field--full">
+                <span>{{ t('latexAlignment') }}</span>
+                <div class="mode-switch mode-switch--full">
+                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'left'" (click)="setLatexAlignment('left')">
+                    {{ t('alignLeft') }}
+                  </button>
+                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'center'" (click)="setLatexAlignment('center')">
+                    {{ t('alignCenter') }}
+                  </button>
+                  <button type="button" [class.is-active]="latexExportConfig().alignment === 'right'" (click)="setLatexAlignment('right')">
+                    {{ t('alignRight') }}
+                  </button>
+                </div>
+              </div>
+              <label class="field field--full">
+                <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
+                <div class="range-field">
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    [value]="latexExportConfig().maxWidthPercent"
+                    (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                  <input
+                    type="number"
+                    min="10"
+                    max="100"
+                    step="5"
+                    [value]="latexExportConfig().maxWidthPercent"
+                    (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <section class="sidebar-section">
+            <div class="section-header section-header--static">
+              <span>{{ t('latexCaptionLabel') }}</span>
+              <button class="secondary-button secondary-button--compact" type="button" (click)="applySuggestedCaptionAndLabel()">
+                {{ t('latexSuggest') }}
+              </button>
+            </div>
+            <div class="form-grid">
+              <label class="toggle-field field--full"
+                ><input
+                  type="checkbox"
+                  [checked]="latexExportConfig().includeCaption"
+                  (change)="updateLatexExportBoolean('includeCaption', $event)" /><span>{{
+                  t('latexIncludeCaption')
+                }}</span></label
+              >
+              @if (latexExportConfig().includeCaption) {
+                <label class="field field--full">
+                  <span>{{ t('latexCaption') }}</span>
+                  <input
+                    type="text"
+                    [value]="latexExportConfig().caption"
+                    [placeholder]="suggestedCaption()"
+                    (input)="updateLatexExportText('caption', $event)" />
+                </label>
+              }
+              <label class="toggle-field field--full"
+                ><input
+                  type="checkbox"
+                  [checked]="latexExportConfig().includeLabel"
+                  (change)="updateLatexExportBoolean('includeLabel', $event)" /><span>{{
+                  t('latexIncludeLabel')
+                }}</span></label
+              >
+              @if (latexExportConfig().includeLabel) {
+                <label class="field field--full">
+                  <span>{{ t('latexLabel') }}</span>
+                  <input
+                    type="text"
+                    [value]="latexExportConfig().label"
+                    [placeholder]="suggestedLabel()"
+                    (input)="updateLatexExportText('label', $event)" />
+                </label>
+              }
+            </div>
+          </section>
+
+          <section class="sidebar-section">
+            <div class="section-header section-header--static">
+              <span>{{ t('latexColors') }}</span>
+            </div>
+            <div class="export-config-grid">
+              <button
+                class="export-option-card"
+                type="button"
+                [class.is-active]="latexExportConfig().colorMode === 'direct-rgb'"
+                (click)="setExportColorMode('direct-rgb')">
+                <strong>{{ t('latexColorDirect') }}</strong>
+                <span>{{ t('latexColorDirectDescription') }}</span>
+              </button>
+              <button
+                class="export-option-card"
+                type="button"
+                [class.is-active]="latexExportConfig().colorMode === 'define-colors'"
+                (click)="setExportColorMode('define-colors')">
+                <strong>{{ t('latexColorDefined') }}</strong>
+                <span>{{ t('latexColorDefinedDescription') }}</span>
+              </button>
+            </div>
+          </section>
         </div>
       </section>
     </div>

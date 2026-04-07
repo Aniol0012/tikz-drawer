@@ -115,6 +115,7 @@
 
 .scene-input input,
 .search-field input,
+.field select,
 .field input:not([type='range']),
 .field textarea,
 .code-input,
@@ -810,12 +811,9 @@ kbd {
   gap: 10px;
 }
 
-.inline-actions {
-  flex-wrap: wrap;
-}
-
 .inline-actions .secondary-button,
 .inline-actions .primary-button {
+  width: 200px;
   flex: 1 1 140px;
   justify-content: center;
 }
@@ -910,6 +908,10 @@ kbd {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.code-panel {
+  position: relative;
 }
 
 .secondary-button--compact {
@@ -1059,6 +1061,19 @@ kbd {
   font-size: 0.9rem;
 }
 
+.code-copy-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
+  border-color: color-mix(in srgb, var(--tool-border) 82%, transparent);
+}
+
+.export-section__header .code-copy-button {
+  position: static;
+}
+
 :host ::ng-deep .tok-command {
   color: #4a78dc;
 }
@@ -1089,13 +1104,32 @@ kbd {
   gap: 12px;
 }
 
+.export-settings-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.mode-switch--full {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eef4ff;
+}
+
+.sidebar-section--code-tools {
+  padding-bottom: 4px;
+}
+
 .export-option-card {
   display: grid;
   gap: 8px;
   padding: 14px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
-  background: var(--tool-surface);
+  background: #f6f9ff;
   text-align: left;
 }
 
@@ -1110,9 +1144,23 @@ kbd {
 }
 
 .export-option-card.is-active {
-  border-color: var(--accent-soft-border);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  border-color: #b7cdf8;
+  background: #dbe9ff;
+  color: #2456cf;
+}
+
+.mode-switch--full button.is-active {
+  border-radius: 10px;
+  background: #dbe9ff;
+  color: #2456cf;
+  font-weight: 700;
+}
+
+.export-settings-layout .sidebar-section {
+  padding: 14px;
+  border: 1px solid var(--tool-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tool-surface) 82%, white 18%);
 }
 
 .tool-button svg,
