@@ -156,12 +156,17 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   };
 };
 
-export const sceneToTikz = (scene: TikzScene, options: TikzExportOptions = {}): string => sceneToTikzBundle(scene, options).code;
+export const sceneToTikz = (scene: TikzScene, options: TikzExportOptions = {}): string =>
+  sceneToTikzBundle(scene, options).code;
 
 export const sceneToStandaloneDocument = (scene: TikzScene, options: TikzExportOptions = {}): string =>
   (() => {
     const bundle = sceneToTikzBundle(scene, options);
-    return ['\\documentclass[tikz]{standalone}', bundle.imports, '\\begin{document}', bundle.code, '\\end{document}'].join(
-      '\n'
-    );
+    return [
+      '\\documentclass[tikz]{standalone}',
+      bundle.imports,
+      '\\begin{document}',
+      bundle.code,
+      '\\end{document}'
+    ].join('\n');
   })();

@@ -1337,14 +1337,16 @@
             <div class="export-section__header">
               <h3>{{ t('latexImports') }}</h3>
             </div>
-            <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
+            <pre
+              class="code-block code-block--modal"><code [innerHTML]="highlightedExportImports()"></code></pre>
           </section>
         }
         <section class="export-section">
           <div class="export-section__header">
             <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
           </div>
-          <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+          <pre
+            class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
         </section>
       </section>
     </div>

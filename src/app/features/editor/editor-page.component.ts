@@ -186,7 +186,12 @@ interface MinimapTextShape extends MinimapShapeBase {
   readonly fill: string;
 }
 
-type MinimapShape = MinimapLineShape | MinimapRectangleShape | MinimapCircleShape | MinimapEllipseShape | MinimapTextShape;
+type MinimapShape =
+  | MinimapLineShape
+  | MinimapRectangleShape
+  | MinimapCircleShape
+  | MinimapEllipseShape
+  | MinimapTextShape;
 
 interface MinimapOverview {
   readonly viewBoxWidth: number;
