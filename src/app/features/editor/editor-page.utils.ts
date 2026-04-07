@@ -1,5 +1,6 @@
 import type { CanvasShape } from './tikz.models';
 import type { SharedScenePayload } from './editor-page.i18n';
+import { sceneToTikz } from './tikz.codegen';
 
 export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
   switch (shape.kind) {
@@ -54,11 +55,93 @@ export const highlightLatex = (source: string): string =>
     })
     .join('<br />');
 
-export const encodeSharePayload = (payload: SharedScenePayload): string =>
-  btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+interface CompactSharedScenePayloadV1 {
+  readonly v: 1;
+  readonly s: SharedScenePayload['scene'];
+  readonly p: SharedScenePayload['preferences'];
+  readonly c: SharedScenePayload['viewportCenter'];
+  readonly l?: SharedScenePayload['latexExportConfig'];
+}
 
-export const decodeSharePayload = (raw: string): SharedScenePayload | null => {
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+const bytesToBase64Url = (bytes: Uint8Array): string => {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+};
+
+const base64UrlToBytes = (value: string): Uint8Array => {
+  const normalized = value.replaceAll('-', '+').replaceAll('_', '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
+  bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+
+const readCompressedBytes = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
+  const buffer = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buffer);
+};
+
+const compactSharePayload = (payload: SharedScenePayload): CompactSharedScenePayloadV1 => ({
+  v: 1,
+  s: {
+    ...payload.scene,
+    shapes: payload.scene.shapes.filter((shape) => shape.kind !== 'image')
+  },
+  p: payload.preferences,
+  c: payload.viewportCenter,
+  ...(payload.latexExportConfig ? { l: payload.latexExportConfig } : {})
+});
+
+const expandSharePayload = (payload: CompactSharedScenePayloadV1): SharedScenePayload => ({
+  scene: payload.s,
+  preferences: payload.p,
+  importCode: sceneToTikz(payload.s),
+  viewportCenter: payload.c,
+  ...(payload.l ? { latexExportConfig: payload.l } : {})
+});
+
+export const encodeSharePayload = async (payload: SharedScenePayload): Promise<string> => {
+  const compact = compactSharePayload(payload);
+  const compactPayload = JSON.stringify(compact);
+
+  if (typeof CompressionStream === 'undefined') {
+    return `b:${bytesToBase64Url(encoder.encode(compactPayload))}`;
+  }
+
+  const compressed = await readCompressedBytes(
+    new Blob([toArrayBuffer(encoder.encode(compactPayload))]).stream().pipeThrough(new CompressionStream('gzip'))
+  );
+  return `gz:${bytesToBase64Url(compressed)}`;
+};
+
+export const decodeSharePayload = async (raw: string): Promise<SharedScenePayload | null> => {
   try {
+    if (raw.startsWith('gz:')) {
+      if (typeof DecompressionStream === 'undefined') {
+        return null;
+      }
+
+      const decompressed = await readCompressedBytes(
+        new Blob([toArrayBuffer(base64UrlToBytes(raw.slice(3)))]).stream().pipeThrough(new DecompressionStream('gzip'))
+      );
+      const parsed = JSON.parse(decoder.decode(decompressed)) as CompactSharedScenePayloadV1;
+      return parsed?.v === 1 ? expandSharePayload(parsed) : null;
+    }
+
+    if (raw.startsWith('b:')) {
+      const parsed = JSON.parse(decoder.decode(base64UrlToBytes(raw.slice(2)))) as CompactSharedScenePayloadV1;
+      return parsed?.v === 1 ? expandSharePayload(parsed) : null;
+    }
+
     return JSON.parse(decodeURIComponent(escape(atob(raw)))) as SharedScenePayload;
   } catch {
     return null;

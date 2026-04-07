@@ -6,6 +6,7 @@ import {
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
   viewChild
@@ -163,6 +164,16 @@ interface ContextMenuState {
 interface InlineTextEditorState {
   readonly shapeId: string;
   readonly value: string;
+}
+
+interface SceneReplaceDialogState {
+  readonly presetId: string;
+  readonly title: string;
+}
+
+interface ClipboardShapeSet {
+  readonly shapes: readonly CanvasShape[];
+  readonly pasteCount: number;
 }
 
 interface SidebarResizeState {
@@ -336,6 +347,7 @@ export class EditorPageComponent {
   readonly templateUseCurrentSelection = signal(true);
   readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
   readonly inlineTextEditor = signal<InlineTextEditorState | null>(null);
+  readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
@@ -604,7 +616,9 @@ export class EditorPageComponent {
   readonly highlightedSnippetCode = computed(() => highlightLatex(this.snippetExport().combined));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
-  readonly shareUrl = computed(() => this.buildShareUrl());
+  readonly shareUrl = signal('');
+  readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
+  private shareUrlRequestId = 0;
 
   constructor() {
     afterNextRender(() => {
@@ -618,8 +632,17 @@ export class EditorPageComponent {
       resizeObserver.observe(viewport);
       updateCanvasSize();
       this.restoreSavedTemplates();
-      this.restoreSharedSceneFromUrl();
+      void this.restoreSharedSceneFromUrl();
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
+    });
+
+    effect(() => {
+      this.scene();
+      this.preferences();
+      this.viewportCenter();
+      this.store.importCode();
+      this.latexExportConfig();
+      void this.refreshShareUrl();
     });
   }
 
@@ -936,10 +959,10 @@ export class EditorPageComponent {
   }
 
   applyScenePreset(presetId: string): void {
-    if (!this.confirmSceneReplacement()) {
-      return;
-    }
+    this.requestSceneReplacement(presetId);
+  }
 
+  private applyScenePresetConfirmed(presetId: string): void {
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === presetId);
       this.store.applyScenePreset(presetId);
@@ -955,9 +978,10 @@ export class EditorPageComponent {
   }
 
   resetScene(): void {
-    if (!this.confirmSceneReplacement()) {
-      return;
-    }
+    this.requestSceneReplacement('blank');
+  }
+
+  private resetSceneConfirmed(): void {
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === 'blank');
       this.store.applyScenePreset('blank');
@@ -1047,7 +1071,12 @@ export class EditorPageComponent {
       return;
     }
 
-    await navigator.clipboard.writeText(this.shareUrl());
+    const url = await this.generateShareUrl();
+    if (!url) {
+      return;
+    }
+    this.shareUrl.set(url);
+    await navigator.clipboard.writeText(url);
     this.shareFeedback.set(this.t('copied'));
     this.showNotification(this.t('shareLinkReady'));
   }
@@ -1122,6 +1151,68 @@ export class EditorPageComponent {
 
   duplicateSelected(): void {
     this.runSceneMutation(() => this.store.duplicateSelected());
+  }
+
+  copySelected(): void {
+    const shapes = this.selectedShapes();
+    if (!shapes.length) {
+      return;
+    }
+
+    this.clipboardShapes.set({
+      shapes: structuredClone(shapes),
+      pasteCount: 0
+    });
+    this.showNotification(this.t('selectionCopied'));
+  }
+
+  cutSelected(): void {
+    const shapes = this.selectedShapes();
+    if (!shapes.length) {
+      return;
+    }
+
+    this.clipboardShapes.set({
+      shapes: structuredClone(shapes),
+      pasteCount: 0
+    });
+    this.removeSelected();
+    this.showNotification(this.t('selectionCut'));
+  }
+
+  pasteClipboard(): void {
+    const clipboard = this.clipboardShapes();
+    if (!clipboard?.shapes.length) {
+      return;
+    }
+
+    const offsetStep = 0.8;
+    const offset = offsetStep * (clipboard.pasteCount + 1);
+    const mergeIdMap = new Map<string, string>();
+    const pastedShapes = clipboard.shapes.map((shape) => {
+      const duplicate = structuredClone(shape);
+      let nextMergeId: string | undefined;
+      if (duplicate.mergeId) {
+        nextMergeId = mergeIdMap.get(duplicate.mergeId);
+        if (!nextMergeId) {
+          nextMergeId = crypto.randomUUID();
+          mergeIdMap.set(duplicate.mergeId, nextMergeId);
+        }
+      }
+      return {
+        ...translateShapeBy(duplicate, offset, -offset),
+        id: crypto.randomUUID(),
+        name: `${duplicate.name} copy`,
+        ...(nextMergeId ? { mergeId: nextMergeId } : { mergeId: undefined })
+      } as CanvasShape;
+    });
+
+    this.runSceneMutation(() => this.store.addShapes(pastedShapes));
+    this.clipboardShapes.set({
+      shapes: clipboard.shapes,
+      pasteCount: clipboard.pasteCount + 1
+    });
+    this.showNotification(this.t('selectionPasted'));
   }
 
   mergeSelected(): void {
@@ -1731,6 +1822,24 @@ export class EditorPageComponent {
       return;
     }
 
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+      this.copySelected();
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      this.cutSelected();
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+      event.preventDefault();
+      this.pasteClipboard();
+      return;
+    }
+
     switch (event.key.toLowerCase()) {
       case 'v':
         this.setActiveTool('select');
@@ -1778,6 +1887,10 @@ export class EditorPageComponent {
         }
         if (this.exportModalOpen()) {
           this.closeExportModal();
+          return;
+        }
+        if (this.sceneReplaceDialog()) {
+          this.closeSceneReplaceDialog();
           return;
         }
         if (this.fileMenuOpen()) {
@@ -1861,39 +1974,45 @@ export class EditorPageComponent {
     action();
   }
 
-  private confirmSceneReplacement(): boolean {
-    if (this.scene().shapes.length === 0) {
-      return true;
-    }
-
-    return globalThis.confirm?.(this.t('confirmReplaceScene')) ?? true;
-  }
-
-  private buildShareUrl(): string {
-    const location = globalThis.location;
-    if (!location) {
-      return '';
-    }
-
-    const payload: SharedScenePayload = {
+  private buildSharePayload(): SharedScenePayload {
+    return {
       scene: this.scene(),
       preferences: this.preferences(),
       importCode: this.store.importCode(),
       viewportCenter: this.viewportCenter(),
       latexExportConfig: this.latexExportConfig()
     };
-    const url = new URL(location.href);
-    url.searchParams.set('share', encodeSharePayload(payload));
-    return url.toString();
   }
 
-  private restoreSharedSceneFromUrl(): void {
+  private async refreshShareUrl(): Promise<void> {
+    const requestId = ++this.shareUrlRequestId;
+    const url = await this.generateShareUrl();
+    if (requestId === this.shareUrlRequestId) {
+      this.shareUrl.set(url);
+    }
+  }
+
+  private async generateShareUrl(): Promise<string> {
+    const location = globalThis.location;
+    if (!location) {
+      return '';
+    }
+
+    const baseUrl = new URL(location.origin + location.pathname);
+    if (location.hash) {
+      baseUrl.hash = location.hash;
+    }
+    baseUrl.searchParams.set('share', await encodeSharePayload(this.buildSharePayload()));
+    return baseUrl.toString();
+  }
+
+  private async restoreSharedSceneFromUrl(): Promise<void> {
     const location = globalThis.location;
     if (!location) {
       return;
     }
 
-    const sharedState = decodeSharePayload(new URL(location.href).searchParams.get('share') ?? '');
+    const sharedState = await decodeSharePayload(new URL(location.href).searchParams.get('share') ?? '');
     if (!sharedState) {
       return;
     }
@@ -1906,6 +2025,41 @@ export class EditorPageComponent {
         ...sharedState.latexExportConfig
       });
     }
+  }
+
+  private requestSceneReplacement(presetId: string): void {
+    if (this.scene().shapes.length === 0) {
+      if (presetId === 'blank') {
+        this.resetSceneConfirmed();
+      } else {
+        this.applyScenePresetConfirmed(presetId);
+      }
+      return;
+    }
+
+    const preset = presetId === 'blank' ? null : this.scenePresets.find((entry) => entry.id === presetId);
+    this.sceneReplaceDialog.set({
+      presetId,
+      title: presetId === 'blank' ? this.t('newScene') : (preset ? this.scenePresetTitle(preset) : this.t('newScene'))
+    });
+  }
+
+  confirmSceneReplaceDialog(): void {
+    const dialog = this.sceneReplaceDialog();
+    if (!dialog) {
+      return;
+    }
+
+    this.sceneReplaceDialog.set(null);
+    if (dialog.presetId === 'blank') {
+      this.resetSceneConfirmed();
+      return;
+    }
+    this.applyScenePresetConfirmed(dialog.presetId);
+  }
+
+  closeSceneReplaceDialog(): void {
+    this.sceneReplaceDialog.set(null);
   }
 
   private setScaleFromViewportCenter(nextScale: number): void {
