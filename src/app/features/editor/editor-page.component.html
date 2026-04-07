@@ -108,7 +108,7 @@
       <section class="sidebar-block sidebar-block--intro">
         <div class="section-header section-header--static">
           <span>{{ t('library') }}</span>
-          <div class="stat-pill">{{ objectPresets.length }}</div>
+          <div class="stat-pill">{{ allInsertablePresets().length }}</div>
         </div>
         <label class="search-field">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.search"></path></svg>
@@ -118,6 +118,52 @@
             [placeholder]="t('searchLibrary')"
             (input)="setLibraryQuery($any($event.target).value)" />
         </label>
+      </section>
+
+      <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('savedTemplates')">
+        <button class="section-header" type="button" (click)="toggleSection('savedTemplates')">
+          <span>{{ t('savedTemplates') }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.chevronDown"></path>
+          </svg>
+        </button>
+        @if (!isSectionCollapsed('savedTemplates')) {
+          @if (visibleSavedTemplates().length) {
+            <div class="preset-list">
+              @for (template of visibleSavedTemplates(); track template.id) {
+                <div class="preset-card preset-card--library preset-card--saved">
+                  <button
+                    class="preset-card__main"
+                    type="button"
+                    [class.is-active]="activeTool() === template.id"
+                    [title]="template.title"
+                    (click)="setActiveTool(template.id)">
+                    <span class="preset-card__icon"
+                      ><svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="presetIconPath(template.icon)"></path></svg
+                    ></span>
+                    <span class="preset-card__body">
+                      <strong>{{ template.title }}</strong>
+                      @if (template.description) {
+                        <small>{{ template.description }}</small>
+                      }
+                    </span>
+                  </button>
+                  <div class="preset-card__actions">
+                    <button class="icon-button" type="button" [title]="t('edit')" (click)="openEditTemplateDialog(template)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.pencil"></path></svg>
+                    </button>
+                    <button class="icon-button" type="button" [title]="t('delete')" (click)="confirmDeleteTemplate(template)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.trash"></path></svg>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-panel">{{ t('noSavedTemplates') }}</div>
+          }
+        }
       </section>
 
       <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('scenePresets')">
@@ -342,7 +388,8 @@
             </g>
           }
 
-          @if (insertionPreviewShape(); as previewShape) {
+          @if (insertionPreviewShapes().length) {
+            @for (previewShape of insertionPreviewShapes(); track $index) {
             <g class="shape-layer shape-layer--preview">
               @switch (previewShape.kind) {
                 @case ('line') {
@@ -414,6 +461,7 @@
                 }
               }
             </g>
+            }
           }
 
           @if (lineSelectionPath(); as selectionPath) {
@@ -681,6 +729,11 @@
                       <path [attr.d]="iconMap.back"></path></svg
                     ><span>{{ t('sendToBack') }}</span>
                   </button>
+                  <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.library"></path></svg
+                    ><span>{{ t('saveAsTemplate') }}</span>
+                  </button>
                 </div>
                 <div class="form-grid">
                   <label class="field field--full"
@@ -690,13 +743,31 @@
                       [value]="shape.name"
                       (input)="updateShapeText('name', $event)"
                   /></label>
-                  <label class="field"
-                    ><span>{{ t('stroke') }}</span
-                    ><input
-                      type="color"
-                      [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
-                      (input)="updateShapeText('stroke', $event)"
-                  /></label>
+                  @if (shape.kind !== 'text') {
+                    <div class="field field--full">
+                      <span>{{ t('appearance') }}</span>
+                      <div class="color-pair-controls">
+                        <label class="color-chip-field">
+                          <small>{{ t('stroke') }}</small>
+                          <input
+                            class="color-swatch"
+                            type="color"
+                            [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
+                            (input)="updateShapeText('stroke', $event)" />
+                        </label>
+                        @if (shape.kind === 'rectangle' || shape.kind === 'circle' || shape.kind === 'ellipse') {
+                          <label class="color-chip-field">
+                            <small>{{ t('fill') }}</small>
+                            <input
+                              class="color-swatch"
+                              type="color"
+                              [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
+                              (input)="updateShapeText('fill', $event)" />
+                          </label>
+                        }
+                      </div>
+                    </div>
+                  }
                   <label class="field"
                     ><span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
                     <div class="range-field">
@@ -876,13 +947,6 @@
                             [value]="shape.cornerRadius"
                             (input)="updateShapeNumber('cornerRadius', $event)" /></div
                       ></label>
-                      <label class="field"
-                        ><span>{{ t('fill') }}</span
-                        ><input
-                          type="color"
-                          [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                          (input)="updateShapeText('fill', $event)"
-                      /></label>
                     }
                     @case ('circle') {
                       <label class="field"
@@ -931,13 +995,6 @@
                             [value]="shape.r"
                             (input)="updateShapeNumber('r', $event)" /></div
                       ></label>
-                      <label class="field"
-                        ><span>{{ t('fill') }}</span
-                        ><input
-                          type="color"
-                          [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                          (input)="updateShapeText('fill', $event)"
-                      /></label>
                     }
                     @case ('ellipse') {
                       <label class="field"
@@ -1002,13 +1059,6 @@
                             [value]="shape.ry"
                             (input)="updateShapeNumber('ry', $event)" /></div
                       ></label>
-                      <label class="field field--full"
-                        ><span>{{ t('fill') }}</span
-                        ><input
-                          type="color"
-                          [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                          (input)="updateShapeText('fill', $event)"
-                      /></label>
                     }
                     @case ('text') {
                       <label class="field field--full"
@@ -1242,6 +1292,11 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.back"></path></svg
                     ><span>{{ t('sendToBack') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.library"></path></svg
+                    ><span>{{ t('saveAsTemplate') }}</span>
                   </button>
                 </div>
                 <div class="selected-shape-list">
@@ -1500,6 +1555,75 @@
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('back')">
         {{ t('sendToBack') }}
       </button>
+    </div>
+  }
+
+  @if (templateDialogOpen()) {
+    <div class="modal-backdrop">
+      <section class="export-settings-modal export-settings-modal--template" (click)="$event.stopPropagation()">
+        <header class="export-modal__header">
+          <div>
+            <p>{{ t('saveAsTemplate') }}</p>
+            <h2>{{ templateDialogMode() === 'edit' ? t('editTemplate') : t('saveTemplateTitle') }}</h2>
+            <span>{{ t('saveTemplateDescription') }}</span>
+          </div>
+          <button class="icon-button" type="button" (click)="closeTemplateDialog()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg>
+          </button>
+        </header>
+        <div class="form-grid">
+          <label class="field field--full">
+            <span>{{ t('name') }}</span>
+            <input type="text" [value]="templateTitleInput()" (input)="updateTemplateDialogText('title', $event)" />
+          </label>
+          <label class="field field--full">
+            <span>{{ t('description') }}</span>
+            <input
+              type="text"
+              [value]="templateDescriptionInput()"
+              (input)="updateTemplateDialogText('description', $event)" />
+          </label>
+          @if (templateDialogMode() === 'edit' && selectionCount() > 0) {
+            <label class="toggle-field field--full">
+              <input
+                type="checkbox"
+                [checked]="templateUseCurrentSelection()"
+                (change)="updateTemplateUseCurrentSelection($event)" />
+              <span>{{ t('replaceTemplateWithSelection') }}</span>
+            </label>
+          }
+        </div>
+        <div class="inline-actions">
+          <button class="secondary-button" type="button" (click)="closeTemplateDialog()">{{ t('cancel') }}</button>
+          <button class="primary-button" type="button" (click)="saveTemplate()">{{ t('saveTemplate') }}</button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (templateDeleteTarget(); as templateToDelete) {
+    <div class="modal-backdrop">
+      <section class="export-settings-modal export-settings-modal--template" (click)="$event.stopPropagation()">
+        <header class="export-modal__header">
+          <div>
+            <p>{{ t('delete') }}</p>
+            <h2>{{ t('deleteTemplateTitle') }}</h2>
+            <span>{{ t('deleteTemplateDescription') }}</span>
+          </div>
+          <button class="icon-button" type="button" (click)="closeDeleteTemplateDialog()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.close"></path></svg>
+          </button>
+        </header>
+        <div class="selection-title">
+          <strong>{{ templateToDelete.title }}</strong>
+        </div>
+        <div class="inline-actions">
+          <button class="secondary-button" type="button" (click)="closeDeleteTemplateDialog()">{{ t('cancel') }}</button>
+          <button class="secondary-button secondary-button--danger" type="button" (click)="deleteTemplate()">
+            {{ t('delete') }}
+          </button>
+        </div>
+      </section>
     </div>
   }
 

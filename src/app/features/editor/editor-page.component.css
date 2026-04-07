@@ -391,11 +391,12 @@
 .mode-switch button,
 .sidebar-tabs button {
   min-height: 30px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 0;
   background: transparent;
   color: var(--muted-foreground);
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .language-switch button.is-active {
@@ -457,11 +458,13 @@
   place-items: center;
   min-width: 0;
   min-height: 38px;
-  padding: 8px 10px;
+  padding: 7px 8px;
   text-align: center;
   line-height: 1.2;
   white-space: normal;
   overflow-wrap: anywhere;
+  word-break: keep-all;
+  hyphens: manual;
 }
 
 .menu-cluster {
@@ -556,6 +559,39 @@
   min-width: 0;
   display: grid;
   gap: 2px;
+}
+
+.preset-card--saved {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  padding: 0;
+}
+
+.preset-card__main {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preset-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 0;
+}
+
+.preset-card__main.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .left-sidebar .preset-card__body small {
@@ -866,6 +902,34 @@ kbd {
   overflow-wrap: anywhere;
 }
 
+.color-pair-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.color-chip-field {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.color-chip-field small {
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.color-swatch {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px;
+  min-height: 44px !important;
+  padding: 3px !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+
 .selected-shape-list {
   display: grid;
   gap: 10px;
@@ -1139,6 +1203,10 @@ kbd {
   box-shadow: var(--floating-shadow);
 }
 
+.export-settings-modal--template {
+  width: min(520px, 100%);
+}
+
 .export-modal__header,
 .export-toolbar {
   display: flex;
@@ -1393,6 +1461,11 @@ button:disabled {
     padding-left: 0;
   }
 
+  .sidebar-tabs button {
+    font-size: 0.84rem;
+    padding-inline: 6px;
+  }
+
   .workspace {
     height: calc(100dvh - var(--topbar-height));
     grid-template-columns: 1fr;
@@ -1452,9 +1525,17 @@ button:disabled {
     flex-wrap: wrap;
   }
 
+  .sidebar-tabs button {
+    font-size: 0.8rem;
+  }
+
   .form-grid,
   .range-field,
   .share-field {
+    grid-template-columns: 1fr;
+  }
+
+  .color-pair-controls {
     grid-template-columns: 1fr;
   }
 

@@ -88,6 +88,14 @@ interface LibrarySection {
   readonly presets: readonly ObjectPreset[];
 }
 
+interface SavedTemplate {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly shapes: readonly CanvasShape[];
+}
+
 interface SelectionBounds {
   readonly left: number;
   readonly right: number;
@@ -260,6 +268,7 @@ interface MinimapOverview {
   }
 })
 export class EditorPageComponent {
+  private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
   private readonly defaultScale = 24;
   private readonly defaultLatexExportConfig = {
     colorMode: 'direct-rgb',
@@ -307,10 +316,18 @@ export class EditorPageComponent {
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
   readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
+  readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly selectedImageFilename = signal('');
+  readonly templateDialogOpen = signal(false);
+  readonly templateDialogMode = signal<'create' | 'edit'>('create');
+  readonly editingTemplateId = signal<string | null>(null);
+  readonly templateTitleInput = signal('');
+  readonly templateDescriptionInput = signal('');
+  readonly templateUseCurrentSelection = signal(true);
+  readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
@@ -336,12 +353,16 @@ export class EditorPageComponent {
   readonly iconMap = iconPaths;
 
   readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
+  readonly allInsertablePresets = computed<readonly ObjectPreset[]>(() => [
+    ...this.savedTemplates().map((template) => this.savedTemplateToPreset(template)),
+    ...this.objectPresets
+  ]);
   readonly selectionLabel = computed(() => {
     if (this.selectionCount() === 0) return this.t('noneSelected');
     if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
-  readonly activePreset = computed(() => this.objectPresets.find((preset) => preset.id === this.activeTool()) ?? null);
+  readonly activePreset = computed(() => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null);
   readonly activeToolLabel = computed(() => {
     const preset = this.activePreset();
     return preset ? this.presetTitle(preset) : this.t('selection');
@@ -419,7 +440,7 @@ export class EditorPageComponent {
       iconPath: getIconPath('select'),
       shortcut: 'V'
     },
-    ...this.objectPresets
+    ...this.allInsertablePresets()
       .filter((preset) => preset.quickAccess)
       .map((preset) => ({
         id: preset.id,
@@ -459,6 +480,13 @@ export class EditorPageComponent {
         };
       })
       .filter((section) => section.presets.length > 0);
+  });
+  readonly visibleSavedTemplates = computed<readonly SavedTemplate[]>(() => {
+    const query = this.libraryQuery().trim().toLowerCase();
+    return this.savedTemplates().filter((template) => {
+      if (!query) return true;
+      return [template.title, template.description].join(' ').toLowerCase().includes(query);
+    });
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
@@ -505,18 +533,19 @@ export class EditorPageComponent {
       height: (top - bottom) * this.preferences().scale
     };
   });
-  readonly insertionPreviewShape = computed<CanvasShape | null>(() => {
+  readonly insertionPreviewShapes = computed<readonly CanvasShape[]>(() => {
     const interactionState = this.interactionState();
     if (!interactionState || interactionState.kind !== 'insert') {
-      return null;
+      return [];
     }
 
-    return this.buildInsertionPreviewShape(
+    return this.buildInsertionPreviewShapes(
       interactionState.toolId,
       interactionState.startWorldPoint,
       interactionState.currentWorldPoint
     );
   });
+  readonly insertionPreviewShape = computed<CanvasShape | null>(() => this.insertionPreviewShapes()[0] ?? null);
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
   }));
@@ -545,6 +574,7 @@ export class EditorPageComponent {
       const resizeObserver = new ResizeObserver(() => updateCanvasSize());
       resizeObserver.observe(viewport);
       updateCanvasSize();
+      this.restoreSavedTemplates();
       this.restoreSharedSceneFromUrl();
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
@@ -742,7 +772,7 @@ export class EditorPageComponent {
   setActiveTool(toolId: ToolId): void {
     if (toolId !== 'select' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
-        this.store.addPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
+        this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
         this.activeTool.set('select');
         this.inspectorTab.set('properties');
       });
@@ -752,6 +782,104 @@ export class EditorPageComponent {
     this.activeTool.set(toolId);
     this.closeContextMenu();
     this.closeFileMenu();
+  }
+
+  openSaveTemplateDialog(): void {
+    if (this.selectionCount() === 0) {
+      return;
+    }
+
+    this.templateDialogMode.set('create');
+    this.editingTemplateId.set(null);
+    this.templateTitleInput.set(this.selectionLabel());
+    this.templateDescriptionInput.set('');
+    this.templateUseCurrentSelection.set(true);
+    this.templateDialogOpen.set(true);
+  }
+
+  openEditTemplateDialog(template: SavedTemplate): void {
+    this.templateDialogMode.set('edit');
+    this.editingTemplateId.set(template.id);
+    this.templateTitleInput.set(template.title);
+    this.templateDescriptionInput.set(template.description);
+    this.templateUseCurrentSelection.set(false);
+    this.templateDialogOpen.set(true);
+  }
+
+  closeTemplateDialog(): void {
+    this.templateDialogOpen.set(false);
+    this.editingTemplateId.set(null);
+  }
+
+  updateTemplateDialogText(key: 'title' | 'description', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    if (key === 'title') {
+      this.templateTitleInput.set(value);
+      return;
+    }
+    this.templateDescriptionInput.set(value);
+  }
+
+  updateTemplateUseCurrentSelection(event: Event): void {
+    this.templateUseCurrentSelection.set((event.target as HTMLInputElement).checked);
+  }
+
+  saveTemplate(): void {
+    const title = this.templateTitleInput().trim();
+    if (!title) {
+      return;
+    }
+
+    const mode = this.templateDialogMode();
+    const existing = this.savedTemplates().find((template) => template.id === this.editingTemplateId());
+    const sourceShapes =
+      mode === 'edit' && !this.templateUseCurrentSelection()
+        ? existing?.shapes ?? []
+        : structuredClone(this.selectedShapes());
+
+    if (!sourceShapes.length) {
+      return;
+    }
+
+    const template: SavedTemplate = {
+      id: mode === 'edit' && existing ? existing.id : crypto.randomUUID(),
+      title,
+      description: this.templateDescriptionInput().trim(),
+      icon: this.iconForShapes(sourceShapes),
+      shapes: structuredClone(sourceShapes)
+    };
+
+    this.savedTemplates.update((templates) =>
+      mode === 'edit' && existing
+        ? templates.map((entry) => (entry.id === existing.id ? template : entry))
+        : [template, ...templates]
+    );
+    this.persistSavedTemplates();
+    this.closeTemplateDialog();
+    this.showNotification(this.t(mode === 'edit' ? 'templateUpdated' : 'templateSaved'));
+  }
+
+  confirmDeleteTemplate(template: SavedTemplate): void {
+    this.templateDeleteTarget.set(template);
+  }
+
+  closeDeleteTemplateDialog(): void {
+    this.templateDeleteTarget.set(null);
+  }
+
+  deleteTemplate(): void {
+    const template = this.templateDeleteTarget();
+    if (!template) {
+      return;
+    }
+
+    this.savedTemplates.update((templates) => templates.filter((entry) => entry.id !== template.id));
+    this.persistSavedTemplates();
+    if (this.activeTool() === template.id) {
+      this.activeTool.set('select');
+    }
+    this.templateDeleteTarget.set(null);
+    this.showNotification(this.t('templateDeleted'));
   }
 
   selectShape(shapeId: string | null): void {
@@ -811,7 +939,7 @@ export class EditorPageComponent {
     }
 
     this.runSceneMutation(() => {
-      this.store.addPresetAt(activeTool, this.snapScenePoint(point));
+      this.insertPresetAt(activeTool, this.snapScenePoint(point));
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
@@ -1290,15 +1418,14 @@ export class EditorPageComponent {
     }
 
     if (interactionState.kind === 'insert') {
-      const previewShape = this.buildInsertionPreviewShape(
+      const previewShapes = this.buildInsertionPreviewShapes(
         interactionState.toolId,
         interactionState.startWorldPoint,
-        interactionState.currentWorldPoint,
-        true
+        interactionState.currentWorldPoint
       );
-      if (previewShape) {
+      if (previewShapes.length) {
         this.runSceneMutation(() => {
-          this.store.addShapes([previewShape]);
+          this.store.addShapes(previewShapes.map((shape) => ({ ...shape, id: crypto.randomUUID() })));
           this.activeTool.set('select');
           this.inspectorTab.set('properties');
         });
@@ -1477,6 +1604,14 @@ export class EditorPageComponent {
         this.removeSelected();
         return;
       case 'escape':
+        if (this.templateDeleteTarget()) {
+          this.closeDeleteTemplateDialog();
+          return;
+        }
+        if (this.templateDialogOpen()) {
+          this.closeTemplateDialog();
+          return;
+        }
         if (this.exportSettingsModalOpen()) {
           this.closeExportSettingsModal();
           return;
@@ -1716,103 +1851,190 @@ export class EditorPageComponent {
   }
 
   private canPreviewInsert(toolId: ToolId): boolean {
-    return this.objectPresets.some((preset) => preset.id === toolId && preset.shapes.length === 1);
+    return this.allInsertablePresets().some((preset) => preset.id === toolId);
   }
 
-  private buildInsertionPreviewShape(
+  private buildInsertionPreviewShapes(
     toolId: ToolId,
     startPoint: Point,
-    currentPoint: Point,
-    commit = false
-  ): CanvasShape | null {
-    const preset = this.objectPresets.find((entry) => entry.id === toolId);
-    if (!preset || preset.shapes.length !== 1) {
-      return null;
+    currentPoint: Point
+  ): readonly CanvasShape[] {
+    const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
+    if (!preset) {
+      return [];
     }
-    const template = preset.shapes[0];
-
     const deltaX = currentPoint.x - startPoint.x;
     const deltaY = currentPoint.y - startPoint.y;
     const hasDrag = Math.abs(deltaX) > 0.12 || Math.abs(deltaY) > 0.12;
-    const id = commit ? crypto.randomUUID() : 'preview-shape';
+    const templateShapes = structuredClone(preset.shapes);
+    const templateBounds = this.computeBounds(templateShapes);
+    if (!templateBounds) {
+      return [];
+    }
 
-    switch (template.kind) {
+    if (!hasDrag) {
+      const centerX = (templateBounds.left + templateBounds.right) / 2;
+      const centerY = (templateBounds.bottom + templateBounds.top) / 2;
+      return templateShapes.map((shape, index) =>
+        this.transformShape(
+          shape,
+          startPoint.x - centerX,
+          startPoint.y - centerY,
+          1,
+          1,
+          templateBounds.left,
+          templateBounds.bottom,
+          `preview-${index}`
+        )
+      );
+    }
+
+    const targetLeft = Math.min(startPoint.x, currentPoint.x);
+    const targetBottom = Math.min(startPoint.y, currentPoint.y);
+    const targetWidth = Math.max(Math.abs(deltaX), 0.2);
+    const targetHeight = Math.max(Math.abs(deltaY), 0.2);
+    const templateWidth = Math.max(templateBounds.right - templateBounds.left, 0.2);
+    const templateHeight = Math.max(templateBounds.top - templateBounds.bottom, 0.2);
+    const scaleX = targetWidth / templateWidth;
+    const scaleY = targetHeight / templateHeight;
+
+    return templateShapes.map((shape, index) =>
+      this.transformShape(
+        shape,
+        targetLeft - templateBounds.left * scaleX,
+        targetBottom - templateBounds.bottom * scaleY,
+        scaleX,
+        scaleY,
+        0,
+        0,
+        `preview-${index}`
+      )
+    );
+  }
+
+  private insertPresetAt(toolId: ToolId, point: Point): void {
+    const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
+    if (!preset) {
+      return;
+    }
+
+    const templateBounds = this.computeBounds(preset.shapes);
+    if (!templateBounds) {
+      return;
+    }
+
+    const centerX = (templateBounds.left + templateBounds.right) / 2;
+    const centerY = (templateBounds.bottom + templateBounds.top) / 2;
+    const shapes = structuredClone(preset.shapes).map((shape) =>
+      this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID())
+    );
+    this.store.addShapes(shapes);
+  }
+
+  private transformShape(
+    shape: CanvasShape,
+    deltaX: number,
+    deltaY: number,
+    scaleX: number,
+    scaleY: number,
+    originX: number,
+    originY: number,
+    id: string
+  ): CanvasShape {
+    const scalePoint = (point: Point): Point => ({
+      x: (point.x - originX) * scaleX + originX + deltaX,
+      y: (point.y - originY) * scaleY + originY + deltaY
+    });
+
+    switch (shape.kind) {
       case 'line':
-        return {
-          ...structuredClone(template),
-          id,
-          from: startPoint,
-          to: hasDrag ? currentPoint : { x: startPoint.x + 2, y: startPoint.y }
-        };
+        return { ...shape, id, from: scalePoint(shape.from), to: scalePoint(shape.to) };
       case 'rectangle':
-        if (!hasDrag) {
-          return {
-            ...structuredClone(template),
-            id,
-            x: startPoint.x - template.width / 2,
-            y: startPoint.y - template.height / 2
-          };
-        }
         return {
-          ...structuredClone(template),
+          ...shape,
           id,
-          x: Math.min(startPoint.x, currentPoint.x),
-          y: Math.min(startPoint.y, currentPoint.y),
-          width: Math.max(Math.abs(deltaX), 0.2),
-          height: Math.max(Math.abs(deltaY), 0.2)
+          x: (shape.x - originX) * scaleX + originX + deltaX,
+          y: (shape.y - originY) * scaleY + originY + deltaY,
+          width: Math.max(shape.width * scaleX, 0.2),
+          height: Math.max(shape.height * scaleY, 0.2),
+          cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
         };
-      case 'circle': {
-        const radius = hasDrag ? Math.max(Math.max(Math.abs(deltaX), Math.abs(deltaY)) / 2, 0.1) : template.r;
+      case 'circle':
         return {
-          ...structuredClone(template),
+          ...shape,
           id,
-          cx: hasDrag ? (startPoint.x + currentPoint.x) / 2 : startPoint.x,
-          cy: hasDrag ? (startPoint.y + currentPoint.y) / 2 : startPoint.y,
-          r: radius
+          cx: (shape.cx - originX) * scaleX + originX + deltaX,
+          cy: (shape.cy - originY) * scaleY + originY + deltaY,
+          r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), 0.2), 0.1)
         };
-      }
       case 'ellipse':
         return {
-          ...structuredClone(template),
+          ...shape,
           id,
-          cx: hasDrag ? (startPoint.x + currentPoint.x) / 2 : startPoint.x,
-          cy: hasDrag ? (startPoint.y + currentPoint.y) / 2 : startPoint.y,
-          rx: hasDrag ? Math.max(Math.abs(deltaX) / 2, 0.2) : template.rx,
-          ry: hasDrag ? Math.max(Math.abs(deltaY) / 2, 0.2) : template.ry
+          cx: (shape.cx - originX) * scaleX + originX + deltaX,
+          cy: (shape.cy - originY) * scaleY + originY + deltaY,
+          rx: Math.max(shape.rx * scaleX, 0.1),
+          ry: Math.max(shape.ry * scaleY, 0.1)
         };
       case 'text':
         return {
-          ...structuredClone(template),
+          ...shape,
           id,
-          x: startPoint.x,
-          y: startPoint.y
+          x: (shape.x - originX) * scaleX + originX + deltaX,
+          y: (shape.y - originY) * scaleY + originY + deltaY,
+          fontSize: Math.max(shape.fontSize * Math.max(Math.min(scaleX, scaleY), 0.7), 0.2)
         };
-      case 'image': {
-        const aspectRatio = template.aspectRatio || 1;
-        if (!hasDrag) {
-          return {
-            ...structuredClone(template),
-            id,
-            x: startPoint.x - template.width / 2,
-            y: startPoint.y - template.height / 2
-          };
-        }
-        const signX = deltaX >= 0 ? 1 : -1;
-        const signY = deltaY >= 0 ? 1 : -1;
-        const width = Math.max(Math.abs(deltaX), Math.abs(deltaY) * aspectRatio, 0.4);
-        const height = Math.max(width / aspectRatio, 0.4);
-        const x = signX >= 0 ? startPoint.x : startPoint.x - width;
-        const y = signY >= 0 ? startPoint.y : startPoint.y - height;
+      case 'image':
         return {
-          ...structuredClone(template),
+          ...shape,
           id,
-          x,
-          y,
-          width,
-          height
+          x: (shape.x - originX) * scaleX + originX + deltaX,
+          y: (shape.y - originY) * scaleY + originY + deltaY,
+          width: Math.max(shape.width * scaleX, 0.4),
+          height: Math.max(shape.height * scaleY, 0.4)
         };
-      }
     }
+  }
+
+  private savedTemplateToPreset(template: SavedTemplate): ObjectPreset {
+    return {
+      id: template.id,
+      category: 'essentials',
+      icon: template.icon,
+      title: template.title,
+      description: template.description,
+      shapes: template.shapes,
+      quickAccess: false
+    };
+  }
+
+  private iconForShapes(shapes: readonly CanvasShape[]): string {
+    const firstShape = shapes[0];
+    if (!firstShape) {
+      return 'library';
+    }
+    return firstShape.kind === 'line' && firstShape.arrowEnd ? 'arrow' : firstShape.kind === 'line' ? 'segment' : firstShape.kind;
+  }
+
+  private restoreSavedTemplates(): void {
+    const raw = this.document.defaultView?.localStorage?.getItem(this.savedTemplatesStorageKey);
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as SavedTemplate[];
+      this.savedTemplates.set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      this.savedTemplates.set([]);
+    }
+  }
+
+  private persistSavedTemplates(): void {
+    this.document.defaultView?.localStorage?.setItem(
+      this.savedTemplatesStorageKey,
+      JSON.stringify(this.savedTemplates())
+    );
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
