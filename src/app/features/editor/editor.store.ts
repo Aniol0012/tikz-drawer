@@ -357,6 +357,26 @@ export class EditorStore {
     this.selectedShapeIds.set(shapes.map((shape) => shape.id));
   }
 
+  mergeSelected(): void {
+    const mergeId = crypto.randomUUID();
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
+    if (selectedShapeIdSet.size < 2) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.map((shape) =>
+        selectedShapeIdSet.has(shape.id)
+          ? ({
+              ...shape,
+              mergeId
+            } as CanvasShape)
+          : shape
+      )
+    }));
+  }
+
   removeSelected(): void {
     const selectedShapeIdSet = new Set(this.selectedShapeIds());
 
@@ -463,6 +483,35 @@ export class EditorStore {
         ]
       };
     });
+  }
+
+  ungroupSelected(): void {
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
+    if (selectedShapeIdSet.size === 0) {
+      return;
+    }
+
+    const mergeIds = new Set(
+      this.scene()
+        .shapes.filter((shape) => selectedShapeIdSet.has(shape.id) && shape.mergeId)
+        .map((shape) => shape.mergeId as string)
+    );
+
+    if (mergeIds.size === 0) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.map((shape) =>
+        shape.mergeId && mergeIds.has(shape.mergeId)
+          ? ({
+              ...shape,
+              mergeId: undefined
+            } as CanvasShape)
+          : shape
+      )
+    }));
   }
 
   sendSelectedToBack(): void {

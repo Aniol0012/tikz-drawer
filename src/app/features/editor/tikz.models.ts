@@ -12,6 +12,7 @@ export interface CanvasShapeBase {
   readonly kind: ShapeKind;
   readonly stroke: string;
   readonly strokeWidth: number;
+  readonly mergeId?: string;
 }
 
 export interface LineShape extends CanvasShapeBase {

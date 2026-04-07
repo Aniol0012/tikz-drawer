@@ -57,17 +57,16 @@
     </div>
 
     <div class="topbar__right">
-      <div class="language-switch" [attr.aria-label]="t('language')">
-        <button type="button" [class.is-active]="language() === 'en'" (click)="setLanguage('en')">
-          En
-        </button>
-        <button type="button" [class.is-active]="language() === 'ca'" (click)="setLanguage('ca')">
-          Ca
-        </button>
-        <button type="button" [class.is-active]="language() === 'es'" (click)="setLanguage('es')">
-          Es
-        </button>
-      </div>
+      <label class="language-select" [attr.aria-label]="t('language')">
+        <select [value]="language()" (change)="setLanguage($any($event.target).value)">
+          <option value="en">En</option>
+          <option value="ca">Ca</option>
+          <option value="es">Es</option>
+        </select>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.chevronDown"></path>
+        </svg>
+      </label>
 
       <a
         class="icon-button icon-button--github"
@@ -153,7 +152,7 @@
                     <button class="icon-button" type="button" [title]="t('edit')" (click)="openEditTemplateDialog(template)">
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.pencil"></path></svg>
                     </button>
-                    <button class="icon-button" type="button" [title]="t('delete')" (click)="confirmDeleteTemplate(template)">
+                    <button class="icon-button icon-button--danger-soft" type="button" [title]="t('delete')" (click)="confirmDeleteTemplate(template)">
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.trash"></path></svg>
                     </button>
                   </div>
@@ -762,12 +761,24 @@
                               class="color-swatch"
                               type="color"
                               [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                              (input)="updateShapeText('fill', $event)" />
+                            (input)="updateShapeText('fill', $event)" />
                           </label>
                         }
+                        <label class="color-chip-field color-chip-field--metric">
+                          <small>{{ t('strokeWidth') }}</small>
+                          <input
+                            class="color-metric-input"
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.02"
+                            [value]="shape.strokeWidth"
+                            (input)="updateShapeNumber('strokeWidth', $event)" />
+                        </label>
                       </div>
                     </div>
                   }
+                  @if (shape.kind === 'text') {
                   <label class="field"
                     ><span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
                     <div class="range-field">
@@ -785,6 +796,7 @@
                         [value]="shape.strokeWidth"
                         (input)="updateShapeNumber('strokeWidth', $event)" /></div
                   ></label>
+                  }
 
                   @switch (shape.kind) {
                     @case ('line') {
@@ -1363,14 +1375,14 @@
                       [value]="preferences().snapStep"
                       (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /></div
                 ></label>
-                <label class="field"
+                <label class="field field--color-picker"
                   ><span>{{ t('defaultStroke') }}</span
                   ><input
                     type="color"
                     [value]="preferences().defaultStroke"
                     (input)="updatePreferenceText('defaultStroke', $event)"
                 /></label>
-                <label class="field"
+                <label class="field field--color-picker"
                   ><span>{{ t('defaultFill') }}</span
                   ><input
                     type="color"
@@ -1555,6 +1567,16 @@
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('back')">
         {{ t('sendToBack') }}
       </button>
+      @if (canGroupSelection()) {
+        <button type="button" (click)="runContextAction('group')">
+          {{ t('groupFigures') }}
+        </button>
+      }
+      @if (canUngroupSelection()) {
+        <button type="button" (click)="runContextAction('ungroup')">
+          {{ t('ungroupFigures') }}
+        </button>
+      }
     </div>
   }
 

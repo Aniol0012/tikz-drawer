@@ -372,7 +372,7 @@
   flex: 0 0 auto;
 }
 
-.language-switch,
+.language-select,
 .mode-switch,
 .sidebar-tabs {
   padding: 2px;
@@ -381,13 +381,16 @@
   background: var(--tool-surface);
 }
 
-.language-switch {
-  gap: 2px;
-  padding: 3px;
+.language-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px 0 12px;
   border-radius: 999px;
 }
 
-.language-switch button,
+.language-select select,
 .mode-switch button,
 .sidebar-tabs button {
   min-height: 30px;
@@ -399,11 +402,23 @@
   font-size: 0.9rem;
 }
 
-.language-switch button.is-active {
-  border-radius: 999px;
-  background: #111111;
-  color: #ffffff;
+.language-select select {
+  appearance: none;
+  color: var(--app-foreground);
+  padding-right: 18px;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.language-select svg {
+  position: absolute;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  stroke: var(--muted-foreground);
+  fill: none;
+  stroke-width: 1.8;
 }
 
 .icon-button--github .icon-button__github-mark {
@@ -587,6 +602,17 @@
   align-items: center;
   gap: 6px;
   padding: 8px 8px 8px 0;
+}
+
+.icon-button--danger-soft {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 26%, var(--tool-border));
+  color: var(--danger);
+}
+
+.icon-button--danger-soft:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--tool-border-strong));
 }
 
 .preset-card__main.is-active {
@@ -904,30 +930,67 @@ kbd {
 
 .color-pair-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  align-items: start;
 }
 
 .color-chip-field {
   display: grid;
   gap: 8px;
   justify-items: start;
+  align-content: start;
 }
 
 .color-chip-field small {
   color: var(--muted-foreground);
   font-size: 0.76rem;
   font-weight: 700;
+  justify-self: start;
+  text-align: left;
 }
 
 .color-swatch {
-  width: 44px !important;
-  min-width: 44px !important;
-  height: 44px;
-  min-height: 44px !important;
-  padding: 3px !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px;
+  min-height: 36px !important;
+  padding: 0 !important;
   border-radius: 50% !important;
   overflow: hidden;
+  border: 1px solid var(--tool-border) !important;
+  background: transparent;
+  justify-self: start;
+}
+
+.color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 50%;
+}
+
+.color-swatch::-webkit-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+
+.color-swatch::-moz-color-swatch {
+  border: 0;
+  border-radius: 50%;
+}
+
+.color-chip-field--metric {
+  justify-items: stretch;
+}
+
+.color-metric-input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  text-align: center;
 }
 
 .selected-shape-list {
@@ -1034,12 +1097,33 @@ kbd {
 }
 
 .field input[type='color'] {
-  width: 76px;
-  min-width: 76px;
+  width: 52px;
+  min-width: 52px;
   min-height: 40px;
   padding: 3px;
   cursor: pointer;
   justify-self: start;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.field input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 999px;
+}
+
+.field input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.field input[type='color']::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.field--color-picker {
+  align-content: start;
 }
 
 .field textarea {

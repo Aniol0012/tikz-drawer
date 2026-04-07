@@ -269,6 +269,7 @@ interface MinimapOverview {
 })
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
+  private readonly languageStorageKey = 'tikz-drawer.language';
   private readonly defaultScale = 24;
   private readonly defaultLatexExportConfig = {
     colorMode: 'direct-rgb',
@@ -303,7 +304,7 @@ export class EditorPageComponent {
   readonly canUndo = this.store.canUndo;
   readonly canRedo = this.store.canRedo;
 
-  readonly language = signal<LanguageCode>(detectLanguage());
+  readonly language = signal<LanguageCode>(this.restoreLanguage());
   readonly inspectorTab = signal<InspectorTab>('properties');
   readonly activeTool = signal<ToolId>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
@@ -362,6 +363,11 @@ export class EditorPageComponent {
     if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
+  readonly selectedMergeIds = computed(() =>
+    Array.from(new Set(this.selectedShapes().map((shape) => shape.mergeId).filter((mergeId): mergeId is string => !!mergeId)))
+  );
+  readonly canGroupSelection = computed(() => this.selectionCount() > 1 && this.selectedMergeIds().length === 0);
+  readonly canUngroupSelection = computed(() => this.selectedMergeIds().length > 0);
   readonly activePreset = computed(() => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null);
   readonly activeToolLabel = computed(() => {
     const preset = this.activePreset();
@@ -652,6 +658,7 @@ export class EditorPageComponent {
 
   setLanguage(language: LanguageCode): void {
     this.language.set(language);
+    this.document.defaultView?.localStorage?.setItem(this.languageStorageKey, language);
   }
 
   isSectionCollapsed(sectionId: string): boolean {
@@ -1026,12 +1033,17 @@ export class EditorPageComponent {
     }
 
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      if (shape.mergeId) {
+        this.toggleMergedShapeSelection(shape.mergeId);
+        this.setInspectorTab('properties');
+        return;
+      }
       this.setInspectorTab('properties');
       return;
     }
 
     if (!this.selectionContainsShape(shape.id)) {
-      this.store.selectShape(shape.id);
+      this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
   }
@@ -1054,6 +1066,16 @@ export class EditorPageComponent {
 
   duplicateSelected(): void {
     this.runSceneMutation(() => this.store.duplicateSelected());
+  }
+
+  mergeSelected(): void {
+    this.runSceneMutation(() => this.store.mergeSelected());
+    this.showNotification(this.t('figuresGrouped'));
+  }
+
+  ungroupSelected(): void {
+    this.runSceneMutation(() => this.store.ungroupSelected());
+    this.showNotification(this.t('figuresUngrouped'));
   }
 
   bringSelectedToFront(): void {
@@ -1211,6 +1233,30 @@ export class EditorPageComponent {
     return this.selectedShapes().some((shape) => shape.id === shapeId);
   }
 
+  private selectShapeSet(shape: CanvasShape): void {
+    if (shape.mergeId) {
+      const groupedIds = this.scene()
+        .shapes.filter((entry) => entry.mergeId === shape.mergeId)
+        .map((entry) => entry.id);
+      this.store.setSelectedShapes(groupedIds);
+      return;
+    }
+    this.store.selectShape(shape.id);
+  }
+
+  private toggleMergedShapeSelection(mergeId: string): void {
+    const groupedIds = this.scene()
+      .shapes.filter((entry) => entry.mergeId === mergeId)
+      .map((entry) => entry.id);
+    const selectedIds = new Set(this.selectedShapes().map((shape) => shape.id));
+    const alreadySelected = groupedIds.every((id) => selectedIds.has(id));
+    this.store.setSelectedShapes(
+      alreadySelected
+        ? [...selectedIds].filter((id) => !groupedIds.includes(id))
+        : [...selectedIds, ...groupedIds]
+    );
+  }
+
   openCanvasContextMenu(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
@@ -1226,7 +1272,7 @@ export class EditorPageComponent {
     event.preventDefault();
     event.stopPropagation();
     if (!this.selectionContainsShape(shape.id)) {
-      this.store.selectShape(shape.id);
+      this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
     this.contextMenu.set({
@@ -1241,7 +1287,7 @@ export class EditorPageComponent {
     this.contextMenu.set(null);
   }
 
-  runContextAction(action: 'duplicate' | 'delete' | 'front' | 'back'): void {
+  runContextAction(action: 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup'): void {
     switch (action) {
       case 'duplicate':
         this.duplicateSelected();
@@ -1254,6 +1300,12 @@ export class EditorPageComponent {
         break;
       case 'back':
         this.sendSelectedToBack();
+        break;
+      case 'group':
+        this.mergeSelected();
+        break;
+      case 'ungroup':
+        this.ungroupSelected();
         break;
     }
     this.closeContextMenu();
@@ -1308,13 +1360,17 @@ export class EditorPageComponent {
     event.stopPropagation();
 
     if (event.shiftKey || event.ctrlKey || event.metaKey) {
-      this.store.toggleShapeInSelection(shape.id);
+      if (shape.mergeId) {
+        this.toggleMergedShapeSelection(shape.mergeId);
+      } else {
+        this.store.toggleShapeInSelection(shape.id);
+      }
       this.setInspectorTab('properties');
       return;
     }
 
     if (!this.selectionContainsShape(shape.id)) {
-      this.store.selectShape(shape.id);
+      this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
 
@@ -1854,6 +1910,35 @@ export class EditorPageComponent {
     return this.allInsertablePresets().some((preset) => preset.id === toolId);
   }
 
+  private applyInsertionDefaults(shape: CanvasShape): CanvasShape {
+    const preferences = this.preferences();
+    switch (shape.kind) {
+      case 'line':
+        return {
+          ...shape,
+          stroke: preferences.defaultStroke,
+          strokeWidth: preferences.defaultStrokeWidth
+        };
+      case 'rectangle':
+      case 'circle':
+      case 'ellipse':
+        return {
+          ...shape,
+          stroke: preferences.defaultStroke,
+          fill: preferences.defaultFill,
+          strokeWidth: preferences.defaultStrokeWidth
+        };
+      case 'image':
+        return {
+          ...shape,
+          stroke: preferences.defaultStroke,
+          strokeWidth: preferences.defaultStrokeWidth
+        };
+      case 'text':
+        return shape;
+    }
+  }
+
   private buildInsertionPreviewShapes(
     toolId: ToolId,
     startPoint: Point,
@@ -1876,15 +1961,17 @@ export class EditorPageComponent {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
       return templateShapes.map((shape, index) =>
-        this.transformShape(
-          shape,
-          startPoint.x - centerX,
-          startPoint.y - centerY,
-          1,
-          1,
-          templateBounds.left,
-          templateBounds.bottom,
-          `preview-${index}`
+        this.applyInsertionDefaults(
+          this.transformShape(
+            shape,
+            startPoint.x - centerX,
+            startPoint.y - centerY,
+            1,
+            1,
+            templateBounds.left,
+            templateBounds.bottom,
+            `preview-${index}`
+          )
         )
       );
     }
@@ -1899,15 +1986,17 @@ export class EditorPageComponent {
     const scaleY = targetHeight / templateHeight;
 
     return templateShapes.map((shape, index) =>
-      this.transformShape(
-        shape,
-        targetLeft - templateBounds.left * scaleX,
-        targetBottom - templateBounds.bottom * scaleY,
-        scaleX,
-        scaleY,
-        0,
-        0,
-        `preview-${index}`
+      this.applyInsertionDefaults(
+        this.transformShape(
+          shape,
+          targetLeft - templateBounds.left * scaleX,
+          targetBottom - templateBounds.bottom * scaleY,
+          scaleX,
+          scaleY,
+          0,
+          0,
+          `preview-${index}`
+        )
       )
     );
   }
@@ -1926,7 +2015,9 @@ export class EditorPageComponent {
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
     const shapes = structuredClone(preset.shapes).map((shape) =>
-      this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID())
+      this.applyInsertionDefaults(
+        this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID())
+      )
     );
     this.store.addShapes(shapes);
   }
@@ -2035,6 +2126,11 @@ export class EditorPageComponent {
       this.savedTemplatesStorageKey,
       JSON.stringify(this.savedTemplates())
     );
+  }
+
+  private restoreLanguage(): LanguageCode {
+    const saved = this.document.defaultView?.localStorage?.getItem(this.languageStorageKey);
+    return saved === 'ca' || saved === 'es' || saved === 'en' ? saved : detectLanguage();
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
