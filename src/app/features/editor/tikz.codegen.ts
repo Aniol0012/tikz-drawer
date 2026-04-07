@@ -2,6 +2,7 @@ import type {
   CanvasShape,
   CircleShape,
   EllipseShape,
+  ImageShape,
   LineShape,
   RectangleShape,
   TextShape,
@@ -125,6 +126,22 @@ const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): str
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   `\\node[text=${context.registerColor(shape.color)}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
 
+const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
+  const centerX = shape.x + shape.width / 2;
+  const centerY = shape.y + shape.height / 2;
+  const lines = [
+    `\\node[inner sep=0pt] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
+  ];
+
+  if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
+    lines.push(
+      `\\draw[draw=${context.registerColor(shape.stroke)}, line width=${formatNumber(shape.strokeWidth)}pt] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
+    );
+  }
+
+  return lines.join('\n  ');
+};
+
 export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext): string => {
   switch (shape.kind) {
     case 'line':
@@ -137,6 +154,8 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
       return ellipseToTikz(shape, context);
     case 'text':
       return textToTikz(shape, context);
+    case 'image':
+      return imageToTikz(shape, context);
   }
 };
 
@@ -145,6 +164,7 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
   const imports = [
     '\\usepackage{tikz}',
+    ...(scene.shapes.some((shape) => shape.kind === 'image') ? ['\\usepackage{graphicx}'] : []),
     ...(context.colorMode === 'define-colors'
       ? Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)
       : [])

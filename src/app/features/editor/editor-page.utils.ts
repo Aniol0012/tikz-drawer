@@ -17,6 +17,8 @@ export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: num
       return { ...shape, cx: shape.cx + deltaX, cy: shape.cy + deltaY };
     case 'text':
       return { ...shape, x: shape.x + deltaX, y: shape.y + deltaY };
+    case 'image':
+      return { ...shape, x: shape.x + deltaX, y: shape.y + deltaY };
   }
 };
 

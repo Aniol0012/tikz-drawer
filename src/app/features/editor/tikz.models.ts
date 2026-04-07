@@ -1,5 +1,5 @@
 export type ThemeMode = 'light' | 'dark';
-export type ShapeKind = 'line' | 'rectangle' | 'circle' | 'ellipse' | 'text';
+export type ShapeKind = 'line' | 'rectangle' | 'circle' | 'ellipse' | 'text' | 'image';
 
 export interface Point {
   readonly x: number;
@@ -58,7 +58,18 @@ export interface TextShape extends CanvasShapeBase {
   readonly color: string;
 }
 
-export type CanvasShape = LineShape | RectangleShape | CircleShape | EllipseShape | TextShape;
+export interface ImageShape extends CanvasShapeBase {
+  readonly kind: 'image';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly aspectRatio: number;
+  readonly src: string;
+  readonly latexSource: string;
+}
+
+export type CanvasShape = LineShape | RectangleShape | CircleShape | EllipseShape | TextShape | ImageShape;
 
 export interface SceneBounds {
   readonly width: number;

@@ -52,6 +52,8 @@ const shapeBounds = (
         top: shape.y + height / 2
       };
     }
+    case 'image':
+      return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
   }
 };
 
@@ -131,6 +133,12 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
         x: shape.x + deltaX,
         y: shape.y + deltaY
       };
+    case 'image':
+      return {
+        ...shape,
+        x: shape.x + deltaX,
+        y: shape.y + deltaY
+      };
   }
 };
 
@@ -153,6 +161,12 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
       };
     case 'text':
       return shape;
+    case 'image':
+      return {
+        ...shape,
+        stroke: shape.stroke,
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+      };
   }
 };
 
@@ -186,6 +200,12 @@ const moveShapeToPoint = (shape: CanvasShape, point: { x: number; y: number }): 
         ...shape,
         x: point.x,
         y: point.y
+      };
+    case 'image':
+      return {
+        ...shape,
+        x: point.x - shape.width / 2,
+        y: point.y - shape.height / 2
       };
   }
 };

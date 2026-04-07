@@ -8,6 +8,7 @@ import type {
   PresetCategory,
   RectangleShape,
   ScenePreset,
+  ImageShape,
   TextShape,
   TikzScene
 } from './tikz.models';
@@ -74,6 +75,27 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   text: overrides.text ?? 'label',
   fontSize: overrides.fontSize ?? 0.42,
   color: overrides.color ?? '#161616'
+});
+
+const imagePlaceholder =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'><rect width='640' height='420' fill='#eef4ff'/><rect x='36' y='36' width='568' height='348' rx='20' fill='#dbe9ff' stroke='#9db7f2' stroke-width='6'/><circle cx='180' cy='160' r='40' fill='#8fb1ff'/><path d='M120 300 250 210 340 280 430 180 520 300H120Z' fill='#6b8fe8'/><text x='320' y='360' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' fill='#3251a8'>Image</text></svg>"
+  );
+
+const createImage = (overrides: Partial<ImageShape> = {}): ImageShape => ({
+  id: overrides.id ?? crypto.randomUUID(),
+  name: overrides.name ?? 'Image',
+  kind: 'image',
+  stroke: overrides.stroke ?? '#94a3b8',
+  strokeWidth: overrides.strokeWidth ?? 0.08,
+  x: overrides.x ?? -2.4,
+  y: overrides.y ?? -1.6,
+  width: overrides.width ?? 4.8,
+  height: overrides.height ?? 3.2,
+  aspectRatio: overrides.aspectRatio ?? 1.5,
+  src: overrides.src ?? imagePlaceholder,
+  latexSource: overrides.latexSource ?? 'images/example.png'
 });
 
 const createPreset = (
@@ -170,6 +192,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Simple text label positioned on the canvas.',
     [createText({ name: 'Text', text: 'Text' })],
     { quickAccess: true, searchTerms: ['label', 'text', 'annotation'] }
+  ),
+  createPreset(
+    'image',
+    'interface',
+    'image',
+    'Image',
+    'Place an image with editable preview source and LaTeX path.',
+    [createImage()],
+    { quickAccess: true, searchTerms: ['image', 'photo', 'picture', 'asset'] }
   ),
   createPreset(
     'card',
@@ -674,7 +705,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Folder-style block for files, groups and collections.',
     [
       createRectangle({ name: 'Folder body', width: 4.8, height: 2.7, fill: '#faf7e8', cornerRadius: 0.12 }),
-      createRectangle({ name: 'Folder tab', x: -1.8, y: 1.55, width: 1.6, height: 0.55, fill: '#f3e5a3', cornerRadius: 0.08 }),
+      createRectangle({
+        name: 'Folder tab',
+        x: -1.8,
+        y: 1.55,
+        width: 1.6,
+        height: 0.55,
+        fill: '#f3e5a3',
+        cornerRadius: 0.08
+      }),
       createText({ name: 'Folder label', text: 'Folder', y: 0.05 })
     ],
     { searchTerms: ['folder', 'files', 'directory', 'collection'] }
@@ -701,8 +740,20 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Three-column board for workflows and task planning.',
     [
       createRectangle({ name: 'Kanban frame', width: 7.2, height: 3.8, fill: '#fbfbfb', cornerRadius: 0.14 }),
-      createLine({ name: 'Kanban divider 1', from: { x: -1.2, y: 1.9 }, to: { x: -1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
-      createLine({ name: 'Kanban divider 2', from: { x: 1.2, y: 1.9 }, to: { x: 1.2, y: -1.9 }, stroke: '#90959a', strokeWidth: 0.05 }),
+      createLine({
+        name: 'Kanban divider 1',
+        from: { x: -1.2, y: 1.9 },
+        to: { x: -1.2, y: -1.9 },
+        stroke: '#90959a',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Kanban divider 2',
+        from: { x: 1.2, y: 1.9 },
+        to: { x: 1.2, y: -1.9 },
+        stroke: '#90959a',
+        strokeWidth: 0.05
+      }),
       createText({ name: 'Kanban todo', text: 'To do', x: -2.4, y: 1.2, fontSize: 0.3 }),
       createText({ name: 'Kanban doing', text: 'Doing', x: 0, y: 1.2, fontSize: 0.3 }),
       createText({ name: 'Kanban done', text: 'Done', x: 2.4, y: 1.2, fontSize: 0.3 })

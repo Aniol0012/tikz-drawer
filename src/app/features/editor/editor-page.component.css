@@ -70,6 +70,8 @@
 
 .topbar__left {
   min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 10px;
 }
 
 .topbar__center {
@@ -78,6 +80,7 @@
 
 .topbar__right {
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .brand-lockup {
@@ -111,6 +114,7 @@
 
 .scene-input {
   width: min(220px, 100%);
+  flex: 1 1 220px;
 }
 
 .scene-input input,
@@ -320,6 +324,8 @@
 .topbar-actions {
   padding-left: 4px;
   flex-wrap: wrap;
+  min-width: 0;
+  flex: 1 1 320px;
 }
 
 .tool-button {
@@ -753,6 +759,13 @@ kbd {
   min-height: 34px;
   padding: 0 10px;
   border-radius: 999px;
+  flex: 0 1 auto;
+  white-space: nowrap;
+}
+
+.secondary-button--toolbar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .minimap {
@@ -760,8 +773,8 @@ kbd {
   right: 14px;
   bottom: 14px;
   z-index: 4;
-  width: 132px;
-  height: 132px;
+  width: 156px;
+  height: 156px;
   padding: 6px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
@@ -774,6 +787,9 @@ kbd {
   height: 100%;
   display: block;
   cursor: grab;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .minimap__shape {
@@ -806,15 +822,20 @@ kbd {
 
 .selection-summary {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.selection-summary > div {
+  min-width: 0;
 }
 
 .inline-actions .secondary-button,
 .inline-actions .primary-button {
-  width: 200px;
-  flex: 1 1 140px;
+  width: auto;
+  flex: 1 1 150px;
   justify-content: center;
 }
 
@@ -902,6 +923,48 @@ kbd {
   padding: 8px 10px;
   resize: vertical;
   min-height: 76px;
+}
+
+.sidebar-section--nested {
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tool-surface) 82%, white 18%);
+}
+
+.file-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.file-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 6px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+}
+
+.file-input::file-selector-button {
+  margin-right: 10px;
+  padding: 0 14px;
+  height: 32px;
+  border: 1px solid #b7cdf8;
+  border-radius: 999px;
+  background: #dbe9ff;
+  color: #2456cf;
+  font: 700 0.82rem/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.file-picker__name {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .chip-row {
@@ -1244,6 +1307,10 @@ button:disabled {
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
+
+  .secondary-button--toolbar {
+    flex: 1 1 160px;
+  }
 }
 
 @media (max-width: 1220px) {
@@ -1260,6 +1327,11 @@ button:disabled {
   .topbar__right {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    padding-left: 0;
   }
 
   .workspace {
@@ -1307,6 +1379,12 @@ button:disabled {
     gap: 10px;
   }
 
+  .secondary-button--toolbar,
+  .primary-button {
+    flex: 1 1 calc(50% - 8px);
+    justify-content: center;
+  }
+
   .scene-input {
     width: 100%;
   }
@@ -1345,8 +1423,8 @@ button:disabled {
   }
 
   .minimap {
-    width: 108px;
-    height: 108px;
+    width: 124px;
+    height: 124px;
   }
 
   .export-modal__header,

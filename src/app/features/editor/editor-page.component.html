@@ -334,6 +334,23 @@
                     {{ shape.text }}
                   </text>
                 }
+                @case ('image') {
+                  <image
+                    [attr.x]="toSvgX(shape.x)"
+                    [attr.y]="toSvgY(shape.y + shape.height)"
+                    [attr.width]="shape.width * preferences().scale"
+                    [attr.height]="shape.height * preferences().scale"
+                    [attr.href]="shape.src"
+                    preserveAspectRatio="xMidYMid meet"></image>
+                  <rect
+                    [attr.x]="toSvgX(shape.x)"
+                    [attr.y]="toSvgY(shape.y + shape.height)"
+                    [attr.width]="shape.width * preferences().scale"
+                    [attr.height]="shape.height * preferences().scale"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    fill="none"></rect>
+                }
               }
             </g>
           }
@@ -567,7 +584,6 @@
                 <div class="selection-summary">
                   <div>
                     <strong>{{ shape.name }}</strong>
-                    <span>{{ localizedShapeKind(shape.kind) }}</span>
                   </div>
                   <span class="badge">{{ selectionCount() }}</span>
                 </div>
@@ -1020,6 +1036,114 @@
                           (input)="updateShapeText('color', $event)"
                       /></label>
                     }
+                    @case ('image') {
+                      <label class="field">
+                        <span>{{ t('x') }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-20"
+                            max="20"
+                            step="0.1"
+                            [value]="shape.x"
+                            (input)="updateShapeNumber('x', $event)" /><input
+                            type="number"
+                            step="0.1"
+                            [value]="shape.x"
+                            (input)="updateShapeNumber('x', $event)" /></div
+                      ></label>
+                      <label class="field">
+                        <span>{{ t('y') }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-20"
+                            max="20"
+                            step="0.1"
+                            [value]="shape.y"
+                            (input)="updateShapeNumber('y', $event)" /><input
+                            type="number"
+                            step="0.1"
+                            [value]="shape.y"
+                            (input)="updateShapeNumber('y', $event)" /></div
+                      ></label>
+                      <label class="field">
+                        <span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.4"
+                            max="16"
+                            step="0.1"
+                            [value]="shape.width"
+                            (input)="updateImageDimension('width', $event)" /><input
+                            type="number"
+                            min="0.4"
+                            step="0.1"
+                            [value]="shape.width"
+                            (input)="updateImageDimension('width', $event)" /></div
+                      ></label>
+                      <label class="field">
+                        <span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.4"
+                            max="16"
+                            step="0.1"
+                            [value]="shape.height"
+                            (input)="updateImageDimension('height', $event)" /><input
+                            type="number"
+                            min="0.4"
+                            step="0.1"
+                            [value]="shape.height"
+                            (input)="updateImageDimension('height', $event)" /></div
+                      ></label>
+                      <label class="field field--full">
+                        <span>{{ t('latexImageSource') }}</span>
+                        <input
+                          type="text"
+                          [value]="shape.latexSource"
+                          (input)="updateImageText('latexSource', $event)" />
+                      </label>
+                      <label class="field field--full">
+                        <span>{{ t('uploadImage') }}</span>
+                        <div class="file-picker">
+                          <input
+                            class="file-input"
+                            type="file"
+                            accept="image/*"
+                            (change)="onImageFileSelected($event)" />
+                          <span class="file-picker__name">{{
+                            selectedImageFilename() || t('noFileChosen')
+                          }}</span>
+                        </div>
+                      </label>
+                      <section
+                        class="sidebar-section sidebar-section--nested field--full"
+                        [class.is-collapsed]="isSectionCollapsed('imageAdvanced')">
+                        <button
+                          class="section-header"
+                          type="button"
+                          (click)="toggleSection('imageAdvanced')">
+                          <span>{{ t('advancedSettings') }}</span>
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path [attr.d]="iconMap.chevronDown"></path>
+                          </svg>
+                        </button>
+                        @if (!isSectionCollapsed('imageAdvanced')) {
+                          <div class="form-grid">
+                            <label class="field field--full">
+                              <span>{{ t('imageSource') }}</span>
+                              <input
+                                type="text"
+                                [value]="shape.src"
+                                (input)="updateImageText('src', $event)" />
+                            </label>
+                          </div>
+                        }
+                      </section>
+                    }
                   }
                 </div>
               } @else if (selectionCount() > 1) {
@@ -1273,7 +1397,7 @@
   }
 
   @if (exportModalOpen()) {
-    <div class="modal-backdrop" (click)="closeExportModal()">
+    <div class="modal-backdrop">
       <section class="export-modal" (click)="$event.stopPropagation()">
         <header class="export-modal__header">
           <div>
@@ -1377,7 +1501,7 @@
   }
 
   @if (exportSettingsModalOpen()) {
-    <div class="modal-backdrop" (click)="closeExportSettingsModal()">
+    <div class="modal-backdrop">
       <section class="export-settings-modal" (click)="$event.stopPropagation()">
         <header class="export-modal__header">
           <div>

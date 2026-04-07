@@ -287,6 +287,7 @@ export class EditorPageComponent {
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly notifications = signal<readonly ToastNotification[]>([]);
+  readonly selectedImageFilename = signal('');
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
@@ -347,7 +348,7 @@ export class EditorPageComponent {
     const top = Math.max(sceneBounds.top, visibleBounds.top) + padding;
     const width = Math.max(right - left, 1);
     const height = Math.max(top - bottom, 1);
-    const mapSize = 100;
+    const mapSize = 180;
     const scaleX = mapSize / width;
     const scaleY = mapSize / height;
     const scale = Math.min(scaleX, scaleY);
@@ -560,6 +561,8 @@ export class EditorPageComponent {
         return 'N';
       case 'ellipse':
         return 'E';
+      case 'image':
+        return 'I';
       default:
         return undefined;
     }
@@ -705,6 +708,7 @@ export class EditorPageComponent {
     if (toolId !== 'select' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
         this.store.addPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
+        this.activeTool.set('select');
         this.inspectorTab.set('properties');
       });
       return;
@@ -717,6 +721,7 @@ export class EditorPageComponent {
 
   selectShape(shapeId: string | null): void {
     this.closeContextMenu();
+    this.selectedImageFilename.set('');
     this.store.selectShape(shapeId);
     if (shapeId) {
       this.setInspectorTab('properties');
@@ -772,6 +777,7 @@ export class EditorPageComponent {
 
     this.runSceneMutation(() => {
       this.store.addPresetAt(activeTool, this.snapScenePoint(point));
+      this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
   }
@@ -917,6 +923,71 @@ export class EditorPageComponent {
   updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateImageText(key: 'src' | 'latexSource', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'image' ? ({ ...shape, [key]: value } as CanvasShape) : shape
+    );
+  }
+
+  updateImageDimension(key: 'width' | 'height', event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'image') {
+        return shape;
+      }
+
+      const aspectRatio = shape.aspectRatio || (shape.height !== 0 ? shape.width / shape.height : 1);
+      return key === 'width'
+        ? ({
+            ...shape,
+            width: value,
+            height: Math.max(value / Math.max(aspectRatio, 0.01), 0.2)
+          } as CanvasShape)
+        : ({
+            ...shape,
+            height: value,
+            width: Math.max(value * Math.max(aspectRatio, 0.01), 0.2)
+          } as CanvasShape);
+    });
+  }
+
+  async onImageFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    const dimensions = await this.loadImageDimensions(dataUrl);
+    this.selectedImageFilename.set(file.name);
+
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'image'
+        ? ({
+            ...shape,
+            src: dataUrl,
+            ...(dimensions
+              ? {
+                  aspectRatio: dimensions.width / dimensions.height,
+                  height: Math.max(shape.width / Math.max(dimensions.width / dimensions.height, 0.01), 0.2)
+                }
+              : {}),
+            latexSource: shape.latexSource || file.name
+          } as CanvasShape)
+        : shape
+    );
+    input.value = '';
   }
 
   setTextPresetSize(fontSize: number): void {
@@ -1316,6 +1387,9 @@ export class EditorPageComponent {
       case 'e':
         this.setActiveTool('ellipse');
         return;
+      case 'i':
+        this.setActiveTool('image');
+        return;
       case 'delete':
       case 'backspace':
         this.removeSelected();
@@ -1705,6 +1779,18 @@ export class EditorPageComponent {
           height
         };
       }
+      case 'image':
+        return {
+          kind: 'rectangle',
+          stroke: shape.stroke,
+          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          fill: '#cbd5e1',
+          x: toMapX(shape.x),
+          y: toMapY(shape.y + shape.height),
+          width: Math.max(shape.width * scale, 1.4),
+          height: Math.max(shape.height * scale, 1.4),
+          rx: 0.8
+        };
     }
   }
 
@@ -1743,6 +1829,8 @@ export class EditorPageComponent {
           top: shape.y + height / 2
         };
       }
+      case 'image':
+        return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
     }
   }
 
@@ -1758,11 +1846,13 @@ export class EditorPageComponent {
         return this.resizeLine(shape, handle, point);
       case 'text':
         return shape;
+      case 'image':
+        return this.resizeRectangle(shape, handle, point);
     }
   }
 
   private resizeRectangle(
-    shape: Extract<CanvasShape, { kind: 'rectangle' }>,
+    shape: Extract<CanvasShape, { kind: 'rectangle' | 'image' }>,
     handle: ResizeHandle,
     point: Point
   ): CanvasShape {
@@ -1772,15 +1862,21 @@ export class EditorPageComponent {
       point,
       0.2,
       0.2,
-      shape.width / shape.height
+      shape.kind === 'image' ? shape.aspectRatio : shape.width / shape.height
     );
-    return {
+    const resizedShape = {
       ...shape,
       x: resizedBounds.left,
       y: resizedBounds.bottom,
       width: resizedBounds.right - resizedBounds.left,
       height: resizedBounds.top - resizedBounds.bottom
     };
+    return shape.kind === 'image'
+      ? ({
+          ...resizedShape,
+          aspectRatio: shape.aspectRatio || (resizedShape.height !== 0 ? resizedShape.width / resizedShape.height : 1)
+        } as CanvasShape)
+      : resizedShape;
   }
 
   private resizeCircle(
@@ -1854,7 +1950,7 @@ export class EditorPageComponent {
     if (handle.includes('n')) top = Math.max(point.y, bottom + minimumHeight);
     if (handle.includes('s')) bottom = Math.min(point.y, top - minimumHeight);
 
-    if (this.shiftPressed() && aspectRatio) {
+    if (aspectRatio && (this.shiftPressed() || this.selectedShape()?.kind === 'image')) {
       const currentWidth = Math.max(right - left, minimumWidth);
       const currentHeight = Math.max(top - bottom, minimumHeight);
       const nextHeight = currentWidth / aspectRatio;
@@ -1876,5 +1972,18 @@ export class EditorPageComponent {
     }
 
     return { left, right, top, bottom };
+  }
+
+  private loadImageDimensions(src: string): Promise<{ readonly width: number; readonly height: number } | null> {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve(
+          image.naturalWidth && image.naturalHeight ? { width: image.naturalWidth, height: image.naturalHeight } : null
+        );
+      };
+      image.onerror = () => resolve(null);
+      image.src = src;
+    });
   }
 }
