@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: repo-writes-${{ github.ref }}
+  group: repo-writes-sync-version-badge-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

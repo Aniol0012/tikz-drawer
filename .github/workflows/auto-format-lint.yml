@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: repo-writes-${{ github.ref }}
+  group: repo-writes-auto-format-lint-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
