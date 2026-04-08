@@ -1743,14 +1743,27 @@
           </section>
         } @else {
           <section class="sidebar-section sidebar-section--code-tools">
-            <button
-              class="secondary-button secondary-button--wide"
-              type="button"
-              (click)="openExportSettingsModal()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.settings"></path></svg
-              ><span>{{ t('latexSettings') }}</span>
-            </button>
+            <div class="code-tools-row">
+              <button
+                class="secondary-button code-tools-row__button"
+                type="button"
+                (click)="openExportSettingsModal()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.settings"></path></svg
+                ><span>{{ t('latexSettings') }}</span>
+              </button>
+              <label class="field field--code-theme">
+                <span>{{ t('codeTheme') }}</span>
+                <select [value]="codeHighlightTheme()" (change)="setCodeHighlightTheme($any($event.target).value)">
+                  <option value="aurora">{{ t('codeThemeAurora') }}</option>
+                  <option value="sunset">{{ t('codeThemeSunset') }}</option>
+                  <option value="midnight">{{ t('codeThemeMidnight') }}</option>
+                  <option value="forest">{{ t('codeThemeForest') }}</option>
+                  <option value="rose">{{ t('codeThemeRose') }}</option>
+                  <option value="graphite">{{ t('codeThemeGraphite') }}</option>
+                </select>
+              </label>
+            </div>
           </section>
 
           <section
@@ -1763,17 +1776,37 @@
               </svg>
             </button>
             @if (!isSectionCollapsed('generatedCode')) {
-              <div class="code-panel">
-                <button
-                  class="icon-button code-copy-button"
-                  type="button"
-                  [title]="t('copyTikz')"
-                  (click)="copyExportedCode()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.copy"></path>
-                  </svg>
-                </button>
-                <pre class="code-block"><code [innerHTML]="highlightedSnippetCode()"></code></pre>
+              <div class="code-stack" [attr.data-code-theme]="codeHighlightTheme()">
+                <div class="code-panel">
+                  <div class="export-section__header">
+                    <h3>{{ t('latexImports') }}</h3>
+                    <button
+                      class="icon-button code-copy-button code-copy-button--inline"
+                      type="button"
+                      [title]="t('copy')"
+                      (click)="copySnippetImports()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.copy"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <pre class="code-block code-block--imports"><code [innerHTML]="highlightedGeneratedImports()"></code></pre>
+                </div>
+                <div class="code-panel">
+                  <div class="export-section__header">
+                    <h3>{{ t('latexCode') }}</h3>
+                    <button
+                      class="icon-button code-copy-button code-copy-button--inline"
+                      type="button"
+                      [title]="t('copyTikz')"
+                      (click)="copyExportedCode()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.copy"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <pre class="code-block"><code [innerHTML]="highlightedGeneratedCode()"></code></pre>
+                </div>
               </div>
             }
           </section>
@@ -1786,11 +1819,16 @@
               </svg>
             </button>
             @if (!isSectionCollapsed('importCode')) {
-              <textarea
-                class="code-input"
-                [value]="store.importCode()"
-                spellcheck="false"
-                (input)="onImportCodeInput($event)"></textarea>
+              <div class="code-editor" [attr.data-code-theme]="codeHighlightTheme()">
+                <pre #importCodePreview class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedImportCode()"></code></pre>
+                <textarea
+                  #importCodeInput
+                  class="code-input code-input--overlay"
+                  [value]="store.importCode()"
+                  spellcheck="false"
+                  (input)="onImportCodeInput($event); syncImportCodeScroll()"
+                  (scroll)="syncImportCodeScroll()"></textarea>
+              </div>
               <button
                 class="primary-button primary-button--wide"
                 type="button"

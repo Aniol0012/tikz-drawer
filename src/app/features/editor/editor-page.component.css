@@ -1285,6 +1285,11 @@ kbd {
   gap: 8px;
 }
 
+.code-stack {
+  display: grid;
+  gap: 12px;
+}
+
 .code-panel {
   position: relative;
 }
@@ -1309,6 +1314,11 @@ kbd {
   white-space: pre-wrap;
 }
 
+.code-block code {
+  display: block;
+  min-height: inherit;
+}
+
 .code-block--modal {
   min-height: 220px;
 }
@@ -1317,10 +1327,60 @@ kbd {
   min-height: auto;
 }
 
+.code-block--editor {
+  min-height: 220px;
+  white-space: pre;
+}
+
 .code-input {
   min-height: 180px;
   resize: vertical;
   padding: 10px 12px;
+}
+
+.code-input--overlay {
+  position: absolute;
+  inset: 0;
+  min-height: 220px;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--app-foreground);
+  z-index: 2;
+}
+
+.code-input--overlay::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: transparent;
+}
+
+.code-editor {
+  position: relative;
+}
+
+.code-editor__preview {
+  pointer-events: none;
+}
+
+.code-copy-button--inline {
+  position: static;
+}
+
+.field--code-theme {
+  min-width: 180px;
+}
+
+.code-tools-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  gap: 12px;
+  align-items: end;
+}
+
+.code-tools-row__button {
+  width: 100%;
+  justify-content: center;
+  align-self: end;
 }
 
 .warning-box {
@@ -1458,27 +1518,81 @@ kbd {
 }
 
 :host ::ng-deep .tok-command {
-  color: #4a78dc;
+  color: var(--code-command, #4a78dc);
 }
 
 :host ::ng-deep .tok-option {
-  color: #5e7d3d;
+  color: var(--code-option, #5e7d3d);
 }
 
 :host ::ng-deep .tok-punctuation {
-  color: #6e6e6e;
+  color: var(--code-punctuation, #6e6e6e);
 }
 
 :host ::ng-deep .tok-number {
-  color: #b86a32;
+  color: var(--code-number, #b86a32);
 }
 
 :host ::ng-deep .tok-color {
-  color: #bb4f72;
+  color: var(--code-color, #bb4f72);
 }
 
 :host ::ng-deep .tok-comment {
-  color: #8b8b8b;
+  color: var(--code-comment, #8b8b8b);
+}
+
+[data-code-theme='aurora'] {
+  --code-command: #5c7cfa;
+  --code-option: #2f9e44;
+  --code-punctuation: #6b7280;
+  --code-number: #d97706;
+  --code-color: #d6336c;
+  --code-comment: #94a3b8;
+}
+
+[data-code-theme='sunset'] {
+  --code-command: #c2410c;
+  --code-option: #0f766e;
+  --code-punctuation: #7c6f64;
+  --code-number: #b45309;
+  --code-color: #be185d;
+  --code-comment: #a8a29e;
+}
+
+[data-code-theme='midnight'] {
+  --code-command: #7dd3fc;
+  --code-option: #86efac;
+  --code-punctuation: #94a3b8;
+  --code-number: #fbbf24;
+  --code-color: #f9a8d4;
+  --code-comment: #64748b;
+}
+
+[data-code-theme='forest'] {
+  --code-command: #2f855a;
+  --code-option: #4c9a2a;
+  --code-punctuation: #5f6b66;
+  --code-number: #c05621;
+  --code-color: #2b8a78;
+  --code-comment: #7a8b85;
+}
+
+[data-code-theme='rose'] {
+  --code-command: #c2255c;
+  --code-option: #2b8a3e;
+  --code-punctuation: #8a7d85;
+  --code-number: #d9480f;
+  --code-color: #a61e4d;
+  --code-comment: #9c8f97;
+}
+
+[data-code-theme='graphite'] {
+  --code-command: #4c6ef5;
+  --code-option: #2b8a3e;
+  --code-punctuation: #868e96;
+  --code-number: #e67700;
+  --code-color: #c2255c;
+  --code-comment: #adb5bd;
 }
 
 .export-config-grid {
@@ -1682,6 +1796,10 @@ button:disabled {
   .form-grid,
   .range-field,
   .share-field {
+    grid-template-columns: 1fr;
+  }
+
+  .code-tools-row {
     grid-template-columns: 1fr;
   }
 

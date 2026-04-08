@@ -46,6 +46,7 @@ import type {
 
 type InspectorTab = 'properties' | 'scene' | 'code';
 type ExportMode = 'snippet' | 'standalone';
+type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 type ToolId = 'select' | string;
 type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to' | `anchor-${number}`;
 type ContextTarget = 'canvas' | 'shape';
@@ -303,6 +304,8 @@ export class EditorPageComponent {
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
   readonly inlineTextInput = viewChild<ElementRef<HTMLInputElement>>('inlineTextInput');
   readonly topbarActions = viewChild<ElementRef<HTMLDivElement>>('topbarActions');
+  readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
+  readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
 
   readonly appVersion = packageManifest.version;
   readonly scene = this.store.scene;
@@ -331,6 +334,7 @@ export class EditorPageComponent {
   readonly exportModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
+  readonly codeHighlightTheme = signal<CodeHighlightTheme>('aurora');
   readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly libraryQuery = signal('');
@@ -635,6 +639,9 @@ export class EditorPageComponent {
   readonly highlightedSnippetCode = computed(() => highlightLatex(this.snippetExport().combined));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
+  readonly highlightedGeneratedImports = computed(() => highlightLatex(this.baseTikzExportBundle().imports));
+  readonly highlightedGeneratedCode = computed(() => highlightLatex(this.baseTikzExportBundle().code));
+  readonly highlightedImportCode = computed(() => highlightLatex(this.store.importCode() || ' '));
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
@@ -1325,6 +1332,19 @@ export class EditorPageComponent {
     this.store.renameScene((event.target as HTMLInputElement).value);
   }
 
+  setCodeHighlightTheme(theme: string): void {
+    if (
+      theme === 'aurora' ||
+      theme === 'sunset' ||
+      theme === 'midnight' ||
+      theme === 'forest' ||
+      theme === 'rose' ||
+      theme === 'graphite'
+    ) {
+      this.codeHighlightTheme.set(theme);
+    }
+  }
+
   updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor', event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
@@ -1588,6 +1608,17 @@ export class EditorPageComponent {
 
   opacityPercent(value: number): number {
     return Math.round(value * 100);
+  }
+
+  syncImportCodeScroll(): void {
+    const input = this.importCodeInput()?.nativeElement;
+    const preview = this.importCodePreview()?.nativeElement;
+    if (!input || !preview) {
+      return;
+    }
+
+    preview.scrollTop = input.scrollTop;
+    preview.scrollLeft = input.scrollLeft;
   }
 
   selectionContainsShape(shapeId: string): boolean {
