@@ -422,9 +422,16 @@
 .language-select select {
   appearance: none;
   color: var(--app-foreground);
+  background: transparent;
   padding-right: 18px;
   font-weight: 700;
   cursor: pointer;
+  color-scheme: light dark;
+}
+
+.language-select select option {
+  background: var(--panel-background);
+  color: var(--app-foreground);
 }
 
 .language-select svg {
@@ -436,6 +443,20 @@
   stroke: var(--muted-foreground);
   fill: none;
   stroke-width: 1.8;
+}
+
+:host([data-theme='dark']) .language-select {
+  background: color-mix(in srgb, var(--tool-surface) 92%, black 8%);
+  border-color: var(--tool-border-strong);
+}
+
+:host([data-theme='dark']) .language-select select {
+  color: #f8fafc;
+}
+
+:host([data-theme='dark']) .language-select select option {
+  background: #111827;
+  color: #f8fafc;
 }
 
 .icon-button--github .icon-button__github-mark {

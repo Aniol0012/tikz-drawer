@@ -1,26 +1,26 @@
 import { DOCUMENT } from '@angular/common';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
-  ElementRef,
-  afterNextRender,
   computed,
+  DestroyRef,
   effect,
+  ElementRef,
   inject,
   signal,
   viewChild
 } from '@angular/core';
 import packageManifest from '../../../../package.json';
-import { iconPaths, getIconPath } from './editor-icons';
+import { getIconPath, iconPaths } from './editor-icons';
 import {
   categoryOrder,
   categoryTranslationKey,
   detectLanguage,
-  localizedShapeKinds,
-  translations,
   type LanguageCode,
-  type SharedScenePayload
+  localizedShapeKinds,
+  type SharedScenePayload,
+  translations
 } from './editor-page.i18n';
 import {
   decodeSharePayload,
@@ -29,12 +29,7 @@ import {
   highlightLatex,
   translateShapeBy
 } from './editor-page.utils';
-import {
-  sceneToStandaloneDocument,
-  sceneToTikzBundle,
-  type LatexColorMode,
-  type TikzExportOptions
-} from './tikz.codegen';
+import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
   ArrowTipKind,
@@ -42,6 +37,7 @@ import type {
   EditorPreferences,
   LineShape,
   ObjectPreset,
+  PersistedEditorState,
   Point,
   PresetCategory,
   ScenePreset,
@@ -285,6 +281,7 @@ interface MinimapOverview {
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
   private readonly languageStorageKey = 'tikz-drawer.language';
+  private readonly editorStateStorageKey = 'tikz-drawer.state';
   private readonly defaultScale = 24;
   private readonly defaultLatexExportConfig = {
     colorMode: 'direct-rgb',
@@ -677,6 +674,29 @@ export class EditorPageComponent {
       updateTopbarActions();
       this.restoreSavedTemplates();
       void this.restoreSharedSceneFromUrl();
+      const handleStorage = (event: StorageEvent) => {
+        if (event.key === this.languageStorageKey && event.newValue) {
+          if (event.newValue === 'ca' || event.newValue === 'es' || event.newValue === 'en') {
+            this.language.set(event.newValue);
+          }
+          return;
+        }
+
+        if (event.key === this.editorStateStorageKey && event.newValue) {
+          try {
+            const parsed = JSON.parse(event.newValue) as Partial<PersistedEditorState>;
+            const nextTheme = parsed.preferences?.theme;
+            if (nextTheme === 'light' || nextTheme === 'dark') {
+              this.store.setTheme(nextTheme);
+            }
+          } catch {
+            return;
+          }
+        }
+      };
+
+      this.document.defaultView?.addEventListener('storage', handleStorage);
+      this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
 
