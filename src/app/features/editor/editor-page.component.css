@@ -1232,7 +1232,7 @@ kbd {
 }
 
 .code-block--imports {
-  min-height: 160px;
+  min-height: auto;
 }
 
 .code-input {
