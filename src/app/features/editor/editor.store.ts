@@ -36,7 +36,12 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
       return {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
-        colorOpacity: shape.colorOpacity ?? 1
+        colorOpacity: shape.colorOpacity ?? 1,
+        fontWeight: shape.fontWeight ?? 'normal',
+        fontStyle: shape.fontStyle ?? 'normal',
+        textDecoration: shape.textDecoration ?? 'none',
+        textAlign: shape.textAlign ?? 'center',
+        rotation: shape.rotation ?? 0
       } as CanvasShape;
     case 'image':
       return {
@@ -89,8 +94,9 @@ const shapeBounds = (
         }
       );
     case 'text': {
-      const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
-      const height = shape.fontSize * 0.72;
+      const lines = shape.text.split('\n');
+      const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
+      const height = Math.max(lines.length * shape.fontSize * 0.9, shape.fontSize * 0.72);
       return {
         left: shape.x - width / 2,
         right: shape.x + width / 2,
@@ -216,7 +222,12 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
       return {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
-        colorOpacity: shape.colorOpacity ?? 1
+        colorOpacity: shape.colorOpacity ?? 1,
+        fontWeight: shape.fontWeight ?? 'normal',
+        fontStyle: shape.fontStyle ?? 'normal',
+        textDecoration: shape.textDecoration ?? 'none',
+        textAlign: shape.textAlign ?? 'center',
+        rotation: shape.rotation ?? 0
       };
     case 'image':
       return {

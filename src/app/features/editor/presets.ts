@@ -88,7 +88,12 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   text: overrides.text ?? 'label',
   fontSize: overrides.fontSize ?? 0.42,
   color: overrides.color ?? '#161616',
-  colorOpacity: overrides.colorOpacity ?? 1
+  colorOpacity: overrides.colorOpacity ?? 1,
+  fontWeight: overrides.fontWeight ?? 'normal',
+  fontStyle: overrides.fontStyle ?? 'normal',
+  textDecoration: overrides.textDecoration ?? 'none',
+  textAlign: overrides.textAlign ?? 'center',
+  rotation: overrides.rotation ?? 0
 });
 
 const imagePlaceholder =

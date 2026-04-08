@@ -326,6 +326,7 @@ const parseNode = (line: string): CanvasShape | null => {
 
   const styles = parseStyleMap(match.groups['styles']);
   const scale = Number.parseFloat(styles['scale'] ?? '1') || 1;
+  const anchor = styles['anchor'] ?? 'center';
 
   const shape: TextShape = {
     id: createId(),
@@ -339,7 +340,12 @@ const parseNode = (line: string): CanvasShape | null => {
     text: match.groups['text'].trim(),
     fontSize: 0.42 * scale,
     color: styles['text'] ?? '#0f172a',
-    colorOpacity: styleOpacity(styles, 'text opacity')
+    colorOpacity: styleOpacity(styles, 'text opacity'),
+    fontWeight: match.groups['text'].includes('\\bfseries') ? 'bold' : 'normal',
+    fontStyle: match.groups['text'].includes('\\itshape') ? 'italic' : 'normal',
+    textDecoration: match.groups['text'].includes('\\underline{') ? 'underline' : 'none',
+    textAlign: anchor === 'west' ? 'left' : anchor === 'east' ? 'right' : 'center',
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 
   return shape;

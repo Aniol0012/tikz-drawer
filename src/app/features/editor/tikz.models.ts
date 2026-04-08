@@ -1,5 +1,8 @@
 export type ThemeMode = 'light' | 'dark';
 export type ShapeKind = 'line' | 'rectangle' | 'circle' | 'ellipse' | 'text' | 'image';
+export type TextWeight = 'normal' | 'bold';
+export type TextStyle = 'normal' | 'italic';
+export type TextAlign = 'left' | 'center' | 'right';
 
 export interface Point {
   readonly x: number;
@@ -68,6 +71,11 @@ export interface TextShape extends CanvasShapeBase {
   readonly fontSize: number;
   readonly color: string;
   readonly colorOpacity: number;
+  readonly fontWeight: TextWeight;
+  readonly fontStyle: TextStyle;
+  readonly textDecoration: 'none' | 'underline';
+  readonly textAlign: TextAlign;
+  readonly rotation: number;
 }
 
 export interface ImageShape extends CanvasShapeBase {

@@ -2,7 +2,7 @@
   class="editor-shell"
   [style.--left-sidebar-width.px]="leftSidebarWidth()"
   [style.--right-sidebar-width.px]="rightSidebarWidth()"
-  (click)="closeContextMenu(); closeFileMenu()">
+  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <header class="topbar">
     <div class="topbar__left">
       <div class="brand-lockup">
@@ -449,14 +449,28 @@
                     [attr.fill-opacity]="shape.fillOpacity"></ellipse>
                 }
                 @case ('text') {
-                  <text
-                    [attr.x]="toSvgX(shape.x)"
-                    [attr.y]="toSvgY(shape.y)"
-                    [attr.font-size]="shape.fontSize * preferences().scale"
-                    [attr.fill]="shape.color"
-                    [attr.fill-opacity]="shape.colorOpacity">
-                    {{ shape.text }}
-                  </text>
+                  @if (inlineTextEditor()?.shapeId !== shape.id) {
+                    <text
+                      [attr.x]="textRenderX(shape)"
+                      [attr.y]="toSvgY(shape.y)"
+                      [attr.font-size]="shape.fontSize * preferences().scale"
+                      [attr.font-weight]="shape.fontWeight"
+                      [attr.font-style]="shape.fontStyle"
+                      [attr.text-decoration]="shape.textDecoration"
+                      [attr.text-anchor]="textAnchor(shape.textAlign)"
+                      [attr.transform]="'rotate(' + shape.rotation + ' ' + toSvgX(shape.x) + ' ' + toSvgY(shape.y) + ')'"
+                      [attr.fill]="shape.color"
+                      [attr.fill-opacity]="shape.colorOpacity">
+                      @for (line of displayTextLines(shape.text); track $index) {
+                        <tspan
+                          [attr.x]="textRenderX(shape)"
+                          [attr.text-anchor]="textAnchor(shape.textAlign)"
+                          [attr.dy]="$index === 0 ? 0 : shape.fontSize * preferences().scale * 1.14">
+                          {{ line }}
+                        </tspan>
+                      }
+                    </text>
+                  }
                 }
                 @case ('image') {
                   <image
@@ -574,12 +588,32 @@
                   }
                   @case ('text') {
                     <text
-                      [attr.x]="toSvgX(previewShape.x)"
+                      [attr.x]="textRenderX(previewShape)"
                       [attr.y]="toSvgY(previewShape.y)"
                       [attr.font-size]="previewShape.fontSize * preferences().scale"
+                      [attr.font-weight]="previewShape.fontWeight"
+                      [attr.font-style]="previewShape.fontStyle"
+                      [attr.text-decoration]="previewShape.textDecoration"
+                      [attr.text-anchor]="textAnchor(previewShape.textAlign)"
+                      [attr.transform]="
+                        'rotate(' +
+                        previewShape.rotation +
+                        ' ' +
+                        toSvgX(previewShape.x) +
+                        ' ' +
+                        toSvgY(previewShape.y) +
+                        ')'
+                      "
                       [attr.fill]="previewShape.color"
                       [attr.fill-opacity]="previewShape.colorOpacity">
-                      {{ previewShape.text }}
+                      @for (line of displayTextLines(previewShape.text); track $index) {
+                        <tspan
+                          [attr.x]="textRenderX(previewShape)"
+                          [attr.text-anchor]="textAnchor(previewShape.textAlign)"
+                          [attr.dy]="$index === 0 ? 0 : previewShape.fontSize * preferences().scale * 1.14">
+                          {{ line }}
+                        </tspan>
+                      }
                     </text>
                   }
                   @case ('image') {
@@ -607,23 +641,26 @@
 
           @if (inlineTextEditorLayout(); as editorLayout) {
             <foreignObject
-              [attr.x]="editorLayout.left - editorLayout.width / 2"
-              [attr.y]="editorLayout.top - editorLayout.height / 2"
+              [attr.x]="editorLayout.x"
+              [attr.y]="editorLayout.y"
               [attr.width]="editorLayout.width"
               [attr.height]="editorLayout.height"
               (pointerdown)="$event.stopPropagation()">
               <div class="inline-text-editor__shell" xmlns="http://www.w3.org/1999/xhtml">
-                <input
+                <textarea
                   #inlineTextInput
                   class="inline-text-editor"
-                  type="text"
+                  rows="1"
                   [value]="inlineTextEditor()?.value ?? ''"
                   [style.fontSize.px]="editorLayout.fontSize"
+                  [style.textAlign]="textInputAlign(editorLayout.textAlign)"
+                  [style.fontWeight]="editorLayout.fontWeight"
+                  [style.fontStyle]="editorLayout.fontStyle"
                   (input)="updateInlineTextEditor($event)"
                   (blur)="commitInlineTextEditor()"
                   (keydown)="onInlineTextEditorKeydown($event)"
                   (pointerdown)="$event.stopPropagation()"
-                  (click)="$event.stopPropagation()" />
+                  (click)="$event.stopPropagation()"></textarea>
               </div>
             </foreignObject>
           }
@@ -1342,10 +1379,70 @@
                     <label class="field field--full"
                       ><span>{{ t('text') }}</span
                       ><textarea
+                        #inspectorTextInput
                         rows="3"
                         [value]="shape.text"
                         (input)="updateShapeText('text', $event)"></textarea>
                     </label>
+                    <div class="field field--full">
+                      <span>{{ t('textFormatting') }}</span>
+                      <div class="text-style-toolbar">
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textStyleBold')"
+                          [class.is-active]="isTextStyleActive(shape, 'fontWeight', 'bold')"
+                          (click)="toggleTextStyle('fontWeight')">
+                          <span class="text-style-glyph text-style-glyph--bold">B</span>
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textStyleItalic')"
+                          [class.is-active]="isTextStyleActive(shape, 'fontStyle', 'italic')"
+                          (click)="toggleTextStyle('fontStyle')">
+                          <span class="text-style-glyph text-style-glyph--italic">I</span>
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textStyleUnderline')"
+                          [class.is-active]="isTextStyleActive(shape, 'textDecoration', 'underline')"
+                          (click)="toggleTextStyle('textDecoration')">
+                          <span class="text-style-glyph text-style-glyph--underline">U</span>
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textAlignLeft')"
+                          [class.is-active]="isTextStyleActive(shape, 'textAlign', 'left')"
+                          (click)="setTextStyle('textAlign', 'left')">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 7h14M5 12h10M5 17h14"></path>
+                          </svg>
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textAlignCenter')"
+                          [class.is-active]="isTextStyleActive(shape, 'textAlign', 'center')"
+                          (click)="setTextStyle('textAlign', 'center')">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 7h14M7 12h10M5 17h14"></path>
+                          </svg>
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          [title]="t('textAlignRight')"
+                          [class.is-active]="isTextStyleActive(shape, 'textAlign', 'right')"
+                          (click)="setTextStyle('textAlign', 'right')">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5 7h14M9 12h10M5 17h14"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                     <div class="field field--full">
                       <span>{{ t('fontSize') }}</span>
                       <div class="chip-row">
@@ -1385,6 +1482,42 @@
                           (click)="transformSelectedText('titlecase')">
                           Aa
                         </button>
+                      </div>
+                    </div>
+                    <div class="field field--full">
+                      <span>{{ t('textSymbols') }}</span>
+                      <div class="text-symbol-picker" (click)="$event.stopPropagation()">
+                        <button
+                          class="secondary-button secondary-button--compact text-symbol-trigger"
+                          type="button"
+                          [title]="t('openSymbolPalette')"
+                          (click)="toggleTextSymbolPalette($event)">
+                          <span>Ω</span>
+                        </button>
+                        @if (textSymbolPaletteOpen()) {
+                          <div
+                            class="text-symbol-popover"
+                            [style.top.px]="textSymbolPalettePosition().top"
+                            [style.left.px]="textSymbolPalettePosition().left"
+                            [style.max-height.px]="textSymbolPalettePosition().maxHeight">
+                            @for (group of textSymbolGroups; track group.label) {
+                              <div class="text-symbol-group">
+                                <small>{{ textSymbolGroupLabel(group.label) }}</small>
+                                <div class="text-symbol-grid">
+                                  @for (symbol of group.symbols; track symbol.insert) {
+                                    <button
+                                      class="text-symbol-button"
+                                      type="button"
+                                      [title]="t('symbol.' + symbol.title)"
+                                      (click)="insertTextSymbol(symbol.insert)">
+                                      {{ symbol.label }}
+                                    </button>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
                       </div>
                     </div>
                     <label class="field"
@@ -1433,6 +1566,33 @@
                           [value]="shape.fontSize"
                           (input)="updateShapeNumber('fontSize', $event)" /></div
                     ></label>
+                    <label class="field"
+                      ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation) }}°</span>
+                      <div class="range-field">
+                        <input
+                          type="range"
+                          min="-180"
+                          max="180"
+                          step="1"
+                          [value]="shape.rotation"
+                          (input)="updateShapeNumber('rotation', $event)" /><input
+                          type="number"
+                          min="-180"
+                          max="180"
+                          step="1"
+                          [value]="shape.rotation"
+                          (input)="updateShapeNumber('rotation', $event)" /></div
+                    ></label>
+                    <div class="field field--full">
+                      <span>{{ t('rotationPresets') }}</span>
+                      <div class="chip-row">
+                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-90)">-90</button>
+                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-45)">-45</button>
+                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(0)">0</button>
+                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(45)">45</button>
+                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(90)">90</button>
+                      </div>
+                    </div>
                     <label class="field"
                       ><span>{{ t('color') }}</span>
                       <div class="color-inline-field">
@@ -2096,21 +2256,42 @@
           }
         </div>
         <div class="export-toolbar">
-          <div class="mode-switch">
-            <button
-              type="button"
-              [class.is-active]="exportMode() === 'snippet'"
-              (click)="exportMode.set('snippet')">
-              {{ t('snippet') }}
-            </button>
-            <button
-              type="button"
-              [class.is-active]="exportMode() === 'standalone'"
-              (click)="exportMode.set('standalone')">
-              {{ t('standalone') }}
-            </button>
+          <div class="export-toolbar__meta">
+            <div class="mode-switch">
+              <button
+                type="button"
+                [class.is-active]="exportMode() === 'snippet'"
+                (click)="exportMode.set('snippet')">
+                {{ t('snippet') }}
+              </button>
+              <button
+                type="button"
+                [class.is-active]="exportMode() === 'standalone'"
+                (click)="exportMode.set('standalone')">
+                {{ t('standalone') }}
+              </button>
+            </div>
+            <p class="export-toolbar__scope">
+              {{ selectedShapes().length ? t('exportScopeSelection') : t('exportScopeScene') }}
+            </p>
           </div>
-          <div class="share-field">
+          <div class="export-actions-grid">
+            <button
+              class="secondary-button export-btn"
+              type="button"
+              (click)="downloadCanvasPng()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.download"></path></svg
+              ><span>{{ t('downloadPng') }}</span>
+            </button>
+            <button
+              class="secondary-button export-btn"
+              type="button"
+              (click)="downloadCanvasSvg()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.download"></path></svg
+              ><span>{{ t('downloadSvg') }}</span>
+            </button>
             <button
               class="secondary-button export-btn"
               type="button"

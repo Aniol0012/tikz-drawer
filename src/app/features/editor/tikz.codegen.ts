@@ -171,8 +171,28 @@ const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): strin
 const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string =>
   `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
 
-const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
-  `\\node[text=${context.registerColor(shape.color)}, text opacity=${formatNumber(shape.colorOpacity)}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
+const textToTikz = (shape: TextShape, context: TikzGenerationContext): string => {
+  const nodeOptions = [
+    `text=${context.registerColor(shape.color)}`,
+    `text opacity=${formatNumber(shape.colorOpacity)}`,
+    `scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}`,
+    `anchor=${shape.textAlign === 'left' ? 'west' : shape.textAlign === 'right' ? 'east' : 'center'}`
+  ];
+
+  if (shape.rotation !== 0) {
+    nodeOptions.push(`rotate=${formatNumber(shape.rotation)}`);
+  }
+
+  const fontTokens = [
+    shape.fontWeight === 'bold' ? '\\bfseries' : '',
+    shape.fontStyle === 'italic' ? '\\itshape' : ''
+  ].filter(Boolean);
+
+  const baseText = shape.textDecoration === 'underline' ? `\\underline{${shape.text}}` : shape.text;
+  const content = fontTokens.length ? `{${fontTokens.join(' ')} ${baseText}}` : `{${baseText}}`;
+
+  return `\\node[${nodeOptions.join(', ')}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) ${content};`;
+};
 
 const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
   const centerX = shape.x + shape.width / 2;

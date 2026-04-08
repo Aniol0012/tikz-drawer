@@ -41,6 +41,8 @@ import type {
   Point,
   PresetCategory,
   ScenePreset,
+  TextAlign,
+  TextShape,
   ThemeMode
 } from './tikz.models';
 
@@ -166,6 +168,15 @@ interface InlineTextEditorState {
   readonly value: string;
 }
 
+interface TextSymbolGroup {
+  readonly label: string;
+  readonly symbols: readonly {
+    readonly label: string;
+    readonly insert: string;
+    readonly title: string;
+  }[];
+}
+
 interface SceneReplaceDialogState {
   readonly presetId: string;
   readonly title: string;
@@ -180,6 +191,23 @@ interface SidebarResizeState {
   readonly side: 'left' | 'right';
   readonly startX: number;
   readonly startWidth: number;
+}
+
+interface RecentTextTap {
+  readonly shapeId: string;
+  readonly timestamp: number;
+}
+
+interface TextSymbolPalettePosition {
+  readonly top: number;
+  readonly left: number;
+  readonly maxHeight: number;
+}
+
+interface ExportSvgDocument {
+  readonly markup: string;
+  readonly width: number;
+  readonly height: number;
 }
 
 interface MinimapRect {
@@ -304,7 +332,8 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
-  readonly inlineTextInput = viewChild<ElementRef<HTMLInputElement>>('inlineTextInput');
+  readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
+  readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
   readonly topbarActions = viewChild<ElementRef<HTMLDivElement>>('topbarActions');
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
@@ -352,6 +381,9 @@ export class EditorPageComponent {
   readonly templateUseCurrentSelection = signal(true);
   readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
   readonly inlineTextEditor = signal<InlineTextEditorState | null>(null);
+  readonly textSymbolPaletteOpen = signal(false);
+  readonly textSymbolPalettePosition = signal<TextSymbolPalettePosition>({ top: 0, left: 0, maxHeight: 320 });
+  readonly recentTextTap = signal<RecentTextTap | null>(null);
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
@@ -376,6 +408,62 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
+  readonly textSymbolGroups: readonly TextSymbolGroup[] = [
+    {
+      label: 'Greek',
+      symbols: [
+        { label: 'α', insert: '\\alpha', title: 'alpha' },
+        { label: 'β', insert: '\\beta', title: 'beta' },
+        { label: 'γ', insert: '\\gamma', title: 'gamma' },
+        { label: 'δ', insert: '\\delta', title: 'delta' },
+        { label: 'ε', insert: '\\epsilon', title: 'epsilon' },
+        { label: 'θ', insert: '\\theta', title: 'theta' },
+        { label: 'λ', insert: '\\lambda', title: 'lambda' },
+        { label: 'μ', insert: '\\mu', title: 'mu' },
+        { label: 'π', insert: '\\pi', title: 'pi' },
+        { label: 'σ', insert: '\\sigma', title: 'sigma' },
+        { label: 'φ', insert: '\\phi', title: 'phi' },
+        { label: 'ω', insert: '\\omega', title: 'omega' }
+      ]
+    },
+    {
+      label: 'Arrows',
+      symbols: [
+        { label: '←', insert: '\\leftarrow', title: 'left arrow' },
+        { label: '→', insert: '\\rightarrow', title: 'right arrow' },
+        { label: '↑', insert: '\\uparrow', title: 'up arrow' },
+        { label: '↓', insert: '\\downarrow', title: 'down arrow' },
+        { label: '↔', insert: '\\leftrightarrow', title: 'left-right arrow' },
+        { label: '⇒', insert: '\\Rightarrow', title: 'double right arrow' },
+        { label: '⇐', insert: '\\Leftarrow', title: 'double left arrow' },
+        { label: '⇔', insert: '\\Leftrightarrow', title: 'double left-right arrow' }
+      ]
+    },
+    {
+      label: 'Math',
+      symbols: [
+        { label: '×', insert: '\\times', title: 'times' },
+        { label: '÷', insert: '\\div', title: 'divide' },
+        { label: '±', insert: '\\pm', title: 'plus minus' },
+        { label: '∞', insert: '\\infty', title: 'infinity' },
+        { label: '∑', insert: '\\sum', title: 'sum' },
+        { label: '∏', insert: '\\prod', title: 'product' },
+        { label: '∫', insert: '\\int', title: 'integral' },
+        { label: '∂', insert: '\\partial', title: 'partial' }
+      ]
+    },
+    {
+      label: 'Logic',
+      symbols: [
+        { label: '∀', insert: '\\forall', title: 'for all' },
+        { label: '∃', insert: '\\exists', title: 'exists' },
+        { label: '∈', insert: '\\in', title: 'belongs to' },
+        { label: '∉', insert: '\\notin', title: 'not belongs to' },
+        { label: '∪', insert: '\\cup', title: 'union' },
+        { label: '∩', insert: '\\cap', title: 'intersection' }
+      ]
+    }
+  ];
 
   readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
   readonly allInsertablePresets = computed<readonly ObjectPreset[]>(() => [
@@ -484,14 +572,22 @@ export class EditorPageComponent {
     }
 
     const fontSize = Math.max(shape.fontSize * this.preferences().scale, 14);
-    const width = Math.max(editor.value.length * fontSize * 0.58, fontSize * 3.2, 88);
-    const height = Math.max(fontSize * 1.9, 36);
+    const lines = this.textLines(editor.value);
+    const paddingX = Math.max(6, fontSize * 0.08);
+    const paddingY = Math.max(4, fontSize * 0.08);
+    const width = Math.max(
+      ...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36))
+    );
+    const height = Math.max(lines.length * fontSize * 1.08 + paddingY * 2, fontSize + paddingY * 2);
     return {
-      left: this.toSvgX(shape.x),
-      top: this.toSvgY(shape.y),
-      width,
+      x: this.toSvgX(shape.x) - width / 2 - paddingX,
+      y: this.toSvgY(shape.y) - height / 2,
+      width: width + paddingX * 2,
       height,
-      fontSize
+      fontSize,
+      textAlign: shape.textAlign,
+      fontWeight: shape.fontWeight,
+      fontStyle: shape.fontStyle
     };
   });
   readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
@@ -579,7 +675,6 @@ export class EditorPageComponent {
         }
       ];
     }
-    if (selectedShape.kind === 'text') return [];
     const selectionBounds = this.selectionBounds();
     if (!selectionBounds) return [];
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
@@ -838,6 +933,7 @@ export class EditorPageComponent {
 
   closeFileMenu(): void {
     this.fileMenuOpen.set(false);
+    this.textSymbolPaletteOpen.set(false);
   }
 
   openExportModal(mode: ExportMode = 'snippet'): void {
@@ -1130,6 +1226,61 @@ export class EditorPageComponent {
     URL.revokeObjectURL(url);
   }
 
+  downloadCanvasSvg(): void {
+    const exportDocument = this.buildCanvasExportDocument();
+    const blob = new Blob([exportDocument.markup], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${this.exportFileBaseName()}.svg`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async downloadCanvasPng(): Promise<void> {
+    const exportDocument = this.buildCanvasExportDocument();
+    const svgMarkup = exportDocument.markup;
+    const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Unable to render canvas export.'));
+        img.src = svgUrl;
+      });
+
+      const width = exportDocument.width;
+      const height = exportDocument.height;
+      const scale = 2;
+      const canvas = this.document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+
+      context.scale(scale, scale);
+      context.drawImage(image, 0, 0, width, height);
+
+      const pngBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!pngBlob) {
+        return;
+      }
+
+      const pngUrl = URL.createObjectURL(pngBlob);
+      const anchor = this.document.createElement('a');
+      anchor.href = pngUrl;
+      anchor.download = `${this.exportFileBaseName()}.png`;
+      anchor.click();
+      URL.revokeObjectURL(pngUrl);
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
   copyExportedCode(): void {
     void navigator.clipboard?.writeText(this.snippetExport().code);
   }
@@ -1369,6 +1520,51 @@ export class EditorPageComponent {
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
+  setTextStyle(
+    key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
+    value: TextShape['fontWeight'] | TextShape['fontStyle'] | TextShape['textDecoration'] | TextShape['textAlign']
+  ): void {
+    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape));
+  }
+
+  setTextRotation(value: number): void {
+    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape));
+  }
+
+  toggleTextStyle(key: 'fontWeight' | 'fontStyle' | 'textDecoration'): void {
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'text') return shape;
+      if (key === 'fontWeight') {
+        return { ...shape, fontWeight: shape.fontWeight === 'bold' ? 'normal' : 'bold' } as CanvasShape;
+      }
+      if (key === 'fontStyle') {
+        return { ...shape, fontStyle: shape.fontStyle === 'italic' ? 'normal' : 'italic' } as CanvasShape;
+      }
+      return { ...shape, textDecoration: shape.textDecoration === 'underline' ? 'none' : 'underline' } as CanvasShape;
+    });
+  }
+
+  insertTextSymbol(symbol: string): void {
+    this.closeTextSymbolPalette();
+    const inlineInput = this.inlineTextInput()?.nativeElement;
+    if (this.inlineTextEditor() && inlineInput) {
+      this.insertTextAtCursor(inlineInput, symbol, (nextValue) => {
+        this.inlineTextEditor.update((editor) => (editor ? { ...editor, value: nextValue } : null));
+      });
+      return;
+    }
+
+    const inspectorInput = this.inspectorTextInput()?.nativeElement;
+    const selectedShape = this.selectedShape();
+    if (!inspectorInput || !selectedShape || selectedShape.kind !== 'text') {
+      return;
+    }
+
+    this.insertTextAtCursor(inspectorInput, symbol, (nextValue) => {
+      this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, text: nextValue } as CanvasShape) : shape));
+    });
+  }
+
   updateShapeOpacity(key: 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity', event: Event): void {
     const value = Math.min(1, Math.max(0, Number((event.target as HTMLInputElement).value)));
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
@@ -1399,7 +1595,7 @@ export class EditorPageComponent {
   }
 
   onInlineTextEditorKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       this.commitInlineTextEditor();
       return;
@@ -1413,6 +1609,36 @@ export class EditorPageComponent {
 
   closeInlineTextEditor(): void {
     this.inlineTextEditor.set(null);
+  }
+
+  toggleTextSymbolPalette(event?: Event): void {
+    event?.stopPropagation();
+    const trigger = event?.currentTarget as HTMLElement | null;
+    if (trigger) {
+      const rect = trigger.getBoundingClientRect();
+      const viewportWidth = this.document.defaultView?.innerWidth ?? 1280;
+      const viewportHeight = this.document.defaultView?.innerHeight ?? 800;
+      const popoverWidth = Math.min(420, Math.max(viewportWidth - 24, 280));
+      const preferredHeight = 420;
+      const spaceBelow = viewportHeight - rect.bottom - 12;
+      const spaceAbove = rect.top - 12;
+      const maxHeight = Math.max(220, Math.min(preferredHeight, Math.max(spaceBelow, spaceAbove)));
+      const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
+      const top = openUpward
+        ? Math.max(12, rect.top - Math.min(preferredHeight, maxHeight) - 8)
+        : Math.max(12, Math.min(rect.bottom + 8, viewportHeight - maxHeight - 12));
+      const left = Math.max(12, Math.min(rect.right - popoverWidth, viewportWidth - popoverWidth - 12));
+      this.textSymbolPalettePosition.set({
+        top,
+        left,
+        maxHeight
+      });
+    }
+    this.textSymbolPaletteOpen.update((isOpen) => !isOpen);
+  }
+
+  closeTextSymbolPalette(): void {
+    this.textSymbolPaletteOpen.set(false);
   }
 
   updateImageText(key: 'src' | 'latexSource', event: Event): void {
@@ -1493,7 +1719,7 @@ export class EditorPageComponent {
   }
 
   updateShapeNumber(
-    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'fontSize',
+    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'fontSize' | 'rotation',
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
@@ -1801,12 +2027,28 @@ export class EditorPageComponent {
       return;
     }
 
-    if (shape.kind === 'text' && event.detail >= 2) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.selectShape(shape.id);
-      this.openInlineTextEditor(shape);
-      return;
+    if (shape.kind === 'text') {
+      if (event.detail >= 2 || this.isRepeatedTextTap(shape.id)) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.selectShape(shape.id);
+        this.openInlineTextEditor(shape);
+        this.recentTextTap.set(null);
+        return;
+      }
+
+      this.recentTextTap.set({ shapeId: shape.id, timestamp: Date.now() });
+
+      if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !this.selectionContainsShape(shape.id)) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.selectShapeSet(shape);
+        this.setInspectorTab('properties');
+        this.ignoreNextCanvasClick.set(true);
+        return;
+      }
+    } else {
+      this.recentTextTap.set(null);
     }
 
     event.preventDefault();
@@ -1955,11 +2197,18 @@ export class EditorPageComponent {
   }
 
   onCanvasBackgroundClick(event: MouseEvent): void {
-    this.closeInlineTextEditor();
     if (this.ignoreNextCanvasClick()) {
       this.ignoreNextCanvasClick.set(false);
       return;
     }
+
+    if (this.inlineTextEditor()) {
+      this.commitInlineTextEditor();
+      this.ignoreNextCanvasClick.set(true);
+      return;
+    }
+
+    this.recentTextTap.set(null);
 
     if (this.activeTool() === 'select') {
       if (!this.interactionState()) {
@@ -2888,8 +3137,9 @@ export class EditorPageComponent {
           ry: Math.max(shape.ry * scale, 0.9)
         };
       case 'text': {
-        const width = Math.max(shape.text.length * shape.fontSize * 0.48 * scale, 1.6);
-        const height = Math.max(shape.fontSize * 0.72 * scale, 1.2);
+        const lines = this.textLines(shape.text);
+        const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, 1.6)));
+        const height = Math.max(lines.length * shape.fontSize * 0.88 * scale, 1.2);
         return {
           kind: 'text',
           stroke: 'transparent',
@@ -2949,8 +3199,9 @@ export class EditorPageComponent {
           }
         );
       case 'text': {
-        const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
-        const height = shape.fontSize * 0.72;
+        const lines = this.textLines(shape.text);
+        const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
+        const height = Math.max(lines.length * shape.fontSize * 0.88, shape.fontSize * 0.72);
         return {
           left: shape.x - width / 2,
           right: shape.x + width / 2,
@@ -2974,10 +3225,33 @@ export class EditorPageComponent {
       case 'line':
         return this.resizeLine(shape, handle, point);
       case 'text':
-        return shape;
+        return this.resizeText(shape, handle, point);
       case 'image':
         return this.resizeRectangle(shape, handle, point);
     }
+  }
+
+  private resizeText(shape: Extract<CanvasShape, { kind: 'text' }>, handle: ResizeHandle, point: Point): CanvasShape {
+    const bounds = this.shapeBounds(shape);
+    if (!bounds) {
+      return shape;
+    }
+
+    const resizedBounds = this.resizeBounds(bounds, handle, point, 0.4, 0.24);
+    const originalWidth = Math.max(bounds.right - bounds.left, shape.fontSize);
+    const originalHeight = Math.max(bounds.top - bounds.bottom, shape.fontSize * 0.72);
+    const nextWidth = Math.max(resizedBounds.right - resizedBounds.left, 0.4);
+    const nextHeight = Math.max(resizedBounds.top - resizedBounds.bottom, 0.24);
+    const scaleX = nextWidth / originalWidth;
+    const scaleY = nextHeight / originalHeight;
+    const scale = Math.max(Math.min(scaleX, scaleY), 0.35);
+
+    return {
+      ...shape,
+      x: (resizedBounds.left + resizedBounds.right) / 2,
+      y: (resizedBounds.top + resizedBounds.bottom) / 2,
+      fontSize: Math.max(shape.fontSize * scale, 0.2)
+    };
   }
 
   private resizeRectangle(
@@ -3181,10 +3455,226 @@ export class EditorPageComponent {
       shapeId: shape.id,
       value: shape.text
     });
+    this.ignoreNextCanvasClick.set(true);
     afterNextRender(() => {
       const input = this.inlineTextInput()?.nativeElement;
       input?.focus();
       input?.select();
     });
+  }
+
+  textLines(value: string): readonly string[] {
+    return value.split('\n').map((line) => line || ' ');
+  }
+
+  displayTextLines(value: string): readonly string[] {
+    return this.textLines(value).map((line) => this.renderDisplayText(line));
+  }
+
+  textSymbolGroupLabel(label: string): string {
+    return this.t(`textSymbolGroup.${label.toLowerCase()}`);
+  }
+
+  textAnchor(align: TextAlign): 'start' | 'middle' | 'end' {
+    if (align === 'left') return 'start';
+    if (align === 'right') return 'end';
+    return 'middle';
+  }
+
+  textRenderX(shape: TextShape): number {
+    return this.textRenderXAt(shape, (value) => this.toSvgX(value), this.preferences().scale);
+  }
+
+  textInputAlign(align: TextAlign): 'left' | 'center' | 'right' {
+    return align;
+  }
+
+  isTextStyleActive(
+    shape: CanvasShape,
+    key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
+    value: string
+  ): boolean {
+    return shape.kind === 'text' && String(shape[key]) === value;
+  }
+
+  private insertTextAtCursor(
+    input: HTMLTextAreaElement,
+    symbol: string,
+    onValue: (nextValue: string) => void
+  ): void {
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? start;
+    const nextValue = `${input.value.slice(0, start)}${symbol}${input.value.slice(end)}`;
+    onValue(nextValue);
+    afterNextRender(() => {
+      input.focus();
+      const nextCursor = start + symbol.length;
+      input.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
+
+  private exportFileBaseName(): string {
+    return (this.scene().name || 'figure').trim().replace(/[\\/:*?"<>|]+/g, '-');
+  }
+
+  private isRepeatedTextTap(shapeId: string): boolean {
+    const previousTap = this.recentTextTap();
+    return !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < 320;
+  }
+
+  private renderDisplayText(value: string): string {
+    return value
+      .replaceAll('\\alpha', 'α')
+      .replaceAll('\\beta', 'β')
+      .replaceAll('\\gamma', 'γ')
+      .replaceAll('\\delta', 'δ')
+      .replaceAll('\\epsilon', 'ε')
+      .replaceAll('\\theta', 'θ')
+      .replaceAll('\\lambda', 'λ')
+      .replaceAll('\\mu', 'μ')
+      .replaceAll('\\pi', 'π')
+      .replaceAll('\\sigma', 'σ')
+      .replaceAll('\\phi', 'φ')
+      .replaceAll('\\omega', 'ω')
+      .replaceAll('\\leftarrow', '←')
+      .replaceAll('\\rightarrow', '→')
+      .replaceAll('\\uparrow', '↑')
+      .replaceAll('\\downarrow', '↓')
+      .replaceAll('\\leftrightarrow', '↔')
+      .replaceAll('\\Rightarrow', '⇒')
+      .replaceAll('\\Leftarrow', '⇐')
+      .replaceAll('\\Leftrightarrow', '⇔')
+      .replaceAll('\\times', '×')
+      .replaceAll('\\div', '÷')
+      .replaceAll('\\pm', '±')
+      .replaceAll('\\infty', '∞')
+      .replaceAll('\\sum', '∑')
+      .replaceAll('\\prod', '∏')
+      .replaceAll('\\int', '∫')
+      .replaceAll('\\partial', '∂')
+      .replaceAll('\\forall', '∀')
+      .replaceAll('\\exists', '∃')
+      .replaceAll('\\in', '∈')
+      .replaceAll('\\notin', '∉')
+      .replaceAll('\\cup', '∪')
+      .replaceAll('\\cap', '∩');
+  }
+
+  private textRenderXAt(
+    shape: TextShape,
+    projectX: (value: number) => number,
+    scale: number
+  ): number {
+    const centerX = projectX(shape.x);
+    const width = this.estimateTextWidth(shape, scale);
+    if (shape.textAlign === 'left') return centerX - width / 2;
+    if (shape.textAlign === 'right') return centerX + width / 2;
+    return centerX;
+  }
+
+  private estimateTextWidth(shape: TextShape, scale: number): number {
+    const lines = this.displayTextLines(shape.text);
+    return Math.max(
+      ...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale))
+    );
+  }
+
+  private buildCanvasExportDocument(): ExportSvgDocument {
+    const shapes = this.selectedShapes().length ? this.selectedShapes() : this.scene().shapes;
+    const bounds = this.computeBounds(shapes);
+    const background = this.preferences().theme === 'dark' ? '#161616' : '#ffffff';
+
+    if (!bounds || !shapes.length) {
+      const width = 960;
+      const height = 720;
+      return {
+        width,
+        height,
+        markup: [
+          `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+          `<rect x="0" y="0" width="${width}" height="${height}" fill="${background}" />`,
+          '</svg>'
+        ].join('')
+      };
+    }
+
+    const sceneWidth = Math.max(bounds.right - bounds.left, 1);
+    const sceneHeight = Math.max(bounds.top - bounds.bottom, 1);
+    const longestSide = Math.max(sceneWidth, sceneHeight, 1);
+    const scale = Math.min(120, Math.max(42, 1600 / longestSide));
+    const padding = Math.max(28, scale * 0.9);
+    const width = Math.max(Math.ceil(sceneWidth * scale + padding * 2), 320);
+    const height = Math.max(Math.ceil(sceneHeight * scale + padding * 2), 240);
+    const projectX = (value: number) => (value - bounds.left) * scale + padding;
+    const projectY = (value: number) => (bounds.top - value) * scale + padding;
+
+    const defs = shapes
+      .filter((shape): shape is LineShape => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
+      .map(
+        (shape) => `
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" />
+          </marker>
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
+            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" />
+          </marker>`
+      )
+      .join('');
+
+    const body = shapes
+      .map((shape) => {
+        switch (shape.kind) {
+          case 'line': {
+            const markerStart = shape.arrowStart ? ` marker-start="url(#${this.escapeXml(this.arrowMarkerId(shape, 'start'))})"` : '';
+            const markerEnd = shape.arrowEnd ? ` marker-end="url(#${this.escapeXml(this.arrowMarkerId(shape, 'end'))})"` : '';
+            return `<path d="${this.escapeXml(
+              this.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
+            )}" fill="none" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
+          }
+          case 'rectangle':
+            return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+          case 'circle':
+            return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+          case 'ellipse':
+            return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+          case 'text': {
+            const renderX = this.textRenderXAt(shape, projectX, scale);
+            const anchor = this.textAnchor(shape.textAlign);
+            const rotate = shape.rotation ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"` : '';
+            const lines = this.displayTextLines(shape.text)
+              .map(
+                (line, index) =>
+                  `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * 1.14}">${this.escapeXml(line)}</tspan>`
+              )
+              .join('');
+            return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${this.escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="Geist, Arial, sans-serif" xml:space="preserve"${rotate}>${lines}</text>`;
+          }
+          case 'image':
+            return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" href="${this.escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet" />`;
+        }
+      })
+      .join('');
+
+    const defsMarkup = defs ? `<defs>${defs}</defs>` : '';
+    return {
+      width,
+      height,
+      markup: [
+        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+        `<rect x="0" y="0" width="${width}" height="${height}" fill="${background}" />`,
+        defsMarkup,
+        body,
+        '</svg>'
+      ].join('')
+    };
+  }
+
+  private escapeXml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&apos;');
   }
 }
