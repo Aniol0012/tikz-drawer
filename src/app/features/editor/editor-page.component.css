@@ -46,8 +46,11 @@
   padding: 14px 18px 14px 44px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 82%, transparent);
   border-radius: 16px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-background) 96%, white 4%),
+    var(--panel-background)
+  );
   box-shadow:
     0 18px 38px rgba(0, 0, 0, 0.18),
     inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
@@ -68,19 +71,30 @@
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, black 18%));
+  background: linear-gradient(
+    180deg,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 72%, black 18%)
+  );
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
   transform: translateY(-50%);
 }
 
 .toast--warning {
   border-color: color-mix(in srgb, var(--warning) 46%, var(--tool-border-strong));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--warning) 11%, var(--panel-background)), var(--panel-background));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--warning) 11%, var(--panel-background)),
+    var(--panel-background)
+  );
 }
 
 .toast--warning::before {
-  background: linear-gradient(180deg, var(--warning), color-mix(in srgb, var(--warning) 72%, black 18%));
+  background: linear-gradient(
+    180deg,
+    var(--warning),
+    color-mix(in srgb, var(--warning) 72%, black 18%)
+  );
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--warning) 16%, transparent);
 }
 
@@ -1531,8 +1545,11 @@ kbd {
   padding: 6px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 88%, transparent);
   border-radius: 12px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-background) 96%, white 4%),
+    var(--panel-background)
+  );
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 color-mix(in srgb, white 8%, transparent);

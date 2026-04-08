@@ -1884,7 +1884,7 @@
       </button>
       <button
         type="button"
-        [disabled]="!(clipboardShapes()?.shapes?.length)"
+        [disabled]="!clipboardShapes()?.shapes?.length"
         (click)="runContextAction('paste')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.plus"></path>
