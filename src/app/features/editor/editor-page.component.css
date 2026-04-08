@@ -75,7 +75,7 @@
 .topbar__left {
   min-width: 0;
   flex-wrap: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .topbar__center {
@@ -138,6 +138,10 @@
   border-radius: 8px;
   background: var(--input-background);
   color: var(--app-foreground);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .search-field {
@@ -154,6 +158,42 @@
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+.scene-input input:hover,
+.search-field:hover,
+.field select:hover,
+.field input:not([type='range']):hover,
+.field textarea:hover,
+.code-input:hover,
+.share-field input:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.scene-input input:focus,
+.search-field input:focus,
+.field select:focus,
+.field input:not([type='range']):focus,
+.field textarea:focus,
+.code-input:focus,
+.share-field input:focus {
+  outline: none;
+}
+
+.scene-input input:focus-visible,
+.field select:focus-visible,
+.field input:not([type='range']):focus-visible,
+.field textarea:focus-visible,
+.code-input:focus-visible,
+.share-field input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.search-field:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .workspace {
@@ -342,6 +382,8 @@
 
 .topbar-actions-menu {
   flex: 0 0 auto;
+  position: relative;
+  z-index: 35;
 }
 
 .dropdown-menu--topbar {
