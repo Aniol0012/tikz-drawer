@@ -1,4 +1,5 @@
 import type {
+  ArrowTipKind,
   CanvasShape,
   CircleShape,
   EllipseShape,
@@ -27,8 +28,10 @@ const formatNumber = (value: number): string => {
 
 interface ShapeStyleConfig {
   readonly stroke: string;
+  readonly strokeOpacity?: number;
   readonly strokeWidth: number;
   readonly fill?: string;
+  readonly fillOpacity?: number;
 }
 
 interface TikzGenerationContext {
@@ -86,25 +89,70 @@ const buildStyleEntries = (shape: ShapeStyleConfig, context: TikzGenerationConte
     entries.push(`line width=${formatNumber(shape.strokeWidth)}pt`);
   }
 
+  if (shape.strokeOpacity !== undefined && shape.strokeOpacity < 1) {
+    entries.push(`draw opacity=${formatNumber(shape.strokeOpacity)}`);
+  }
+
   if ('fill' in shape && shape.fill && shape.fill !== 'none') {
     entries.push(`fill=${context.registerColor(shape.fill)}`);
+    if (shape.fillOpacity !== undefined && shape.fillOpacity < 1) {
+      entries.push(`fill opacity=${formatNumber(shape.fillOpacity)}`);
+    }
   }
 
   return entries;
 };
 
+const arrowTipName = (arrowType: ArrowTipKind): string => {
+  switch (arrowType) {
+    case 'triangle':
+      return 'Latex';
+    case 'stealth':
+      return 'Stealth';
+    case 'diamond':
+      return 'Diamond';
+    case 'circle':
+      return 'Circle';
+  }
+};
+
+const arrowTipSpec = (shape: LineShape): string => {
+  const options = [`draw=${shape.arrowColor}`];
+  if (shape.arrowType === 'circle') {
+    options.push('open');
+  } else {
+    options.push(`fill=${shape.arrowColor}`);
+  }
+  if (shape.arrowOpacity < 1) {
+    options.push(`opacity=${formatNumber(shape.arrowOpacity)}`);
+  }
+  return `{${arrowTipName(shape.arrowType)}[${options.join(', ')}]}`;
+};
+
 const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
+  const tipSpec = arrowTipSpec({
+    ...shape,
+    arrowColor: context.registerColor(shape.arrowColor)
+  });
 
   if (shape.arrowStart && shape.arrowEnd) {
-    entries.push('<->');
+    entries.push(`${tipSpec}-${tipSpec}`);
   } else if (shape.arrowStart) {
-    entries.push('<-');
+    entries.push(`${tipSpec}-`);
   } else if (shape.arrowEnd) {
-    entries.push('->');
+    entries.push(`-${tipSpec}`);
   }
 
-  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)});`;
+  const points = [shape.from, ...shape.anchors, shape.to];
+  const path =
+    shape.anchors.length > 0
+      ? `plot[smooth] coordinates {${points
+          .map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`)
+          .join(' ')}}`
+      : `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
+
+  return `\\draw[${entries.join(', ')}] ${path};`;
 };
 
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
@@ -124,7 +172,7 @@ const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): str
   `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
 
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
-  `\\node[text=${context.registerColor(shape.color)}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
+  `\\node[text=${context.registerColor(shape.color)}, text opacity=${formatNumber(shape.colorOpacity)}, scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) {${shape.text}};`;
 
 const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
   const centerX = shape.x + shape.width / 2;
@@ -135,7 +183,7 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
 
   if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
     lines.push(
-      `\\draw[draw=${context.registerColor(shape.stroke)}, line width=${formatNumber(shape.strokeWidth)}pt] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
+      `\\draw[draw=${context.registerColor(shape.stroke)}, draw opacity=${formatNumber(shape.strokeOpacity)}, line width=${formatNumber(shape.strokeWidth)}pt] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
     );
   }
 
@@ -164,6 +212,9 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
   const imports = [
     '\\usepackage{tikz}',
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
+      ? ['\\usetikzlibrary{arrows.meta}']
+      : []),
     ...(scene.shapes.some((shape) => shape.kind === 'image') ? ['\\usepackage{graphicx}'] : []),
     ...(context.colorMode === 'define-colors'
       ? Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)

@@ -37,6 +37,7 @@ import {
 } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
+  ArrowTipKind,
   CanvasShape,
   EditorPreferences,
   LineShape,
@@ -50,7 +51,7 @@ import type {
 type InspectorTab = 'properties' | 'scene' | 'code';
 type ExportMode = 'snippet' | 'standalone';
 type ToolId = 'select' | string;
-type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to';
+type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to' | `anchor-${number}`;
 type ContextTarget = 'canvas' | 'shape';
 
 interface ToastNotification {
@@ -109,6 +110,7 @@ interface HandleDescriptor {
   readonly x: number;
   readonly y: number;
   readonly cursor: string;
+  readonly variant?: 'endpoint' | 'anchor';
 }
 
 interface MoveInteractionState {
@@ -197,10 +199,7 @@ interface MinimapShapeBase {
 
 interface MinimapLineShape extends MinimapShapeBase {
   readonly kind: 'line';
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
+  readonly path: string;
 }
 
 interface MinimapRectangleShape extends MinimapShapeBase {
@@ -306,6 +305,7 @@ export class EditorPageComponent {
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
   readonly inlineTextInput = viewChild<ElementRef<HTMLInputElement>>('inlineTextInput');
+  readonly topbarActions = viewChild<ElementRef<HTMLDivElement>>('topbarActions');
 
   readonly appVersion = packageManifest.version;
   readonly scene = this.store.scene;
@@ -330,6 +330,7 @@ export class EditorPageComponent {
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly fileMenuOpen = signal(false);
+  readonly compactTopbarActions = signal(false);
   readonly exportModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
@@ -413,6 +414,8 @@ export class EditorPageComponent {
     };
   });
   readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
+  readonly xSliderRange = computed(() => this.sliderRange('x'));
+  readonly ySliderRange = computed(() => this.sliderRange('y'));
   readonly minimapOverview = computed<MinimapOverview | null>(() => {
     const sceneBounds = this.sceneContentBounds();
     if (!sceneBounds) return null;
@@ -549,8 +552,27 @@ export class EditorPageComponent {
     if (!selectedShape) return [];
     if (selectedShape.kind === 'line') {
       return [
-        { id: 'from', x: this.toSvgX(selectedShape.from.x), y: this.toSvgY(selectedShape.from.y), cursor: 'crosshair' },
-        { id: 'to', x: this.toSvgX(selectedShape.to.x), y: this.toSvgY(selectedShape.to.y), cursor: 'crosshair' }
+        {
+          id: 'from',
+          x: this.toSvgX(selectedShape.from.x),
+          y: this.toSvgY(selectedShape.from.y),
+          cursor: 'crosshair',
+          variant: 'endpoint'
+        },
+        ...selectedShape.anchors.map((anchor, index) => ({
+          id: `anchor-${index}` as const,
+          x: this.toSvgX(anchor.x),
+          y: this.toSvgY(anchor.y),
+          cursor: 'grab',
+          variant: 'anchor' as const
+        })),
+        {
+          id: 'to',
+          x: this.toSvgX(selectedShape.to.x),
+          y: this.toSvgY(selectedShape.to.y),
+          cursor: 'crosshair',
+          variant: 'endpoint'
+        }
       ];
     }
     if (selectedShape.kind === 'text') return [];
@@ -623,14 +645,36 @@ export class EditorPageComponent {
   constructor() {
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
+      const topbarActions = this.topbarActions()?.nativeElement ?? null;
       const updateCanvasSize = () => {
         this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
         this.canvasHeight.set(Math.max(320, Math.round(viewport.clientHeight)));
       };
+      const updateTopbarActions = () => {
+        if (!topbarActions) {
+          return;
+        }
 
-      const resizeObserver = new ResizeObserver(() => updateCanvasSize());
+        const compact =
+          topbarActions.scrollWidth > topbarActions.clientWidth + 1 ||
+          viewport.clientWidth <= 1180 ||
+          globalThis.innerWidth <= 1320;
+        this.compactTopbarActions.set(compact);
+        if (!compact) {
+          this.closeFileMenu();
+        }
+      };
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateCanvasSize();
+        updateTopbarActions();
+      });
       resizeObserver.observe(viewport);
+      if (topbarActions) {
+        resizeObserver.observe(topbarActions);
+      }
       updateCanvasSize();
+      updateTopbarActions();
       this.restoreSavedTemplates();
       void this.restoreSharedSceneFromUrl();
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
@@ -978,6 +1022,7 @@ export class EditorPageComponent {
   }
 
   resetScene(): void {
+    this.closeFileMenu();
     this.requestSceneReplacement('blank');
   }
 
@@ -1079,6 +1124,7 @@ export class EditorPageComponent {
     await navigator.clipboard.writeText(url);
     this.shareFeedback.set(this.t('copied'));
     this.showNotification(this.t('shareLinkReady'));
+    this.closeFileMenu();
   }
 
   startMinimapPan(event: PointerEvent, minimap: MinimapOverview): void {
@@ -1259,8 +1305,13 @@ export class EditorPageComponent {
     this.store.renameScene((event.target as HTMLInputElement).value);
   }
 
-  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color', event: Event): void {
+  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor', event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateShapeOpacity(key: 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity', event: Event): void {
+    const value = Math.min(1, Math.max(0, Number((event.target as HTMLInputElement).value)));
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
@@ -1395,6 +1446,33 @@ export class EditorPageComponent {
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
+  setLineArrowDirection(direction: 'none' | 'forward' | 'backward' | 'both'): void {
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'line') {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        arrowStart: direction === 'backward' || direction === 'both',
+        arrowEnd: direction === 'forward' || direction === 'both'
+      } as LineShape;
+    });
+  }
+
+  lineArrowDirection(shape: LineShape): 'none' | 'forward' | 'backward' | 'both' {
+    if (shape.arrowStart && shape.arrowEnd) return 'both';
+    if (shape.arrowStart) return 'backward';
+    if (shape.arrowEnd) return 'forward';
+    return 'none';
+  }
+
+  setLineArrowType(value: string): void {
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind } as LineShape) : shape
+    );
+  }
+
   updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.store.patchSelectedShape((shape) => {
@@ -1410,6 +1488,86 @@ export class EditorPageComponent {
         }
       } as LineShape;
     });
+  }
+
+  updateLineAnchorPoint(index: number, axis: 'x' | 'y', event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'line' || !shape.anchors[index]) {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        anchors: shape.anchors.map((anchor, anchorIndex) =>
+          anchorIndex === index ? { ...anchor, [axis]: value } : anchor
+        )
+      } as LineShape;
+    });
+  }
+
+  addLineAnchor(): void {
+    const shape = this.selectedShape();
+    if (!shape || shape.kind !== 'line') {
+      return;
+    }
+
+    const points = [shape.from, ...shape.anchors, shape.to];
+    const lastPoint = points.at(-2) ?? shape.from;
+    const nextPoint = shape.to;
+    const anchor = {
+      x: Number(((lastPoint.x + nextPoint.x) / 2).toFixed(3)),
+      y: Number(((lastPoint.y + nextPoint.y) / 2).toFixed(3))
+    };
+
+    this.runSceneMutation(() => {
+      this.store.patchSelectedShape((currentShape) =>
+        currentShape.kind === 'line'
+          ? ({
+              ...currentShape,
+              anchors: [...currentShape.anchors, anchor]
+            } as LineShape)
+          : currentShape
+      );
+    });
+  }
+
+  removeLineAnchor(index: number): void {
+    this.runSceneMutation(() => {
+      this.store.patchSelectedShape((shape) =>
+        shape.kind === 'line'
+          ? ({
+              ...shape,
+              anchors: shape.anchors.filter((_, anchorIndex) => anchorIndex !== index)
+            } as LineShape)
+          : shape
+      );
+    });
+  }
+
+  sliderRange(axis: 'x' | 'y'): { readonly min: number; readonly max: number } {
+    const bounds = this.sceneContentBounds();
+    if (!bounds) {
+      return axis === 'x' ? { min: -20, max: 20 } : { min: -20, max: 20 };
+    }
+
+    const maxAbs =
+      axis === 'x'
+        ? Math.max(Math.abs(bounds.left), Math.abs(bounds.right), 1)
+        : Math.max(Math.abs(bounds.bottom), Math.abs(bounds.top), 1);
+
+    return {
+      min: Number((-maxAbs).toFixed(2)),
+      max: Number(maxAbs.toFixed(2))
+    };
+  }
+
+  positiveSliderMax(value: number, minimum: number): number {
+    return Number(Math.max(value, minimum).toFixed(2));
+  }
+
+  opacityPercent(value: number): number {
+    return Math.round(value * 100);
   }
 
   selectionContainsShape(shapeId: string): boolean {
@@ -1775,7 +1933,35 @@ export class EditorPageComponent {
   lineSelectionPath(): string | null {
     const selectedShape = this.selectedShape();
     if (!selectedShape || selectedShape.kind !== 'line') return null;
-    return `M ${this.toSvgX(selectedShape.from.x)} ${this.toSvgY(selectedShape.from.y)} L ${this.toSvgX(selectedShape.to.x)} ${this.toSvgY(selectedShape.to.y)}`;
+    return this.lineSvgPath(selectedShape);
+  }
+
+  lineSvgPath(shape: LineShape): string {
+    return this.buildLinePath(shape, (point) => ({
+      x: this.toSvgX(point.x),
+      y: this.toSvgY(point.y)
+    }));
+  }
+
+  arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
+    return `${shape.id}-${shape.arrowType}-${side}`;
+  }
+
+  arrowMarkerPath(shape: LineShape): string {
+    switch (shape.arrowType) {
+      case 'triangle':
+        return 'M0,0 L0,6 L8,3 z';
+      case 'stealth':
+        return 'M0.5,3 L7.5,0.4 L5.6,3 L7.5,5.6 z';
+      case 'diamond':
+        return 'M0,3 L3.8,0 L8,3 L3.8,6 z';
+      case 'circle':
+        return 'M4,1.1 A1.9,1.9 0 1 1 4,4.9 A1.9,1.9 0 1 1 4,1.1 z';
+    }
+  }
+
+  arrowMarkerFill(shape: LineShape): string {
+    return shape.arrowType === 'circle' ? 'none' : shape.arrowColor;
   }
 
   gridColumns(): number[] {
@@ -2199,6 +2385,9 @@ export class EditorPageComponent {
         return {
           ...shape,
           stroke: preferences.defaultStroke,
+          arrowColor: preferences.defaultStroke,
+          arrowOpacity: 1,
+          strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'rectangle':
@@ -2208,16 +2397,22 @@ export class EditorPageComponent {
           ...shape,
           stroke: preferences.defaultStroke,
           fill: preferences.defaultFill,
+          strokeOpacity: 1,
+          fillOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
         return {
           ...shape,
           stroke: preferences.defaultStroke,
+          strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'text':
-        return shape;
+        return {
+          ...shape,
+          colorOpacity: 1
+        };
     }
   }
 
@@ -2326,7 +2521,13 @@ export class EditorPageComponent {
 
     switch (shape.kind) {
       case 'line':
-        return { ...shape, id, from: scalePoint(shape.from), to: scalePoint(shape.to) };
+        return {
+          ...shape,
+          id,
+          from: scalePoint(shape.from),
+          to: scalePoint(shape.to),
+          anchors: shape.anchors.map((anchor) => scalePoint(anchor))
+        };
       case 'rectangle':
         return {
           ...shape,
@@ -2506,6 +2707,43 @@ export class EditorPageComponent {
     }, null);
   }
 
+  private linePoints(shape: LineShape): readonly Point[] {
+    return [shape.from, ...shape.anchors, shape.to];
+  }
+
+  private buildLinePath(
+    shape: LineShape,
+    projectPoint: (point: Point) => { readonly x: number; readonly y: number }
+  ): string {
+    const points = this.linePoints(shape).map(projectPoint);
+    if (points.length < 2) {
+      return '';
+    }
+
+    if (points.length === 2) {
+      return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+    }
+
+    let path = `M ${points[0].x} ${points[0].y}`;
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const previous = points[index - 1] ?? points[index];
+      const current = points[index];
+      const next = points[index + 1];
+      const afterNext = points[index + 2] ?? next;
+      const control1 = {
+        x: current.x + (next.x - previous.x) / 6,
+        y: current.y + (next.y - previous.y) / 6
+      };
+      const control2 = {
+        x: next.x - (afterNext.x - current.x) / 6,
+        y: next.y - (afterNext.y - current.y) / 6
+      };
+      path += ` C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${next.x} ${next.y}`;
+    }
+
+    return path;
+  }
+
   private toMinimapShape(
     shape: CanvasShape,
     toMapX: (x: number) => number,
@@ -2518,10 +2756,10 @@ export class EditorPageComponent {
           kind: 'line',
           stroke: shape.stroke,
           strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
-          x1: toMapX(shape.from.x),
-          y1: toMapY(shape.from.y),
-          x2: toMapX(shape.to.x),
-          y2: toMapY(shape.to.y)
+          path: this.buildLinePath(shape, (point) => ({
+            x: toMapX(point.x),
+            y: toMapY(point.y)
+          }))
         };
       case 'rectangle':
         return {
@@ -2603,12 +2841,20 @@ export class EditorPageComponent {
           top: shape.cy + shape.ry
         };
       case 'line':
-        return {
-          left: Math.min(shape.from.x, shape.to.x),
-          right: Math.max(shape.from.x, shape.to.x),
-          bottom: Math.min(shape.from.y, shape.to.y),
-          top: Math.max(shape.from.y, shape.to.y)
-        };
+        return this.linePoints(shape).reduce<SelectionBounds>(
+          (bounds, point) => ({
+            left: Math.min(bounds.left, point.x),
+            right: Math.max(bounds.right, point.x),
+            bottom: Math.min(bounds.bottom, point.y),
+            top: Math.max(bounds.top, point.y)
+          }),
+          {
+            left: Number.POSITIVE_INFINITY,
+            right: Number.NEGATIVE_INFINITY,
+            bottom: Number.POSITIVE_INFINITY,
+            top: Number.NEGATIVE_INFINITY
+          }
+        );
       case 'text': {
         const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
         const height = shape.fontSize * 0.72;
@@ -2719,7 +2965,27 @@ export class EditorPageComponent {
   }
 
   private resizeLine(shape: Extract<CanvasShape, { kind: 'line' }>, handle: ResizeHandle, point: Point): CanvasShape {
-    return handle === 'from' ? { ...shape, from: point } : handle === 'to' ? { ...shape, to: point } : shape;
+    if (handle === 'from') {
+      return { ...shape, from: point };
+    }
+
+    if (handle === 'to') {
+      return { ...shape, to: point };
+    }
+
+    if (handle.startsWith('anchor-')) {
+      const anchorIndex = Number(handle.slice('anchor-'.length));
+      if (!Number.isInteger(anchorIndex) || !shape.anchors[anchorIndex]) {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        anchors: shape.anchors.map((anchor, index) => (index === anchorIndex ? point : anchor))
+      };
+    }
+
+    return shape;
   }
 
   private resizeBounds(
@@ -2797,6 +3063,7 @@ export class EditorPageComponent {
       name: file.name.replace(/\.[^/.]+$/, '') || 'Image',
       kind: 'image',
       stroke: this.preferences().defaultStroke,
+      strokeOpacity: 1,
       strokeWidth: this.preferences().defaultStrokeWidth,
       x: point.x - width / 2,
       y: point.y - height / 2,

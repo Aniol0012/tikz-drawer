@@ -13,7 +13,45 @@ const cloneShape = (shape: CanvasShape): CanvasShape => ({
   name: `${shape.name} copy`
 });
 
-const cloneScene = (scene: TikzScene): TikzScene => structuredClone(scene);
+const normalizeShape = (shape: CanvasShape): CanvasShape => {
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        anchors: shape.anchors ?? [],
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        arrowType: shape.arrowType ?? 'triangle',
+        arrowColor: shape.arrowColor ?? shape.stroke,
+        arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1
+      } as CanvasShape;
+    case 'rectangle':
+    case 'circle':
+    case 'ellipse':
+      return {
+        ...shape,
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        fillOpacity: shape.fillOpacity ?? 1
+      } as CanvasShape;
+    case 'text':
+      return {
+        ...shape,
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        colorOpacity: shape.colorOpacity ?? 1
+      } as CanvasShape;
+    case 'image':
+      return {
+        ...shape,
+        strokeOpacity: shape.strokeOpacity ?? 1
+      } as CanvasShape;
+  }
+};
+
+const normalizeScene = (scene: TikzScene): TikzScene => ({
+  ...scene,
+  shapes: scene.shapes.map((shape) => normalizeShape(shape))
+});
+
+const cloneScene = (scene: TikzScene): TikzScene => structuredClone(normalizeScene(scene));
 
 const shapeBounds = (
   shape: CanvasShape
@@ -36,12 +74,20 @@ const shapeBounds = (
         top: shape.cy + shape.ry
       };
     case 'line':
-      return {
-        left: Math.min(shape.from.x, shape.to.x),
-        right: Math.max(shape.from.x, shape.to.x),
-        bottom: Math.min(shape.from.y, shape.to.y),
-        top: Math.max(shape.from.y, shape.to.y)
-      };
+      return [shape.from, ...shape.anchors, shape.to].reduce(
+        (bounds, point) => ({
+          left: Math.min(bounds.left, point.x),
+          right: Math.max(bounds.right, point.x),
+          bottom: Math.min(bounds.bottom, point.y),
+          top: Math.max(bounds.top, point.y)
+        }),
+        {
+          left: Number.POSITIVE_INFINITY,
+          right: Number.NEGATIVE_INFINITY,
+          bottom: Number.POSITIVE_INFINITY,
+          top: Number.NEGATIVE_INFINITY
+        }
+      );
     case 'text': {
       const width = Math.max(shape.text.length * shape.fontSize * 0.48, shape.fontSize);
       const height = shape.fontSize * 0.72;
@@ -107,7 +153,11 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
         to: {
           x: shape.to.x + deltaX,
           y: shape.to.y + deltaY
-        }
+        },
+        anchors: shape.anchors.map((anchor) => ({
+          x: anchor.x + deltaX,
+          y: anchor.y + deltaY
+        }))
       };
     case 'rectangle':
       return {
@@ -148,6 +198,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
       return {
         ...shape,
         stroke: shape.stroke,
+        strokeOpacity: shape.strokeOpacity ?? 1,
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
       };
     case 'rectangle':
@@ -157,14 +208,21 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         ...shape,
         stroke: shape.stroke,
         fill: shape.fill,
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        fillOpacity: shape.fillOpacity ?? 1,
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
       };
     case 'text':
-      return shape;
+      return {
+        ...shape,
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        colorOpacity: shape.colorOpacity ?? 1
+      };
     case 'image':
       return {
         ...shape,
         stroke: shape.stroke,
+        strokeOpacity: shape.strokeOpacity ?? 1,
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
       };
   }
@@ -579,7 +637,7 @@ export class EditorStore {
       }
 
       if (parsed.scene) {
-        this.scene.set(parsed.scene);
+        this.scene.set(normalizeScene(parsed.scene));
       }
 
       if (typeof parsed.importCode === 'string') {
@@ -609,7 +667,8 @@ export class EditorStore {
   }
 
   private setScene(scene: TikzScene): void {
-    this.scene.set(cloneScene(scene));
-    this.selectedShapeIds.set(scene.shapes[0] ? [scene.shapes[0].id] : []);
+    const normalizedScene = normalizeScene(scene);
+    this.scene.set(cloneScene(normalizedScene));
+    this.selectedShapeIds.set(normalizedScene.shapes[0] ? [normalizedScene.shapes[0].id] : []);
   }
 }

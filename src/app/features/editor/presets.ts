@@ -1,4 +1,5 @@
 import type {
+  ArrowTipKind,
   CanvasShape,
   CircleShape,
   EditorPreferences,
@@ -18,11 +19,16 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   name: overrides.name ?? 'Line',
   kind: 'line',
   stroke: overrides.stroke ?? '#1f1f1f',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0.08,
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
+  anchors: overrides.anchors ?? [],
   arrowStart: overrides.arrowStart ?? false,
-  arrowEnd: overrides.arrowEnd ?? false
+  arrowEnd: overrides.arrowEnd ?? false,
+  arrowType: overrides.arrowType ?? ('triangle' satisfies ArrowTipKind),
+  arrowColor: overrides.arrowColor ?? overrides.stroke ?? '#1f1f1f',
+  arrowOpacity: overrides.arrowOpacity ?? overrides.strokeOpacity ?? 1
 });
 
 const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShape => ({
@@ -30,12 +36,14 @@ const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShap
   name: overrides.name ?? 'Rectangle',
   kind: 'rectangle',
   stroke: overrides.stroke ?? '#1f1f1f',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0.08,
   x: overrides.x ?? -2,
   y: overrides.y ?? 1.5,
   width: overrides.width ?? 4,
   height: overrides.height ?? 2.4,
   fill: overrides.fill ?? '#f1f1f1',
+  fillOpacity: overrides.fillOpacity ?? 1,
   cornerRadius: overrides.cornerRadius ?? 0.14
 });
 
@@ -44,11 +52,13 @@ const createCircle = (overrides: Partial<CircleShape> = {}): CircleShape => ({
   name: overrides.name ?? 'Circle',
   kind: 'circle',
   stroke: overrides.stroke ?? '#1f1f1f',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0.08,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
   r: overrides.r ?? 1.4,
-  fill: overrides.fill ?? '#f5f5f5'
+  fill: overrides.fill ?? '#f5f5f5',
+  fillOpacity: overrides.fillOpacity ?? 1
 });
 
 const createEllipse = (overrides: Partial<EllipseShape> = {}): EllipseShape => ({
@@ -56,12 +66,14 @@ const createEllipse = (overrides: Partial<EllipseShape> = {}): EllipseShape => (
   name: overrides.name ?? 'Ellipse',
   kind: 'ellipse',
   stroke: overrides.stroke ?? '#1f1f1f',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0.08,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
   rx: overrides.rx ?? 2,
   ry: overrides.ry ?? 1.1,
-  fill: overrides.fill ?? '#f5f5f5'
+  fill: overrides.fill ?? '#f5f5f5',
+  fillOpacity: overrides.fillOpacity ?? 1
 });
 
 const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
@@ -69,12 +81,14 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   name: overrides.name ?? 'Label',
   kind: 'text',
   stroke: overrides.stroke ?? 'none',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0,
   x: overrides.x ?? 0,
   y: overrides.y ?? 0,
   text: overrides.text ?? 'label',
   fontSize: overrides.fontSize ?? 0.42,
-  color: overrides.color ?? '#161616'
+  color: overrides.color ?? '#161616',
+  colorOpacity: overrides.colorOpacity ?? 1
 });
 
 const imagePlaceholder =
@@ -88,6 +102,7 @@ const createImage = (overrides: Partial<ImageShape> = {}): ImageShape => ({
   name: overrides.name ?? 'Image',
   kind: 'image',
   stroke: overrides.stroke ?? '#94a3b8',
+  strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0.08,
   x: overrides.x ?? -2.4,
   y: overrides.y ?? -1.6,

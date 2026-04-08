@@ -20,7 +20,7 @@
   right: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   min-height: var(--topbar-height);
@@ -74,17 +74,19 @@
 
 .topbar__left {
   min-width: 0;
-  flex-wrap: wrap;
-  row-gap: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .topbar__center {
   justify-content: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .topbar__right {
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .brand-lockup {
@@ -320,6 +322,10 @@
 }
 
 .tool-cluster {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
   padding: 2px;
   border: 1px solid var(--tool-border);
   border-radius: 10px;
@@ -328,9 +334,20 @@
 
 .topbar-actions {
   padding-left: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-width: 0;
-  flex: 1 1 320px;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.topbar-actions-menu {
+  flex: 0 0 auto;
+}
+
+.dropdown-menu--topbar {
+  left: auto;
+  right: 0;
+  min-width: 220px;
 }
 
 .tool-button {
@@ -718,6 +735,7 @@ kbd {
 }
 
 .shape-layer line,
+.shape-layer path,
 .shape-layer rect,
 .shape-layer circle,
 .shape-layer ellipse {
@@ -755,6 +773,7 @@ kbd {
 }
 
 .shape-layer.is-selected line,
+.shape-layer.is-selected path,
 .shape-layer.is-selected rect,
 .shape-layer.is-selected circle,
 .shape-layer.is-selected ellipse,
@@ -782,6 +801,10 @@ kbd {
   stroke: var(--accent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+
+.selection-handle--anchor {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--panel-background));
 }
 
 .arrow-head {
@@ -965,6 +988,11 @@ kbd {
   align-content: start;
 }
 
+.color-inline-field {
+  display: grid;
+  gap: 8px;
+}
+
 .color-chip-field small {
   color: var(--muted-foreground);
   font-size: 0.76rem;
@@ -1016,6 +1044,10 @@ kbd {
   text-align: center;
 }
 
+.color-opacity-input {
+  width: 100%;
+}
+
 .selected-shape-list {
   display: grid;
   gap: 10px;
@@ -1048,6 +1080,11 @@ kbd {
   justify-content: center;
 }
 
+.inline-actions--compact .secondary-button,
+.inline-actions--compact .primary-button {
+  flex: 0 0 auto;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1057,6 +1094,10 @@ kbd {
 
 .field--full {
   grid-column: 1 / -1;
+}
+
+.form-grid--line-anchor {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .range-field {
@@ -1104,6 +1145,26 @@ kbd {
   min-height: 40px;
   padding: 0 10px;
   background: var(--input-background);
+}
+
+.toggle-field select {
+  width: 100%;
+}
+
+.anchor-editor {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tool-surface) 88%, transparent);
+}
+
+.anchor-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .toggle-field input {
@@ -1532,39 +1593,14 @@ button:disabled {
   background: transparent;
 }
 
-@media (max-width: 1480px) {
-  .topbar {
-    grid-template-columns: minmax(280px, 1fr) auto;
-  }
-
-  .topbar__center {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-
-  .secondary-button--toolbar {
-    flex: 1 1 160px;
-  }
-}
-
 @media (max-width: 1220px) {
-  .editor-shell {
-    --topbar-height: 124px;
-  }
-
-  .topbar {
-    grid-template-columns: 1fr;
-  }
-
   .topbar__left,
   .topbar__center,
   .topbar__right {
-    flex-wrap: wrap;
     justify-content: flex-start;
   }
 
   .topbar-actions {
-    width: 100%;
     padding-left: 0;
   }
 
@@ -1604,10 +1640,6 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
-  .editor-shell {
-    --topbar-height: 148px;
-  }
-
   .topbar {
     padding: 10px;
   }
@@ -1618,18 +1650,8 @@ button:disabled {
     gap: 10px;
   }
 
-  .secondary-button--toolbar,
-  .primary-button {
-    flex: 1 1 calc(50% - 8px);
-    justify-content: center;
-  }
-
   .scene-input {
-    width: 100%;
-  }
-
-  .tool-cluster {
-    flex-wrap: wrap;
+    min-width: 120px;
   }
 
   .sidebar-tabs button {
@@ -1639,6 +1661,10 @@ button:disabled {
   .form-grid,
   .range-field,
   .share-field {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid--line-anchor {
     grid-template-columns: 1fr;
   }
 

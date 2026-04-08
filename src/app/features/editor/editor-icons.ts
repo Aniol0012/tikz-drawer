@@ -22,6 +22,7 @@ export const iconPaths = {
   undo: 'M9 14L4 9l5-5 M4 9h10a5 5 0 1 1 0 10h-1',
   redo: 'M15 14l5-5-5-5 M20 9H10a5 5 0 1 0 0 10h1',
   plus: 'M12 5v14M5 12h14',
+  menu: 'M4 7h16M4 12h16M4 17h16',
   minus: 'M5 12h14',
   select: 'M5.5 3.5l10.5 8.5-5 1 3.5 6-1.5 1-3.5-6-4 3.5V3.5z\n',
   segment: 'M5 18 19 6',

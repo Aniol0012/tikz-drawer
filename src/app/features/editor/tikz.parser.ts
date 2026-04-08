@@ -34,20 +34,58 @@ const parseStyleMap = (raw: string | undefined): Record<string, string> => {
     return {};
   }
 
-  return raw
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .reduce<Record<string, string>>((styles, entry) => {
-      if (entry === '->' || entry === '<-' || entry === '<->') {
-        styles[entry] = 'true';
-        return styles;
-      }
+  const entries: string[] = [];
+  let current = '';
+  let depth = 0;
 
-      const [key, ...rest] = entry.split('=');
-      styles[key.trim()] = rest.join('=').trim() || 'true';
+  for (const character of raw) {
+    if (character === ',' && depth === 0) {
+      const entry = current.trim();
+      if (entry) {
+        entries.push(entry);
+      }
+      current = '';
+      continue;
+    }
+
+    if (character === '[' || character === '{' || character === '(') {
+      depth += 1;
+    } else if ((character === ']' || character === '}' || character === ')') && depth > 0) {
+      depth -= 1;
+    }
+
+    current += character;
+  }
+
+  const trailingEntry = current.trim();
+  if (trailingEntry) {
+    entries.push(trailingEntry);
+  }
+
+  return entries.reduce<Record<string, string>>((styles, entry) => {
+    if (entry === '->' || entry === '<-' || entry === '<->') {
+      styles[entry] = 'true';
       return styles;
-    }, {});
+    }
+
+    if (entry.startsWith('-{') || entry.startsWith('{')) {
+      const hasStart = entry.startsWith('{');
+      const hasEnd = entry.includes('}-{') || entry.startsWith('-{');
+      if (hasStart && hasEnd) {
+        styles['<->'] = 'true';
+      } else if (hasStart) {
+        styles['<-'] = 'true';
+      } else if (hasEnd) {
+        styles['->'] = 'true';
+      }
+      styles['arrow meta'] = entry;
+      return styles;
+    }
+
+    const [key, ...rest] = entry.split('=');
+    styles[key.trim()] = rest.join('=').trim() || 'true';
+    return styles;
+  }, {});
 };
 
 const styleStrokeWidth = (styles: Record<string, string>): number => {
@@ -64,6 +102,37 @@ const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeW
   stroke: styles['draw'] ?? '#0f172a',
   strokeWidth: styleStrokeWidth(styles)
 });
+
+const styleOpacity = (styles: Record<string, string>, key: string): number => {
+  const raw = Number.parseFloat(styles[key] ?? '1');
+  return Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 1;
+};
+
+const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
+  const raw = `${styles['arrow meta'] ?? styles['>='] ?? styles['<='] ?? ''}`.toLowerCase();
+  if (raw.includes('diamond')) return 'diamond';
+  if (raw.includes('circle')) return 'circle';
+  if (raw.includes('stealth')) return 'stealth';
+  return 'triangle';
+};
+
+const parseArrowColor = (styles: Record<string, string>): string => {
+  const raw = styles['arrow meta'] ?? '';
+  const drawMatch = raw.match(/draw=({[^}]+}|[^,\]]+)/i);
+  return drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'] ?? '#0f172a';
+};
+
+const parseArrowOpacity = (styles: Record<string, string>): number => {
+  const raw = styles['arrow meta'] ?? '';
+  const opacityMatch = raw.match(/opacity=([^,\]]+)/i);
+  if (opacityMatch) {
+    const parsed = Number.parseFloat(opacityMatch[1]);
+    if (Number.isFinite(parsed)) {
+      return Math.min(1, Math.max(0, parsed));
+    }
+  }
+  return styleOpacity(styles, 'opacity');
+};
 
 const parseLine = (line: string): CanvasShape | null => {
   const match = line.match(/^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/);
@@ -88,8 +157,54 @@ const parseLine = (line: string): CanvasShape | null => {
     ...sharedStroke(styles),
     from,
     to,
+    anchors: [],
     arrowStart: styles['<-'] === 'true' || styles['<->'] === 'true',
-    arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true'
+    arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
+    arrowType: parseArrowType(styles),
+    arrowColor: parseArrowColor(styles),
+    arrowOpacity: parseArrowOpacity(styles)
+  };
+
+  return shape;
+};
+
+const parseSmoothLine = (line: string): CanvasShape | null => {
+  const match = line.match(
+    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/
+  );
+
+  if (!match?.groups) {
+    return null;
+  }
+
+  const points = Array.from(
+    match.groups['points'].matchAll(/\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g)
+  ).map(([, x, y]) => ({
+    x: Number(x),
+    y: Number(y)
+  }));
+
+  if (points.length < 2) {
+    return null;
+  }
+
+  const styles = parseStyleMap(match.groups['styles']);
+
+  const shape: LineShape = {
+    id: createId(),
+    name: 'Imported line',
+    kind: 'line',
+    ...sharedStroke(styles),
+    from: points[0],
+    to: points.at(-1)!,
+    anchors: points.slice(1, -1),
+    arrowStart: styles['<-'] === 'true' || styles['<->'] === 'true',
+    arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
+    arrowType: parseArrowType(styles),
+    arrowColor: parseArrowColor(styles),
+    arrowOpacity: parseArrowOpacity(styles)
   };
 
   return shape;
@@ -118,11 +233,13 @@ const parseRectangle = (line: string): CanvasShape | null => {
     name: 'Imported rectangle',
     kind: 'rectangle',
     ...sharedStroke(styles),
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
     x: Math.min(from.x, to.x),
     y: Math.max(from.y, to.y),
     width: Math.abs(to.x - from.x),
     height: Math.abs(from.y - to.y),
     fill: styles['fill'] ?? 'none',
+    fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0
   };
 
@@ -150,10 +267,12 @@ const parseCircle = (line: string): CanvasShape | null => {
     name: 'Imported circle',
     kind: 'circle',
     ...sharedStroke(styles),
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
     cx: center.x,
     cy: center.y,
     r: Number(match.groups['radius']),
-    fill: styles['fill'] ?? 'none'
+    fill: styles['fill'] ?? 'none',
+    fillOpacity: styleOpacity(styles, 'fill opacity')
   };
 
   return shape;
@@ -180,11 +299,13 @@ const parseEllipse = (line: string): CanvasShape | null => {
     name: 'Imported ellipse',
     kind: 'ellipse',
     ...sharedStroke(styles),
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
     cx: center.x,
     cy: center.y,
     rx: Number(match.groups['rx']),
     ry: Number(match.groups['ry']),
-    fill: styles['fill'] ?? 'none'
+    fill: styles['fill'] ?? 'none',
+    fillOpacity: styleOpacity(styles, 'fill opacity')
   };
 
   return shape;
@@ -211,19 +332,26 @@ const parseNode = (line: string): CanvasShape | null => {
     name: 'Imported text',
     kind: 'text',
     stroke: 'none',
+    strokeOpacity: 1,
     strokeWidth: 0,
     x: point.x,
     y: point.y,
     text: match.groups['text'].trim(),
     fontSize: 0.42 * scale,
-    color: styles['text'] ?? '#0f172a'
+    color: styles['text'] ?? '#0f172a',
+    colorOpacity: styleOpacity(styles, 'text opacity')
   };
 
   return shape;
 };
 
 const parseShape = (line: string): CanvasShape | null =>
-  parseRectangle(line) ?? parseCircle(line) ?? parseEllipse(line) ?? parseLine(line) ?? parseNode(line);
+  parseRectangle(line) ??
+  parseCircle(line) ??
+  parseEllipse(line) ??
+  parseSmoothLine(line) ??
+  parseLine(line) ??
+  parseNode(line);
 
 export const parseTikz = (source: string): ParsedTikzResult => {
   const warnings: string[] = [];

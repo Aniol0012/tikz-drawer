@@ -11,16 +11,23 @@ export interface CanvasShapeBase {
   readonly name: string;
   readonly kind: ShapeKind;
   readonly stroke: string;
+  readonly strokeOpacity: number;
   readonly strokeWidth: number;
   readonly mergeId?: string;
 }
+
+export type ArrowTipKind = 'triangle' | 'stealth' | 'diamond' | 'circle';
 
 export interface LineShape extends CanvasShapeBase {
   readonly kind: 'line';
   readonly from: Point;
   readonly to: Point;
+  readonly anchors: readonly Point[];
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
+  readonly arrowType: ArrowTipKind;
+  readonly arrowColor: string;
+  readonly arrowOpacity: number;
 }
 
 export interface RectangleShape extends CanvasShapeBase {
@@ -30,6 +37,7 @@ export interface RectangleShape extends CanvasShapeBase {
   readonly width: number;
   readonly height: number;
   readonly fill: string;
+  readonly fillOpacity: number;
   readonly cornerRadius: number;
 }
 
@@ -39,6 +47,7 @@ export interface CircleShape extends CanvasShapeBase {
   readonly cy: number;
   readonly r: number;
   readonly fill: string;
+  readonly fillOpacity: number;
 }
 
 export interface EllipseShape extends CanvasShapeBase {
@@ -48,6 +57,7 @@ export interface EllipseShape extends CanvasShapeBase {
   readonly rx: number;
   readonly ry: number;
   readonly fill: string;
+  readonly fillOpacity: number;
 }
 
 export interface TextShape extends CanvasShapeBase {
@@ -57,6 +67,7 @@ export interface TextShape extends CanvasShapeBase {
   readonly text: string;
   readonly fontSize: number;
   readonly color: string;
+  readonly colorOpacity: number;
 }
 
 export interface ImageShape extends CanvasShapeBase {

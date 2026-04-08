@@ -8,7 +8,8 @@ export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: num
       return {
         ...shape,
         from: { x: shape.from.x + deltaX, y: shape.from.y + deltaY },
-        to: { x: shape.to.x + deltaX, y: shape.to.y + deltaY }
+        to: { x: shape.to.x + deltaX, y: shape.to.y + deltaY },
+        anchors: shape.anchors.map((anchor) => ({ x: anchor.x + deltaX, y: anchor.y + deltaY }))
       };
     case 'rectangle':
       return { ...shape, x: shape.x + deltaX, y: shape.y + deltaY };

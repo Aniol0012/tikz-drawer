@@ -18,26 +18,57 @@
           (input)="onSceneNameInput($event)" />
       </label>
 
-      <div class="topbar-actions">
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
-          [title]="t('newScene')"
-          (click)="resetScene()">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.plus"></path></svg>
-          <span>{{ t('newScene') }}</span>
-        </button>
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
-          [title]="t('copyLink')"
-          (click)="copyShareLink()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.link"></path>
-          </svg>
-          <span>{{ t('copyLink') }}</span>
-        </button>
+      <div #topbarActions class="topbar-actions">
+        @if (!compactTopbarActions()) {
+          <button
+            class="secondary-button secondary-button--toolbar"
+            type="button"
+            [title]="t('newScene')"
+            (click)="resetScene()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.plus"></path></svg>
+            <span>{{ t('newScene') }}</span>
+          </button>
+          <button
+            class="secondary-button secondary-button--toolbar"
+            type="button"
+            [title]="t('copyLink')"
+            (click)="copyShareLink()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.link"></path>
+            </svg>
+            <span>{{ t('copyLink') }}</span>
+          </button>
+        }
       </div>
+
+      @if (compactTopbarActions()) {
+        <div class="menu-cluster topbar-actions-menu" (click)="$event.stopPropagation()">
+          <button
+            class="icon-button"
+            type="button"
+            [title]="t('moreActions')"
+            (click)="toggleFileMenu()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.menu"></path></svg>
+          </button>
+
+          @if (fileMenuOpen()) {
+            <div class="dropdown-menu dropdown-menu--topbar">
+              <button class="dropdown-row" type="button" (click)="resetScene()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.plus"></path>
+                </svg>
+                <span>{{ t('newScene') }}</span>
+              </button>
+              <button class="dropdown-row" type="button" (click)="copyShareLink()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.link"></path>
+                </svg>
+                <span>{{ t('copyLink') }}</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
     </div>
 
     <div class="topbar__center">
@@ -332,15 +363,52 @@
               (contextmenu)="openShapeContextMenu($event, shape)">
               @switch (shape.kind) {
                 @case ('line') {
-                  <line
-                    [attr.x1]="toSvgX(shape.from.x)"
-                    [attr.y1]="toSvgY(shape.from.y)"
-                    [attr.x2]="toSvgX(shape.to.x)"
-                    [attr.y2]="toSvgY(shape.to.y)"
+                  <defs>
+                    <marker
+                      [attr.id]="arrowMarkerId(shape, 'end')"
+                      markerWidth="10"
+                      markerHeight="10"
+                      refX="8"
+                      refY="3"
+                      orient="auto"
+                      markerUnits="strokeWidth">
+                      <path
+                        [attr.d]="arrowMarkerPath(shape)"
+                        [attr.fill]="arrowMarkerFill(shape)"
+                        [attr.stroke]="shape.arrowColor"
+                        [attr.stroke-opacity]="shape.arrowOpacity"
+                        [attr.fill-opacity]="shape.arrowOpacity"
+                        class="arrow-head"></path>
+                    </marker>
+                    <marker
+                      [attr.id]="arrowMarkerId(shape, 'start')"
+                      markerWidth="10"
+                      markerHeight="10"
+                      refX="2"
+                      refY="3"
+                      orient="auto-start-reverse"
+                      markerUnits="strokeWidth">
+                      <path
+                        [attr.d]="arrowMarkerPath(shape)"
+                        [attr.fill]="arrowMarkerFill(shape)"
+                        [attr.stroke]="shape.arrowColor"
+                        [attr.stroke-opacity]="shape.arrowOpacity"
+                        [attr.fill-opacity]="shape.arrowOpacity"
+                        class="arrow-head"></path>
+                    </marker>
+                  </defs>
+                  <path
+                    [attr.d]="lineSvgPath(shape)"
                     [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
-                    [attr.marker-start]="shape.arrowStart ? 'url(#arrow-start)' : null"
-                    [attr.marker-end]="shape.arrowEnd ? 'url(#arrow-end)' : null"></line>
+                    fill="none"
+                    [attr.marker-start]="
+                      shape.arrowStart ? 'url(#' + arrowMarkerId(shape, 'start') + ')' : null
+                    "
+                    [attr.marker-end]="
+                      shape.arrowEnd ? 'url(#' + arrowMarkerId(shape, 'end') + ')' : null
+                    "></path>
                 }
                 @case ('rectangle') {
                   <rect
@@ -349,8 +417,10 @@
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
                     [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
                     [attr.fill]="shape.fill"
+                    [attr.fill-opacity]="shape.fillOpacity"
                     [attr.rx]="shape.cornerRadius * preferences().scale"></rect>
                 }
                 @case ('circle') {
@@ -359,8 +429,10 @@
                     [attr.cy]="toSvgY(shape.cy)"
                     [attr.r]="shape.r * preferences().scale"
                     [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
-                    [attr.fill]="shape.fill"></circle>
+                    [attr.fill]="shape.fill"
+                    [attr.fill-opacity]="shape.fillOpacity"></circle>
                 }
                 @case ('ellipse') {
                   <ellipse
@@ -369,15 +441,18 @@
                     [attr.rx]="shape.rx * preferences().scale"
                     [attr.ry]="shape.ry * preferences().scale"
                     [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
-                    [attr.fill]="shape.fill"></ellipse>
+                    [attr.fill]="shape.fill"
+                    [attr.fill-opacity]="shape.fillOpacity"></ellipse>
                 }
                 @case ('text') {
                   <text
                     [attr.x]="toSvgX(shape.x)"
                     [attr.y]="toSvgY(shape.y)"
                     [attr.font-size]="shape.fontSize * preferences().scale"
-                    [attr.fill]="shape.color">
+                    [attr.fill]="shape.color"
+                    [attr.fill-opacity]="shape.colorOpacity">
                     {{ shape.text }}
                   </text>
                 }
@@ -395,6 +470,7 @@
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
                     [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
                     fill="none"></rect>
                 }
@@ -407,15 +483,56 @@
               <g class="shape-layer shape-layer--preview">
                 @switch (previewShape.kind) {
                   @case ('line') {
-                    <line
-                      [attr.x1]="toSvgX(previewShape.from.x)"
-                      [attr.y1]="toSvgY(previewShape.from.y)"
-                      [attr.x2]="toSvgX(previewShape.to.x)"
-                      [attr.y2]="toSvgY(previewShape.to.y)"
+                    <defs>
+                      <marker
+                        [attr.id]="arrowMarkerId(previewShape, 'end')"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="8"
+                        refY="3"
+                        orient="auto"
+                        markerUnits="strokeWidth">
+                        <path
+                          [attr.d]="arrowMarkerPath(previewShape)"
+                          [attr.fill]="arrowMarkerFill(previewShape)"
+                          [attr.stroke]="previewShape.arrowColor"
+                          [attr.stroke-opacity]="previewShape.arrowOpacity"
+                          [attr.fill-opacity]="previewShape.arrowOpacity"
+                          class="arrow-head"></path>
+                      </marker>
+                      <marker
+                        [attr.id]="arrowMarkerId(previewShape, 'start')"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="2"
+                        refY="3"
+                        orient="auto-start-reverse"
+                        markerUnits="strokeWidth">
+                        <path
+                          [attr.d]="arrowMarkerPath(previewShape)"
+                          [attr.fill]="arrowMarkerFill(previewShape)"
+                          [attr.stroke]="previewShape.arrowColor"
+                          [attr.stroke-opacity]="previewShape.arrowOpacity"
+                          [attr.fill-opacity]="previewShape.arrowOpacity"
+                          class="arrow-head"></path>
+                      </marker>
+                    </defs>
+                    <path
+                      [attr.d]="lineSvgPath(previewShape)"
                       [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
-                      [attr.marker-start]="previewShape.arrowStart ? 'url(#arrow-start)' : null"
-                      [attr.marker-end]="previewShape.arrowEnd ? 'url(#arrow-end)' : null"></line>
+                      fill="none"
+                      [attr.marker-start]="
+                        previewShape.arrowStart
+                          ? 'url(#' + arrowMarkerId(previewShape, 'start') + ')'
+                          : null
+                      "
+                      [attr.marker-end]="
+                        previewShape.arrowEnd
+                          ? 'url(#' + arrowMarkerId(previewShape, 'end') + ')'
+                          : null
+                      "></path>
                   }
                   @case ('rectangle') {
                     <rect
@@ -424,8 +541,10 @@
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
                       [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
                       [attr.fill]="previewShape.fill"
+                      [attr.fill-opacity]="previewShape.fillOpacity"
                       [attr.rx]="previewShape.cornerRadius * preferences().scale"></rect>
                   }
                   @case ('circle') {
@@ -434,8 +553,10 @@
                       [attr.cy]="toSvgY(previewShape.cy)"
                       [attr.r]="previewShape.r * preferences().scale"
                       [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
-                      [attr.fill]="previewShape.fill"></circle>
+                      [attr.fill]="previewShape.fill"
+                      [attr.fill-opacity]="previewShape.fillOpacity"></circle>
                   }
                   @case ('ellipse') {
                     <ellipse
@@ -444,15 +565,18 @@
                       [attr.rx]="previewShape.rx * preferences().scale"
                       [attr.ry]="previewShape.ry * preferences().scale"
                       [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
-                      [attr.fill]="previewShape.fill"></ellipse>
+                      [attr.fill]="previewShape.fill"
+                      [attr.fill-opacity]="previewShape.fillOpacity"></ellipse>
                   }
                   @case ('text') {
                     <text
                       [attr.x]="toSvgX(previewShape.x)"
                       [attr.y]="toSvgY(previewShape.y)"
                       [attr.font-size]="previewShape.fontSize * preferences().scale"
-                      [attr.fill]="previewShape.color">
+                      [attr.fill]="previewShape.color"
+                      [attr.fill-opacity]="previewShape.colorOpacity">
                       {{ previewShape.text }}
                     </text>
                   }
@@ -470,6 +594,7 @@
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
                       [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
                       fill="none"></rect>
                   }
@@ -525,6 +650,7 @@
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               <rect
                 class="selection-handle"
+                [class.selection-handle--anchor]="handle.variant === 'anchor'"
                 [attr.x]="handle.x - 5"
                 [attr.y]="handle.y - 5"
                 width="10"
@@ -548,9 +674,6 @@
               <path [attr.d]="iconMap.layers"></path>
             </svg>
             <span>{{ objectCount() }}</span>
-          </button>
-          <button class="canvas-chip" type="button" [title]="activeToolLabel()">
-            <span>{{ activeToolLabel() }}</span>
           </button>
         </div>
 
@@ -622,14 +745,12 @@
               @for (shape of minimap.shapes; track $index) {
                 @switch (shape.kind) {
                   @case ('line') {
-                    <line
+                    <path
                       class="minimap__shape"
-                      [attr.x1]="shape.x1"
-                      [attr.y1]="shape.y1"
-                      [attr.x2]="shape.x2"
-                      [attr.y2]="shape.y2"
+                      [attr.d]="shape.path"
+                      fill="none"
                       [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></line>
+                      [attr.stroke-width]="shape.strokeWidth"></path>
                   }
                   @case ('rectangle') {
                     <rect
@@ -783,6 +904,15 @@
                           type="color"
                           [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
                           (input)="updateShapeText('stroke', $event)" />
+                        <input
+                          class="color-opacity-input"
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          [value]="shape.strokeOpacity"
+                          (input)="updateShapeOpacity('strokeOpacity', $event)" />
+                        <small>{{ t('opacity') }} {{ opacityPercent(shape.strokeOpacity) }}%</small>
                       </label>
                       @if (
                         shape.kind === 'rectangle' ||
@@ -796,6 +926,15 @@
                             type="color"
                             [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
                             (input)="updateShapeText('fill', $event)" />
+                          <input
+                            class="color-opacity-input"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.fillOpacity"
+                            (input)="updateShapeOpacity('fillOpacity', $event)" />
+                          <small>{{ t('opacity') }} {{ opacityPercent(shape.fillOpacity) }}%</small>
                         </label>
                       }
                       <label class="color-chip-field color-chip-field--metric">
@@ -839,8 +978,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.from.x"
                           (input)="updateLinePoint('from', 'x', $event)" /><input
@@ -854,8 +993,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.from.y"
                           (input)="updateLinePoint('from', 'y', $event)" /><input
@@ -869,8 +1008,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.to.x"
                           (input)="updateLinePoint('to', 'x', $event)" /><input
@@ -884,8 +1023,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.to.y"
                           (input)="updateLinePoint('to', 'y', $event)" /><input
@@ -895,21 +1034,114 @@
                           (input)="updateLinePoint('to', 'y', $event)" /></div
                     ></label>
                     <label class="toggle-field"
-                      ><input
-                        type="checkbox"
-                        [checked]="shape.arrowStart"
-                        (change)="updateShapeBoolean('arrowStart', $event)" /><span>{{
-                        t('arrowStart')
-                      }}</span></label
+                      ><span>{{ t('arrowDirection') }}</span
+                      ><select
+                        [value]="lineArrowDirection(shape)"
+                        (change)="setLineArrowDirection($any($event.target).value)">
+                        <option value="none">{{ t('arrowDirectionNone') }}</option>
+                        <option value="forward">{{ t('arrowDirectionForward') }}</option>
+                        <option value="backward">{{ t('arrowDirectionBackward') }}</option>
+                        <option value="both">{{ t('arrowDirectionBoth') }}</option>
+                      </select></label
                     >
-                    <label class="toggle-field"
-                      ><input
-                        type="checkbox"
-                        [checked]="shape.arrowEnd"
-                        (change)="updateShapeBoolean('arrowEnd', $event)" /><span>{{
-                        t('arrowEnd')
-                      }}</span></label
-                    >
+                    <label class="field">
+                      <span>{{ t('arrowType') }}</span>
+                      <select
+                        [value]="shape.arrowType"
+                        (change)="setLineArrowType($any($event.target).value)">
+                        <option value="triangle">{{ t('arrowTypeTriangle') }}</option>
+                        <option value="stealth">{{ t('arrowTypeStealth') }}</option>
+                        <option value="diamond">{{ t('arrowTypeDiamond') }}</option>
+                        <option value="circle">{{ t('arrowTypeCircle') }}</option>
+                      </select>
+                    </label>
+                    <div class="field field--full">
+                      <span>{{ t('arrowAppearance') }}</span>
+                      <div class="color-pair-controls color-pair-controls--line">
+                        <label class="color-chip-field">
+                          <small>{{ t('arrowColor') }}</small>
+                          <input
+                            class="color-swatch"
+                            type="color"
+                            [value]="shape.arrowColor"
+                            (input)="updateShapeText('arrowColor', $event)" />
+                          <input
+                            class="color-opacity-input"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.arrowOpacity"
+                            (input)="updateShapeOpacity('arrowOpacity', $event)" />
+                          <small
+                            >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
+                          >
+                        </label>
+                      </div>
+                    </div>
+                    <div class="field field--full">
+                      <span>{{ t('anchors') }}</span>
+                      <div class="inline-actions inline-actions--compact">
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="addLineAnchor()">
+                          {{ t('addAnchor') }}
+                        </button>
+                      </div>
+                    </div>
+                    @for (anchor of shape.anchors; track $index) {
+                      <div class="anchor-editor field--full">
+                        <div class="anchor-editor__header">
+                          <span>{{ t('anchor') }} {{ $index + 1 }}</span>
+                          <button
+                            class="icon-button icon-button--danger-soft"
+                            type="button"
+                            [title]="t('removeAnchor')"
+                            (click)="removeLineAnchor($index)">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path [attr.d]="iconMap.trash"></path>
+                            </svg>
+                          </button>
+                        </div>
+                        <div class="form-grid form-grid--line-anchor">
+                          <label class="field">
+                            <span>{{ t('x') }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                [min]="xSliderRange().min"
+                                [max]="xSliderRange().max"
+                                step="0.1"
+                                [value]="anchor.x"
+                                (input)="updateLineAnchorPoint($index, 'x', $event)" />
+                              <input
+                                type="number"
+                                step="0.1"
+                                [value]="anchor.x"
+                                (input)="updateLineAnchorPoint($index, 'x', $event)" />
+                            </div>
+                          </label>
+                          <label class="field">
+                            <span>{{ t('y') }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                [min]="ySliderRange().min"
+                                [max]="ySliderRange().max"
+                                step="0.1"
+                                [value]="anchor.y"
+                                (input)="updateLineAnchorPoint($index, 'y', $event)" />
+                              <input
+                                type="number"
+                                step="0.1"
+                                [value]="anchor.y"
+                                (input)="updateLineAnchorPoint($index, 'y', $event)" />
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    }
                   }
                   @case ('rectangle') {
                     <label class="field"
@@ -917,8 +1149,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.x"
                           (input)="updateShapeNumber('x', $event)" /><input
@@ -932,8 +1164,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.y"
                           (input)="updateShapeNumber('y', $event)" /><input
@@ -980,13 +1212,13 @@
                         <input
                           type="range"
                           min="0"
-                          max="1.5"
+                          max="5"
                           step="0.02"
                           [value]="shape.cornerRadius"
                           (input)="updateShapeNumber('cornerRadius', $event)" /><input
                           type="number"
                           min="0"
-                          max="1.5"
+                          max="5"
                           step="0.02"
                           [value]="shape.cornerRadius"
                           (input)="updateShapeNumber('cornerRadius', $event)" /></div
@@ -998,8 +1230,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.cx"
                           (input)="updateShapeNumber('cx', $event)" /><input
@@ -1013,8 +1245,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.cy"
                           (input)="updateShapeNumber('cy', $event)" /><input
@@ -1046,8 +1278,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.cx"
                           (input)="updateShapeNumber('cx', $event)" /><input
@@ -1061,8 +1293,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.cy"
                           (input)="updateShapeNumber('cy', $event)" /><input
@@ -1158,8 +1390,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.x"
                           (input)="updateShapeNumber('x', $event)" /><input
@@ -1173,8 +1405,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.y"
                           (input)="updateShapeNumber('y', $event)" /><input
@@ -1200,12 +1432,24 @@
                           (input)="updateShapeNumber('fontSize', $event)" /></div
                     ></label>
                     <label class="field"
-                      ><span>{{ t('color') }}</span
-                      ><input
-                        type="color"
-                        [value]="shape.color"
-                        (input)="updateShapeText('color', $event)"
-                    /></label>
+                      ><span>{{ t('color') }}</span>
+                      <div class="color-inline-field">
+                        <input
+                          class="color-swatch"
+                          type="color"
+                          [value]="shape.color"
+                          (input)="updateShapeText('color', $event)" />
+                        <input
+                          class="color-opacity-input"
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          [value]="shape.colorOpacity"
+                          (input)="updateShapeOpacity('colorOpacity', $event)" />
+                        <small>{{ t('opacity') }} {{ opacityPercent(shape.colorOpacity) }}%</small>
+                      </div></label
+                    >
                   }
                   @case ('image') {
                     <label class="field">
@@ -1213,8 +1457,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="xSliderRange().min"
+                          [max]="xSliderRange().max"
                           step="0.1"
                           [value]="shape.x"
                           (input)="updateShapeNumber('x', $event)" /><input
@@ -1228,8 +1472,8 @@
                       <div class="range-field">
                         <input
                           type="range"
-                          min="-20"
-                          max="20"
+                          [min]="ySliderRange().min"
+                          [max]="ySliderRange().max"
                           step="0.1"
                           [value]="shape.y"
                           (input)="updateShapeNumber('y', $event)" /><input
