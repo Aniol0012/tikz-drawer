@@ -1195,6 +1195,25 @@ kbd {
   justify-content: center;
 }
 
+.property-group {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tool-surface) 86%, transparent);
+}
+
+.property-group--actions {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.property-group__title {
+  display: none;
+}
+
 .inline-actions--compact .secondary-button,
 .inline-actions--compact .primary-button {
   flex: 0 0 auto;
@@ -1205,6 +1224,18 @@ kbd {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   min-width: 0;
+}
+
+.form-grid--section {
+  gap: 12px;
+}
+
+.sidebar-section > .form-grid > .field,
+.sidebar-section > .form-grid > .toggle-field {
+  padding: 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tool-surface) 86%, transparent);
 }
 
 .field--full {
@@ -1259,11 +1290,40 @@ kbd {
   gap: 10px;
   min-height: 40px;
   padding: 0 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
   background: var(--input-background);
 }
 
 .toggle-field select {
   width: 100%;
+}
+
+.property-group .toggle-field,
+.property-group .field > select {
+  min-height: 40px;
+}
+
+.color-pair-controls--line {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.color-pair-controls--line .color-chip-field {
+  padding: 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--input-background);
+}
+
+.color-pair-controls--line .color-swatch {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px;
+  min-height: 42px !important;
+}
+
+.color-pair-controls--line .color-opacity-input {
+  margin-top: 2px;
 }
 
 .anchor-editor {
