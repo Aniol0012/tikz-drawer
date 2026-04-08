@@ -54,6 +54,7 @@ type ContextTarget = 'canvas' | 'shape';
 interface ToastNotification {
   readonly id: string;
   readonly message: string;
+  readonly tone: 'info' | 'warning';
 }
 
 type LatexAlignment = 'center' | 'left' | 'right';
@@ -340,6 +341,7 @@ export class EditorPageComponent {
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
+  readonly shareFeedbackTone = signal<'info' | 'warning'>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
@@ -843,12 +845,14 @@ export class EditorPageComponent {
     this.exportMode.set(mode);
     this.exportModalOpen.set(true);
     this.shareFeedback.set('');
+    this.shareFeedbackTone.set('info');
   }
 
   closeExportModal(): void {
     this.exportModalOpen.set(false);
     this.exportSettingsModalOpen.set(false);
     this.shareFeedback.set('');
+    this.shareFeedbackTone.set('info');
   }
 
   openExportSettingsModal(): void {
@@ -1158,8 +1162,17 @@ export class EditorPageComponent {
     }
     this.shareUrl.set(url);
     await navigator.clipboard.writeText(url);
-    this.shareFeedback.set(this.t('copied'));
-    this.showNotification(this.t('shareLinkReady'));
+    const hasImages = this.scene().shapes.some((shape) => shape.kind === 'image');
+    if (hasImages) {
+      const warningMessage = this.t('shareLinkImagesWarning');
+      this.shareFeedback.set(warningMessage);
+      this.shareFeedbackTone.set('warning');
+      this.showNotification(warningMessage, 'warning');
+    } else {
+      this.shareFeedback.set(this.t('copied'));
+      this.shareFeedbackTone.set('info');
+      this.showNotification(this.t('shareLinkReady'));
+    }
     this.closeFileMenu();
   }
 
@@ -1245,7 +1258,6 @@ export class EditorPageComponent {
       shapes: structuredClone(shapes),
       pasteCount: 0
     });
-    this.showNotification(this.t('selectionCopied'));
   }
 
   cutSelected(): void {
@@ -1259,7 +1271,6 @@ export class EditorPageComponent {
       pasteCount: 0
     });
     this.removeSelected();
-    this.showNotification(this.t('selectionCut'));
   }
 
   pasteClipboard(): void {
@@ -1294,7 +1305,6 @@ export class EditorPageComponent {
       shapes: clipboard.shapes,
       pasteCount: clipboard.pasteCount + 1
     });
-    this.showNotification(this.t('selectionPasted'));
   }
 
   mergeSelected(): void {
@@ -1686,8 +1696,19 @@ export class EditorPageComponent {
     this.contextMenu.set(null);
   }
 
-  runContextAction(action: 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup'): void {
+  runContextAction(
+    action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup'
+  ): void {
     switch (action) {
+      case 'copy':
+        this.copySelected();
+        break;
+      case 'cut':
+        this.cutSelected();
+        break;
+      case 'paste':
+        this.pasteClipboard();
+        break;
       case 'duplicate':
         this.duplicateSelected();
         break;
@@ -2226,9 +2247,9 @@ export class EditorPageComponent {
     this.minimapPanPointerId.set(null);
   }
 
-  private showNotification(message: string): void {
+  private showNotification(message: string, tone: 'info' | 'warning' = 'info'): void {
     const id = crypto.randomUUID();
-    this.notifications.update((notifications) => [...notifications, { id, message }]);
+    this.notifications.update((notifications) => [...notifications, { id, message, tone }]);
     globalThis.setTimeout(() => {
       this.notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
     }, 2400);

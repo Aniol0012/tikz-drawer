@@ -31,26 +31,68 @@
 
 .toast-stack {
   position: fixed;
-  top: 84px;
+  top: 82px;
   left: 50%;
   z-index: 70;
   display: grid;
-  gap: 10px;
-  width: min(420px, calc(100vw - 32px));
+  gap: 12px;
+  width: min(460px, calc(100vw - 28px));
   transform: translateX(-50%);
   pointer-events: none;
 }
 
 .toast {
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--panel-background) 92%, white 8%);
-  box-shadow: var(--floating-shadow);
+  position: relative;
+  padding: 14px 18px 14px 44px;
+  border: 1px solid color-mix(in srgb, var(--tool-border-strong) 82%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
   color: var(--app-foreground);
-  font-size: 0.84rem;
-  text-align: center;
-  backdrop-filter: blur(12px);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  backdrop-filter: blur(18px);
+  animation: toast-enter 180ms ease;
+}
+
+.toast::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, black 18%));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-50%);
+}
+
+.toast--warning {
+  border-color: color-mix(in srgb, var(--warning) 46%, var(--tool-border-strong));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--warning) 11%, var(--panel-background)), var(--panel-background));
+}
+
+.toast--warning::before {
+  background: linear-gradient(180deg, var(--warning), color-mix(in srgb, var(--warning) 72%, black 18%));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--warning) 16%, transparent);
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .topbar__left,
@@ -1290,6 +1332,36 @@ kbd {
 .file-picker {
   display: grid;
   gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--tool-surface) 88%, transparent);
+}
+
+.file-picker__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: var(--input-background);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.file-picker__control:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.file-picker__control:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .file-input {
@@ -1302,23 +1374,37 @@ kbd {
   color: var(--app-foreground);
 }
 
-.file-input::file-selector-button {
-  margin-right: 10px;
-  padding: 0 14px;
-  height: 32px;
-  border: 1px solid #b7cdf8;
-  border-radius: 999px;
-  background: #dbe9ff;
-  color: #2456cf;
-  font: 700 0.82rem/1 var(--font-sans);
+.file-input--hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   cursor: pointer;
 }
 
+.file-picker__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--tool-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-background));
+  color: var(--accent-strong);
+  font: 700 0.84rem/1 var(--font-sans);
+}
+
 .file-picker__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding-right: 8px;
   color: var(--muted-foreground);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   line-height: 1.4;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chip-row {
@@ -1441,22 +1527,56 @@ kbd {
   z-index: 60;
   display: grid;
   gap: 4px;
-  min-width: 180px;
-  padding: 8px;
-  border: 1px solid var(--tool-border-strong);
-  border-radius: 10px;
-  background: var(--panel-background);
-  box-shadow: var(--floating-shadow);
+  min-width: 196px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--tool-border-strong) 88%, transparent);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .context-menu button {
-  min-height: 36px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
   padding: 0 10px;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: inherit;
   text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.context-menu button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: 0 0 auto;
+}
+
+.context-menu button span {
+  min-width: 0;
+}
+
+.context-menu button:disabled {
+  opacity: 0.42;
+}
+
+.context-menu button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 10%, var(--tool-surface));
+  color: var(--app-foreground);
 }
 
 .modal-backdrop {
@@ -1523,6 +1643,11 @@ kbd {
 .copy-feedback {
   color: var(--accent-strong);
   font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.copy-feedback--warning {
+  color: color-mix(in srgb, var(--warning) 82%, var(--app-foreground));
 }
 
 .share-field {
@@ -1893,6 +2018,20 @@ button:disabled {
 
   .export-config-grid {
     grid-template-columns: 1fr;
+  }
+
+  .file-picker__control {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .file-picker__button,
+  .file-picker__name {
+    width: 100%;
+  }
+
+  .file-picker__name {
+    padding: 0 6px 4px;
   }
 }
 

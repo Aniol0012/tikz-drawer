@@ -128,7 +128,9 @@
   @if (notifications().length) {
     <div class="toast-stack" aria-live="polite" aria-atomic="true">
       @for (notification of notifications(); track notification.id) {
-        <div class="toast">{{ notification.message }}</div>
+        <div class="toast" [class.toast--warning]="notification.tone === 'warning'">
+          {{ notification.message }}
+        </div>
       }
     </div>
   }
@@ -1521,19 +1523,22 @@
                         [value]="shape.latexSource"
                         (input)="updateImageText('latexSource', $event)" />
                     </label>
-                    <label class="field field--full">
+                    <div class="field field--full">
                       <span>{{ t('uploadImage') }}</span>
                       <div class="file-picker">
-                        <input
-                          class="file-input"
-                          type="file"
-                          accept="image/*"
-                          (change)="onImageFileSelected($event)" />
-                        <span class="file-picker__name">{{
-                          selectedImageFilename() || t('noFileChosen')
-                        }}</span>
+                        <label class="file-picker__control">
+                          <input
+                            class="file-input file-input--hidden"
+                            type="file"
+                            accept="image/*"
+                            (change)="onImageFileSelected($event)" />
+                          <span class="file-picker__button">{{ t('chooseFile') }}</span>
+                          <span class="file-picker__name">{{
+                            selectedImageFilename() || t('noFileChosen')
+                          }}</span>
+                        </label>
                       </div>
-                    </label>
+                    </div>
                     <section
                       class="sidebar-section sidebar-section--nested field--full"
                       [class.is-collapsed]="isSectionCollapsed('imageAdvanced')">
@@ -1865,32 +1870,71 @@
       [style.top.px]="menu.clientY"
       role="menu"
       (click)="$event.stopPropagation()">
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('copy')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.copy"></path>
+        </svg>
+        <span>{{ t('copy') }}</span>
+      </button>
+      <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('cut')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.minus"></path>
+        </svg>
+        <span>{{ t('cut') }}</span>
+      </button>
+      <button
+        type="button"
+        [disabled]="!(clipboardShapes()?.shapes?.length)"
+        (click)="runContextAction('paste')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.plus"></path>
+        </svg>
+        <span>{{ t('paste') }}</span>
+      </button>
       <button
         type="button"
         [disabled]="selectionCount() === 0"
         (click)="runContextAction('duplicate')">
-        {{ t('duplicate') }}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.copy"></path>
+        </svg>
+        <span>{{ t('duplicate') }}</span>
       </button>
       <button
         type="button"
         [disabled]="selectionCount() === 0"
         (click)="runContextAction('delete')">
-        {{ t('delete') }}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.trash"></path>
+        </svg>
+        <span>{{ t('delete') }}</span>
       </button>
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('front')">
-        {{ t('bringToFront') }}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.front"></path>
+        </svg>
+        <span>{{ t('bringToFront') }}</span>
       </button>
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('back')">
-        {{ t('sendToBack') }}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.back"></path>
+        </svg>
+        <span>{{ t('sendToBack') }}</span>
       </button>
       @if (canGroupSelection()) {
         <button type="button" (click)="runContextAction('group')">
-          {{ t('groupFigures') }}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.layers"></path>
+          </svg>
+          <span>{{ t('groupFigures') }}</span>
         </button>
       }
       @if (canUngroupSelection()) {
         <button type="button" (click)="runContextAction('ungroup')">
-          {{ t('ungroupFigures') }}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.layers"></path>
+          </svg>
+          <span>{{ t('ungroupFigures') }}</span>
         </button>
       }
     </div>
@@ -2044,7 +2088,11 @@
             </div>
           </label>
           @if (shareFeedback()) {
-            <div class="copy-feedback">{{ shareFeedback() }}</div>
+            <div
+              class="copy-feedback"
+              [class.copy-feedback--warning]="shareFeedbackTone() === 'warning'">
+              {{ shareFeedback() }}
+            </div>
           }
         </div>
         <div class="export-toolbar">
