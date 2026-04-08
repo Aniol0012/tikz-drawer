@@ -64,11 +64,37 @@ jobs:
         shell: bash
         run: npm version patch --no-git-tag-version
 
+      - name: Update README version badge
+        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const version = packageJson.version;
+          const encodedVersion = encodeURIComponent(version);
+          const badgeUrl = `https://img.shields.io/badge/version-${encodedVersion}-blue?style=flat-square&logo=git&logoColor=white`;
+
+          const readmePath = 'README.md';
+          const original = fs.readFileSync(readmePath, 'utf8');
+
+          const badgeRegex = /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[^)]*\)\]\(([^)]+)\)/;
+          const next = original.replace(badgeRegex, `[![Version](${badgeUrl})]($1)`);
+
+          if (next === original) {
+            console.log('No README badge changes detected.');
+          } else {
+            fs.writeFileSync(readmePath, next);
+            console.log(`README version badge updated to ${version}.`);
+          }
+          NODE
+
       - name: Commit and push bumped version
         if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain package.json)" ]; then
+          if [ -z "$(git status --porcelain package.json README.md)" ]; then
             echo "No version changes to commit."
             exit 0
           fi
@@ -76,7 +102,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add package.json
+          git add package.json README.md
           git commit -m "chore(ci): bump package version"
 
           for attempt in 1 2 3; do
