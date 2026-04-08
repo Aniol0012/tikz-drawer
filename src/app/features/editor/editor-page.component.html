@@ -1754,7 +1754,9 @@
               </button>
               <label class="field field--code-theme">
                 <span>{{ t('codeTheme') }}</span>
-                <select [value]="codeHighlightTheme()" (change)="setCodeHighlightTheme($any($event.target).value)">
+                <select
+                  [value]="codeHighlightTheme()"
+                  (change)="setCodeHighlightTheme($any($event.target).value)">
                   <option value="aurora">{{ t('codeThemeAurora') }}</option>
                   <option value="sunset">{{ t('codeThemeSunset') }}</option>
                   <option value="midnight">{{ t('codeThemeMidnight') }}</option>
@@ -1790,7 +1792,8 @@
                       </svg>
                     </button>
                   </div>
-                  <pre class="code-block code-block--imports"><code [innerHTML]="highlightedGeneratedImports()"></code></pre>
+                  <pre
+                    class="code-block code-block--imports"><code [innerHTML]="highlightedGeneratedImports()"></code></pre>
                 </div>
                 <div class="code-panel">
                   <div class="export-section__header">
@@ -1805,7 +1808,8 @@
                       </svg>
                     </button>
                   </div>
-                  <pre class="code-block"><code [innerHTML]="highlightedGeneratedCode()"></code></pre>
+                  <pre
+                    class="code-block"><code [innerHTML]="highlightedGeneratedCode()"></code></pre>
                 </div>
               </div>
             }
@@ -1820,7 +1824,9 @@
             </button>
             @if (!isSectionCollapsed('importCode')) {
               <div class="code-editor" [attr.data-code-theme]="codeHighlightTheme()">
-                <pre #importCodePreview class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedImportCode()"></code></pre>
+                <pre
+                  #importCodePreview
+                  class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedImportCode()"></code></pre>
                 <textarea
                   #importCodeInput
                   class="code-input code-input--overlay"
