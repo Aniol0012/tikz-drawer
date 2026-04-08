@@ -282,6 +282,7 @@ interface MinimapOverview {
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
   private readonly languageStorageKey = 'tikz-drawer.language';
+  private readonly codeThemeStorageKey = 'tikz-drawer.code-theme';
   private readonly editorStateStorageKey = 'tikz-drawer.state';
   private readonly defaultScale = 24;
   private readonly defaultLatexExportConfig = {
@@ -334,7 +335,7 @@ export class EditorPageComponent {
   readonly exportModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
-  readonly codeHighlightTheme = signal<CodeHighlightTheme>('aurora');
+  readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
   readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly libraryQuery = signal('');
@@ -700,6 +701,10 @@ export class EditorPageComponent {
             return;
           }
         }
+
+        if (event.key === this.codeThemeStorageKey && event.newValue) {
+          this.setCodeHighlightTheme(event.newValue);
+        }
       };
 
       this.document.defaultView?.addEventListener('storage', handleStorage);
@@ -714,6 +719,10 @@ export class EditorPageComponent {
       this.store.importCode();
       this.latexExportConfig();
       void this.refreshShareUrl();
+    });
+
+    effect(() => {
+      this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
   }
 
@@ -2674,6 +2683,18 @@ export class EditorPageComponent {
   private restoreLanguage(): LanguageCode {
     const saved = this.document.defaultView?.localStorage?.getItem(this.languageStorageKey);
     return saved === 'ca' || saved === 'es' || saved === 'en' ? saved : detectLanguage();
+  }
+
+  private restoreCodeHighlightTheme(): CodeHighlightTheme {
+    const saved = this.document.defaultView?.localStorage?.getItem(this.codeThemeStorageKey);
+    return saved === 'aurora' ||
+      saved === 'sunset' ||
+      saved === 'midnight' ||
+      saved === 'forest' ||
+      saved === 'rose' ||
+      saved === 'graphite'
+      ? saved
+      : 'aurora';
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {

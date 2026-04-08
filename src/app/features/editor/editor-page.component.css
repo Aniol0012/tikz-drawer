@@ -1367,12 +1367,12 @@ kbd {
 }
 
 .field--code-theme {
-  min-width: 180px;
+  min-width: 0;
 }
 
 .code-tools-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   align-items: end;
 }
@@ -1613,7 +1613,7 @@ kbd {
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: #eef4ff;
+  background: color-mix(in srgb, var(--tool-surface) 92%, transparent);
 }
 
 .sidebar-section--code-tools {
@@ -1626,7 +1626,7 @@ kbd {
   padding: 14px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
-  background: #f6f9ff;
+  background: color-mix(in srgb, var(--tool-surface) 94%, transparent);
   text-align: left;
 }
 
@@ -1641,15 +1641,15 @@ kbd {
 }
 
 .export-option-card.is-active {
-  border-color: #b7cdf8;
-  background: #dbe9ff;
-  color: #2456cf;
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .mode-switch--full button.is-active {
   border-radius: 10px;
-  background: #dbe9ff;
-  color: #2456cf;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
@@ -1657,7 +1657,7 @@ kbd {
   padding: 14px;
   border: 1px solid var(--tool-border);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--tool-surface) 82%, white 18%);
+  background: color-mix(in srgb, var(--tool-surface) 96%, transparent);
 }
 
 .tool-button svg,
