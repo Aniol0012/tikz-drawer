@@ -458,14 +458,24 @@
                       [attr.font-style]="shape.fontStyle"
                       [attr.text-decoration]="shape.textDecoration"
                       [attr.text-anchor]="textAnchor(shape.textAlign)"
-                      [attr.transform]="'rotate(' + shape.rotation + ' ' + toSvgX(shape.x) + ' ' + toSvgY(shape.y) + ')'"
+                      [attr.transform]="
+                        'rotate(' +
+                        shape.rotation +
+                        ' ' +
+                        toSvgX(shape.x) +
+                        ' ' +
+                        toSvgY(shape.y) +
+                        ')'
+                      "
                       [attr.fill]="shape.color"
                       [attr.fill-opacity]="shape.colorOpacity">
                       @for (line of displayTextLines(shape.text); track $index) {
                         <tspan
                           [attr.x]="textRenderX(shape)"
                           [attr.text-anchor]="textAnchor(shape.textAlign)"
-                          [attr.dy]="$index === 0 ? 0 : shape.fontSize * preferences().scale * 1.14">
+                          [attr.dy]="
+                            $index === 0 ? 0 : shape.fontSize * preferences().scale * 1.14
+                          ">
                           {{ line }}
                         </tspan>
                       }
@@ -610,7 +620,9 @@
                         <tspan
                           [attr.x]="textRenderX(previewShape)"
                           [attr.text-anchor]="textAnchor(previewShape.textAlign)"
-                          [attr.dy]="$index === 0 ? 0 : previewShape.fontSize * preferences().scale * 1.14">
+                          [attr.dy]="
+                            $index === 0 ? 0 : previewShape.fontSize * preferences().scale * 1.14
+                          ">
                           {{ line }}
                         </tspan>
                       }
@@ -1407,7 +1419,9 @@
                           class="secondary-button secondary-button--compact"
                           type="button"
                           [title]="t('textStyleUnderline')"
-                          [class.is-active]="isTextStyleActive(shape, 'textDecoration', 'underline')"
+                          [class.is-active]="
+                            isTextStyleActive(shape, 'textDecoration', 'underline')
+                          "
                           (click)="toggleTextStyle('textDecoration')">
                           <span class="text-style-glyph text-style-glyph--underline">U</span>
                         </button>
@@ -1586,11 +1600,36 @@
                     <div class="field field--full">
                       <span>{{ t('rotationPresets') }}</span>
                       <div class="chip-row">
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-90)">-90</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-45)">-45</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(0)">0</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(45)">45</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(90)">90</button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="setTextRotation(-90)">
+                          -90
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="setTextRotation(-45)">
+                          -45
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="setTextRotation(0)">
+                          0
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="setTextRotation(45)">
+                          45
+                        </button>
+                        <button
+                          class="secondary-button secondary-button--compact"
+                          type="button"
+                          (click)="setTextRotation(90)">
+                          90
+                        </button>
                       </div>
                     </div>
                     <label class="field"
@@ -2247,13 +2286,6 @@
               >
             </div>
           </label>
-          @if (shareFeedback()) {
-            <div
-              class="copy-feedback"
-              [class.copy-feedback--warning]="shareFeedbackTone() === 'warning'">
-              {{ shareFeedback() }}
-            </div>
-          }
         </div>
         <div class="export-toolbar">
           <div class="export-toolbar__meta">
@@ -2271,23 +2303,14 @@
                 {{ t('standalone') }}
               </button>
             </div>
-            <p class="export-toolbar__scope">
-              {{ selectedShapes().length ? t('exportScopeSelection') : t('exportScopeScene') }}
-            </p>
           </div>
           <div class="export-actions-grid">
-            <button
-              class="secondary-button export-btn"
-              type="button"
-              (click)="downloadCanvasPng()">
+            <button class="secondary-button export-btn" type="button" (click)="downloadCanvasPng()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.download"></path></svg
               ><span>{{ t('downloadPng') }}</span>
             </button>
-            <button
-              class="secondary-button export-btn"
-              type="button"
-              (click)="downloadCanvasSvg()">
+            <button class="secondary-button export-btn" type="button" (click)="downloadCanvasSvg()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.download"></path></svg
               ><span>{{ t('downloadSvg') }}</span>

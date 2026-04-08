@@ -33,7 +33,7 @@
   position: fixed;
   top: 82px;
   left: 50%;
-  z-index: 70;
+  z-index: 220;
   display: grid;
   gap: 12px;
   width: min(460px, calc(100vw - 28px));
@@ -43,23 +43,17 @@
 
 .toast {
   position: relative;
+  isolation: isolate;
   padding: 14px 18px 14px 44px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 82%, transparent);
   border-radius: 16px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel-background) 96%, white 4%),
-    var(--panel-background)
-  );
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+  background: var(--panel-background);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.16);
   color: var(--app-foreground);
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.45;
   text-align: left;
-  backdrop-filter: blur(18px);
   animation: toast-enter 180ms ease;
 }
 
@@ -82,11 +76,7 @@
 
 .toast--warning {
   border-color: color-mix(in srgb, var(--warning) 46%, var(--tool-border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--warning) 11%, var(--panel-background)),
-    var(--panel-background)
-  );
+  background: color-mix(in srgb, var(--warning) 8%, var(--panel-background));
 }
 
 .toast--warning::before {
@@ -1737,7 +1727,9 @@ kbd {
 }
 
 .export-toolbar {
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
   padding: 14px;
   border: 1px solid var(--tool-border);
   border-radius: 14px;
@@ -1745,29 +1737,23 @@ kbd {
 }
 
 .export-toolbar__meta {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-  min-width: 220px;
-}
-
-.export-toolbar__scope {
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.82rem;
-  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .export-actions-grid {
-  flex: 1 1 auto;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .export-btn {
-  width: 100%;
-  justify-content: flex-start;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  justify-content: center;
 }
 
 .share-panel,
@@ -2217,12 +2203,12 @@ button:disabled {
 
   .export-modal__header,
   .export-toolbar {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
   .export-actions-grid {
-    grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .export-section__header {
@@ -2250,4 +2236,10 @@ button:disabled {
 
 .export-btn {
   min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .export-btn {
+    width: 100%;
+  }
 }

@@ -575,12 +575,13 @@ export class EditorPageComponent {
     const lines = this.textLines(editor.value);
     const paddingX = Math.max(6, fontSize * 0.08);
     const paddingY = Math.max(4, fontSize * 0.08);
-    const width = Math.max(
-      ...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36))
-    );
+    const width = Math.max(...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36)));
     const height = Math.max(lines.length * fontSize * 1.08 + paddingY * 2, fontSize + paddingY * 2);
+    const anchorX = this.toSvgX(shape.x);
+    const left =
+      shape.textAlign === 'left' ? anchorX : shape.textAlign === 'right' ? anchorX - width : anchorX - width / 2;
     return {
-      x: this.toSvgX(shape.x) - width / 2 - paddingX,
+      x: left - paddingX,
       y: this.toSvgY(shape.y) - height / 2,
       width: width + paddingX * 2,
       height,
@@ -1235,6 +1236,7 @@ export class EditorPageComponent {
     anchor.download = `${this.exportFileBaseName()}.svg`;
     anchor.click();
     URL.revokeObjectURL(url);
+    this.showExportNotification('svg');
   }
 
   async downloadCanvasPng(): Promise<void> {
@@ -1276,6 +1278,7 @@ export class EditorPageComponent {
       anchor.download = `${this.exportFileBaseName()}.png`;
       anchor.click();
       URL.revokeObjectURL(pngUrl);
+      this.showExportNotification('png');
     } finally {
       URL.revokeObjectURL(svgUrl);
     }
@@ -1316,12 +1319,8 @@ export class EditorPageComponent {
     const hasImages = this.scene().shapes.some((shape) => shape.kind === 'image');
     if (hasImages) {
       const warningMessage = this.t('shareLinkImagesWarning');
-      this.shareFeedback.set(warningMessage);
-      this.shareFeedbackTone.set('warning');
       this.showNotification(warningMessage, 'warning');
     } else {
-      this.shareFeedback.set(this.t('copied'));
-      this.shareFeedbackTone.set('info');
       this.showNotification(this.t('shareLinkReady'));
     }
     this.closeFileMenu();
@@ -1524,11 +1523,15 @@ export class EditorPageComponent {
     key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
     value: TextShape['fontWeight'] | TextShape['fontStyle'] | TextShape['textDecoration'] | TextShape['textAlign']
   ): void {
-    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape));
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape
+    );
   }
 
   setTextRotation(value: number): void {
-    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape));
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape
+    );
   }
 
   toggleTextStyle(key: 'fontWeight' | 'fontStyle' | 'textDecoration'): void {
@@ -1561,7 +1564,9 @@ export class EditorPageComponent {
     }
 
     this.insertTextAtCursor(inspectorInput, symbol, (nextValue) => {
-      this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, text: nextValue } as CanvasShape) : shape));
+      this.store.patchSelectedShape((shape) =>
+        shape.kind === 'text' ? ({ ...shape, text: nextValue } as CanvasShape) : shape
+      );
     });
   }
 
@@ -1719,7 +1724,20 @@ export class EditorPageComponent {
   }
 
   updateShapeNumber(
-    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'fontSize' | 'rotation',
+    key:
+      | 'strokeWidth'
+      | 'x'
+      | 'y'
+      | 'width'
+      | 'height'
+      | 'cornerRadius'
+      | 'cx'
+      | 'cy'
+      | 'r'
+      | 'rx'
+      | 'ry'
+      | 'fontSize'
+      | 'rotation',
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
@@ -2504,6 +2522,12 @@ export class EditorPageComponent {
     }, 2400);
   }
 
+  private showExportNotification(format: 'png' | 'svg'): void {
+    const scope = this.selectedShapes().length ? 'Selection' : 'Scene';
+    const formatKey = format === 'png' ? 'Png' : 'Svg';
+    this.showNotification(this.t(`exportNotice${scope}${formatKey}`));
+  }
+
   private runSceneMutation(action: () => void): void {
     this.closeContextMenu();
     this.store.recordHistoryCheckpoint();
@@ -3140,12 +3164,18 @@ export class EditorPageComponent {
         const lines = this.textLines(shape.text);
         const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, 1.6)));
         const height = Math.max(lines.length * shape.fontSize * 0.88 * scale, 1.2);
+        const left =
+          shape.textAlign === 'left'
+            ? toMapX(shape.x)
+            : shape.textAlign === 'right'
+              ? toMapX(shape.x) - width
+              : toMapX(shape.x) - width / 2;
         return {
           kind: 'text',
           stroke: 'transparent',
           strokeWidth: 0,
           fill: shape.color,
-          x: toMapX(shape.x) - width / 2,
+          x: left,
           y: toMapY(shape.y) - height / 2,
           width,
           height
@@ -3202,9 +3232,11 @@ export class EditorPageComponent {
         const lines = this.textLines(shape.text);
         const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
         const height = Math.max(lines.length * shape.fontSize * 0.88, shape.fontSize * 0.72);
+        const left =
+          shape.textAlign === 'left' ? shape.x : shape.textAlign === 'right' ? shape.x - width : shape.x - width / 2;
         return {
-          left: shape.x - width / 2,
-          right: shape.x + width / 2,
+          left,
+          right: left + width,
           bottom: shape.y - height / 2,
           top: shape.y + height / 2
         };
@@ -3497,11 +3529,7 @@ export class EditorPageComponent {
     return shape.kind === 'text' && String(shape[key]) === value;
   }
 
-  private insertTextAtCursor(
-    input: HTMLTextAreaElement,
-    symbol: string,
-    onValue: (nextValue: string) => void
-  ): void {
+  private insertTextAtCursor(input: HTMLTextAreaElement, symbol: string, onValue: (nextValue: string) => void): void {
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? start;
     const nextValue = `${input.value.slice(0, start)}${symbol}${input.value.slice(end)}`;
@@ -3560,16 +3588,9 @@ export class EditorPageComponent {
       .replaceAll('\\cap', '∩');
   }
 
-  private textRenderXAt(
-    shape: TextShape,
-    projectX: (value: number) => number,
-    scale: number
-  ): number {
-    const centerX = projectX(shape.x);
-    const width = this.estimateTextWidth(shape, scale);
-    if (shape.textAlign === 'left') return centerX - width / 2;
-    if (shape.textAlign === 'right') return centerX + width / 2;
-    return centerX;
+  private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {
+    void scale;
+    return projectX(shape.x);
   }
 
   private estimateTextWidth(shape: TextShape, scale: number): number {
@@ -3625,8 +3646,12 @@ export class EditorPageComponent {
       .map((shape) => {
         switch (shape.kind) {
           case 'line': {
-            const markerStart = shape.arrowStart ? ` marker-start="url(#${this.escapeXml(this.arrowMarkerId(shape, 'start'))})"` : '';
-            const markerEnd = shape.arrowEnd ? ` marker-end="url(#${this.escapeXml(this.arrowMarkerId(shape, 'end'))})"` : '';
+            const markerStart = shape.arrowStart
+              ? ` marker-start="url(#${this.escapeXml(this.arrowMarkerId(shape, 'start'))})"`
+              : '';
+            const markerEnd = shape.arrowEnd
+              ? ` marker-end="url(#${this.escapeXml(this.arrowMarkerId(shape, 'end'))})"`
+              : '';
             return `<path d="${this.escapeXml(
               this.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
             )}" fill="none" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
@@ -3640,7 +3665,9 @@ export class EditorPageComponent {
           case 'text': {
             const renderX = this.textRenderXAt(shape, projectX, scale);
             const anchor = this.textAnchor(shape.textAlign);
-            const rotate = shape.rotation ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"` : '';
+            const rotate = shape.rotation
+              ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"`
+              : '';
             const lines = this.displayTextLines(shape.text)
               .map(
                 (line, index) =>
