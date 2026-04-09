@@ -93,7 +93,9 @@
               [class.is-active]="activeTool() === tool.id"
               [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
               (click)="setActiveTool(tool.id)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="tool.iconPath"></path>
+              </svg>
               <span>{{ tool.label }}</span>
             </button>
           }
@@ -199,10 +201,15 @@
                     <button
                       class="icon-button"
                       type="button"
-                      [title]="isToolPinned(template.id) ? t('unpinFromToolbar') : t('pinToToolbar')"
+                      [title]="
+                        isToolPinned(template.id) ? t('unpinFromToolbar') : t('pinToToolbar')
+                      "
                       (click)="togglePinnedTool(template.id, $event)">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="isToolPinned(template.id) ? iconMap.pinOff : iconMap.pin"></path>
+                        <path
+                          [attr.d]="
+                            isToolPinned(template.id) ? iconMap.pinOff : iconMap.pin
+                          "></path>
                       </svg>
                     </button>
                     <button
@@ -299,7 +306,8 @@
                       [title]="isToolPinned(preset.id) ? t('unpinFromToolbar') : t('pinToToolbar')"
                       (click)="togglePinnedTool(preset.id, $event)">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="isToolPinned(preset.id) ? iconMap.pinOff : iconMap.pin"></path>
+                        <path
+                          [attr.d]="isToolPinned(preset.id) ? iconMap.pinOff : iconMap.pin"></path>
                       </svg>
                     </button>
                   }
@@ -1160,7 +1168,9 @@
                         >
                         <label class="toggle-field"
                           ><span>{{ t('lineMode') }}</span
-                          ><select [value]="shape.lineMode" (change)="setLineMode($any($event.target).value)">
+                          ><select
+                            [value]="shape.lineMode"
+                            (change)="setLineMode($any($event.target).value)">
                             <option value="straight">{{ t('lineModeStraight') }}</option>
                             <option value="curved">{{ t('lineModeCurved') }}</option>
                           </select></label
