@@ -881,7 +881,10 @@ export class EditorPageComponent {
       this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
     effect(() => {
-      this.document.defaultView?.localStorage?.setItem(this.pinnedToolsStorageKey, JSON.stringify(this.pinnedToolIds()));
+      this.document.defaultView?.localStorage?.setItem(
+        this.pinnedToolsStorageKey,
+        JSON.stringify(this.pinnedToolIds())
+      );
     });
   }
 
@@ -916,9 +919,7 @@ export class EditorPageComponent {
   togglePinnedTool(toolId: string, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
-    this.pinnedToolIds.update((ids) =>
-      ids.includes(toolId) ? ids.filter((id) => id !== toolId) : [...ids, toolId]
-    );
+    this.pinnedToolIds.update((ids) => (ids.includes(toolId) ? ids.filter((id) => id !== toolId) : [...ids, toolId]));
   }
 
   scenePresetTitle(preset: ScenePreset): string {
@@ -1854,15 +1855,17 @@ export class EditorPageComponent {
     const value = Number((event.target as HTMLInputElement).value);
     this.store.patchSelectedShape((shape) =>
       shape.kind === 'line'
-        ? ({ ...shape, arrowScale: Number.isFinite(value) ? Math.min(3, Math.max(0.4, value)) : shape.arrowScale } as LineShape)
+        ? ({
+            ...shape,
+            arrowScale: Number.isFinite(value) ? Math.min(3, Math.max(0.4, value)) : shape.arrowScale
+          } as LineShape)
         : shape
     );
   }
 
   setLineArrowBendMode(value: string): void {
     this.store.patchSelectedShape((shape) =>
-      shape.kind === 'line' &&
-      (value === 'none' || value === 'flex' || value === 'flex-prime' || value === 'bend')
+      shape.kind === 'line' && (value === 'none' || value === 'flex' || value === 'flex-prime' || value === 'bend')
         ? ({ ...shape, arrowBendMode: value } as LineShape)
         : shape
     );
@@ -3250,7 +3253,9 @@ export class EditorPageComponent {
 
     try {
       const parsed = JSON.parse(raw);
-      this.pinnedToolIds.set(Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []);
+      this.pinnedToolIds.set(
+        Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []
+      );
     } catch {
       this.pinnedToolIds.set([]);
     }
@@ -3380,9 +3385,7 @@ export class EditorPageComponent {
     }
 
     if (shape.lineMode === 'straight') {
-      return points
-        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-        .join(' ');
+      return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
     }
 
     let path = `M ${points[0].x} ${points[0].y}`;
@@ -3459,14 +3462,13 @@ export class EditorPageComponent {
         const lines = this.displayTextLinesForShape(shape);
         const width = this.estimateTextWidth(shape, scale);
         const height = Math.max(lines.length * shape.fontSize * 0.88 * scale, 1.2);
-        const left =
-          shape.textBox
+        const left = shape.textBox
+          ? toMapX(shape.x)
+          : shape.textAlign === 'left'
             ? toMapX(shape.x)
-            : shape.textAlign === 'left'
-              ? toMapX(shape.x)
-              : shape.textAlign === 'right'
-                ? toMapX(shape.x) - width
-                : toMapX(shape.x) - width / 2;
+            : shape.textAlign === 'right'
+              ? toMapX(shape.x) - width
+              : toMapX(shape.x) - width / 2;
         return {
           kind: 'text',
           stroke: 'transparent',
@@ -3529,14 +3531,13 @@ export class EditorPageComponent {
         const lines = this.displayTextLinesForShape(shape);
         const width = this.estimateTextWidth(shape, 1);
         const height = Math.max(lines.length * shape.fontSize * 0.88, shape.fontSize * 0.72);
-        const left =
-          shape.textBox
+        const left = shape.textBox
+          ? shape.x
+          : shape.textAlign === 'left'
             ? shape.x
-            : shape.textAlign === 'left'
-              ? shape.x
-              : shape.textAlign === 'right'
-                ? shape.x - width
-                : shape.x - width / 2;
+            : shape.textAlign === 'right'
+              ? shape.x - width
+              : shape.x - width / 2;
         return {
           left,
           right: left + width,
@@ -3927,7 +3928,9 @@ export class EditorPageComponent {
       return Math.max(shape.boxWidth * scale, shape.fontSize * scale);
     }
     const lines = this.displayTextLinesForShape(shape);
-    return Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale)));
+    return Math.max(
+      ...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale))
+    );
   }
 
   private wrapTextLine(line: string, maxChars: number): readonly string[] {
