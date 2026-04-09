@@ -110,10 +110,14 @@ const styleOpacity = (styles: Record<string, string>, key: string): number => {
 
 const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
   const raw = `${styles['arrow meta'] ?? styles['>='] ?? styles['<='] ?? ''}`.toLowerCase();
+  if (raw.includes('bracket')) return 'bracket';
+  if (raw.includes('hooks')) return 'hooks';
+  if (raw.includes('bar')) return 'bar';
   if (raw.includes('diamond')) return 'diamond';
   if (raw.includes('circle')) return 'circle';
   if (raw.includes('stealth')) return 'stealth';
-  return 'triangle';
+  if (raw.includes('triangle')) return 'triangle';
+  return 'latex';
 };
 
 const parseArrowColor = (styles: Record<string, string>): string => {
@@ -132,6 +136,27 @@ const parseArrowOpacity = (styles: Record<string, string>): number => {
     }
   }
   return styleOpacity(styles, 'opacity');
+};
+
+const parseArrowOpen = (styles: Record<string, string>): boolean =>
+  /(?:\[|,)\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+
+const parseArrowRound = (styles: Record<string, string>): boolean =>
+  /(?:\[|,)\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+
+const parseArrowScale = (styles: Record<string, string>): number => {
+  const raw = styles['arrow meta'] ?? '';
+  const match = raw.match(/scale=([^,\]}]+)/i);
+  const parsed = Number.parseFloat(match?.[1] ?? '');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+};
+
+const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
+  const raw = styles['arrow meta'] ?? '';
+  if (/(?:\[|,)\s*bend(?:\s*[,}\]])/i.test(raw)) return 'bend';
+  if (/flex'\s*(?:=|[,}\]])/i.test(raw)) return 'flex-prime';
+  if (/flex\s*(?:=|[,}\]])/i.test(raw)) return 'flex';
+  return 'none';
 };
 
 const parseLine = (line: string): CanvasShape | null => {
@@ -163,7 +188,11 @@ const parseLine = (line: string): CanvasShape | null => {
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     arrowType: parseArrowType(styles),
     arrowColor: parseArrowColor(styles),
-    arrowOpacity: parseArrowOpacity(styles)
+    arrowOpacity: parseArrowOpacity(styles),
+    arrowOpen: parseArrowOpen(styles),
+    arrowRound: parseArrowRound(styles),
+    arrowScale: parseArrowScale(styles),
+    arrowBendMode: parseArrowBendMode(styles)
   };
 
   return shape;
@@ -204,7 +233,11 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     arrowType: parseArrowType(styles),
     arrowColor: parseArrowColor(styles),
-    arrowOpacity: parseArrowOpacity(styles)
+    arrowOpacity: parseArrowOpacity(styles),
+    arrowOpen: parseArrowOpen(styles),
+    arrowRound: parseArrowRound(styles),
+    arrowScale: parseArrowScale(styles),
+    arrowBendMode: parseArrowBendMode(styles)
   };
 
   return shape;
@@ -338,6 +371,8 @@ const parseNode = (line: string): CanvasShape | null => {
     x: point.x,
     y: point.y,
     text: match.groups['text'].trim(),
+    textBox: /text width=/.test(match.groups['styles'] ?? ''),
+    boxWidth: Number.parseFloat((styles['text width'] ?? '4').replace(/cm/g, '').trim()) || 4,
     fontSize: 0.42 * scale,
     color: styles['text'] ?? '#0f172a',
     colorOpacity: styleOpacity(styles, 'text opacity'),

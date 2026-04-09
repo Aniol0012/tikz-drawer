@@ -20,9 +20,13 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         ...shape,
         anchors: shape.anchors ?? [],
         strokeOpacity: shape.strokeOpacity ?? 1,
-        arrowType: shape.arrowType ?? 'triangle',
+        arrowType: shape.arrowType ?? 'latex',
         arrowColor: shape.arrowColor ?? shape.stroke,
-        arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1
+        arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1,
+        arrowOpen: shape.arrowOpen ?? false,
+        arrowRound: shape.arrowRound ?? false,
+        arrowScale: shape.arrowScale ?? 1,
+        arrowBendMode: shape.arrowBendMode ?? 'none'
       } as CanvasShape;
     case 'rectangle':
     case 'circle':
@@ -36,6 +40,8 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
       return {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
+        textBox: shape.textBox ?? false,
+        boxWidth: shape.boxWidth ?? 4,
         colorOpacity: shape.colorOpacity ?? 1,
         fontWeight: shape.fontWeight ?? 'normal',
         fontStyle: shape.fontStyle ?? 'normal',
@@ -205,7 +211,13 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         ...shape,
         stroke: shape.stroke,
         strokeOpacity: shape.strokeOpacity ?? 1,
-        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+        arrowColor: shape.arrowColor ?? shape.stroke,
+        arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1,
+        arrowOpen: shape.arrowOpen ?? false,
+        arrowRound: shape.arrowRound ?? false,
+        arrowScale: shape.arrowScale ?? 1,
+        arrowBendMode: shape.arrowBendMode ?? 'none'
       };
     case 'rectangle':
     case 'circle':

@@ -28,7 +28,11 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   arrowEnd: overrides.arrowEnd ?? false,
   arrowType: overrides.arrowType ?? ('triangle' satisfies ArrowTipKind),
   arrowColor: overrides.arrowColor ?? overrides.stroke ?? '#1f1f1f',
-  arrowOpacity: overrides.arrowOpacity ?? overrides.strokeOpacity ?? 1
+  arrowOpacity: overrides.arrowOpacity ?? overrides.strokeOpacity ?? 1,
+  arrowOpen: overrides.arrowOpen ?? false,
+  arrowRound: overrides.arrowRound ?? false,
+  arrowScale: overrides.arrowScale ?? 1,
+  arrowBendMode: overrides.arrowBendMode ?? 'none'
 });
 
 const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShape => ({
@@ -86,6 +90,8 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   x: overrides.x ?? 0,
   y: overrides.y ?? 0,
   text: overrides.text ?? 'label',
+  textBox: overrides.textBox ?? false,
+  boxWidth: overrides.boxWidth ?? 4,
   fontSize: overrides.fontSize ?? 0.42,
   color: overrides.color ?? '#161616',
   colorOpacity: overrides.colorOpacity ?? 1,
@@ -196,13 +202,13 @@ export const objectPresets: readonly ObjectPreset[] = [
     { quickAccess: true, searchTerms: ['ellipse', 'state', 'pill'] }
   ),
   createPreset(
-    'node',
+    'note',
     'essentials',
-    'node',
-    'Node',
-    'Compact connection point.',
-    [createCircle({ name: 'Node', r: 0.24, fill: '#1f1f1f', stroke: '#1f1f1f' })],
-    { quickAccess: true, searchTerms: ['node', 'point', 'dot'] }
+    'note',
+    'Note',
+    'Text box for annotations and descriptions.',
+    [createText({ name: 'Note', text: 'Note', textBox: true, boxWidth: 4.8, textAlign: 'left' })],
+    { quickAccess: true, searchTerms: ['note', 'text box', 'annotation', 'comment'] }
   ),
   createPreset(
     'label',

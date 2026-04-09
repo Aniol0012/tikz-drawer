@@ -19,7 +19,7 @@ export interface CanvasShapeBase {
   readonly mergeId?: string;
 }
 
-export type ArrowTipKind = 'triangle' | 'stealth' | 'diamond' | 'circle';
+export type ArrowTipKind = 'latex' | 'triangle' | 'stealth' | 'diamond' | 'circle' | 'bar' | 'hooks' | 'bracket';
 
 export interface LineShape extends CanvasShapeBase {
   readonly kind: 'line';
@@ -31,6 +31,10 @@ export interface LineShape extends CanvasShapeBase {
   readonly arrowType: ArrowTipKind;
   readonly arrowColor: string;
   readonly arrowOpacity: number;
+  readonly arrowOpen: boolean;
+  readonly arrowRound: boolean;
+  readonly arrowScale: number;
+  readonly arrowBendMode: 'none' | 'flex' | 'flex-prime' | 'bend';
 }
 
 export interface RectangleShape extends CanvasShapeBase {
@@ -68,6 +72,8 @@ export interface TextShape extends CanvasShapeBase {
   readonly x: number;
   readonly y: number;
   readonly text: string;
+  readonly textBox: boolean;
+  readonly boxWidth: number;
   readonly fontSize: number;
   readonly color: string;
   readonly colorOpacity: number;

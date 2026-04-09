@@ -105,26 +105,47 @@ const buildStyleEntries = (shape: ShapeStyleConfig, context: TikzGenerationConte
 
 const arrowTipName = (arrowType: ArrowTipKind): string => {
   switch (arrowType) {
-    case 'triangle':
+    case 'latex':
       return 'Latex';
+    case 'triangle':
+      return 'Triangle';
     case 'stealth':
       return 'Stealth';
     case 'diamond':
       return 'Diamond';
     case 'circle':
       return 'Circle';
+    case 'bar':
+      return 'Bar';
+    case 'hooks':
+      return 'Hooks';
+    case 'bracket':
+      return 'Bracket';
   }
 };
 
 const arrowTipSpec = (shape: LineShape): string => {
   const options = [`draw=${shape.arrowColor}`];
-  if (shape.arrowType === 'circle') {
+  if (shape.arrowOpen || shape.arrowType === 'circle') {
     options.push('open');
   } else {
     options.push(`fill=${shape.arrowColor}`);
   }
   if (shape.arrowOpacity < 1) {
     options.push(`opacity=${formatNumber(shape.arrowOpacity)}`);
+  }
+  if (shape.arrowRound) {
+    options.push('round');
+  }
+  if (shape.arrowScale !== 1) {
+    options.push(`scale=${formatNumber(shape.arrowScale)}`);
+  }
+  if (shape.arrowBendMode === 'flex') {
+    options.push('flex');
+  } else if (shape.arrowBendMode === 'flex-prime') {
+    options.push("flex'");
+  } else if (shape.arrowBendMode === 'bend') {
+    options.push('bend');
   }
   return `{${arrowTipName(shape.arrowType)}[${options.join(', ')}]}`;
 };
@@ -178,6 +199,11 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
     `scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}`,
     `anchor=${shape.textAlign === 'left' ? 'west' : shape.textAlign === 'right' ? 'east' : 'center'}`
   ];
+
+  if (shape.textBox) {
+    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`);
+    nodeOptions.push(`align=${shape.textAlign}`);
+  }
 
   if (shape.rotation !== 0) {
     nodeOptions.push(`rotate=${formatNumber(shape.rotation)}`);
@@ -234,6 +260,9 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
     '\\usepackage{tikz}',
     ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
       ? ['\\usetikzlibrary{arrows.meta}']
+      : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none')
+      ? ['\\usetikzlibrary{bending}']
       : []),
     ...(scene.shapes.some((shape) => shape.kind === 'image') ? ['\\usepackage{graphicx}'] : []),
     ...(context.colorMode === 'define-colors'

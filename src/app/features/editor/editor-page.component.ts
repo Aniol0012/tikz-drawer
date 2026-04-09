@@ -204,6 +204,11 @@ interface TextSymbolPalettePosition {
   readonly maxHeight: number;
 }
 
+interface ArrowTipOption {
+  readonly id: ArrowTipKind;
+  readonly title: string;
+}
+
 interface ExportSvgDocument {
   readonly markup: string;
   readonly width: number;
@@ -338,6 +343,8 @@ export class EditorPageComponent {
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
+  readonly rightSidebar = viewChild<ElementRef<HTMLElement>>('rightSidebar');
+  readonly sidebarScroll = viewChild<ElementRef<HTMLElement>>('sidebarScroll');
 
   readonly appVersion = packageManifest.version;
   readonly scene = this.store.scene;
@@ -465,6 +472,16 @@ export class EditorPageComponent {
       ]
     }
   ];
+  readonly arrowTipOptions: readonly ArrowTipOption[] = [
+    { id: 'latex', title: 'Latex' },
+    { id: 'triangle', title: 'Triangle' },
+    { id: 'stealth', title: 'Stealth' },
+    { id: 'diamond', title: 'Diamond' },
+    { id: 'circle', title: 'Circle' },
+    { id: 'bar', title: 'Bar' },
+    { id: 'hooks', title: 'Hooks' },
+    { id: 'bracket', title: 'Bracket' }
+  ];
 
   readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
   readonly allInsertablePresets = computed<readonly ObjectPreset[]>(() => [
@@ -573,10 +590,12 @@ export class EditorPageComponent {
     }
 
     const fontSize = Math.max(shape.fontSize * this.preferences().scale, 14);
-    const lines = this.textLines(editor.value);
+    const lines = this.displayTextLinesForShape({ ...shape, text: editor.value });
     const paddingX = Math.max(6, fontSize * 0.08);
     const paddingY = Math.max(4, fontSize * 0.08);
-    const width = Math.max(...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36)));
+    const width = shape.textBox
+      ? Math.max(shape.boxWidth * this.preferences().scale, 56)
+      : Math.max(...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36)));
     const height = Math.max(lines.length * fontSize * 1.08 + paddingY * 2, fontSize + paddingY * 2);
     const anchorX = this.toSvgX(shape.x);
     const left =
@@ -868,6 +887,8 @@ export class EditorPageComponent {
       case 'arrow':
         return 'A';
       case 'node':
+        return undefined;
+      case 'note':
         return 'N';
       case 'ellipse':
         return 'E';
@@ -1021,10 +1042,15 @@ export class EditorPageComponent {
       layers: false
     }));
     afterNextRender(() => {
-      this.layersSection()?.nativeElement.scrollIntoView({
-        block: 'start',
-        behavior: 'smooth'
-      });
+      this.rightSidebar()?.nativeElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      const sidebarScroll = this.sidebarScroll()?.nativeElement;
+      const layersSection = this.layersSection()?.nativeElement;
+      if (sidebarScroll && layersSection) {
+        const top = Math.max(layersSection.offsetTop - 12, 0);
+        sidebarScroll.scrollTo({ top, behavior: 'smooth' });
+      } else {
+        layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     });
   }
 
@@ -1751,6 +1777,7 @@ export class EditorPageComponent {
       | 'r'
       | 'rx'
       | 'ry'
+      | 'boxWidth'
       | 'fontSize'
       | 'rotation',
     event: Event
@@ -1759,9 +1786,27 @@ export class EditorPageComponent {
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
-  updateShapeBoolean(key: 'arrowStart' | 'arrowEnd', event: Event): void {
+  updateShapeBoolean(key: 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound', event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
     this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+  }
+
+  updateLineArrowScale(event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'line'
+        ? ({ ...shape, arrowScale: Number.isFinite(value) ? Math.min(3, Math.max(0.4, value)) : shape.arrowScale } as LineShape)
+        : shape
+    );
+  }
+
+  setLineArrowBendMode(value: string): void {
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'line' &&
+      (value === 'none' || value === 'flex' || value === 'flex-prime' || value === 'bend')
+        ? ({ ...shape, arrowBendMode: value } as LineShape)
+        : shape
+    );
   }
 
   setLineArrowDirection(direction: 'none' | 'forward' | 'backward' | 'both'): void {
@@ -1788,6 +1833,13 @@ export class EditorPageComponent {
   setLineArrowType(value: string): void {
     this.store.patchSelectedShape((shape) =>
       shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind } as LineShape) : shape
+    );
+  }
+
+  setTextBoxEnabled(event: Event): void {
+    const value = (event.target as HTMLInputElement).checked;
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'text' ? ({ ...shape, textBox: value } as CanvasShape) : shape
     );
   }
 
@@ -1956,7 +2008,7 @@ export class EditorPageComponent {
   }
 
   runContextAction(
-    action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup'
+    action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png'
   ): void {
     switch (action) {
       case 'copy':
@@ -1985,6 +2037,9 @@ export class EditorPageComponent {
         break;
       case 'ungroup':
         this.ungroupSelected();
+        break;
+      case 'png':
+        void this.downloadCanvasPng();
         break;
     }
     this.closeContextMenu();
@@ -2277,6 +2332,27 @@ export class EditorPageComponent {
     );
   }
 
+  arrowTipIconPath(arrowType: ArrowTipKind): string {
+    switch (arrowType) {
+      case 'latex':
+        return 'M4 10h12m0 0-4-4m4 4-4 4';
+      case 'triangle':
+        return 'M5 7 17 10 5 13Z';
+      case 'stealth':
+        return 'M5 10 15 6 12 10 15 14Z';
+      case 'diamond':
+        return 'M5 10 11 6 17 10 11 14Z';
+      case 'circle':
+        return 'M11 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0';
+      case 'bar':
+        return 'M5 10h8m4-4v8';
+      case 'hooks':
+        return 'M5 10h8m3-4c-2 0-2 2-2 4s0 4 2 4';
+      case 'bracket':
+        return 'M5 10h8m3-4h-2v8h2';
+    }
+  }
+
   selectionOutline(): {
     readonly x: number;
     readonly y: number;
@@ -2307,24 +2383,55 @@ export class EditorPageComponent {
   }
 
   arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
-    return `${shape.id}-${shape.arrowType}-${side}`;
+    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${side}`;
+  }
+
+  arrowMarkerBoxSize(shape: LineShape): number {
+    return 10 * shape.arrowScale;
+  }
+
+  arrowMarkerRefX(shape: LineShape, side: 'start' | 'end'): number {
+    return (side === 'start' ? 2 : 8) * shape.arrowScale;
+  }
+
+  arrowMarkerRefY(shape: LineShape): number {
+    return 3 * shape.arrowScale;
   }
 
   arrowMarkerPath(shape: LineShape): string {
+    const scale = shape.arrowScale;
     switch (shape.arrowType) {
       case 'triangle':
-        return 'M0,0 L0,6 L8,3 z';
+        return `M0,0 L0,${6 * scale} L${8 * scale},${3 * scale} z`;
+      case 'latex':
+        return `M0,0 L0,${6 * scale} L${8 * scale},${3 * scale} z`;
       case 'stealth':
-        return 'M0.5,3 L7.5,0.4 L5.6,3 L7.5,5.6 z';
+        return `M${0.5 * scale},${3 * scale} L${7.5 * scale},${0.4 * scale} L${5.6 * scale},${3 * scale} L${7.5 * scale},${5.6 * scale} z`;
       case 'diamond':
-        return 'M0,3 L3.8,0 L8,3 L3.8,6 z';
+        return `M0,${3 * scale} L${3.8 * scale},0 L${8 * scale},${3 * scale} L${3.8 * scale},${6 * scale} z`;
       case 'circle':
-        return 'M4,1.1 A1.9,1.9 0 1 1 4,4.9 A1.9,1.9 0 1 1 4,1.1 z';
+        return `M${4 * scale},${1.1 * scale} A${1.9 * scale},${1.9 * scale} 0 1 1 ${4 * scale},${4.9 * scale} A${1.9 * scale},${1.9 * scale} 0 1 1 ${4 * scale},${1.1 * scale} z`;
+      case 'bar':
+        return `M${8 * scale},0 L${8 * scale},${6 * scale}`;
+      case 'hooks':
+        return `M${8 * scale},${0.6 * scale} C${5 * scale},${0.6 * scale} ${5 * scale},${5.4 * scale} ${8 * scale},${5.4 * scale} M${4.4 * scale},${0.6 * scale} C${1.5 * scale},${0.6 * scale} ${1.5 * scale},${5.4 * scale} ${4.4 * scale},${5.4 * scale}`;
+      case 'bracket':
+        return `M${8 * scale},0 L${4 * scale},0 L${4 * scale},${6 * scale} L${8 * scale},${6 * scale}`;
     }
   }
 
   arrowMarkerFill(shape: LineShape): string {
-    return shape.arrowType === 'circle' ? 'none' : shape.arrowColor;
+    return shape.arrowOpen || shape.arrowType === 'circle' || shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket'
+      ? 'none'
+      : shape.arrowColor;
+  }
+
+  arrowMarkerStrokeLineJoin(shape: LineShape): 'round' | 'miter' {
+    return shape.arrowRound ? 'round' : 'miter';
+  }
+
+  arrowMarkerStrokeLineCap(shape: LineShape): 'round' | 'butt' {
+    return shape.arrowRound ? 'round' : 'butt';
   }
 
   gridColumns(): number[] {
@@ -2429,7 +2536,7 @@ export class EditorPageComponent {
         this.setActiveTool('arrow');
         return;
       case 'n':
-        this.setActiveTool('node');
+        this.setActiveTool('note');
         return;
       case 'e':
         this.setActiveTool('ellipse');
@@ -2756,6 +2863,10 @@ export class EditorPageComponent {
           stroke: preferences.defaultStroke,
           arrowColor: preferences.defaultStroke,
           arrowOpacity: 1,
+          arrowOpen: false,
+          arrowRound: false,
+          arrowScale: 1,
+          arrowBendMode: 'none',
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
         };
@@ -3518,6 +3629,16 @@ export class EditorPageComponent {
     return this.textLines(value).map((line) => this.renderDisplayText(line));
   }
 
+  displayTextLinesForShape(shape: TextShape): readonly string[] {
+    const sourceLines = this.displayTextLines(shape.text);
+    if (!shape.textBox) {
+      return sourceLines;
+    }
+
+    const maxChars = Math.max(Math.floor(shape.boxWidth / Math.max(shape.fontSize * 0.48, 0.12)), 4);
+    return sourceLines.flatMap((line) => this.wrapTextLine(line, maxChars));
+  }
+
   textSymbolGroupLabel(label: string): string {
     return this.t(`textSymbolGroup.${label.toLowerCase()}`);
   }
@@ -3604,15 +3725,41 @@ export class EditorPageComponent {
   }
 
   private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {
-    void scale;
-    return projectX(shape.x);
+    if (!shape.textBox) {
+      void scale;
+      return projectX(shape.x);
+    }
+    const width = shape.boxWidth * scale;
+    if (shape.textAlign === 'left') return projectX(shape.x);
+    if (shape.textAlign === 'right') return projectX(shape.x) + width;
+    return projectX(shape.x) + width / 2;
   }
 
   private estimateTextWidth(shape: TextShape, scale: number): number {
-    const lines = this.displayTextLines(shape.text);
-    return Math.max(
-      ...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale))
-    );
+    if (shape.textBox) {
+      return Math.max(shape.boxWidth * scale, shape.fontSize * scale);
+    }
+    const lines = this.displayTextLinesForShape(shape);
+    return Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale)));
+  }
+
+  private wrapTextLine(line: string, maxChars: number): readonly string[] {
+    if (line.length <= maxChars) return [line || ' '];
+    const words = line.split(/\s+/).filter(Boolean);
+    if (!words.length) return [line.slice(0, maxChars), ...this.wrapTextLine(line.slice(maxChars), maxChars)];
+    const rows: string[] = [];
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= maxChars || !current) {
+        current = candidate;
+      } else {
+        rows.push(current);
+        current = word;
+      }
+    }
+    if (current) rows.push(current);
+    return rows;
   }
 
   private buildCanvasExportDocument(): ExportSvgDocument {
@@ -3648,11 +3795,11 @@ export class EditorPageComponent {
       .filter((shape): shape is LineShape => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
       .map(
         (shape) => `
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" />
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" markerWidth="${this.arrowMarkerBoxSize(shape)}" markerHeight="${this.arrowMarkerBoxSize(shape)}" refX="${this.arrowMarkerRefX(shape, 'end')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto" markerUnits="strokeWidth">
+            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
           </marker>
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
-            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" />
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" markerWidth="${this.arrowMarkerBoxSize(shape)}" markerHeight="${this.arrowMarkerBoxSize(shape)}" refX="${this.arrowMarkerRefX(shape, 'start')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto-start-reverse" markerUnits="strokeWidth">
+            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
           </marker>`
       )
       .join('');

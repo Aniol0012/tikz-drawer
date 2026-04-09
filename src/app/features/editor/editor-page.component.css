@@ -1248,7 +1248,7 @@ kbd {
 
 .range-field {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(96px, 112px);
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 92px);
   gap: 8px;
   align-items: center;
 }
