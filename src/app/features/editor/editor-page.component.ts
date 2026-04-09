@@ -432,8 +432,8 @@ export class EditorPageComponent {
     properties: false,
     sceneSettings: false,
     layers: false,
-    generatedCode: false,
-    importCode: true
+    generatedCode: true,
+    importCode: false
   });
   readonly spacePressed = signal(false);
   readonly shiftPressed = signal(false);
@@ -574,6 +574,12 @@ export class EditorPageComponent {
   readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
   readonly xSliderRange = computed(() => this.sliderRange('x'));
   readonly ySliderRange = computed(() => this.sliderRange('y'));
+  readonly minimapFrame = computed(() => {
+    const aspectRatio = this.canvasWidth() / Math.max(this.canvasHeight(), 1);
+    const width = Math.min(240, Math.max(132, Math.round(this.canvasWidth() * 0.12)));
+    const height = Math.min(180, Math.max(96, Math.round(width / Math.max(aspectRatio, 0.35))));
+    return { width, height };
+  });
   readonly minimapOverview = computed<MinimapOverview | null>(() => {
     const sceneBounds = this.sceneContentBounds();
     if (!sceneBounds) return null;
@@ -586,14 +592,14 @@ export class EditorPageComponent {
     const top = Math.max(sceneBounds.top, visibleBounds.top) + padding;
     const width = Math.max(right - left, 1);
     const height = Math.max(top - bottom, 1);
-    const mapSize = 180;
-    const scaleX = mapSize / width;
-    const scaleY = mapSize / height;
+    const frame = this.minimapFrame();
+    const scaleX = frame.width / width;
+    const scaleY = frame.height / height;
     const scale = Math.min(scaleX, scaleY);
     const contentWidth = width * scale;
     const contentHeight = height * scale;
-    const offsetX = (mapSize - contentWidth) / 2;
-    const offsetY = (mapSize - contentHeight) / 2;
+    const offsetX = (frame.width - contentWidth) / 2;
+    const offsetY = (frame.height - contentHeight) / 2;
     const toMapX = (x: number): number => offsetX + (x - left) * scale;
     const toMapY = (y: number): number => offsetY + (top - y) * scale;
     const toMapRect = (bounds: SelectionBounds): MinimapRect => ({
@@ -604,8 +610,8 @@ export class EditorPageComponent {
     });
 
     return {
-      viewBoxWidth: mapSize,
-      viewBoxHeight: mapSize,
+      viewBoxWidth: frame.width,
+      viewBoxHeight: frame.height,
       worldLeft: left,
       worldTop: top,
       mapScale: scale,
@@ -840,8 +846,8 @@ export class EditorPageComponent {
   readonly highlightedSnippetCode = computed(() => highlightLatex(this.snippetExport().combined));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
-  readonly highlightedGeneratedImports = computed(() => highlightLatex(this.baseTikzExportBundle().imports));
-  readonly highlightedGeneratedCode = computed(() => highlightLatex(this.baseTikzExportBundle().code));
+  readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
+  readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
   readonly highlightedImportCode = computed(() => highlightLatex(this.store.importCode() || ' '));
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
@@ -930,7 +936,10 @@ export class EditorPageComponent {
       if (!this.pinnedToolsReady()) {
         return;
       }
-      this.document.defaultView?.localStorage?.setItem(this.pinnedToolsStorageKey, JSON.stringify(this.pinnedToolIds()));
+      this.document.defaultView?.localStorage?.setItem(
+        this.pinnedToolsStorageKey,
+        JSON.stringify(this.pinnedToolIds())
+      );
     });
   }
 
@@ -3415,10 +3424,10 @@ export class EditorPageComponent {
 
     try {
       const parsed = JSON.parse(raw);
-      const storedIds = Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
-      this.pinnedToolIds.set(
-        Array.from(new Set([...storedIds, ...templatePinnedIds]))
-      );
+      const storedIds = Array.isArray(parsed)
+        ? parsed.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+      this.pinnedToolIds.set(Array.from(new Set([...storedIds, ...templatePinnedIds])));
     } catch {
       this.pinnedToolIds.set(templatePinnedIds);
     }
@@ -3577,12 +3586,14 @@ export class EditorPageComponent {
     toMapY: (y: number) => number,
     scale: number
   ): MinimapShape {
+    const minimapStrokeWidth = (strokeWidth: number): number =>
+      Math.min(Math.max(strokeWidth * scale * 0.42, 0.16), 0.95);
     switch (shape.kind) {
       case 'line':
         return {
           kind: 'line',
           stroke: shape.stroke,
-          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           path: this.buildLinePath(shape, (point) => ({
             x: toMapX(point.x),
             y: toMapY(point.y)
@@ -3592,7 +3603,7 @@ export class EditorPageComponent {
         return {
           kind: 'rectangle',
           stroke: shape.stroke,
-          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           fill: shape.fill,
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
@@ -3604,7 +3615,7 @@ export class EditorPageComponent {
         return {
           kind: 'circle',
           stroke: shape.stroke,
-          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),
@@ -3614,7 +3625,7 @@ export class EditorPageComponent {
         return {
           kind: 'ellipse',
           stroke: shape.stroke,
-          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),
@@ -3647,7 +3658,7 @@ export class EditorPageComponent {
         return {
           kind: 'image',
           stroke: shape.stroke,
-          strokeWidth: Math.max(shape.strokeWidth * scale, 0.8),
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
           width: Math.max(shape.width * scale, 1.4),

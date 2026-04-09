@@ -747,6 +747,15 @@
 .preset-card__pin {
   width: 34px;
   height: 34px;
+  color: color-mix(in srgb, var(--muted-foreground) 84%, var(--app-foreground));
+}
+
+.preset-card__pin svg {
+  stroke-width: 2.1;
+}
+
+.preset-card__pin:hover {
+  color: var(--accent-strong);
 }
 
 .icon-button--danger-soft {
@@ -1038,8 +1047,6 @@ kbd {
   right: 14px;
   bottom: 14px;
   z-index: 4;
-  width: 156px;
-  height: 156px;
   padding: 6px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
@@ -1602,10 +1609,31 @@ kbd {
 .code-stack {
   display: grid;
   gap: 12px;
+  min-width: 0;
+}
+
+.code-stack--import {
+  gap: 10px;
 }
 
 .code-panel {
-  position: relative;
+  min-width: 0;
+}
+
+.code-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.code-panel__header--split {
+  justify-content: flex-end;
+}
+
+.code-panel__header h3 {
+  margin: 0;
+  font-size: 0.92rem;
 }
 
 .secondary-button--compact {
@@ -1621,6 +1649,14 @@ kbd {
   border-radius: 10px;
   background: color-mix(in srgb, var(--input-background) 96%, transparent);
   font: 500 0.8rem/1.65 var(--font-mono);
+}
+
+.code-block-shell {
+  position: relative;
+}
+
+.code-block-shell > .code-block {
+  padding-right: 58px;
 }
 
 .code-block {
@@ -1649,7 +1685,6 @@ kbd {
 .code-input {
   min-height: 180px;
   resize: vertical;
-  padding: 10px 12px;
 }
 
 .code-input--overlay {
@@ -1657,6 +1692,11 @@ kbd {
   inset: 0;
   min-height: 220px;
   resize: none;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre;
+  overflow-wrap: normal;
   background: transparent;
   color: transparent;
   caret-color: var(--app-foreground);
@@ -1670,14 +1710,11 @@ kbd {
 
 .code-editor {
   position: relative;
+  min-width: 0;
 }
 
 .code-editor__preview {
   pointer-events: none;
-}
-
-.code-copy-button--inline {
-  position: static;
 }
 
 .field--code-theme {
@@ -1852,6 +1889,7 @@ kbd {
 .export-section {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .share-panel--top {
@@ -1880,29 +1918,18 @@ kbd {
   flex: 1 1 280px;
 }
 
-.export-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.export-section__header h3 {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
 .code-copy-button {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   z-index: 2;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
   background: color-mix(in srgb, var(--panel-background) 96%, transparent);
   border-color: color-mix(in srgb, var(--tool-border) 82%, transparent);
-}
-
-.export-section__header .code-copy-button {
-  position: static;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-background) 88%, transparent);
 }
 
 :host ::ng-deep .tok-command {
@@ -2469,6 +2496,20 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .code-block,
+  .code-input {
+    font-size: 0.74rem;
+  }
+
+  .code-block-shell > .code-block {
+    padding-right: 50px;
+  }
+
+  .code-block--editor,
+  .code-input--overlay {
+    min-height: 180px;
+  }
+
   .form-grid--line-anchor {
     grid-template-columns: 1fr;
   }
@@ -2541,7 +2582,7 @@ button:disabled {
     justify-content: stretch;
   }
 
-  .export-section__header {
+  .code-panel__header {
     align-items: flex-start;
   }
 
