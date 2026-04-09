@@ -19,6 +19,7 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
       return {
         ...shape,
         anchors: shape.anchors ?? [],
+        lineMode: shape.lineMode ?? 'straight',
         strokeOpacity: shape.strokeOpacity ?? 1,
         arrowType: shape.arrowType ?? 'latex',
         arrowColor: shape.arrowColor ?? shape.stroke,
@@ -100,12 +101,50 @@ const shapeBounds = (
         }
       );
     case 'text': {
-      const lines = shape.text.split('\n');
-      const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
+      const lines = shape.textBox
+        ? shape.text.split('\n').flatMap((line) => {
+            const safeLine = line || ' ';
+            const maxChars = Math.max(Math.floor(shape.boxWidth / Math.max(shape.fontSize * 0.48, 0.12)), 4);
+            if (safeLine.length <= maxChars) {
+              return [safeLine];
+            }
+
+            const words = safeLine.split(/\s+/).filter(Boolean);
+            if (!words.length) {
+              return [safeLine];
+            }
+
+            const rows: string[] = [];
+            let current = '';
+            for (const word of words) {
+              const candidate = current ? `${current} ${word}` : word;
+              if (candidate.length <= maxChars || !current) {
+                current = candidate;
+              } else {
+                rows.push(current);
+                current = word;
+              }
+            }
+            if (current) {
+              rows.push(current);
+            }
+            return rows;
+          })
+        : shape.text.split('\n');
+      const width = shape.textBox
+        ? Math.max(shape.boxWidth, shape.fontSize)
+        : Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
       const height = Math.max(lines.length * shape.fontSize * 0.9, shape.fontSize * 0.72);
+      const left = shape.textBox
+        ? shape.x
+        : shape.textAlign === 'left'
+          ? shape.x
+          : shape.textAlign === 'right'
+            ? shape.x - width
+            : shape.x - width / 2;
       return {
-        left: shape.x - width / 2,
-        right: shape.x + width / 2,
+        left,
+        right: left + width,
         bottom: shape.y - height / 2,
         top: shape.y + height / 2
       };
@@ -212,6 +251,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         stroke: shape.stroke,
         strokeOpacity: shape.strokeOpacity ?? 1,
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+        lineMode: shape.lineMode ?? 'straight',
         arrowColor: shape.arrowColor ?? shape.stroke,
         arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1,
         arrowOpen: shape.arrowOpen ?? false,

@@ -73,7 +73,7 @@
 
     <div class="topbar__center">
       <div class="tool-cluster">
-        @for (tool of toolbarTools(); track tool.id) {
+        @for (tool of defaultToolbarTools(); track tool.id) {
           <button
             class="tool-button"
             type="button"
@@ -83,6 +83,20 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
             <span>{{ tool.label }}</span>
           </button>
+        }
+        @if (pinnedToolbarTools().length) {
+          <div class="tool-cluster__separator" aria-hidden="true"></div>
+          @for (tool of pinnedToolbarTools(); track tool.id) {
+            <button
+              class="tool-button tool-button--pinned"
+              type="button"
+              [class.is-active]="activeTool() === tool.id"
+              [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+              (click)="setActiveTool(tool.id)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
+              <span>{{ tool.label }}</span>
+            </button>
+          }
         }
       </div>
     </div>
@@ -185,6 +199,15 @@
                     <button
                       class="icon-button"
                       type="button"
+                      [title]="isToolPinned(template.id) ? t('unpinFromToolbar') : t('pinToToolbar')"
+                      (click)="togglePinnedTool(template.id, $event)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="isToolPinned(template.id) ? iconMap.pinOff : iconMap.pin"></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="icon-button"
+                      type="button"
                       [title]="t('edit')"
                       (click)="openEditTemplateDialog(template)">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -251,23 +274,36 @@
           @if (!isSectionCollapsed(section.category)) {
             <div class="preset-list">
               @for (preset of section.presets; track presetTrackBy($index, preset)) {
-                <button
-                  class="preset-card preset-card--library"
-                  type="button"
-                  [class.is-active]="activeTool() === preset.id"
-                  [title]="preset.title"
-                  (click)="setActiveTool(preset.id)">
-                  <span class="preset-card__icon"
-                    ><svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="presetIconPath(preset.icon)"></path></svg
-                  ></span>
-                  <span class="preset-card__body">
-                    <strong>{{ preset.title }}</strong>
-                  </span>
-                  @if (toolShortcut(preset.id); as shortcut) {
-                    <kbd>{{ shortcut }}</kbd>
+                <div class="preset-card preset-card--library-shell">
+                  <button
+                    class="preset-card preset-card--library"
+                    type="button"
+                    [class.is-active]="activeTool() === preset.id"
+                    [title]="preset.title"
+                    (click)="setActiveTool(preset.id)">
+                    <span class="preset-card__icon"
+                      ><svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="presetIconPath(preset.icon)"></path></svg
+                    ></span>
+                    <span class="preset-card__body">
+                      <strong>{{ preset.title }}</strong>
+                    </span>
+                    @if (toolShortcut(preset.id); as shortcut) {
+                      <kbd>{{ shortcut }}</kbd>
+                    }
+                  </button>
+                  @if (canPinPreset(preset)) {
+                    <button
+                      class="icon-button preset-card__pin"
+                      type="button"
+                      [title]="isToolPinned(preset.id) ? t('unpinFromToolbar') : t('pinToToolbar')"
+                      (click)="togglePinnedTool(preset.id, $event)">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="isToolPinned(preset.id) ? iconMap.pinOff : iconMap.pin"></path>
+                      </svg>
+                    </button>
                   }
-                </button>
+                </div>
               }
             </div>
           }
@@ -473,7 +509,7 @@
                       "
                       [attr.fill]="shape.color"
                       [attr.fill-opacity]="shape.colorOpacity">
-                      @for (line of displayTextLines(shape.text); track $index) {
+                      @for (line of displayTextLinesForShape(shape); track $index) {
                         <tspan
                           [attr.x]="textRenderX(shape)"
                           [attr.text-anchor]="textAnchor(shape.textAlign)"
@@ -624,7 +660,7 @@
                       "
                       [attr.fill]="previewShape.color"
                       [attr.fill-opacity]="previewShape.colorOpacity">
-                      @for (line of displayTextLines(previewShape.text); track $index) {
+                      @for (line of displayTextLinesForShape(previewShape); track $index) {
                         <tspan
                           [attr.x]="textRenderX(previewShape)"
                           [attr.text-anchor]="textAnchor(previewShape.textAlign)"
@@ -710,6 +746,7 @@
               <rect
                 class="selection-handle"
                 [class.selection-handle--anchor]="handle.variant === 'anchor'"
+                [class.selection-handle--ghost]="handle.variant === 'ghost-anchor'"
                 [attr.x]="handle.x - 5"
                 [attr.y]="handle.y - 5"
                 width="10"
@@ -1121,21 +1158,35 @@
                             <option value="both">{{ t('arrowDirectionBoth') }}</option>
                           </select></label
                         >
-                        <label class="field"
-                          ><span>{{ t('arrowType') }}</span
-                          ><select
-                            [value]="shape.arrowType"
-                            (change)="setLineArrowType($any($event.target).value)">
-                            <option value="triangle">{{ t('arrowTypeTriangle') }}</option>
-                            <option value="stealth">{{ t('arrowTypeStealth') }}</option>
-                            <option value="diamond">{{ t('arrowTypeDiamond') }}</option>
-                            <option value="circle">{{ t('arrowTypeCircle') }}</option>
+                        <label class="toggle-field"
+                          ><span>{{ t('lineMode') }}</span
+                          ><select [value]="shape.lineMode" (change)="setLineMode($any($event.target).value)">
+                            <option value="straight">{{ t('lineModeStraight') }}</option>
+                            <option value="curved">{{ t('lineModeCurved') }}</option>
                           </select></label
                         >
                       </div>
                       <div class="field field--full">
+                        <span>{{ t('arrowType') }}</span>
+                        <div class="arrow-tip-grid">
+                          @for (arrowType of arrowTipOptions; track arrowType.id) {
+                            <button
+                              class="arrow-tip-button"
+                              type="button"
+                              [class.is-active]="shape.arrowType === arrowType.id"
+                              [title]="arrowTipLabel(arrowType.id)"
+                              [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              (click)="setLineArrowType(arrowType.id)">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
+                              </svg>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="field field--full">
                         <span>{{ t('arrowAppearance') }}</span>
-                        <div class="color-pair-controls color-pair-controls--line">
+                        <div class="arrow-style-grid">
                           <label class="color-chip-field">
                             <small>{{ t('arrowColor') }}</small>
                             <input
@@ -1155,25 +1206,23 @@
                               >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
                             >
                           </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowOpen"
+                              (change)="updateShapeBoolean('arrowOpen', $event)" />
+                            <span>{{ t('arrowOpen') }}</span>
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowRound"
+                              (change)="updateShapeBoolean('arrowRound', $event)" />
+                            <span>{{ t('arrowRound') }}</span>
+                          </label>
                         </div>
                       </div>
                       <div class="form-grid form-grid--section">
-                        <label class="toggle-field"
-                          ><input
-                            type="checkbox"
-                            [checked]="shape.arrowOpen"
-                            (change)="updateShapeBoolean('arrowOpen', $event)" /><span>{{
-                            t('arrowOpen')
-                          }}</span></label
-                        >
-                        <label class="toggle-field"
-                          ><input
-                            type="checkbox"
-                            [checked]="shape.arrowRound"
-                            (change)="updateShapeBoolean('arrowRound', $event)" /><span>{{
-                            t('arrowRound')
-                          }}</span></label
-                        >
                         <label class="field"
                           ><span>{{ t('arrowScale') }} · {{ formatValue(shape.arrowScale) }}</span>
                           <div class="range-field">
@@ -2196,6 +2245,12 @@
           <path [attr.d]="iconMap.back"></path>
         </svg>
         <span>{{ t('sendToBack') }}</span>
+      </button>
+      <button type="button" (click)="runContextAction('png')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.download"></path>
+        </svg>
+        <span>{{ t('downloadPng') }}</span>
       </button>
       @if (canGroupSelection()) {
         <button type="button" (click)="runContextAction('group')">

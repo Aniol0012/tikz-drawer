@@ -418,6 +418,13 @@
   background: var(--tool-surface);
 }
 
+.tool-cluster__separator {
+  width: 1px;
+  align-self: stretch;
+  background: var(--tool-border);
+  margin: 4px 2px;
+}
+
 .topbar-actions {
   padding-left: 4px;
   flex-wrap: nowrap;
@@ -730,6 +737,18 @@
   padding: 8px 8px 8px 0;
 }
 
+.preset-card--library-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.preset-card__pin {
+  width: 34px;
+  height: 34px;
+}
+
 .icon-button--danger-soft {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
   border-color: color-mix(in srgb, var(--danger) 26%, var(--tool-border));
@@ -922,8 +941,9 @@ kbd {
   fill: color-mix(in srgb, var(--accent) 22%, var(--panel-background));
 }
 
-.arrow-head {
-  fill: currentColor;
+.selection-handle--ghost {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  stroke-dasharray: 3 2;
 }
 
 .canvas-empty {
@@ -1988,6 +2008,76 @@ kbd {
   margin-top: 12px;
 }
 
+.arrow-tip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.arrow-tip-button {
+  min-height: 42px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  color: inherit;
+  display: grid;
+  place-items: center;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.arrow-tip-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arrow-tip-button.is-active {
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.arrow-tip-button:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.arrow-style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+.toggle-field--checkbox {
+  grid-template-columns: auto 1fr;
+  min-height: 44px;
+  padding-inline: 12px;
+  align-content: center;
+}
+
+.toggle-field--checkbox span {
+  overflow-wrap: anywhere;
+}
+
+.arrow-style-grid .color-chip-field {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.arrow-style-grid .toggle-field {
+  min-width: 0;
+}
+
 .mode-switch--full {
   width: 100%;
   display: grid;
@@ -2318,6 +2408,11 @@ button:disabled {
 
   .color-pair-controls {
     grid-template-columns: 1fr;
+  }
+
+  .arrow-tip-grid,
+  .arrow-style-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .canvas-corner--top,

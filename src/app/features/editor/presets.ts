@@ -24,6 +24,7 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
   anchors: overrides.anchors ?? [],
+  lineMode: overrides.lineMode ?? 'straight',
   arrowStart: overrides.arrowStart ?? false,
   arrowEnd: overrides.arrowEnd ?? false,
   arrowType: overrides.arrowType ?? ('triangle' satisfies ArrowTipKind),
@@ -208,7 +209,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Note',
     'Text box for annotations and descriptions.',
     [createText({ name: 'Note', text: 'Note', textBox: true, boxWidth: 4.8, textAlign: 'left' })],
-    { quickAccess: true, searchTerms: ['note', 'text box', 'annotation', 'comment'] }
+    { searchTerms: ['note', 'text box', 'annotation', 'comment'] }
   ),
   createPreset(
     'label',
@@ -642,7 +643,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     { searchTerms: ['table', 'grid', 'matrix', 'data'] }
   ),
   createPreset(
-    'note',
+    'sticky-note',
     'interface',
     'document',
     'Note',

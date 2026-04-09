@@ -26,6 +26,7 @@ export interface LineShape extends CanvasShapeBase {
   readonly from: Point;
   readonly to: Point;
   readonly anchors: readonly Point[];
+  readonly lineMode: 'straight' | 'curved';
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
   readonly arrowType: ArrowTipKind;

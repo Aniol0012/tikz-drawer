@@ -50,7 +50,19 @@ type InspectorTab = 'properties' | 'scene' | 'code';
 type ExportMode = 'snippet' | 'standalone';
 type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 type ToolId = 'select' | string;
-type ResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'from' | 'to' | `anchor-${number}`;
+type ResizeHandle =
+  | 'nw'
+  | 'n'
+  | 'ne'
+  | 'e'
+  | 'se'
+  | 's'
+  | 'sw'
+  | 'w'
+  | 'from'
+  | 'to'
+  | `anchor-${number}`
+  | `insert-anchor-${number}`;
 type ContextTarget = 'canvas' | 'shape';
 
 interface ToastNotification {
@@ -110,7 +122,7 @@ interface HandleDescriptor {
   readonly x: number;
   readonly y: number;
   readonly cursor: string;
-  readonly variant?: 'endpoint' | 'anchor';
+  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor';
 }
 
 interface MoveInteractionState {
@@ -315,6 +327,7 @@ interface MinimapOverview {
 })
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
+  private readonly pinnedToolsStorageKey = 'tikz-drawer.pinned-tools';
   private readonly languageStorageKey = 'tikz-drawer.language';
   private readonly codeThemeStorageKey = 'tikz-drawer.code-theme';
   private readonly editorStateStorageKey = 'tikz-drawer.state';
@@ -376,6 +389,7 @@ export class EditorPageComponent {
   readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
   readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
+  readonly pinnedToolIds = signal<readonly string[]>([]);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<'info' | 'warning'>('info');
@@ -611,7 +625,7 @@ export class EditorPageComponent {
       fontStyle: shape.fontStyle
     };
   });
-  readonly toolbarTools = computed<readonly ToolDescriptor[]>(() => [
+  readonly defaultToolbarTools = computed<readonly ToolDescriptor[]>(() => [
     {
       id: 'select',
       label: this.t('selection'),
@@ -620,7 +634,7 @@ export class EditorPageComponent {
       shortcut: 'V'
     },
     ...this.allInsertablePresets()
-      .filter((preset) => preset.quickAccess)
+      .filter((preset) => preset.quickAccess && preset.id !== 'note')
       .map((preset) => ({
         id: preset.id,
         label: this.presetTitle(preset),
@@ -629,6 +643,18 @@ export class EditorPageComponent {
         shortcut: this.toolShortcut(preset.id)
       }))
   ]);
+  readonly pinnedToolbarTools = computed<readonly ToolDescriptor[]>(() =>
+    this.pinnedToolIds()
+      .map((id) => this.allInsertablePresets().find((preset) => preset.id === id))
+      .filter((preset): preset is ObjectPreset => !!preset)
+      .map((preset) => ({
+        id: preset.id,
+        label: this.presetTitle(preset),
+        description: this.presetDescription(preset),
+        iconPath: getIconPath(preset.icon),
+        shortcut: this.toolShortcut(preset.id)
+      }))
+  );
   readonly librarySections = computed<readonly LibrarySection[]>(() => {
     const query = this.libraryQuery().trim().toLowerCase();
     return categoryOrder
@@ -672,6 +698,7 @@ export class EditorPageComponent {
     const selectedShape = this.selectedShape();
     if (!selectedShape) return [];
     if (selectedShape.kind === 'line') {
+      const points = this.linePoints(selectedShape);
       return [
         {
           id: 'from',
@@ -687,6 +714,16 @@ export class EditorPageComponent {
           cursor: 'grab',
           variant: 'anchor' as const
         })),
+        ...points.slice(0, -1).map((point, index) => {
+          const nextPoint = points[index + 1];
+          return {
+            id: `insert-anchor-${index}` as const,
+            x: this.toSvgX((point.x + nextPoint.x) / 2),
+            y: this.toSvgY((point.y + nextPoint.y) / 2),
+            cursor: 'copy',
+            variant: 'ghost-anchor' as const
+          };
+        }),
         {
           id: 'to',
           x: this.toSvgX(selectedShape.to.x),
@@ -799,6 +836,7 @@ export class EditorPageComponent {
       updateCanvasSize();
       updateTopbarActions();
       this.restoreSavedTemplates();
+      this.restorePinnedTools();
       void this.restoreSharedSceneFromUrl();
       const handleStorage = (event: StorageEvent) => {
         if (event.key === this.languageStorageKey && event.newValue) {
@@ -842,6 +880,9 @@ export class EditorPageComponent {
     effect(() => {
       this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
+    effect(() => {
+      this.document.defaultView?.localStorage?.setItem(this.pinnedToolsStorageKey, JSON.stringify(this.pinnedToolIds()));
+    });
   }
 
   t(key: string): string {
@@ -862,6 +903,22 @@ export class EditorPageComponent {
 
   presetDescription(preset: ObjectPreset): string {
     return this.tOrFallback(`preset.${preset.id}.description`, preset.description);
+  }
+
+  canPinPreset(preset: ObjectPreset): boolean {
+    return !preset.quickAccess || !!this.savedTemplates().find((template) => template.id === preset.id);
+  }
+
+  isToolPinned(toolId: string): boolean {
+    return this.pinnedToolIds().includes(toolId);
+  }
+
+  togglePinnedTool(toolId: string, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    this.pinnedToolIds.update((ids) =>
+      ids.includes(toolId) ? ids.filter((id) => id !== toolId) : [...ids, toolId]
+    );
   }
 
   scenePresetTitle(preset: ScenePreset): string {
@@ -886,8 +943,6 @@ export class EditorPageComponent {
         return 'L';
       case 'arrow':
         return 'A';
-      case 'node':
-        return undefined;
       case 'note':
         return 'N';
       case 'ellipse':
@@ -1042,15 +1097,18 @@ export class EditorPageComponent {
       layers: false
     }));
     afterNextRender(() => {
-      this.rightSidebar()?.nativeElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      const sidebarScroll = this.sidebarScroll()?.nativeElement;
-      const layersSection = this.layersSection()?.nativeElement;
-      if (sidebarScroll && layersSection) {
-        const top = Math.max(layersSection.offsetTop - 12, 0);
-        sidebarScroll.scrollTo({ top, behavior: 'smooth' });
-      } else {
+      this.rightSidebar()?.nativeElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      const scrollIntoLayers = () => {
+        const sidebarScroll = this.sidebarScroll()?.nativeElement;
+        const layersSection = this.layersSection()?.nativeElement;
+        if (sidebarScroll && layersSection) {
+          const top = Math.max(layersSection.offsetTop - 12, 0);
+          sidebarScroll.scrollTo({ top, behavior: 'smooth' });
+          return;
+        }
         layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }
+      };
+      requestAnimationFrame(() => requestAnimationFrame(scrollIntoLayers));
     });
   }
 
@@ -1163,6 +1221,7 @@ export class EditorPageComponent {
     }
 
     this.savedTemplates.update((templates) => templates.filter((entry) => entry.id !== template.id));
+    this.pinnedToolIds.update((ids) => ids.filter((id) => id !== template.id));
     this.persistSavedTemplates();
     if (this.activeTool() === template.id) {
       this.activeTool.set('select');
@@ -1836,11 +1895,46 @@ export class EditorPageComponent {
     );
   }
 
+  setLineMode(value: string): void {
+    this.store.patchSelectedShape((shape) =>
+      shape.kind === 'line' && (value === 'straight' || value === 'curved')
+        ? ({
+            ...shape,
+            lineMode: value,
+            anchors:
+              value === 'curved' && shape.anchors.length === 0
+                ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }]
+                : shape.anchors
+          } as LineShape)
+        : shape
+    );
+  }
+
   setTextBoxEnabled(event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
-    this.store.patchSelectedShape((shape) =>
-      shape.kind === 'text' ? ({ ...shape, textBox: value } as CanvasShape) : shape
-    );
+    this.store.patchSelectedShape((shape) => {
+      if (shape.kind !== 'text') {
+        return shape;
+      }
+
+      if (shape.textBox === value) {
+        return shape;
+      }
+
+      const alignedX = value
+        ? shape.textAlign === 'left'
+          ? shape.x
+          : shape.textAlign === 'right'
+            ? shape.x - shape.boxWidth
+            : shape.x - shape.boxWidth / 2
+        : shape.textAlign === 'left'
+          ? shape.x
+          : shape.textAlign === 'right'
+            ? shape.x + shape.boxWidth
+            : shape.x + shape.boxWidth / 2;
+
+      return { ...shape, textBox: value, x: alignedX } as CanvasShape;
+    });
   }
 
   updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
@@ -2175,6 +2269,38 @@ export class EditorPageComponent {
 
     event.preventDefault();
     event.stopPropagation();
+
+    if (selectedShape.kind === 'line' && handle.startsWith('insert-anchor-')) {
+      const segmentIndex = Number(handle.slice('insert-anchor-'.length));
+      const points = this.linePoints(selectedShape);
+      const fromPoint = points[segmentIndex];
+      const toPoint = points[segmentIndex + 1];
+      if (!fromPoint || !toPoint) {
+        return;
+      }
+
+      const anchor = this.toScenePoint(event.clientX, event.clientY);
+      this.store.recordHistoryCheckpoint();
+      this.store.patchSelectedShape((shape) => {
+        if (shape.kind !== 'line') {
+          return shape;
+        }
+
+        const anchorIndex = Math.max(Math.min(segmentIndex, shape.anchors.length), 0);
+        const anchors = [...shape.anchors];
+        anchors.splice(anchorIndex, 0, anchor);
+        return { ...shape, anchors } as LineShape;
+      });
+      this.interactionState.set({
+        kind: 'resize',
+        pointerId: event.pointerId,
+        handle: `anchor-${segmentIndex}` as ResizeHandle,
+        initialShape: structuredClone(this.selectedShape() ?? selectedShape)
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
+
     this.store.recordHistoryCheckpoint();
     this.interactionState.set({
       kind: 'resize',
@@ -2353,6 +2479,27 @@ export class EditorPageComponent {
     }
   }
 
+  arrowTipLabel(arrowType: ArrowTipKind): string {
+    switch (arrowType) {
+      case 'latex':
+        return this.t('arrowTypeLatex');
+      case 'triangle':
+        return this.t('arrowTypeTriangle');
+      case 'stealth':
+        return this.t('arrowTypeStealth');
+      case 'diamond':
+        return this.t('arrowTypeDiamond');
+      case 'circle':
+        return this.t('arrowTypeCircle');
+      case 'bar':
+        return this.t('arrowTypeBar');
+      case 'hooks':
+        return this.t('arrowTypeHooks');
+      case 'bracket':
+        return this.t('arrowTypeBracket');
+    }
+  }
+
   selectionOutline(): {
     readonly x: number;
     readonly y: number;
@@ -2421,7 +2568,7 @@ export class EditorPageComponent {
   }
 
   arrowMarkerFill(shape: LineShape): string {
-    return shape.arrowOpen || shape.arrowType === 'circle' || shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket'
+    return shape.arrowOpen || shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket'
       ? 'none'
       : shape.arrowColor;
   }
@@ -3041,6 +3188,7 @@ export class EditorPageComponent {
           id,
           x: (shape.x - originX) * scaleX + originX + deltaX,
           y: (shape.y - originY) * scaleY + originY + deltaY,
+          boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, 1.2) : shape.boxWidth,
           fontSize: Math.max(shape.fontSize * Math.max(Math.min(scaleX, scaleY), 0.7), 0.2)
         };
       case 'image':
@@ -3090,6 +3238,21 @@ export class EditorPageComponent {
       this.savedTemplates.set(Array.isArray(parsed) ? parsed : []);
     } catch {
       this.savedTemplates.set([]);
+    }
+  }
+
+  private restorePinnedTools(): void {
+    const raw = this.document.defaultView?.localStorage?.getItem(this.pinnedToolsStorageKey);
+    if (!raw) {
+      this.pinnedToolIds.set([]);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      this.pinnedToolIds.set(Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []);
+    } catch {
+      this.pinnedToolIds.set([]);
     }
   }
 
@@ -3216,6 +3379,12 @@ export class EditorPageComponent {
       return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
     }
 
+    if (shape.lineMode === 'straight') {
+      return points
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+        .join(' ');
+    }
+
     let path = `M ${points[0].x} ${points[0].y}`;
     for (let index = 0; index < points.length - 1; index += 1) {
       const previous = points[index - 1] ?? points[index];
@@ -3287,15 +3456,17 @@ export class EditorPageComponent {
           ry: Math.max(shape.ry * scale, 0.9)
         };
       case 'text': {
-        const lines = this.textLines(shape.text);
-        const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, 1.6)));
+        const lines = this.displayTextLinesForShape(shape);
+        const width = this.estimateTextWidth(shape, scale);
         const height = Math.max(lines.length * shape.fontSize * 0.88 * scale, 1.2);
         const left =
-          shape.textAlign === 'left'
+          shape.textBox
             ? toMapX(shape.x)
-            : shape.textAlign === 'right'
-              ? toMapX(shape.x) - width
-              : toMapX(shape.x) - width / 2;
+            : shape.textAlign === 'left'
+              ? toMapX(shape.x)
+              : shape.textAlign === 'right'
+                ? toMapX(shape.x) - width
+                : toMapX(shape.x) - width / 2;
         return {
           kind: 'text',
           stroke: 'transparent',
@@ -3355,11 +3526,17 @@ export class EditorPageComponent {
           }
         );
       case 'text': {
-        const lines = this.textLines(shape.text);
-        const width = Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
+        const lines = this.displayTextLinesForShape(shape);
+        const width = this.estimateTextWidth(shape, 1);
         const height = Math.max(lines.length * shape.fontSize * 0.88, shape.fontSize * 0.72);
         const left =
-          shape.textAlign === 'left' ? shape.x : shape.textAlign === 'right' ? shape.x - width : shape.x - width / 2;
+          shape.textBox
+            ? shape.x
+            : shape.textAlign === 'left'
+              ? shape.x
+              : shape.textAlign === 'right'
+                ? shape.x - width
+                : shape.x - width / 2;
         return {
           left,
           right: left + width,
@@ -3403,6 +3580,16 @@ export class EditorPageComponent {
     const scaleX = nextWidth / originalWidth;
     const scaleY = nextHeight / originalHeight;
     const scale = Math.max(Math.min(scaleX, scaleY), 0.35);
+
+    if (shape.textBox) {
+      return {
+        ...shape,
+        x: resizedBounds.left,
+        y: (resizedBounds.top + resizedBounds.bottom) / 2,
+        boxWidth: Math.max(resizedBounds.right - resizedBounds.left, 1.2),
+        fontSize: Math.max(shape.fontSize * scale, 0.2)
+      };
+    }
 
     return {
       ...shape,
@@ -3830,7 +4017,7 @@ export class EditorPageComponent {
             const rotate = shape.rotation
               ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"`
               : '';
-            const lines = this.displayTextLines(shape.text)
+            const lines = this.displayTextLinesForShape(shape)
               .map(
                 (line, index) =>
                   `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * 1.14}">${this.escapeXml(line)}</tspan>`

@@ -34,6 +34,7 @@ export const iconPaths = {
   circle: 'M12 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z',
   ellipse: 'M12 6.5c4.42 0 8 2.46 8 5.5s-3.58 5.5-8 5.5S4 15.04 4 12s3.58-5.5 8-5.5Z',
   node: 'M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0-4v2M12 17v2M5 12h2m10 0h2',
+  note: 'M6 5.5h12v13H6v-13Zm2 3h8M8 11h8M8 14.5h5',
   text: 'M6 6.5h12M12 6.5v11',
   image:
     'M5.5 6.5A1.5 1.5 0 0 1 7 5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19H7a1.5 1.5 0 0 1-1.5-1.5v-11Zm2 9 3.2-3.6 2.5 2.8 2-2.2 2.3 2.9M9 9.25h.01',
@@ -64,6 +65,8 @@ export const iconPaths = {
   pencil: 'M17.5 3.5a2.12 2.12 0 0 1 3 3L7 20l-4 1 1-4Z',
   front: 'M8 8h8v8H8V8Zm4-4h8v8h-2.5v-5.5H12V4Z',
   back: 'M12 8h8v8h-8V8ZM4 12h8v8H4v-8Z',
+  pin: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7',
+  pinOff: 'M6 6l12 12M15 4v5l3 3v1H9',
   layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75'
 } satisfies Record<string, string>;
 

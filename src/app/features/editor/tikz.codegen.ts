@@ -126,7 +126,9 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
 
 const arrowTipSpec = (shape: LineShape): string => {
   const options = [`draw=${shape.arrowColor}`];
-  if (shape.arrowOpen || shape.arrowType === 'circle') {
+  if (shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket') {
+    // These tips are stroked shapes, so fill/open does not materially apply.
+  } else if (shape.arrowOpen) {
     options.push('open');
   } else {
     options.push(`fill=${shape.arrowColor}`);
@@ -166,11 +168,12 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
   }
 
   const points = [shape.from, ...shape.anchors, shape.to];
+  const pointList = points.map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`);
   const path =
     shape.anchors.length > 0
-      ? `plot[smooth] coordinates {${points
-          .map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`)
-          .join(' ')}}`
+      ? shape.lineMode === 'curved'
+        ? `plot[smooth] coordinates {${pointList.join(' ')}}`
+        : pointList.join(' -- ')
       : `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
 
   return `\\draw[${entries.join(', ')}] ${path};`;
