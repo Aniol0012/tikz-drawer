@@ -107,6 +107,7 @@ interface SavedTemplate {
   readonly title: string;
   readonly description: string;
   readonly icon: string;
+  readonly pinned?: boolean;
   readonly shapes: readonly CanvasShape[];
 }
 
@@ -161,12 +162,19 @@ interface InsertInteractionState {
   readonly currentWorldPoint: Point;
 }
 
+interface FreehandInteractionState {
+  readonly kind: 'freehand';
+  readonly pointerId: number;
+  readonly points: readonly Point[];
+}
+
 type InteractionState =
   | MoveInteractionState
   | PanInteractionState
   | ResizeInteractionState
   | MarqueeInteractionState
-  | InsertInteractionState;
+  | InsertInteractionState
+  | FreehandInteractionState;
 
 interface ContextMenuState {
   readonly clientX: number;
@@ -390,6 +398,7 @@ export class EditorPageComponent {
   readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly pinnedToolIds = signal<readonly string[]>([]);
+  readonly pinnedToolsReady = signal(false);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<'info' | 'warning'>('info');
@@ -400,6 +409,7 @@ export class EditorPageComponent {
   readonly editingTemplateId = signal<string | null>(null);
   readonly templateTitleInput = signal('');
   readonly templateDescriptionInput = signal('');
+  readonly templateIconInput = signal('library');
   readonly templateUseCurrentSelection = signal(true);
   readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
   readonly inlineTextEditor = signal<InlineTextEditorState | null>(null);
@@ -496,6 +506,27 @@ export class EditorPageComponent {
     { id: 'hooks', title: 'Hooks' },
     { id: 'bracket', title: 'Bracket' }
   ];
+  readonly templateIconOptions = [
+    'pencil',
+    'arrow',
+    'segment',
+    'rectangle',
+    'circle',
+    'ellipse',
+    'text',
+    'note',
+    'document',
+    'card',
+    'image',
+    'triangle',
+    'decision',
+    'database',
+    'bars',
+    'browser',
+    'pipeline',
+    'hub',
+    'library'
+  ] as const;
 
   readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
   readonly allInsertablePresets = computed<readonly ObjectPreset[]>(() => [
@@ -522,6 +553,9 @@ export class EditorPageComponent {
     () => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null
   );
   readonly activeToolLabel = computed(() => {
+    if (this.activeTool() === 'pencil') {
+      return this.t('freeDraw');
+    }
     const preset = this.activePreset();
     return preset ? this.presetTitle(preset) : this.t('selection');
   });
@@ -632,6 +666,13 @@ export class EditorPageComponent {
       description: this.t('selection'),
       iconPath: getIconPath('select'),
       shortcut: 'V'
+    },
+    {
+      id: 'pencil',
+      label: this.t('freeDraw'),
+      description: this.t('freeDraw'),
+      iconPath: getIconPath('pencil'),
+      shortcut: 'P'
     },
     ...this.allInsertablePresets()
       .filter((preset) => preset.quickAccess && preset.id !== 'note')
@@ -770,6 +811,10 @@ export class EditorPageComponent {
   readonly insertionPreviewShapes = computed<readonly CanvasShape[]>(() => {
     const interactionState = this.interactionState();
     if (!interactionState || interactionState.kind !== 'insert') {
+      if (interactionState?.kind === 'freehand') {
+        const line = this.buildFreehandLine(interactionState.points, 'preview-freehand');
+        return line ? [line] : [];
+      }
       return [];
     }
 
@@ -837,6 +882,7 @@ export class EditorPageComponent {
       updateTopbarActions();
       this.restoreSavedTemplates();
       this.restorePinnedTools();
+      this.pinnedToolsReady.set(true);
       void this.restoreSharedSceneFromUrl();
       const handleStorage = (event: StorageEvent) => {
         if (event.key === this.languageStorageKey && event.newValue) {
@@ -881,10 +927,10 @@ export class EditorPageComponent {
       this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
     effect(() => {
-      this.document.defaultView?.localStorage?.setItem(
-        this.pinnedToolsStorageKey,
-        JSON.stringify(this.pinnedToolIds())
-      );
+      if (!this.pinnedToolsReady()) {
+        return;
+      }
+      this.document.defaultView?.localStorage?.setItem(this.pinnedToolsStorageKey, JSON.stringify(this.pinnedToolIds()));
     });
   }
 
@@ -919,7 +965,21 @@ export class EditorPageComponent {
   togglePinnedTool(toolId: string, event?: Event): void {
     event?.stopPropagation();
     event?.preventDefault();
+    const willPin = !this.pinnedToolIds().includes(toolId);
     this.pinnedToolIds.update((ids) => (ids.includes(toolId) ? ids.filter((id) => id !== toolId) : [...ids, toolId]));
+    let hasTemplateUpdate = false;
+    this.savedTemplates.update((templates) =>
+      templates.map((template) => {
+        if (template.id !== toolId) {
+          return template;
+        }
+        hasTemplateUpdate = true;
+        return { ...template, pinned: willPin };
+      })
+    );
+    if (hasTemplateUpdate) {
+      this.persistSavedTemplates();
+    }
   }
 
   scenePresetTitle(preset: ScenePreset): string {
@@ -944,6 +1004,8 @@ export class EditorPageComponent {
         return 'L';
       case 'arrow':
         return 'A';
+      case 'pencil':
+        return 'P';
       case 'note':
         return 'N';
       case 'ellipse':
@@ -1118,7 +1180,7 @@ export class EditorPageComponent {
   }
 
   setActiveTool(toolId: ToolId): void {
-    if (toolId !== 'select' && this.activeTool() === toolId) {
+    if (toolId !== 'select' && toolId !== 'pencil' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
         this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
         this.activeTool.set('select');
@@ -1141,6 +1203,7 @@ export class EditorPageComponent {
     this.editingTemplateId.set(null);
     this.templateTitleInput.set(this.selectionLabel());
     this.templateDescriptionInput.set('');
+    this.templateIconInput.set(this.iconForShapes(this.selectedShapes()));
     this.templateUseCurrentSelection.set(true);
     this.templateDialogOpen.set(true);
   }
@@ -1150,6 +1213,7 @@ export class EditorPageComponent {
     this.editingTemplateId.set(template.id);
     this.templateTitleInput.set(template.title);
     this.templateDescriptionInput.set(template.description);
+    this.templateIconInput.set(template.icon);
     this.templateUseCurrentSelection.set(false);
     this.templateDialogOpen.set(true);
   }
@@ -1157,6 +1221,7 @@ export class EditorPageComponent {
   closeTemplateDialog(): void {
     this.templateDialogOpen.set(false);
     this.editingTemplateId.set(null);
+    this.templateIconInput.set('library');
   }
 
   updateTemplateDialogText(key: 'title' | 'description', event: Event): void {
@@ -1166,6 +1231,10 @@ export class EditorPageComponent {
       return;
     }
     this.templateDescriptionInput.set(value);
+  }
+
+  setTemplateIcon(icon: string): void {
+    this.templateIconInput.set(icon);
   }
 
   updateTemplateUseCurrentSelection(event: Event): void {
@@ -1193,7 +1262,8 @@ export class EditorPageComponent {
       id: mode === 'edit' && existing ? existing.id : crypto.randomUUID(),
       title,
       description: this.templateDescriptionInput().trim(),
-      icon: this.iconForShapes(sourceShapes),
+      icon: this.templateIconInput() || this.iconForShapes(sourceShapes),
+      pinned: existing?.pinned ?? false,
       shapes: structuredClone(sourceShapes)
     };
 
@@ -2157,6 +2227,16 @@ export class EditorPageComponent {
       return;
     }
 
+    if (event.button === 0 && this.activeTool() === 'pencil') {
+      this.interactionState.set({
+        kind: 'freehand',
+        pointerId: event.pointerId,
+        points: [this.toScenePoint(event.clientX, event.clientY)]
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
+
     if (event.button === 0 && this.activeTool() !== 'select' && this.canPreviewInsert(this.activeTool())) {
       const worldPoint = this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY));
       this.interactionState.set({
@@ -2357,6 +2437,24 @@ export class EditorPageComponent {
       return;
     }
 
+    if (interactionState.kind === 'freehand') {
+      const nextPoint = this.toScenePoint(event.clientX, event.clientY);
+      const lastPoint = interactionState.points.at(-1);
+      if (!lastPoint) {
+        this.interactionState.set({ ...interactionState, points: [nextPoint] });
+        return;
+      }
+      const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
+      if (distance < 0.18) {
+        return;
+      }
+      this.interactionState.set({
+        ...interactionState,
+        points: [...interactionState.points, nextPoint]
+      });
+      return;
+    }
+
     const resizedShape = this.resizeShape(
       interactionState.initialShape,
       interactionState.handle,
@@ -2395,6 +2493,17 @@ export class EditorPageComponent {
         this.runSceneMutation(() => {
           this.store.addShapes(previewShapes.map((shape) => ({ ...shape, id: crypto.randomUUID() })));
           this.activeTool.set('select');
+          this.inspectorTab.set('properties');
+        });
+      }
+    }
+
+    if (interactionState.kind === 'freehand') {
+      const line = this.buildFreehandLine(interactionState.points);
+      if (line) {
+        this.runSceneMutation(() => {
+          this.store.addShapes([line]);
+          this.store.selectShape(line.id);
           this.inspectorTab.set('properties');
         });
       }
@@ -2669,6 +2778,9 @@ export class EditorPageComponent {
     switch (event.key.toLowerCase()) {
       case 'v':
         this.setActiveTool('select');
+        return;
+      case 'p':
+        this.setActiveTool('pencil');
         return;
       case 't':
         this.setActiveTool('label');
@@ -3107,6 +3219,53 @@ export class EditorPageComponent {
     );
   }
 
+  private buildFreehandLine(points: readonly Point[], id: string = crypto.randomUUID()): LineShape | null {
+    const simplified = points.reduce<Point[]>((accumulator, point, index) => {
+      if (index === 0) {
+        accumulator.push(point);
+        return accumulator;
+      }
+
+      const previous = accumulator.at(-1);
+      if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) >= 0.18) {
+        accumulator.push(point);
+      }
+      return accumulator;
+    }, []);
+
+    if (simplified.length < 2) {
+      return null;
+    }
+
+    const [from, ...rest] = simplified;
+    const to = rest.at(-1);
+    if (!to) {
+      return null;
+    }
+
+    return this.applyInsertionDefaults({
+      id,
+      name: this.t('freeDraw'),
+      kind: 'line',
+      stroke: this.preferences().defaultStroke,
+      strokeOpacity: 1,
+      strokeWidth: this.preferences().defaultStrokeWidth,
+      from,
+      to,
+      anchors: rest.slice(0, -1),
+      lineMode: 'curved',
+      arrowStart: false,
+      arrowEnd: false,
+      arrowType: 'latex',
+      arrowColor: this.preferences().defaultStroke,
+      arrowOpacity: 1,
+      arrowOpen: false,
+      arrowRound: false,
+      arrowScale: 1,
+      arrowBendMode: 'none'
+    }) as LineShape;
+  }
+
   private insertPresetAt(toolId: ToolId, point: Point): void {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
@@ -3246,18 +3405,22 @@ export class EditorPageComponent {
 
   private restorePinnedTools(): void {
     const raw = this.document.defaultView?.localStorage?.getItem(this.pinnedToolsStorageKey);
+    const templatePinnedIds = this.savedTemplates()
+      .filter((template) => template.pinned)
+      .map((template) => template.id);
     if (!raw) {
-      this.pinnedToolIds.set([]);
+      this.pinnedToolIds.set(templatePinnedIds);
       return;
     }
 
     try {
       const parsed = JSON.parse(raw);
+      const storedIds = Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
       this.pinnedToolIds.set(
-        Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : []
+        Array.from(new Set([...storedIds, ...templatePinnedIds]))
       );
     } catch {
-      this.pinnedToolIds.set([]);
+      this.pinnedToolIds.set(templatePinnedIds);
     }
   }
 

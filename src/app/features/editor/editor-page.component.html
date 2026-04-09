@@ -1087,7 +1087,7 @@
               <div class="form-grid">
                 @switch (shape.kind) {
                   @case ('line') {
-                    <div class="property-group field--full">
+                    <div class="property-group property-group--arrow field--full">
                       <div class="property-group__title">{{ t('geometry') }}</div>
                       <div class="form-grid form-grid--section">
                         <label class="field"
@@ -1291,7 +1291,7 @@
                           <div class="form-grid form-grid--line-anchor">
                             <label class="field"
                               ><span>{{ t('x') }}</span>
-                              <div class="range-field">
+                              <div class="range-field range-field--anchor">
                                 <input
                                   type="range"
                                   [min]="xSliderRange().min"
@@ -1306,7 +1306,7 @@
                             ></label>
                             <label class="field"
                               ><span>{{ t('y') }}</span>
-                              <div class="range-field">
+                              <div class="range-field range-field--anchor">
                                 <input
                                   type="range"
                                   [min]="ySliderRange().min"
@@ -2313,6 +2313,23 @@
               [value]="templateDescriptionInput()"
               (input)="updateTemplateDialogText('description', $event)" />
           </label>
+          <div class="field field--full">
+            <span>{{ t('templateIcon') }}</span>
+            <div class="template-icon-grid">
+              @for (icon of templateIconOptions; track icon) {
+                <button
+                  class="template-icon-button"
+                  type="button"
+                  [class.is-active]="templateIconInput() === icon"
+                  [title]="icon"
+                  (click)="setTemplateIcon(icon)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="presetIconPath(icon)"></path>
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
           @if (templateDialogMode() === 'edit' && selectionCount() > 0) {
             <label class="toggle-field field--full">
               <input

@@ -1273,6 +1273,10 @@ kbd {
   align-items: center;
 }
 
+.range-field--anchor {
+  grid-template-columns: minmax(0, 1fr) 70px;
+}
+
 .range-field input[type='range'],
 .canvas-control-group input[type='range'] {
   width: 100%;
@@ -1802,7 +1806,7 @@ kbd {
 }
 
 .export-settings-modal--template {
-  width: min(520px, 100%);
+  width: min(640px, 100%);
 }
 
 .export-modal__header,
@@ -2053,14 +2057,14 @@ kbd {
 
 .arrow-style-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: start;
 }
 
 .toggle-field--checkbox {
   grid-template-columns: auto 1fr;
-  min-height: 44px;
+  min-height: 48px;
   padding-inline: 12px;
   align-content: center;
 }
@@ -2076,6 +2080,69 @@ kbd {
 
 .arrow-style-grid .toggle-field {
   min-width: 0;
+}
+
+.property-group--arrow {
+  gap: 14px;
+}
+
+.property-group--arrow .form-grid {
+  gap: 10px;
+}
+
+.property-group--arrow .toggle-field,
+.property-group--arrow .field > select,
+.property-group--arrow .field > input:not([type='range']) {
+  min-height: 44px;
+}
+
+.property-group--arrow .toggle-field:not(.toggle-field--checkbox) {
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 112px);
+}
+
+.property-group--arrow .toggle-field span,
+.property-group--arrow .field span {
+  line-height: 1.25;
+}
+
+.template-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.template-icon-button {
+  min-height: 42px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  color: inherit;
+  display: grid;
+  place-items: center;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.template-icon-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.template-icon-button.is-active {
+  border-color: var(--accent-soft-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.template-icon-button:hover {
+  border-color: var(--tool-border-strong);
 }
 
 .mode-switch--full {
@@ -2413,6 +2480,10 @@ button:disabled {
   .arrow-tip-grid,
   .arrow-style-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .template-icon-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .canvas-corner--top,
