@@ -930,7 +930,10 @@ export class EditorPageComponent {
       if (!this.pinnedToolsReady()) {
         return;
       }
-      this.document.defaultView?.localStorage?.setItem(this.pinnedToolsStorageKey, JSON.stringify(this.pinnedToolIds()));
+      this.document.defaultView?.localStorage?.setItem(
+        this.pinnedToolsStorageKey,
+        JSON.stringify(this.pinnedToolIds())
+      );
     });
   }
 
@@ -3415,10 +3418,10 @@ export class EditorPageComponent {
 
     try {
       const parsed = JSON.parse(raw);
-      const storedIds = Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === 'string') : [];
-      this.pinnedToolIds.set(
-        Array.from(new Set([...storedIds, ...templatePinnedIds]))
-      );
+      const storedIds = Array.isArray(parsed)
+        ? parsed.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+      this.pinnedToolIds.set(Array.from(new Set([...storedIds, ...templatePinnedIds])));
     } catch {
       this.pinnedToolIds.set(templatePinnedIds);
     }
