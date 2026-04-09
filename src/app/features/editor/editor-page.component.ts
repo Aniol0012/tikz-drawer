@@ -337,6 +337,7 @@ export class EditorPageComponent {
   readonly topbarActions = viewChild<ElementRef<HTMLDivElement>>('topbarActions');
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
+  readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
 
   readonly appVersion = packageManifest.version;
   readonly scene = this.store.scene;
@@ -1011,6 +1012,20 @@ export class EditorPageComponent {
 
   setInspectorTab(tab: InspectorTab): void {
     this.inspectorTab.set(tab);
+  }
+
+  openSceneLayers(): void {
+    this.inspectorTab.set('scene');
+    this.collapsedSections.update((sections) => ({
+      ...sections,
+      layers: false
+    }));
+    afterNextRender(() => {
+      this.layersSection()?.nativeElement.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth'
+      });
+    });
   }
 
   setLibraryQuery(value: string): void {

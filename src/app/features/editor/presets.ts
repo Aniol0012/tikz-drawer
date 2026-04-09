@@ -146,7 +146,7 @@ export const defaultPreferences: EditorPreferences = {
   snapStep: 0.25,
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',
-  defaultStrokeWidth: 0.08
+  defaultStrokeWidth: 0.12
 };
 
 export const objectPresets: readonly ObjectPreset[] = [

@@ -720,7 +720,7 @@
         }
 
         <div class="canvas-corner canvas-corner--top">
-          <button class="canvas-chip" type="button" [title]="t('objects')">
+          <button class="canvas-chip" type="button" [title]="t('objects')" (click)="openSceneLayers()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="iconMap.layers"></path>
             </svg>
@@ -908,7 +908,7 @@
 
       <div class="sidebar-scroll">
         @if (inspectorTab() === 'properties') {
-          <section class="sidebar-section">
+          <section class="sidebar-section export-settings-section">
             @if (selectedShape(); as shape) {
               <div class="selection-title">
                 <strong>{{ shape.name }}</strong>
@@ -1004,18 +1004,27 @@
                         <small>{{ t('opacity') }} {{ opacityPercent(shape.fillOpacity) }}%</small>
                       </label>
                     }
-                    <label class="color-chip-field color-chip-field--metric">
-                      <small>{{ t('strokeWidth') }}</small>
+                  </div>
+                  <label class="field field--full field--stroke-width">
+                    <span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
+                    <div class="range-field">
                       <input
-                        class="color-metric-input"
-                        type="number"
-                        min="0"
-                        max="1"
+                        type="range"
+                        min="0.02"
+                        max="3"
                         step="0.02"
                         [value]="shape.strokeWidth"
                         (input)="updateShapeNumber('strokeWidth', $event)" />
-                    </label>
-                  </div>
+                      <input
+                        class="color-metric-input"
+                        type="number"
+                        min="0.02"
+                        max="3"
+                        step="0.02"
+                        [value]="shape.strokeWidth"
+                        (input)="updateShapeNumber('strokeWidth', $event)" />
+                    </div>
+                  </label>
                 </div>
               }
               <div class="form-grid">
@@ -1880,19 +1889,19 @@
                     <input
                       type="range"
                       min="0.02"
-                      max="1"
+                      max="3"
                       step="0.02"
                       [value]="preferences().defaultStrokeWidth"
                       (input)="
-                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 1)
+                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 3)
                       " /><input
                       type="number"
                       min="0.02"
-                      max="1"
+                      max="3"
                       step="0.02"
                       [value]="preferences().defaultStrokeWidth"
                       (input)="
-                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 1)
+                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 3)
                       " /></div
                 ></label>
                 <label class="toggle-field"
@@ -1923,7 +1932,10 @@
             }
           </section>
 
-          <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('layers')">
+          <section
+            #layersSection
+            class="sidebar-section"
+            [class.is-collapsed]="isSectionCollapsed('layers')">
             <button class="section-header" type="button" (click)="toggleSection('layers')">
               <span>{{ t('layers') }}</span
               ><svg viewBox="0 0 24 24" aria-hidden="true">
@@ -2399,7 +2411,7 @@
             <div class="section-header section-header--static">
               <span>{{ t('latexEnvironment') }}</span>
             </div>
-            <div class="form-grid">
+            <div class="form-grid export-settings-form-grid">
               <label class="toggle-field field--full"
                 ><input
                   type="checkbox"
@@ -2438,11 +2450,11 @@
             </div>
           </section>
 
-          <section class="sidebar-section">
+          <section class="sidebar-section export-settings-section">
             <div class="section-header section-header--static">
               <span>{{ t('latexLayout') }}</span>
             </div>
-            <div class="form-grid">
+            <div class="form-grid export-settings-form-grid">
               <div class="field field--full">
                 <span>{{ t('latexAlignment') }}</span>
                 <div class="mode-switch mode-switch--full">
@@ -2488,7 +2500,7 @@
             </div>
           </section>
 
-          <section class="sidebar-section">
+          <section class="sidebar-section export-settings-section export-settings-section--wide">
             <div class="section-header section-header--static">
               <span>{{ t('latexCaptionLabel') }}</span>
               <button
@@ -2498,7 +2510,7 @@
                 {{ t('latexSuggest') }}
               </button>
             </div>
-            <div class="form-grid">
+            <div class="form-grid export-settings-form-grid">
               <label class="toggle-field field--full"
                 ><input
                   type="checkbox"
@@ -2538,7 +2550,7 @@
             </div>
           </section>
 
-          <section class="sidebar-section">
+          <section class="sidebar-section export-settings-section export-settings-section--wide">
             <div class="section-header section-header--static">
               <span>{{ t('latexColors') }}</span>
             </div>
