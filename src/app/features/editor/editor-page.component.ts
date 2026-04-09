@@ -79,6 +79,7 @@ interface LatexExportConfig {
   readonly wrapInFigure: boolean;
   readonly figurePlacement: string;
   readonly alignment: LatexAlignment;
+  readonly includeFrame: boolean;
   readonly maxWidthPercent: number;
   readonly fontSize: LatexFontSize;
   readonly includeCaption: boolean;
@@ -345,6 +346,7 @@ export class EditorPageComponent {
     wrapInFigure: false,
     figurePlacement: 'H',
     alignment: 'center',
+    includeFrame: false,
     maxWidthPercent: 100,
     fontSize: 'footnotesize',
     includeCaption: true,
@@ -1133,7 +1135,10 @@ export class EditorPageComponent {
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportBoolean(key: 'wrapInFigure' | 'includeCaption' | 'includeLabel', event: Event): void {
+  updateLatexExportBoolean(
+    key: 'wrapInFigure' | 'includeFrame' | 'includeCaption' | 'includeLabel',
+    event: Event
+  ): void {
     this.patchLatexExportConfig({
       [key]: (event.target as HTMLInputElement).checked
     } as Partial<LatexExportConfig>);
@@ -3463,6 +3468,11 @@ export class EditorPageComponent {
     const caption = config.caption.trim() || this.suggestedCaption();
     const label = config.label.trim() || this.suggestedLabel();
     const imports = [baseBundle.imports, '\\usepackage{adjustbox}'];
+    const adjustboxOptions = [
+      ...(config.includeFrame ? ['frame'] : []),
+      `max width=${this.latexWidthExpression(config.maxWidthPercent)}`,
+      ...(config.alignment === 'center' ? ['center'] : [])
+    ];
 
     if (config.wrapInFigure && config.figurePlacement.includes('H')) {
       imports.push('\\usepackage{float}');
@@ -3471,7 +3481,7 @@ export class EditorPageComponent {
     const contentLines = [
       this.latexAlignmentCommand(config.alignment),
       config.fontSize === 'normalsize' ? '' : `\\${config.fontSize}`,
-      `\\begin{adjustbox}{max width=${this.latexWidthExpression(config.maxWidthPercent)}${config.alignment === 'center' ? ',center' : ''}}`,
+      `\\begin{adjustbox}{${adjustboxOptions.join(',')}}`,
       baseBundle.code,
       '\\end{adjustbox}'
     ].filter(Boolean);

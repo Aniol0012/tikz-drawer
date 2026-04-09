@@ -228,6 +228,7 @@
   "latexPlacementtbp": "Arriba, abajo o página (tbp)",
   "latexLayout": "Composición",
   "latexAlignment": "Alineación",
+  "latexIncludeFrame": "Añadir marco",
   "alignLeft": "Izquierda",
   "alignCenter": "Centro",
   "alignRight": "Derecha",

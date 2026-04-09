@@ -228,6 +228,7 @@
   "latexPlacementtbp": "Top, bottom o pàgina (tbp)",
   "latexLayout": "Composició",
   "latexAlignment": "Alineació",
+  "latexIncludeFrame": "Afegir marc",
   "alignLeft": "Esquerra",
   "alignCenter": "Centre",
   "alignRight": "Dreta",

@@ -228,6 +228,7 @@
   "latexPlacementtbp": "Top, bottom or page (tbp)",
   "latexLayout": "Layout",
   "latexAlignment": "Alignment",
+  "latexIncludeFrame": "Include frame",
   "alignLeft": "Left",
   "alignCenter": "Center",
   "alignRight": "Right",

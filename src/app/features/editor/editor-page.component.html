@@ -2512,17 +2512,19 @@
               <h3>{{ t('latexImports') }}</h3>
             </div>
             <div class="code-panel">
-              <button
-                class="icon-button code-copy-button"
-                type="button"
-                [title]="t('copy')"
-                (click)="copySnippetImports()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.copy"></path>
-                </svg>
-              </button>
-              <pre
-                class="code-block code-block--modal code-block--imports"><code [innerHTML]="highlightedExportImports()"></code></pre>
+              <div class="code-block-shell">
+                <button
+                  class="icon-button code-copy-button"
+                  type="button"
+                  [title]="t('copy')"
+                  (click)="copySnippetImports()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.copy"></path>
+                  </svg>
+                </button>
+                <pre
+                  class="code-block code-block--modal code-block--imports"><code [innerHTML]="highlightedExportImports()"></code></pre>
+              </div>
             </div>
           </section>
         }
@@ -2531,17 +2533,19 @@
             <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
           </div>
           <div class="code-panel">
-            <button
-              class="icon-button code-copy-button"
-              type="button"
-              [title]="t('copy')"
-              (click)="copyCurrentExportCode()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.copy"></path>
-              </svg>
-            </button>
-            <pre
-              class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+            <div class="code-block-shell">
+              <button
+                class="icon-button code-copy-button"
+                type="button"
+                [title]="t('copy')"
+                (click)="copyCurrentExportCode()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.copy"></path>
+                </svg>
+              </button>
+              <pre
+                class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+            </div>
           </div>
         </section>
       </section>
@@ -2633,6 +2637,14 @@
                   </button>
                 </div>
               </div>
+              <label class="toggle-field field--full"
+                ><input
+                  type="checkbox"
+                  [checked]="latexExportConfig().includeFrame"
+                  (change)="updateLatexExportBoolean('includeFrame', $event)" /><span>{{
+                  t('latexIncludeFrame')
+                }}</span></label
+              >
               <label class="field field--full">
                 <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
                 <div class="range-field">
