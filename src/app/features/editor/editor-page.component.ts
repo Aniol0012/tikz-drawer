@@ -2810,17 +2810,35 @@ export class EditorPageComponent {
         id: `arrow-length-${endpointId}` as ArrowControlHandle,
         x: lengthHandleX,
         y: lengthHandleY,
-        cursor: 'ew-resize',
+        cursor: this.resizeCursorForVector(unitSvg),
         variant: 'arrow-control'
       },
       {
         id: `arrow-width-${endpointId}` as ArrowControlHandle,
         x: widthHandleX,
         y: widthHandleY,
-        cursor: 'ns-resize',
+        cursor: this.resizeCursorForVector(normalSvg),
         variant: 'arrow-control'
       }
     ];
+  }
+
+  resizeCursorForVector(vector: Point): 'ew-resize' | 'ns-resize' | 'nesw-resize' | 'nwse-resize' {
+    const angle = ((Math.atan2(vector.y, vector.x) * 180) / Math.PI + 180) % 180;
+
+    if (angle < 22.5 || angle >= 157.5) {
+      return 'ew-resize';
+    }
+
+    if (angle < 67.5) {
+      return 'nwse-resize';
+    }
+
+    if (angle < 112.5) {
+      return 'ns-resize';
+    }
+
+    return 'nesw-resize';
   }
 
   arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
