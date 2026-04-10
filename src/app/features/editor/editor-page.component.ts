@@ -3321,20 +3321,24 @@ export class EditorPageComponent {
     if (!hasDrag) {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
-      return templateShapes.map((shape, index) =>
-        this.applyPresetStyle(
-          this.transformShape(
-            shape,
-            startPoint.x - centerX,
-            startPoint.y - centerY,
-            1,
-            1,
-            templateBounds.left,
-            templateBounds.bottom,
-            `preview-${index}`
-          ),
-          keepOwnStyle
-        )
+      return this.localizeInsertedPresetShapes(
+        preset,
+        templateShapes.map((shape, index) =>
+          this.applyPresetStyle(
+            this.transformShape(
+              shape,
+              startPoint.x - centerX,
+              startPoint.y - centerY,
+              1,
+              1,
+              templateBounds.left,
+              templateBounds.bottom,
+              `preview-${index}`
+            ),
+            keepOwnStyle
+          )
+        ),
+        keepOwnStyle
       );
     }
 
@@ -3347,20 +3351,24 @@ export class EditorPageComponent {
     const scaleX = targetWidth / templateWidth;
     const scaleY = targetHeight / templateHeight;
 
-    return templateShapes.map((shape, index) =>
-      this.applyPresetStyle(
-        this.transformShape(
-          shape,
-          targetLeft - templateBounds.left * scaleX,
-          targetBottom - templateBounds.bottom * scaleY,
-          scaleX,
-          scaleY,
-          0,
-          0,
-          `preview-${index}`
-        ),
-        keepOwnStyle
-      )
+    return this.localizeInsertedPresetShapes(
+      preset,
+      templateShapes.map((shape, index) =>
+        this.applyPresetStyle(
+          this.transformShape(
+            shape,
+            targetLeft - templateBounds.left * scaleX,
+            targetBottom - templateBounds.bottom * scaleY,
+            scaleX,
+            scaleY,
+            0,
+            0,
+            `preview-${index}`
+          ),
+          keepOwnStyle
+        )
+      ),
+      keepOwnStyle
     );
   }
 
@@ -3425,17 +3433,34 @@ export class EditorPageComponent {
 
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
-    const shapes = structuredClone(preset.shapes).map((shape) =>
-      this.applyPresetStyle(
-        this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
-        keepOwnStyle
-      )
+    const shapes = this.localizeInsertedPresetShapes(
+      preset,
+      structuredClone(preset.shapes).map((shape) =>
+        this.applyPresetStyle(
+          this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
+          keepOwnStyle
+        )
+      ),
+      keepOwnStyle
     );
     this.store.addShapes(shapes);
   }
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
     return keepOwnStyle ? shape : this.applyInsertionDefaults(shape);
+  }
+
+  private localizeInsertedPresetShapes(
+    preset: ObjectPreset,
+    shapes: readonly CanvasShape[],
+    keepOwnStyle: boolean
+  ): readonly CanvasShape[] {
+    if (keepOwnStyle || shapes.length !== 1) {
+      return shapes;
+    }
+
+    const localizedName = this.presetTitle(preset);
+    return shapes.map((shape) => ({ ...shape, name: localizedName }) as CanvasShape);
   }
 
   private transformShape(
