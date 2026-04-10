@@ -2770,7 +2770,7 @@ export class EditorPageComponent {
     }
 
     const { unitSvg } = this.lineEndpointVectors(shape, endpoint, adjacentPoint);
-    const offset = Math.max(this.arrowRenderedLength(shape), this.selectionHandleSize() * 0.8);
+    const offset = Math.max(this.selectionHandleSize() * 0.92, 8);
 
     return {
       id: endpoint,
@@ -2793,22 +2793,30 @@ export class EditorPageComponent {
 
     const endpointId = endpoint === 'from' ? 'start' : 'end';
     const { targetSvg, unitSvg, normalSvg } = this.lineEndpointVectors(shape, endpoint, adjacentPoint);
-    const lengthDistance = this.arrowRenderedLength(shape) + this.selectionHandleSize() * 1.15;
-    const widthDistance = this.arrowRenderedHalfWidth(shape) + this.selectionHandleSize();
-    const lengthMidpoint = this.arrowRenderedLength(shape) * 0.45;
+    const renderedLength = this.arrowRenderedLength(shape);
+    const renderedHalfWidth = this.arrowRenderedHalfWidth(shape);
+    const handlePadding = Math.max(this.selectionHandleSize() * 0.45, 5);
+    const baseCenterX = targetSvg.x - unitSvg.x * renderedLength;
+    const baseCenterY = targetSvg.y - unitSvg.y * renderedLength;
+    const lengthHandleX = baseCenterX - unitSvg.x * handlePadding;
+    const lengthHandleY = baseCenterY - unitSvg.y * handlePadding;
+    const sideBacktrack = Math.max(renderedLength * 0.58, this.selectionHandleSize() * 0.8);
+    const sideDistance = renderedHalfWidth + handlePadding * 0.7;
+    const widthHandleX = targetSvg.x - unitSvg.x * sideBacktrack + normalSvg.x * sideDistance;
+    const widthHandleY = targetSvg.y - unitSvg.y * sideBacktrack + normalSvg.y * sideDistance;
 
     return [
       {
         id: `arrow-length-${endpointId}` as ArrowControlHandle,
-        x: targetSvg.x + unitSvg.x * lengthDistance,
-        y: targetSvg.y + unitSvg.y * lengthDistance,
+        x: lengthHandleX,
+        y: lengthHandleY,
         cursor: 'ew-resize',
         variant: 'arrow-control'
       },
       {
         id: `arrow-width-${endpointId}` as ArrowControlHandle,
-        x: targetSvg.x + unitSvg.x * lengthMidpoint + normalSvg.x * widthDistance,
-        y: targetSvg.y + unitSvg.y * lengthMidpoint + normalSvg.y * widthDistance,
+        x: widthHandleX,
+        y: widthHandleY,
         cursor: 'ns-resize',
         variant: 'arrow-control'
       }
@@ -2949,7 +2957,7 @@ export class EditorPageComponent {
     const unit = { x: deltaX / length, y: deltaY / length };
     const normal = { x: -unit.y, y: unit.x };
     const offset = { x: point.x - targetPoint.x, y: point.y - targetPoint.y };
-    const alongPixels = Math.max((offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
+    const alongPixels = Math.max(-(offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
     const acrossPixels = Math.abs((offset.x * normal.x + offset.y * normal.y) * this.preferences().scale);
     const strokeUnit = Math.max(this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale, 0.5);
 
