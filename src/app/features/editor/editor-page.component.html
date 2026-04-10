@@ -106,14 +106,24 @@
                       </svg>
                     </a>
 
-                    <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
+                    <button
+                      class="icon-button"
+                      type="button"
+                      [title]="t('theme')"
+                      (click)="toggleTheme()">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
+                        <path
+                          [attr.d]="
+                            preferences().theme === 'dark' ? iconMap.sun : iconMap.moon
+                          "></path>
                       </svg>
                     </button>
                   </div>
 
-                  <button class="primary-button primary-button--wide" type="button" (click)="openExportModal()">
+                  <button
+                    class="primary-button primary-button--wide"
+                    type="button"
+                    (click)="openExportModal()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.export"></path>
                     </svg>
@@ -161,40 +171,40 @@
 
     @if (!mobileLayout()) {
       <div class="topbar__right">
-      <label class="language-select" [attr.aria-label]="t('language')">
-        <select [value]="language()" (change)="setLanguage($any($event.target).value)">
-          <option value="en">En</option>
-          <option value="ca">Ca</option>
-          <option value="es">Es</option>
-        </select>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="iconMap.chevronDown"></path>
-        </svg>
-      </label>
+        <label class="language-select" [attr.aria-label]="t('language')">
+          <select [value]="language()" (change)="setLanguage($any($event.target).value)">
+            <option value="en">En</option>
+            <option value="ca">Ca</option>
+            <option value="es">Es</option>
+          </select>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.chevronDown"></path>
+          </svg>
+        </label>
 
-      <a
-        class="icon-button icon-button--github"
-        href="https://github.com/Aniol0012/tikz-drawer/"
-        target="_blank"
-        rel="noopener"
-        aria-label="GitHub"
-        title="GitHub">
-        <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="4"></rect>
-          <path [attr.d]="iconMap.github"></path>
-        </svg>
-      </a>
+        <a
+          class="icon-button icon-button--github"
+          href="https://github.com/Aniol0012/tikz-drawer/"
+          target="_blank"
+          rel="noopener"
+          aria-label="GitHub"
+          title="GitHub">
+          <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+            <path [attr.d]="iconMap.github"></path>
+          </svg>
+        </a>
 
-      <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
-        </svg>
-      </button>
+        <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
+          </svg>
+        </button>
 
-      <button class="primary-button" type="button" (click)="openExportModal()">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg>
-        <span>{{ t('export') }}</span>
-      </button>
+        <button class="primary-button" type="button" (click)="openExportModal()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg>
+          <span>{{ t('export') }}</span>
+        </button>
       </div>
     }
   </header>
