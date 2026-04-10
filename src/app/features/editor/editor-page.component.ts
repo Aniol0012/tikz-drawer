@@ -50,11 +50,7 @@ type InspectorTab = 'properties' | 'scene' | 'code';
 type ExportMode = 'snippet' | 'standalone';
 type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 type ToolId = 'select' | string;
-type ArrowControlHandle =
-  | 'arrow-length-start'
-  | 'arrow-length-end'
-  | 'arrow-width-start'
-  | 'arrow-width-end';
+type ArrowControlHandle = 'arrow-length-start' | 'arrow-length-end' | 'arrow-width-start' | 'arrow-width-end';
 type ResizeHandle =
   | 'nw'
   | 'n'
@@ -2921,7 +2917,11 @@ export class EditorPageComponent {
     };
   }
 
-  lineEndpointVectors(shape: LineShape, endpoint: 'from' | 'to', adjacentPoint: Point): {
+  lineEndpointVectors(
+    shape: LineShape,
+    endpoint: 'from' | 'to',
+    adjacentPoint: Point
+  ): {
     readonly targetSvg: Point;
     readonly unitSvg: Point;
     readonly normalSvg: Point;
@@ -2940,12 +2940,7 @@ export class EditorPageComponent {
     };
   }
 
-  lineArrowControlScale(
-    shape: LineShape,
-    endpoint: 'start' | 'end',
-    point: Point,
-    kind: 'length' | 'width'
-  ): number {
+  lineArrowControlScale(shape: LineShape, endpoint: 'start' | 'end', point: Point, kind: 'length' | 'width'): number {
     const targetPoint = endpoint === 'start' ? shape.from : shape.to;
     const adjacentPoint = endpoint === 'start' ? (shape.anchors[0] ?? shape.to) : (shape.anchors.at(-1) ?? shape.from);
     const deltaX = targetPoint.x - adjacentPoint.x;
