@@ -3711,7 +3711,11 @@ export class EditorPageComponent {
   }
 
   private isQuickLineInsertionPreset(preset: ObjectPreset): boolean {
-    return (preset.id === 'segment' || preset.id === 'arrow') && preset.shapes.length === 1 && preset.shapes[0]?.kind === 'line';
+    return (
+      (preset.id === 'segment' || preset.id === 'arrow') &&
+      preset.shapes.length === 1 &&
+      preset.shapes[0]?.kind === 'line'
+    );
   }
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
@@ -3925,13 +3929,16 @@ export class EditorPageComponent {
       colorMode: this.isOneOf(config?.colorMode, LATEX_COLOR_MODES)
         ? config.colorMode
         : this.defaultLatexExportConfig.colorMode,
-      wrapInFigure: typeof config?.wrapInFigure === 'boolean' ? config.wrapInFigure : this.defaultLatexExportConfig.wrapInFigure,
+      wrapInFigure:
+        typeof config?.wrapInFigure === 'boolean' ? config.wrapInFigure : this.defaultLatexExportConfig.wrapInFigure,
       figurePlacement,
       alignment: this.isOneOf(config?.alignment, LATEX_ALIGNMENTS)
         ? config.alignment
         : this.defaultLatexExportConfig.alignment,
-      scaleToWidth: typeof config?.scaleToWidth === 'boolean' ? config.scaleToWidth : this.defaultLatexExportConfig.scaleToWidth,
-      includeFrame: typeof config?.includeFrame === 'boolean' ? config.includeFrame : this.defaultLatexExportConfig.includeFrame,
+      scaleToWidth:
+        typeof config?.scaleToWidth === 'boolean' ? config.scaleToWidth : this.defaultLatexExportConfig.scaleToWidth,
+      includeFrame:
+        typeof config?.includeFrame === 'boolean' ? config.includeFrame : this.defaultLatexExportConfig.includeFrame,
       maxWidthPercent: this.clampLatexConfigNumber(
         config?.maxWidthPercent,
         10,
@@ -3948,9 +3955,12 @@ export class EditorPageComponent {
         ? config.fontSize
         : this.defaultLatexExportConfig.fontSize,
       includeCaption:
-        typeof config?.includeCaption === 'boolean' ? config.includeCaption : this.defaultLatexExportConfig.includeCaption,
+        typeof config?.includeCaption === 'boolean'
+          ? config.includeCaption
+          : this.defaultLatexExportConfig.includeCaption,
       caption: preserveFreeText && typeof config?.caption === 'string' ? config.caption : '',
-      includeLabel: typeof config?.includeLabel === 'boolean' ? config.includeLabel : this.defaultLatexExportConfig.includeLabel,
+      includeLabel:
+        typeof config?.includeLabel === 'boolean' ? config.includeLabel : this.defaultLatexExportConfig.includeLabel,
       label: preserveFreeText && typeof config?.label === 'string' ? config.label : ''
     };
   }

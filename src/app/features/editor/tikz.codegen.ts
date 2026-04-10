@@ -59,10 +59,7 @@ const INLINE_MATH_COMMANDS = [
   'cup',
   'cap'
 ] as const;
-const INLINE_MATH_COMMAND_REGEX = new RegExp(
-  String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})(?![A-Za-z])`,
-  'g'
-);
+const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})(?![A-Za-z])`, 'g');
 
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));

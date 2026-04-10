@@ -92,6 +92,8 @@ describe('sceneToTikzBundle', () => {
     const bundle = sceneToTikzBundle(scene);
 
     expect(bundle.code).toContain('Hola\\ensuremath{\\times}');
-    expect(bundle.code).toContain('\\ensuremath{\\int}\\ensuremath{\\gamma}\\ensuremath{\\delta}\\ensuremath{\\exists}');
+    expect(bundle.code).toContain(
+      '\\ensuremath{\\int}\\ensuremath{\\gamma}\\ensuremath{\\delta}\\ensuremath{\\exists}'
+    );
   });
 });

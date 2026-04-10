@@ -2654,7 +2654,8 @@
           </button>
         </header>
         <div class="export-settings-layout">
-          <section class="sidebar-section export-settings-section export-settings-section--environment">
+          <section
+            class="sidebar-section export-settings-section export-settings-section--environment">
             <div class="section-header section-header--static">
               <span>{{ t('latexEnvironment') }}</span>
             </div>
@@ -2768,13 +2769,17 @@
             </div>
           </section>
 
-          <section class="sidebar-section export-settings-section export-settings-section--standalone">
+          <section
+            class="sidebar-section export-settings-section export-settings-section--standalone">
             <div class="section-header section-header--static">
               <span>{{ t('latexStandalone') }}</span>
             </div>
             <div class="form-grid export-settings-form-grid">
               <label class="field field--full">
-                <span>{{ t('latexStandaloneBorder') }} · {{ latexExportConfig().standaloneBorderMm }} mm</span>
+                <span
+                  >{{ t('latexStandaloneBorder') }} ·
+                  {{ latexExportConfig().standaloneBorderMm }} mm</span
+                >
                 <div class="range-field">
                   <input
                     type="range"
@@ -2795,7 +2800,8 @@
             </div>
           </section>
 
-          <section class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--meta">
+          <section
+            class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--meta">
             <div class="section-header section-header--static">
               <span>{{ t('latexCaptionLabel') }}</span>
               <button
@@ -2845,7 +2851,8 @@
             </div>
           </section>
 
-          <section class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--colors">
+          <section
+            class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--colors">
             <div class="section-header section-header--static">
               <span>{{ t('latexColors') }}</span>
             </div>
