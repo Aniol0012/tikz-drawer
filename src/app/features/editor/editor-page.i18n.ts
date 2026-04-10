@@ -13,8 +13,10 @@ export interface SharedScenePayload extends PersistedEditorState {
     readonly wrapInFigure?: boolean;
     readonly figurePlacement?: string;
     readonly alignment?: 'center' | 'left' | 'right';
+    readonly scaleToWidth?: boolean;
     readonly includeFrame?: boolean;
     readonly maxWidthPercent?: number;
+    readonly standaloneBorderMm?: number;
     readonly fontSize?: 'tiny' | 'scriptsize' | 'footnotesize' | 'small' | 'normalsize' | 'large';
     readonly includeCaption?: boolean;
     readonly caption?: string;

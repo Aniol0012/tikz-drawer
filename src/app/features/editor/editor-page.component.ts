@@ -78,14 +78,19 @@ interface ToastNotification {
 
 type LatexAlignment = 'center' | 'left' | 'right';
 type LatexFontSize = 'tiny' | 'scriptsize' | 'footnotesize' | 'small' | 'normalsize' | 'large';
+const LATEX_ALIGNMENTS = ['center', 'left', 'right'] as const;
+const LATEX_FONT_SIZES = ['tiny', 'scriptsize', 'footnotesize', 'small', 'normalsize', 'large'] as const;
+const LATEX_COLOR_MODES = ['direct-rgb', 'define-colors'] as const;
 
 interface LatexExportConfig {
   readonly colorMode: LatexColorMode;
   readonly wrapInFigure: boolean;
   readonly figurePlacement: string;
   readonly alignment: LatexAlignment;
+  readonly scaleToWidth: boolean;
   readonly includeFrame: boolean;
   readonly maxWidthPercent: number;
+  readonly standaloneBorderMm: number;
   readonly fontSize: LatexFontSize;
   readonly includeCaption: boolean;
   readonly caption: string;
@@ -350,6 +355,7 @@ export class EditorPageComponent {
   private readonly pinnedToolsStorageKey = 'tikz-drawer.pinned-tools';
   private readonly languageStorageKey = 'tikz-drawer.language';
   private readonly codeThemeStorageKey = 'tikz-drawer.code-theme';
+  private readonly latexExportConfigStorageKey = 'tikz-drawer.latex-export-config';
   private readonly editorStateStorageKey = 'tikz-drawer.state';
   private readonly defaultScale = 24;
   private readonly defaultLatexExportConfig = {
@@ -357,8 +363,10 @@ export class EditorPageComponent {
     wrapInFigure: false,
     figurePlacement: 'H',
     alignment: 'center',
+    scaleToWidth: true,
     includeFrame: false,
     maxWidthPercent: 100,
+    standaloneBorderMm: 6,
     fontSize: 'footnotesize',
     includeCaption: true,
     caption: '',
@@ -408,7 +416,7 @@ export class EditorPageComponent {
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
   readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
-  readonly latexExportConfig = signal<LatexExportConfig>(this.defaultLatexExportConfig);
+  readonly latexExportConfig = signal<LatexExportConfig>(this.restoreLatexExportConfig());
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly pinnedToolIds = signal<readonly string[]>([]);
   readonly pinnedToolsReady = signal(false);
@@ -940,6 +948,11 @@ export class EditorPageComponent {
 
         if (event.key === this.codeThemeStorageKey && event.newValue) {
           this.setCodeHighlightTheme(event.newValue);
+          return;
+        }
+
+        if (event.key === this.latexExportConfigStorageKey) {
+          this.latexExportConfig.set(this.parseStoredLatexExportConfig(event.newValue));
         }
       };
 
@@ -961,6 +974,12 @@ export class EditorPageComponent {
 
     effect(() => {
       this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
+    });
+    effect(() => {
+      this.document.defaultView?.localStorage?.setItem(
+        this.latexExportConfigStorageKey,
+        JSON.stringify(this.serializableLatexExportConfig(this.latexExportConfig()))
+      );
     });
     effect(() => {
       if (!this.pinnedToolsReady()) {
@@ -1160,7 +1179,7 @@ export class EditorPageComponent {
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportNumber(key: 'maxWidthPercent', event: Event, min: number, max: number): void {
+  updateLatexExportNumber(key: 'maxWidthPercent' | 'standaloneBorderMm', event: Event, min: number, max: number): void {
     const input = event.target as HTMLInputElement;
     const value = Number.parseFloat(input.value);
     if (!Number.isFinite(value)) {
@@ -1172,7 +1191,7 @@ export class EditorPageComponent {
   }
 
   updateLatexExportBoolean(
-    key: 'wrapInFigure' | 'includeFrame' | 'includeCaption' | 'includeLabel',
+    key: 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel',
     event: Event
   ): void {
     this.patchLatexExportConfig({
@@ -3285,10 +3304,7 @@ export class EditorPageComponent {
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
     if (sharedState.latexExportConfig) {
-      this.latexExportConfig.set({
-        ...this.defaultLatexExportConfig,
-        ...sharedState.latexExportConfig
-      });
+      this.latexExportConfig.set(this.normalizeLatexExportConfig(sharedState.latexExportConfig));
     }
   }
 
@@ -3870,16 +3886,98 @@ export class EditorPageComponent {
       : 'aurora';
   }
 
+  private restoreLatexExportConfig(): LatexExportConfig {
+    return this.parseStoredLatexExportConfig(
+      this.document.defaultView?.localStorage?.getItem(this.latexExportConfigStorageKey)
+    );
+  }
+
+  private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
+    if (!raw) {
+      return { ...this.defaultLatexExportConfig };
+    }
+
+    try {
+      return this.normalizeLatexExportConfig(JSON.parse(raw) as Partial<LatexExportConfig>, false);
+    } catch {
+      return { ...this.defaultLatexExportConfig };
+    }
+  }
+
+  private serializableLatexExportConfig(config: LatexExportConfig): Partial<LatexExportConfig> {
+    return {
+      ...config,
+      caption: '',
+      label: ''
+    };
+  }
+
+  private normalizeLatexExportConfig(
+    config: Partial<LatexExportConfig> | null | undefined,
+    preserveFreeText = true
+  ): LatexExportConfig {
+    const figurePlacement =
+      typeof config?.figurePlacement === 'string' && config.figurePlacement.trim()
+        ? config.figurePlacement.trim()
+        : this.defaultLatexExportConfig.figurePlacement;
+    return {
+      ...this.defaultLatexExportConfig,
+      colorMode: this.isOneOf(config?.colorMode, LATEX_COLOR_MODES)
+        ? config.colorMode
+        : this.defaultLatexExportConfig.colorMode,
+      wrapInFigure: typeof config?.wrapInFigure === 'boolean' ? config.wrapInFigure : this.defaultLatexExportConfig.wrapInFigure,
+      figurePlacement,
+      alignment: this.isOneOf(config?.alignment, LATEX_ALIGNMENTS)
+        ? config.alignment
+        : this.defaultLatexExportConfig.alignment,
+      scaleToWidth: typeof config?.scaleToWidth === 'boolean' ? config.scaleToWidth : this.defaultLatexExportConfig.scaleToWidth,
+      includeFrame: typeof config?.includeFrame === 'boolean' ? config.includeFrame : this.defaultLatexExportConfig.includeFrame,
+      maxWidthPercent: this.clampLatexConfigNumber(
+        config?.maxWidthPercent,
+        10,
+        100,
+        this.defaultLatexExportConfig.maxWidthPercent
+      ),
+      standaloneBorderMm: this.clampLatexConfigNumber(
+        config?.standaloneBorderMm,
+        0,
+        24,
+        this.defaultLatexExportConfig.standaloneBorderMm
+      ),
+      fontSize: this.isOneOf(config?.fontSize, LATEX_FONT_SIZES)
+        ? config.fontSize
+        : this.defaultLatexExportConfig.fontSize,
+      includeCaption:
+        typeof config?.includeCaption === 'boolean' ? config.includeCaption : this.defaultLatexExportConfig.includeCaption,
+      caption: preserveFreeText && typeof config?.caption === 'string' ? config.caption : '',
+      includeLabel: typeof config?.includeLabel === 'boolean' ? config.includeLabel : this.defaultLatexExportConfig.includeLabel,
+      label: preserveFreeText && typeof config?.label === 'string' ? config.label : ''
+    };
+  }
+
+  private clampLatexConfigNumber(value: unknown, min: number, max: number, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return fallback;
+    }
+
+    return Math.min(max, Math.max(min, value));
+  }
+
+  private isOneOf<const T extends readonly string[]>(value: unknown, options: T): value is T[number] {
+    return typeof value === 'string' && options.includes(value);
+  }
+
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
     const baseBundle = this.baseTikzExportBundle();
     const config = this.latexExportConfig();
     const caption = config.caption.trim() || this.suggestedCaption();
     const label = config.label.trim() || this.suggestedLabel();
-    const imports = [baseBundle.imports, '\\usepackage{adjustbox}'];
+    const useAdjustbox = config.scaleToWidth || config.includeFrame;
+    const imports = [baseBundle.imports, ...(useAdjustbox ? ['\\usepackage{adjustbox}'] : [])];
     const adjustboxOptions = [
       ...(config.includeFrame ? ['frame'] : []),
-      `max width=${this.latexWidthExpression(config.maxWidthPercent)}`,
-      ...(config.alignment === 'center' ? ['center'] : [])
+      ...(config.scaleToWidth ? [`max width=${this.latexWidthExpression(config.maxWidthPercent)}`] : []),
+      ...(config.scaleToWidth && config.alignment === 'center' ? ['center'] : [])
     ];
 
     if (config.wrapInFigure && config.figurePlacement.includes('H')) {
@@ -3889,9 +3987,9 @@ export class EditorPageComponent {
     const contentLines = [
       this.latexAlignmentCommand(config.alignment),
       config.fontSize === 'normalsize' ? '' : `\\${config.fontSize}`,
-      `\\begin{adjustbox}{${adjustboxOptions.join(',')}}`,
-      baseBundle.code,
-      '\\end{adjustbox}'
+      ...(useAdjustbox
+        ? [`\\begin{adjustbox}{${adjustboxOptions.join(',')}}`, baseBundle.code, '\\end{adjustbox}']
+        : [baseBundle.code])
     ].filter(Boolean);
 
     const code = config.wrapInFigure
@@ -3902,7 +4000,7 @@ export class EditorPageComponent {
           ...(config.includeLabel ? [`  \\label{${label}}`] : []),
           '\\end{figure}'
         ].join('\n')
-      : contentLines.join('\n');
+      : ['{', ...contentLines, '}'].join('\n');
 
     const normalizedImports = Array.from(new Set(imports.filter(Boolean))).join('\n');
 
@@ -3915,13 +4013,19 @@ export class EditorPageComponent {
 
   private buildStandaloneDocument(): string {
     const snippet = this.buildSnippetExport();
+    const border = this.formatLatexDecimal(this.latexExportConfig().standaloneBorderMm);
+    const documentClassOptions = ['tikz', ...(Number.parseFloat(border) > 0 ? [`border=${border}mm`] : [])].join(',');
     return [
-      '\\documentclass[tikz]{standalone}',
+      `\\documentclass[${documentClassOptions}]{standalone}`,
       snippet.imports,
       '\\begin{document}',
       snippet.code,
       '\\end{document}'
     ].join('\n');
+  }
+
+  private formatLatexDecimal(value: number): string {
+    return Number.parseFloat(value.toFixed(2)).toString();
   }
 
   private findShapesInsideBounds(bounds: SelectionBounds): string[] {

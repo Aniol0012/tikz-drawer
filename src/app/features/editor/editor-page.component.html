@@ -2694,6 +2694,9 @@
                   <option value="large">large</option>
                 </select>
               </label>
+              @if (!latexExportConfig().wrapInFigure) {
+                <p class="export-settings-note field--full">{{ t('latexScopeGuard') }}</p>
+              }
             </div>
           </section>
 
@@ -2728,28 +2731,65 @@
               <label class="toggle-field field--full"
                 ><input
                   type="checkbox"
+                  [checked]="latexExportConfig().scaleToWidth"
+                  (change)="updateLatexExportBoolean('scaleToWidth', $event)" /><span>{{
+                  t('latexScaleToWidth')
+                }}</span></label
+              >
+              <label class="toggle-field field--full"
+                ><input
+                  type="checkbox"
                   [checked]="latexExportConfig().includeFrame"
                   (change)="updateLatexExportBoolean('includeFrame', $event)" /><span>{{
                   t('latexIncludeFrame')
                 }}</span></label
               >
+              @if (latexExportConfig().scaleToWidth) {
+                <label class="field field--full">
+                  <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
+                  <div class="range-field">
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      [value]="latexExportConfig().maxWidthPercent"
+                      (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                    <input
+                      type="number"
+                      min="10"
+                      max="100"
+                      step="5"
+                      [value]="latexExportConfig().maxWidthPercent"
+                      (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                  </div>
+                </label>
+              }
+            </div>
+          </section>
+
+          <section class="sidebar-section export-settings-section">
+            <div class="section-header section-header--static">
+              <span>{{ t('latexStandalone') }}</span>
+            </div>
+            <div class="form-grid export-settings-form-grid">
               <label class="field field--full">
-                <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
+                <span>{{ t('latexStandaloneBorder') }} · {{ latexExportConfig().standaloneBorderMm }} mm</span>
                 <div class="range-field">
                   <input
                     type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    [value]="latexExportConfig().maxWidthPercent"
-                    (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                    min="0"
+                    max="24"
+                    step="1"
+                    [value]="latexExportConfig().standaloneBorderMm"
+                    (input)="updateLatexExportNumber('standaloneBorderMm', $event, 0, 24)" />
                   <input
                     type="number"
-                    min="10"
-                    max="100"
-                    step="5"
-                    [value]="latexExportConfig().maxWidthPercent"
-                    (input)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)" />
+                    min="0"
+                    max="24"
+                    step="1"
+                    [value]="latexExportConfig().standaloneBorderMm"
+                    (input)="updateLatexExportNumber('standaloneBorderMm', $event, 0, 24)" />
                 </div>
               </label>
             </div>

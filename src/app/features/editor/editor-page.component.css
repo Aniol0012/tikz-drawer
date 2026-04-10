@@ -2282,6 +2282,13 @@ kbd {
   background: color-mix(in srgb, var(--tool-surface) 96%, transparent);
 }
 
+.export-settings-note {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
 .tool-button svg,
 .menu-button svg,
 .icon-button svg,
