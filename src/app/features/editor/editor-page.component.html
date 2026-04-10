@@ -755,10 +755,10 @@
                 class="selection-handle"
                 [class.selection-handle--anchor]="handle.variant === 'anchor'"
                 [class.selection-handle--ghost]="handle.variant === 'ghost-anchor'"
-                [attr.x]="handle.x - 5"
-                [attr.y]="handle.y - 5"
-                width="10"
-                height="10"
+                [attr.x]="handle.x - selectionHandleOffset()"
+                [attr.y]="handle.y - selectionHandleOffset()"
+                [attr.width]="selectionHandleSize()"
+                [attr.height]="selectionHandleSize()"
                 [attr.style]="'cursor:' + handle.cursor"
                 (pointerdown)="startResize($event, handle.id)"></rect>
             }
@@ -1071,7 +1071,7 @@
                       <input
                         type="range"
                         min="0.02"
-                        max="3"
+                        max="8"
                         step="0.02"
                         [value]="shape.strokeWidth"
                         (input)="updateShapeNumber('strokeWidth', $event)" />
@@ -1079,7 +1079,7 @@
                         class="color-metric-input"
                         type="number"
                         min="0.02"
-                        max="3"
+                        max="8"
                         step="0.02"
                         [value]="shape.strokeWidth"
                         (input)="updateShapeNumber('strokeWidth', $event)" />
@@ -1158,7 +1158,7 @@
                     <div class="property-group field--full">
                       <div class="property-group__title">{{ t('arrow') }}</div>
                       <div class="form-grid form-grid--section">
-                        <label class="toggle-field"
+                        <label class="field field--full"
                           ><span>{{ t('arrowDirection') }}</span
                           ><select
                             [value]="lineArrowDirection(shape)"
@@ -1169,7 +1169,7 @@
                             <option value="both">{{ t('arrowDirectionBoth') }}</option>
                           </select></label
                         >
-                        <label class="toggle-field"
+                        <label class="field field--full"
                           ><span>{{ t('lineMode') }}</span
                           ><select
                             [value]="shape.lineMode"
@@ -1242,14 +1242,14 @@
                             <input
                               type="range"
                               min="0.4"
-                              max="3"
+                              max="4.5"
                               step="0.1"
                               [value]="shape.arrowScale"
                               (input)="updateLineArrowScale($event)" />
                             <input
                               type="number"
                               min="0.4"
-                              max="3"
+                              max="4.5"
                               step="0.1"
                               [value]="shape.arrowScale"
                               (input)="updateLineArrowScale($event)" /></div
@@ -1954,23 +1954,6 @@
             @if (!isSectionCollapsed('sceneSettings')) {
               <div class="form-grid">
                 <label class="field"
-                  ><span>{{ t('gridSize') }} · {{ preferences().scale }}</span>
-                  <div class="range-field">
-                    <input
-                      type="range"
-                      min="12"
-                      max="120"
-                      step="4"
-                      [value]="preferences().scale"
-                      (input)="updatePreferenceNumber('scale', $event, 12, 120)" /><input
-                      type="number"
-                      min="12"
-                      max="120"
-                      step="4"
-                      [value]="preferences().scale"
-                      (input)="updatePreferenceNumber('scale', $event, 12, 120)" /></div
-                ></label>
-                <label class="field"
                   ><span>{{ t('snapTolerance') }} · {{ formatValue(preferences().snapStep) }}</span>
                   <div class="range-field">
                     <input
@@ -2010,19 +1993,43 @@
                     <input
                       type="range"
                       min="0.02"
-                      max="3"
+                      max="8"
                       step="0.02"
                       [value]="preferences().defaultStrokeWidth"
                       (input)="
-                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 3)
+                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)
                       " /><input
                       type="number"
                       min="0.02"
-                      max="3"
+                      max="8"
                       step="0.02"
                       [value]="preferences().defaultStrokeWidth"
                       (input)="
-                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 3)
+                        updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)
+                      " /></div
+                ></label>
+                <label class="field field--full"
+                  ><span
+                    >{{ t('arrowScale') }} ·
+                    {{ formatValue(preferences().defaultArrowScale) }}</span
+                  >
+                  <div class="range-field">
+                    <input
+                      type="range"
+                      min="0.4"
+                      max="4.5"
+                      step="0.1"
+                      [value]="preferences().defaultArrowScale"
+                      (input)="
+                        updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)
+                      " /><input
+                      type="number"
+                      min="0.4"
+                      max="4.5"
+                      step="0.1"
+                      [value]="preferences().defaultArrowScale"
+                      (input)="
+                        updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)
                       " /></div
                 ></label>
                 <label class="toggle-field"

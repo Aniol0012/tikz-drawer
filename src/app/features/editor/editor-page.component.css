@@ -190,6 +190,19 @@
     background-color 160ms ease;
 }
 
+.field select {
+  appearance: none;
+  padding-right: 38px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
 .search-field {
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
@@ -419,8 +432,10 @@
 }
 
 .tool-cluster__separator {
+  flex: 0 0 1px;
   width: 1px;
-  align-self: stretch;
+  min-height: 28px;
+  align-self: center;
   background: var(--tool-border);
   margin: 4px 2px;
 }
@@ -836,6 +851,10 @@ kbd {
   border: 1px solid var(--tool-border);
   border-radius: 14px;
   background: var(--canvas-background);
+  touch-action: none;
+  overscroll-behavior: contain;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .canvas-viewport.is-panning {
@@ -1275,7 +1294,7 @@ kbd {
 
 .range-field {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(72px, 92px);
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 72px);
   gap: 8px;
   align-items: center;
 }
@@ -2560,6 +2579,15 @@ button:disabled {
     max-height: none;
   }
 
+  .canvas-panel {
+    padding: 8px;
+  }
+
+  .sidebar-scroll,
+  .left-sidebar {
+    padding: 10px;
+  }
+
   .left-sidebar {
     grid-column: 1;
     grid-row: 3;
@@ -2602,6 +2630,53 @@ button:disabled {
 
   .file-picker__name {
     padding: 0 6px 4px;
+  }
+}
+
+@media (pointer: coarse) {
+  .menu-button,
+  .primary-button,
+  .secondary-button,
+  .dropdown-row,
+  .tool-button,
+  .icon-button,
+  .mode-switch button,
+  .sidebar-tabs button,
+  .zoom-chip,
+  .canvas-chip,
+  .toggle-field,
+  .field select,
+  .field input:not([type='range']),
+  .field textarea {
+    min-height: 42px;
+  }
+
+  .tool-button,
+  .icon-button,
+  .sidebar-tabs button {
+    min-width: 42px;
+  }
+
+  .range-field input[type='range'],
+  .canvas-control-group input[type='range'] {
+    min-height: 24px;
+  }
+
+  .range-field input[type='range']::-webkit-slider-thumb,
+  .canvas-control-group input[type='range']::-webkit-slider-thumb {
+    width: 12px;
+    height: 12px;
+  }
+
+  .range-field input[type='range']::-moz-range-thumb,
+  .canvas-control-group input[type='range']::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+  }
+
+  .selection-handle {
+    rx: 4px;
+    ry: 4px;
   }
 }
 

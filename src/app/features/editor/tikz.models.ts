@@ -119,6 +119,7 @@ export interface EditorPreferences {
   readonly defaultStroke: string;
   readonly defaultFill: string;
   readonly defaultStrokeWidth: number;
+  readonly defaultArrowScale: number;
 }
 
 export interface PersistedEditorState {

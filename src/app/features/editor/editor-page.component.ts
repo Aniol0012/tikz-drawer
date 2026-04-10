@@ -422,6 +422,7 @@ export class EditorPageComponent {
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
+  readonly coarsePointer = signal(false);
   readonly minimapPanPointerId = signal<number | null>(null);
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
@@ -851,6 +852,7 @@ export class EditorPageComponent {
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
   readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
   readonly highlightedImportCode = computed(() => highlightLatex(this.store.importCode() || ' '));
+  readonly selectionHandleSize = computed(() => (this.coarsePointer() ? 18 : 10));
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
@@ -882,6 +884,14 @@ export class EditorPageComponent {
         updateCanvasSize();
         updateTopbarActions();
       });
+      const coarsePointerQuery = this.document.defaultView?.matchMedia?.('(pointer: coarse)') ?? null;
+      const updateCoarsePointer = () => {
+        this.coarsePointer.set(
+          coarsePointerQuery?.matches ?? (this.document.defaultView?.navigator.maxTouchPoints ?? 0) > 0
+        );
+      };
+      updateCoarsePointer();
+      coarsePointerQuery?.addEventListener?.('change', updateCoarsePointer);
       resizeObserver.observe(viewport);
       if (topbarActions) {
         resizeObserver.observe(topbarActions);
@@ -919,6 +929,7 @@ export class EditorPageComponent {
 
       this.document.defaultView?.addEventListener('storage', handleStorage);
       this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
+      this.destroyRef.onDestroy(() => coarsePointerQuery?.removeEventListener?.('change', updateCoarsePointer));
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
 
@@ -1661,7 +1672,7 @@ export class EditorPageComponent {
   }
 
   updatePreferenceNumber(
-    key: 'scale' | 'snapStep' | 'defaultStrokeWidth',
+    key: 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale',
     event: Event,
     minimumValue: number,
     maximumValue?: number
@@ -1941,7 +1952,7 @@ export class EditorPageComponent {
       shape.kind === 'line'
         ? ({
             ...shape,
-            arrowScale: Number.isFinite(value) ? Math.min(3, Math.max(0.4, value)) : shape.arrowScale
+            arrowScale: Number.isFinite(value) ? Math.min(4.5, Math.max(0.4, value)) : shape.arrowScale
           } as LineShape)
         : shape
     );
@@ -2229,8 +2240,9 @@ export class EditorPageComponent {
   onCanvasViewportPointerDown(event: PointerEvent): void {
     this.closeContextMenu();
     this.closeFileMenu();
+    const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
 
-    if (event.button === 1 || (event.button === 0 && this.spacePressed())) {
+    if (event.button === 1 || (event.button === 0 && (this.spacePressed() || touchSelectPan))) {
       event.preventDefault();
       this.interactionState.set({
         kind: 'pan',
@@ -2345,6 +2357,11 @@ export class EditorPageComponent {
 
     if (!this.selectionContainsShape(shape.id)) {
       this.selectShapeSet(shape);
+      if (event.pointerType === 'touch') {
+        this.setInspectorTab('properties');
+        this.ignoreNextCanvasClick.set(true);
+        return;
+      }
     }
     this.setInspectorTab('properties');
 
@@ -2572,6 +2589,10 @@ export class EditorPageComponent {
 
   scaledStrokeWidth(strokeWidth: number): number {
     return Math.max(strokeWidth * this.preferences().scale * 0.05, 1);
+  }
+
+  selectionHandleOffset(): number {
+    return this.selectionHandleSize() / 2;
   }
 
   presetIconPath(icon: string): string {
@@ -3141,7 +3162,7 @@ export class EditorPageComponent {
           arrowOpacity: 1,
           arrowOpen: false,
           arrowRound: false,
-          arrowScale: 1,
+          arrowScale: preferences.defaultArrowScale,
           arrowBendMode: 'none',
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
@@ -3275,7 +3296,7 @@ export class EditorPageComponent {
       arrowOpacity: 1,
       arrowOpen: false,
       arrowRound: false,
-      arrowScale: 1,
+      arrowScale: this.preferences().defaultArrowScale,
       arrowBendMode: 'none'
     }) as LineShape;
   }

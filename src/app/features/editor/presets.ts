@@ -20,7 +20,7 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   kind: 'line',
   stroke: overrides.stroke ?? '#1f1f1f',
   strokeOpacity: overrides.strokeOpacity ?? 1,
-  strokeWidth: overrides.strokeWidth ?? 0.08,
+  strokeWidth: overrides.strokeWidth ?? 0.18,
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
   anchors: overrides.anchors ?? [],
@@ -32,7 +32,7 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   arrowOpacity: overrides.arrowOpacity ?? overrides.strokeOpacity ?? 1,
   arrowOpen: overrides.arrowOpen ?? false,
   arrowRound: overrides.arrowRound ?? false,
-  arrowScale: overrides.arrowScale ?? 1,
+  arrowScale: overrides.arrowScale ?? 1.35,
   arrowBendMode: overrides.arrowBendMode ?? 'none'
 });
 
@@ -153,7 +153,8 @@ export const defaultPreferences: EditorPreferences = {
   snapStep: 0.25,
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',
-  defaultStrokeWidth: 0.12
+  defaultStrokeWidth: 0.28,
+  defaultArrowScale: 1.35
 };
 
 export const objectPresets: readonly ObjectPreset[] = [
