@@ -3519,6 +3519,17 @@ export class EditorPageComponent {
       return [];
     }
 
+    const directLinePreview = this.buildDirectLineInsertionPreview(
+      preset,
+      startPoint,
+      currentPoint,
+      hasDrag,
+      keepOwnStyle
+    );
+    if (directLinePreview) {
+      return directLinePreview;
+    }
+
     if (!hasDrag) {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
@@ -3622,6 +3633,40 @@ export class EditorPageComponent {
     }) as LineShape;
   }
 
+  private buildDirectLineInsertionPreview(
+    preset: ObjectPreset,
+    startPoint: Point,
+    currentPoint: Point,
+    hasDrag: boolean,
+    keepOwnStyle: boolean
+  ): readonly CanvasShape[] | null {
+    if (!this.isQuickLineInsertionPreset(preset)) {
+      return null;
+    }
+
+    const [shape] = structuredClone(preset.shapes);
+    if (!shape || shape.kind !== 'line') {
+      return null;
+    }
+
+    const defaultDelta = {
+      x: shape.to.x - shape.from.x,
+      y: shape.to.y - shape.from.y
+    };
+    const nextLine = this.applyPresetStyle(
+      {
+        ...shape,
+        id: 'preview-0',
+        from: startPoint,
+        to: hasDrag ? currentPoint : { x: startPoint.x + defaultDelta.x, y: startPoint.y + defaultDelta.y },
+        anchors: []
+      } as LineShape,
+      keepOwnStyle
+    );
+
+    return this.localizeInsertedPresetShapes(preset, [nextLine], keepOwnStyle);
+  }
+
   private insertPresetAt(toolId: ToolId, point: Point): void {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
@@ -3647,6 +3692,10 @@ export class EditorPageComponent {
       keepOwnStyle
     );
     this.store.addShapes(shapes);
+  }
+
+  private isQuickLineInsertionPreset(preset: ObjectPreset): boolean {
+    return (preset.id === 'segment' || preset.id === 'arrow') && preset.shapes.length === 1 && preset.shapes[0]?.kind === 'line';
   }
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
