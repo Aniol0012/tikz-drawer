@@ -351,6 +351,7 @@ interface MinimapOverview {
   }
 })
 export class EditorPageComponent {
+  private static readonly themeToggleCooldownMs = 180;
   private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
   private readonly pinnedToolsStorageKey = 'tikz-drawer.pinned-tools';
   private readonly languageStorageKey = 'tikz-drawer.language';
@@ -874,8 +875,16 @@ export class EditorPageComponent {
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
+  private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
+  private themeToggleLocked = false;
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.themeToggleCooldownHandle !== null) {
+        clearTimeout(this.themeToggleCooldownHandle);
+      }
+    });
+
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
       const topbarActions = this.topbarActions()?.nativeElement ?? null;
@@ -1127,7 +1136,19 @@ export class EditorPageComponent {
   }
 
   setTheme(theme: ThemeMode): void {
+    if (this.themeToggleLocked || this.preferences().theme === theme) {
+      return;
+    }
+
+    this.themeToggleLocked = true;
     this.store.setTheme(theme);
+    if (this.themeToggleCooldownHandle !== null) {
+      clearTimeout(this.themeToggleCooldownHandle);
+    }
+    this.themeToggleCooldownHandle = setTimeout(() => {
+      this.themeToggleLocked = false;
+      this.themeToggleCooldownHandle = null;
+    }, EditorPageComponent.themeToggleCooldownMs);
   }
 
   toggleTheme(): void {
