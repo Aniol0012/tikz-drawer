@@ -1,5 +1,11 @@
 import type { SharedScenePayload } from './editor-page.i18n';
-import { decodeSharePayload, encodeSharePayload, formatValue, highlightLatex, translateShapeBy } from './editor-page.utils';
+import {
+  decodeSharePayload,
+  encodeSharePayload,
+  formatValue,
+  highlightLatex,
+  translateShapeBy
+} from './editor-page.utils';
 import { sceneToTikz } from './tikz.codegen';
 import type { EditorPreferences, LineShape } from './tikz.models';
 import { afterEach, vi } from 'vitest';

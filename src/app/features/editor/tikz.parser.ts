@@ -264,9 +264,7 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
 };
 
 const parseRectangle = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/
-  );
+  const match = line.match(/^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/);
 
   if (!match?.groups) {
     return null;
