@@ -23,10 +23,80 @@ export interface TikzExportOptions {
 
 const DEFAULT_ARROW_TIP_LENGTH = 8;
 const DEFAULT_ARROW_TIP_WIDTH = 6;
+const INLINE_MATH_COMMANDS = [
+  'alpha',
+  'beta',
+  'gamma',
+  'delta',
+  'epsilon',
+  'theta',
+  'lambda',
+  'mu',
+  'pi',
+  'sigma',
+  'phi',
+  'omega',
+  'leftarrow',
+  'rightarrow',
+  'uparrow',
+  'downarrow',
+  'leftrightarrow',
+  'Rightarrow',
+  'Leftarrow',
+  'Leftrightarrow',
+  'times',
+  'div',
+  'pm',
+  'infty',
+  'sum',
+  'prod',
+  'int',
+  'partial',
+  'forall',
+  'exists',
+  'in',
+  'notin',
+  'cup',
+  'cap'
+] as const;
+const INLINE_MATH_COMMAND_REGEX = new RegExp(
+  String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})(?![A-Za-z])`,
+  'g'
+);
 
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
+};
+
+const wrapInlineMathCommands = (text: string): string => {
+  let result = '';
+  let buffer = '';
+  let inMathMode = false;
+  let previousChar = '';
+
+  const flushBuffer = (): void => {
+    if (!buffer) {
+      return;
+    }
+
+    result += inMathMode ? buffer : buffer.replace(INLINE_MATH_COMMAND_REGEX, (command) => `\\ensuremath{${command}}`);
+    buffer = '';
+  };
+
+  for (const char of text) {
+    if (char === '$' && previousChar !== '\\') {
+      flushBuffer();
+      inMathMode = !inMathMode;
+      result += char;
+    } else {
+      buffer += char;
+    }
+    previousChar = char;
+  }
+
+  flushBuffer();
+  return result;
 };
 
 interface ShapeStyleConfig {
@@ -128,7 +198,7 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
 };
 
 const arrowTipSpec = (shape: LineShape): string => {
-  const options = [`draw=${shape.arrowColor}`];
+  const options = [`color=${shape.arrowColor}`];
   if (shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket') {
     // These tips are stroked shapes, so fill/open does not materially apply.
   } else if (shape.arrowOpen) {
@@ -226,7 +296,8 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
     shape.fontStyle === 'italic' ? '\\itshape' : ''
   ].filter(Boolean);
 
-  const baseText = shape.textDecoration === 'underline' ? `\\underline{${shape.text}}` : shape.text;
+  const normalizedText = wrapInlineMathCommands(shape.text);
+  const baseText = shape.textDecoration === 'underline' ? `\\underline{${normalizedText}}` : normalizedText;
   const content = fontTokens.length ? `{${fontTokens.join(' ')} ${baseText}}` : `{${baseText}}`;
 
   return `\\node[${nodeOptions.join(', ')}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) ${content};`;
