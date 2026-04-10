@@ -210,8 +210,9 @@ interface ClipboardShapeSet {
 
 interface SidebarResizeState {
   readonly side: 'left' | 'right';
-  readonly startX: number;
-  readonly startWidth: number;
+  readonly axis: 'x' | 'y';
+  readonly startPointer: number;
+  readonly startSize: number;
 }
 
 interface RecentTextTap {
@@ -421,8 +422,11 @@ export class EditorPageComponent {
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
+  readonly mobileRightSidebarHeight = signal(250);
+  readonly mobileLeftSidebarHeight = signal(300);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
   readonly coarsePointer = signal(false);
+  readonly mobileLayout = signal(false);
   readonly minimapPanPointerId = signal<number | null>(null);
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
@@ -625,6 +629,9 @@ export class EditorPageComponent {
     };
   });
   readonly showMinimap = computed(() => {
+    if (this.mobileLayout()) {
+      return false;
+    }
     const sceneBounds = this.sceneContentBounds();
     if (!sceneBounds) return false;
     const visibleBounds = this.visibleWorldBounds();
@@ -861,6 +868,7 @@ export class EditorPageComponent {
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
       const topbarActions = this.topbarActions()?.nativeElement ?? null;
+      const mobileLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 760px)') ?? null;
       const updateCanvasSize = () => {
         this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
         this.canvasHeight.set(Math.max(320, Math.round(viewport.clientHeight)));
@@ -890,8 +898,13 @@ export class EditorPageComponent {
           coarsePointerQuery?.matches ?? (this.document.defaultView?.navigator.maxTouchPoints ?? 0) > 0
         );
       };
+      const updateMobileLayout = () => {
+        this.mobileLayout.set(mobileLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 760);
+      };
       updateCoarsePointer();
+      updateMobileLayout();
       coarsePointerQuery?.addEventListener?.('change', updateCoarsePointer);
+      mobileLayoutQuery?.addEventListener?.('change', updateMobileLayout);
       resizeObserver.observe(viewport);
       if (topbarActions) {
         resizeObserver.observe(topbarActions);
@@ -930,6 +943,7 @@ export class EditorPageComponent {
       this.document.defaultView?.addEventListener('storage', handleStorage);
       this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
       this.destroyRef.onDestroy(() => coarsePointerQuery?.removeEventListener?.('change', updateCoarsePointer));
+      this.destroyRef.onDestroy(() => mobileLayoutQuery?.removeEventListener?.('change', updateMobileLayout));
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
 
@@ -1075,10 +1089,18 @@ export class EditorPageComponent {
   startSidebarResize(event: PointerEvent, side: 'left' | 'right'): void {
     event.preventDefault();
     event.stopPropagation();
+    const mobileLayout = this.mobileLayout();
     this.sidebarResizeState.set({
       side,
-      startX: event.clientX,
-      startWidth: side === 'left' ? this.leftSidebarWidth() : this.rightSidebarWidth()
+      axis: mobileLayout ? 'y' : 'x',
+      startPointer: mobileLayout ? event.clientY : event.clientX,
+      startSize: mobileLayout
+        ? side === 'left'
+          ? this.mobileLeftSidebarHeight()
+          : this.mobileRightSidebarHeight()
+        : side === 'left'
+          ? this.leftSidebarWidth()
+          : this.rightSidebarWidth()
     });
   }
 
@@ -2918,14 +2940,24 @@ export class EditorPageComponent {
     const resizeState = this.sidebarResizeState();
     if (!resizeState) return;
 
-    if (resizeState.side === 'left') {
-      const delta = event.clientX - resizeState.startX;
-      this.leftSidebarWidth.set(Math.min(420, Math.max(220, resizeState.startWidth + delta)));
+    if (resizeState.axis === 'y') {
+      const delta = event.clientY - resizeState.startPointer;
+      if (resizeState.side === 'left') {
+        this.mobileLeftSidebarHeight.set(Math.min(420, Math.max(160, resizeState.startSize - delta)));
+        return;
+      }
+      this.mobileRightSidebarHeight.set(Math.min(420, Math.max(160, resizeState.startSize - delta)));
       return;
     }
 
-    const delta = resizeState.startX - event.clientX;
-    this.rightSidebarWidth.set(Math.min(460, Math.max(260, resizeState.startWidth + delta)));
+    if (resizeState.side === 'left') {
+      const delta = event.clientX - resizeState.startPointer;
+      this.leftSidebarWidth.set(Math.min(420, Math.max(220, resizeState.startSize + delta)));
+      return;
+    }
+
+    const delta = resizeState.startPointer - event.clientX;
+    this.rightSidebarWidth.set(Math.min(460, Math.max(260, resizeState.startSize + delta)));
   }
 
   handleWindowPointerUp(): void {

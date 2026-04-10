@@ -2,6 +2,8 @@
   class="editor-shell"
   [style.--left-sidebar-width.px]="leftSidebarWidth()"
   [style.--right-sidebar-width.px]="rightSidebarWidth()"
+  [style.--mobile-right-sidebar-height.px]="mobileRightSidebarHeight()"
+  [style.--mobile-left-sidebar-height.px]="mobileLeftSidebarHeight()"
   (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <header class="topbar">
     <div class="topbar__left">
@@ -41,10 +43,10 @@
         }
       </div>
 
-      @if (compactTopbarActions()) {
+      @if (compactTopbarActions() || mobileLayout()) {
         <div class="menu-cluster topbar-actions-menu" (click)="$event.stopPropagation()">
           <button
-            class="icon-button"
+            class="icon-button topbar-menu-button"
             type="button"
             [title]="t('moreActions')"
             (click)="toggleFileMenu()">
@@ -52,19 +54,73 @@
           </button>
 
           @if (fileMenuOpen()) {
-            <div class="dropdown-menu dropdown-menu--topbar">
-              <button class="dropdown-row" type="button" (click)="resetScene()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.plus"></path>
-                </svg>
-                <span>{{ t('newScene') }}</span>
-              </button>
-              <button class="dropdown-row" type="button" (click)="copyShareLink()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.link"></path>
-                </svg>
-                <span>{{ t('copyLink') }}</span>
-              </button>
+            <div
+              class="dropdown-menu dropdown-menu--topbar"
+              [class.dropdown-menu--topbar-mobile]="mobileLayout()">
+              @if (compactTopbarActions()) {
+                <button class="dropdown-row" type="button" (click)="resetScene()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.plus"></path>
+                  </svg>
+                  <span>{{ t('newScene') }}</span>
+                </button>
+                <button class="dropdown-row" type="button" (click)="copyShareLink()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.link"></path>
+                  </svg>
+                  <span>{{ t('copyLink') }}</span>
+                </button>
+              }
+
+              @if (mobileLayout()) {
+                @if (compactTopbarActions()) {
+                  <div class="dropdown-divider"></div>
+                }
+                <div class="dropdown-menu__group dropdown-menu__group--topbar-mobile">
+                  <div class="dropdown-menu__topbar-inline">
+                    <label
+                      class="language-select language-select--menu"
+                      [attr.aria-label]="t('language')">
+                      <select
+                        [value]="language()"
+                        (change)="setLanguage($any($event.target).value); closeFileMenu()">
+                        <option value="en">En</option>
+                        <option value="ca">Ca</option>
+                        <option value="es">Es</option>
+                      </select>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.chevronDown"></path>
+                      </svg>
+                    </label>
+
+                    <a
+                      class="icon-button icon-button--github"
+                      href="https://github.com/Aniol0012/tikz-drawer/"
+                      target="_blank"
+                      rel="noopener"
+                      aria-label="GitHub"
+                      title="GitHub">
+                      <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                        <path [attr.d]="iconMap.github"></path>
+                      </svg>
+                    </a>
+
+                    <button class="icon-button" type="button" [title]="t('theme')" (click)="toggleTheme()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="preferences().theme === 'dark' ? iconMap.sun : iconMap.moon"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <button class="primary-button primary-button--wide" type="button" (click)="openExportModal()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.export"></path>
+                    </svg>
+                    <span>{{ t('export') }}</span>
+                  </button>
+                </div>
+              }
             </div>
           }
         </div>
@@ -103,7 +159,8 @@
       </div>
     </div>
 
-    <div class="topbar__right">
+    @if (!mobileLayout()) {
+      <div class="topbar__right">
       <label class="language-select" [attr.aria-label]="t('language')">
         <select [value]="language()" (change)="setLanguage($any($event.target).value)">
           <option value="en">En</option>
@@ -138,7 +195,8 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.export"></path></svg>
         <span>{{ t('export') }}</span>
       </button>
-    </div>
+      </div>
+    }
   </header>
 
   @if (notifications().length) {
@@ -774,7 +832,7 @@
 
         <div class="canvas-corner canvas-corner--top">
           <button
-            class="canvas-chip"
+            class="canvas-chip canvas-chip--objects"
             type="button"
             [title]="t('objects')"
             (click)="openSceneLayers(); $event.stopPropagation()">
