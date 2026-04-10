@@ -3142,7 +3142,12 @@ export class EditorPageComponent {
     );
   }
 
-  private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number, roundToInteger: boolean = true): void {
+  private setScaleAtClientPoint(
+    nextScale: number,
+    clientX: number,
+    clientY: number,
+    roundToInteger: boolean = true
+  ): void {
     const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * 10) / 10;
     const clampedScale = Math.min(120, Math.max(12, normalizedScale));
     const currentScale = this.preferences().scale;
