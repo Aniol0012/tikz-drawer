@@ -995,6 +995,11 @@ kbd {
   fill: color-mix(in srgb, var(--accent) 22%, var(--panel-background));
 }
 
+.selection-handle--arrow-control {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--panel-background));
+  stroke: color-mix(in srgb, var(--accent) 82%, white 18%);
+}
+
 .selection-handle--ghost {
   fill: color-mix(in srgb, var(--accent) 12%, transparent);
   stroke-dasharray: 3 2;

@@ -151,6 +151,20 @@ const parseArrowScale = (styles: Record<string, string>): number => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 };
 
+const parseArrowDimensionScale = (
+  styles: Record<string, string>,
+  key: 'length' | 'width',
+  defaultValue: number
+): number => {
+  const raw = styles['arrow meta'] ?? '';
+  const match = raw.match(new RegExp(`${key}=([^,\\]}]+)`, 'i'));
+  const parsed = Number.parseFloat((match?.[1] ?? '').replace(/pt|cm|mm|ex|em/g, '').trim());
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 1;
+  }
+  return parsed / defaultValue;
+};
+
 const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
   const raw = styles['arrow meta'] ?? '';
   if (/(?:\[|,)\s*bend(?:\s*[,}\]])/i.test(raw)) return 'bend';
@@ -193,6 +207,8 @@ const parseLine = (line: string): CanvasShape | null => {
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
     arrowScale: parseArrowScale(styles),
+    arrowLengthScale: parseArrowDimensionScale(styles, 'length', 8),
+    arrowWidthScale: parseArrowDimensionScale(styles, 'width', 6),
     arrowBendMode: parseArrowBendMode(styles)
   };
 
@@ -239,6 +255,8 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
     arrowScale: parseArrowScale(styles),
+    arrowLengthScale: parseArrowDimensionScale(styles, 'length', 8),
+    arrowWidthScale: parseArrowDimensionScale(styles, 'width', 6),
     arrowBendMode: parseArrowBendMode(styles)
   };
 

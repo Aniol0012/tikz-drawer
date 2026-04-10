@@ -50,6 +50,11 @@ type InspectorTab = 'properties' | 'scene' | 'code';
 type ExportMode = 'snippet' | 'standalone';
 type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 type ToolId = 'select' | string;
+type ArrowControlHandle =
+  | 'arrow-length-start'
+  | 'arrow-length-end'
+  | 'arrow-width-start'
+  | 'arrow-width-end';
 type ResizeHandle =
   | 'nw'
   | 'n'
@@ -61,9 +66,13 @@ type ResizeHandle =
   | 'w'
   | 'from'
   | 'to'
+  | ArrowControlHandle
   | `anchor-${number}`
   | `insert-anchor-${number}`;
 type ContextTarget = 'canvas' | 'shape';
+
+const DEFAULT_ARROW_TIP_LENGTH = 8;
+const DEFAULT_ARROW_TIP_WIDTH = 6;
 
 interface ToastNotification {
   readonly id: string;
@@ -124,7 +133,7 @@ interface HandleDescriptor {
   readonly x: number;
   readonly y: number;
   readonly cursor: string;
-  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor';
+  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control';
 }
 
 interface MoveInteractionState {
@@ -762,14 +771,11 @@ export class EditorPageComponent {
     if (!selectedShape) return [];
     if (selectedShape.kind === 'line') {
       const points = this.linePoints(selectedShape);
+      const fromAdjacentPoint = points[1] ?? selectedShape.to;
+      const toAdjacentPoint = points.at(-2) ?? selectedShape.from;
       return [
-        {
-          id: 'from',
-          x: this.toSvgX(selectedShape.from.x),
-          y: this.toSvgY(selectedShape.from.y),
-          cursor: 'crosshair',
-          variant: 'endpoint'
-        },
+        this.lineEndpointHandle(selectedShape, 'from', fromAdjacentPoint),
+        ...this.lineArrowControlHandles(selectedShape, 'from', fromAdjacentPoint),
         ...selectedShape.anchors.map((anchor, index) => ({
           id: `anchor-${index}` as const,
           x: this.toSvgX(anchor.x),
@@ -787,13 +793,8 @@ export class EditorPageComponent {
             variant: 'ghost-anchor' as const
           };
         }),
-        {
-          id: 'to',
-          x: this.toSvgX(selectedShape.to.x),
-          y: this.toSvgY(selectedShape.to.y),
-          cursor: 'crosshair',
-          variant: 'endpoint'
-        }
+        ...this.lineArrowControlHandles(selectedShape, 'to', toAdjacentPoint),
+        this.lineEndpointHandle(selectedShape, 'to', toAdjacentPoint)
       ];
     }
     const selectionBounds = this.selectionBounds();
@@ -2758,46 +2759,218 @@ export class EditorPageComponent {
     }));
   }
 
-  arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
-    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${side}`;
+  lineEndpointHandle(shape: LineShape, endpoint: 'from' | 'to', adjacentPoint: Point): HandleDescriptor {
+    const targetPoint = endpoint === 'from' ? shape.from : shape.to;
+    const targetSvg = { x: this.toSvgX(targetPoint.x), y: this.toSvgY(targetPoint.y) };
+    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
+    if (!showsArrow) {
+      return {
+        id: endpoint,
+        x: targetSvg.x,
+        y: targetSvg.y,
+        cursor: 'crosshair',
+        variant: 'endpoint'
+      };
+    }
+
+    const { unitSvg } = this.lineEndpointVectors(shape, endpoint, adjacentPoint);
+    const offset = Math.max(this.arrowRenderedLength(shape), this.selectionHandleSize() * 0.8);
+
+    return {
+      id: endpoint,
+      x: targetSvg.x + unitSvg.x * offset,
+      y: targetSvg.y + unitSvg.y * offset,
+      cursor: 'crosshair',
+      variant: 'endpoint'
+    };
   }
 
-  arrowMarkerBoxSize(shape: LineShape): number {
-    return 10 * shape.arrowScale;
+  lineArrowControlHandles(
+    shape: LineShape,
+    endpoint: 'from' | 'to',
+    adjacentPoint: Point
+  ): readonly HandleDescriptor[] {
+    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
+    if (!showsArrow) {
+      return [];
+    }
+
+    const endpointId = endpoint === 'from' ? 'start' : 'end';
+    const { targetSvg, unitSvg, normalSvg } = this.lineEndpointVectors(shape, endpoint, adjacentPoint);
+    const lengthDistance = this.arrowRenderedLength(shape) + this.selectionHandleSize() * 1.15;
+    const widthDistance = this.arrowRenderedHalfWidth(shape) + this.selectionHandleSize();
+    const lengthMidpoint = this.arrowRenderedLength(shape) * 0.45;
+
+    return [
+      {
+        id: `arrow-length-${endpointId}` as ArrowControlHandle,
+        x: targetSvg.x + unitSvg.x * lengthDistance,
+        y: targetSvg.y + unitSvg.y * lengthDistance,
+        cursor: 'ew-resize',
+        variant: 'arrow-control'
+      },
+      {
+        id: `arrow-width-${endpointId}` as ArrowControlHandle,
+        x: targetSvg.x + unitSvg.x * lengthMidpoint + normalSvg.x * widthDistance,
+        y: targetSvg.y + unitSvg.y * lengthMidpoint + normalSvg.y * widthDistance,
+        cursor: 'ns-resize',
+        variant: 'arrow-control'
+      }
+    ];
+  }
+
+  arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
+    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${side}`;
+  }
+
+  arrowMarkerWidth(shape: LineShape): number {
+    return this.arrowMarkerGeometry(shape).markerWidth;
+  }
+
+  arrowMarkerHeight(shape: LineShape): number {
+    return this.arrowMarkerGeometry(shape).markerHeight;
+  }
+
+  arrowMarkerViewBox(shape: LineShape): string {
+    return this.arrowMarkerGeometry(shape).viewBox;
   }
 
   arrowMarkerRefX(shape: LineShape, side: 'start' | 'end'): number {
-    return (side === 'start' ? 2 : 8) * shape.arrowScale;
+    void side;
+    return this.arrowMarkerGeometry(shape).refX;
   }
 
   arrowMarkerRefY(shape: LineShape): number {
-    return 3 * shape.arrowScale;
+    return this.arrowMarkerGeometry(shape).refY;
   }
 
   arrowMarkerPath(shape: LineShape): string {
-    const scale = shape.arrowScale;
+    return this.arrowMarkerGeometry(shape).path;
+  }
+
+  arrowTipLength(shape: LineShape): number {
+    return DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale;
+  }
+
+  arrowTipWidth(shape: LineShape): number {
+    return DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale;
+  }
+
+  arrowRenderedLength(shape: LineShape): number {
+    return this.arrowTipLength(shape) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+  }
+
+  arrowRenderedHalfWidth(shape: LineShape): number {
+    return (this.arrowTipWidth(shape) / 2) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+  }
+
+  arrowMarkerGeometry(shape: LineShape): {
+    readonly markerWidth: number;
+    readonly markerHeight: number;
+    readonly viewBox: string;
+    readonly refX: number;
+    readonly refY: number;
+    readonly path: string;
+  } {
+    const length = this.arrowTipLength(shape);
+    const width = this.arrowTipWidth(shape);
+    const halfWidth = width / 2;
+    const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
+    let refX = length;
+    let path = '';
+
     switch (shape.arrowType) {
       case 'triangle':
-        return `M0,0 L0,${6 * scale} L${8 * scale},${3 * scale} z`;
+        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
+        break;
       case 'latex':
-        return `M0,0 L0,${6 * scale} L${8 * scale},${3 * scale} z`;
+        path = `M0.8,0.65 L${length},${halfWidth} L0.8,${Math.max(width - 0.65, 0.9)}`;
+        break;
       case 'stealth':
-        return `M${0.5 * scale},${3 * scale} L${7.5 * scale},${0.4 * scale} L${5.6 * scale},${3 * scale} L${7.5 * scale},${5.6 * scale} z`;
+        path = `M0.7,${halfWidth} L${length},0.6 L${Math.max(length * 0.72, 1.8)},${halfWidth} L${length},${Math.max(width - 0.6, 0.8)} z`;
+        break;
       case 'diamond':
-        return `M0,${3 * scale} L${3.8 * scale},0 L${8 * scale},${3 * scale} L${3.8 * scale},${6 * scale} z`;
+        path = `M0,${halfWidth} L${length * 0.47},0 L${length},${halfWidth} L${length * 0.47},${width} z`;
+        break;
       case 'circle':
-        return `M${4 * scale},${1.1 * scale} A${1.9 * scale},${1.9 * scale} 0 1 1 ${4 * scale},${4.9 * scale} A${1.9 * scale},${1.9 * scale} 0 1 1 ${4 * scale},${1.1 * scale} z`;
+        {
+          const radius = Math.max(Math.min(length, width) * 0.32, 1.2);
+          const centerX = Math.max(length - radius - 0.8, radius + 0.8);
+          refX = centerX + radius;
+          path = `M${centerX},${halfWidth - radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth + radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth - radius} z`;
+        }
+        break;
       case 'bar':
-        return `M${8 * scale},0 L${8 * scale},${6 * scale}`;
+        path = `M${length},0 L${length},${width}`;
+        break;
       case 'hooks':
-        return `M${8 * scale},${0.6 * scale} C${5 * scale},${0.6 * scale} ${5 * scale},${5.4 * scale} ${8 * scale},${5.4 * scale} M${4.4 * scale},${0.6 * scale} C${1.5 * scale},${0.6 * scale} ${1.5 * scale},${5.4 * scale} ${4.4 * scale},${5.4 * scale}`;
+        path = `M${length},0.6 C${length * 0.62},0.6 ${length * 0.62},${Math.max(width - 0.6, 0.8)} ${length},${Math.max(width - 0.6, 0.8)} M${length * 0.55},0.6 C${Math.max(length * 0.18, 0.8)},0.6 ${Math.max(length * 0.18, 0.8)},${Math.max(width - 0.6, 0.8)} ${length * 0.55},${Math.max(width - 0.6, 0.8)}`;
+        break;
       case 'bracket':
-        return `M${8 * scale},0 L${4 * scale},0 L${4 * scale},${6 * scale} L${8 * scale},${6 * scale}`;
+        path = `M${length},0 L${length * 0.5},0 L${length * 0.5},${width} L${length},${width}`;
+        break;
     }
+
+    return {
+      markerWidth: (length + padding * 2) * shape.arrowScale,
+      markerHeight: (width + padding * 2) * shape.arrowScale,
+      viewBox: `${-padding} ${-padding} ${length + padding * 2} ${width + padding * 2}`,
+      refX,
+      refY: halfWidth,
+      path
+    };
+  }
+
+  lineEndpointVectors(shape: LineShape, endpoint: 'from' | 'to', adjacentPoint: Point): {
+    readonly targetSvg: Point;
+    readonly unitSvg: Point;
+    readonly normalSvg: Point;
+  } {
+    const targetPoint = endpoint === 'from' ? shape.from : shape.to;
+    const targetSvg = { x: this.toSvgX(targetPoint.x), y: this.toSvgY(targetPoint.y) };
+    const adjacentSvg = { x: this.toSvgX(adjacentPoint.x), y: this.toSvgY(adjacentPoint.y) };
+    const deltaX = targetSvg.x - adjacentSvg.x;
+    const deltaY = targetSvg.y - adjacentSvg.y;
+    const length = Math.hypot(deltaX, deltaY) || 1;
+
+    return {
+      targetSvg,
+      unitSvg: { x: deltaX / length, y: deltaY / length },
+      normalSvg: { x: -deltaY / length, y: deltaX / length }
+    };
+  }
+
+  lineArrowControlScale(
+    shape: LineShape,
+    endpoint: 'start' | 'end',
+    point: Point,
+    kind: 'length' | 'width'
+  ): number {
+    const targetPoint = endpoint === 'start' ? shape.from : shape.to;
+    const adjacentPoint = endpoint === 'start' ? (shape.anchors[0] ?? shape.to) : (shape.anchors.at(-1) ?? shape.from);
+    const deltaX = targetPoint.x - adjacentPoint.x;
+    const deltaY = targetPoint.y - adjacentPoint.y;
+    const length = Math.hypot(deltaX, deltaY) || 1;
+    const unit = { x: deltaX / length, y: deltaY / length };
+    const normal = { x: -unit.y, y: unit.x };
+    const offset = { x: point.x - targetPoint.x, y: point.y - targetPoint.y };
+    const alongPixels = Math.max((offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
+    const acrossPixels = Math.abs((offset.x * normal.x + offset.y * normal.y) * this.preferences().scale);
+    const strokeUnit = Math.max(this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale, 0.5);
+
+    if (kind === 'length') {
+      return Math.min(3.6, Math.max(0.45, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
+    }
+
+    return Math.min(3.6, Math.max(0.45, (acrossPixels * 2) / (DEFAULT_ARROW_TIP_WIDTH * strokeUnit)));
   }
 
   arrowMarkerFill(shape: LineShape): string {
-    return shape.arrowOpen || shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket'
+    return shape.arrowOpen ||
+      shape.arrowType === 'latex' ||
+      shape.arrowType === 'bar' ||
+      shape.arrowType === 'hooks' ||
+      shape.arrowType === 'bracket'
       ? 'none'
       : shape.arrowColor;
   }
@@ -3278,6 +3451,8 @@ export class EditorPageComponent {
           arrowOpen: false,
           arrowRound: false,
           arrowScale: preferences.defaultArrowScale,
+          arrowLengthScale: 1,
+          arrowWidthScale: 1,
           arrowBendMode: 'none',
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
@@ -3420,6 +3595,8 @@ export class EditorPageComponent {
       arrowOpen: false,
       arrowRound: false,
       arrowScale: this.preferences().defaultArrowScale,
+      arrowLengthScale: 1,
+      arrowWidthScale: 1,
       arrowBendMode: 'none'
     }) as LineShape;
   }
@@ -4031,6 +4208,22 @@ export class EditorPageComponent {
       return { ...shape, to: point };
     }
 
+    if (handle === 'arrow-length-start') {
+      return { ...shape, arrowLengthScale: this.lineArrowControlScale(shape, 'start', point, 'length') };
+    }
+
+    if (handle === 'arrow-length-end') {
+      return { ...shape, arrowLengthScale: this.lineArrowControlScale(shape, 'end', point, 'length') };
+    }
+
+    if (handle === 'arrow-width-start') {
+      return { ...shape, arrowWidthScale: this.lineArrowControlScale(shape, 'start', point, 'width') };
+    }
+
+    if (handle === 'arrow-width-end') {
+      return { ...shape, arrowWidthScale: this.lineArrowControlScale(shape, 'end', point, 'width') };
+    }
+
     if (handle.startsWith('anchor-')) {
       const anchorIndex = Number(handle.slice('anchor-'.length));
       if (!Number.isInteger(anchorIndex) || !shape.anchors[anchorIndex]) {
@@ -4330,10 +4523,10 @@ export class EditorPageComponent {
       .filter((shape): shape is LineShape => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
       .map(
         (shape) => `
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" markerWidth="${this.arrowMarkerBoxSize(shape)}" markerHeight="${this.arrowMarkerBoxSize(shape)}" refX="${this.arrowMarkerRefX(shape, 'end')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto" markerUnits="strokeWidth">
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" viewBox="${this.arrowMarkerViewBox(shape)}" markerWidth="${this.arrowMarkerWidth(shape)}" markerHeight="${this.arrowMarkerHeight(shape)}" refX="${this.arrowMarkerRefX(shape, 'end')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto" overflow="visible" markerUnits="strokeWidth">
             <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
           </marker>
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" markerWidth="${this.arrowMarkerBoxSize(shape)}" markerHeight="${this.arrowMarkerBoxSize(shape)}" refX="${this.arrowMarkerRefX(shape, 'start')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" viewBox="${this.arrowMarkerViewBox(shape)}" markerWidth="${this.arrowMarkerWidth(shape)}" markerHeight="${this.arrowMarkerHeight(shape)}" refX="${this.arrowMarkerRefX(shape, 'start')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto-start-reverse" overflow="visible" markerUnits="strokeWidth">
             <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
           </marker>`
       )

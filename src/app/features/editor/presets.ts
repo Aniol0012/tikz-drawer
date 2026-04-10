@@ -33,6 +33,8 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   arrowOpen: overrides.arrowOpen ?? false,
   arrowRound: overrides.arrowRound ?? false,
   arrowScale: overrides.arrowScale ?? 1.35,
+  arrowLengthScale: overrides.arrowLengthScale ?? 1,
+  arrowWidthScale: overrides.arrowWidthScale ?? 1,
   arrowBendMode: overrides.arrowBendMode ?? 'none'
 });
 

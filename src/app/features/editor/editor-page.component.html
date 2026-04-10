@@ -484,11 +484,13 @@
                   <defs>
                     <marker
                       [attr.id]="arrowMarkerId(shape, 'end')"
-                      [attr.markerWidth]="arrowMarkerBoxSize(shape)"
-                      [attr.markerHeight]="arrowMarkerBoxSize(shape)"
+                      [attr.viewBox]="arrowMarkerViewBox(shape)"
+                      [attr.markerWidth]="arrowMarkerWidth(shape)"
+                      [attr.markerHeight]="arrowMarkerHeight(shape)"
                       [attr.refX]="arrowMarkerRefX(shape, 'end')"
                       [attr.refY]="arrowMarkerRefY(shape)"
                       orient="auto"
+                      overflow="visible"
                       markerUnits="strokeWidth">
                       <path
                         [attr.d]="arrowMarkerPath(shape)"
@@ -502,11 +504,13 @@
                     </marker>
                     <marker
                       [attr.id]="arrowMarkerId(shape, 'start')"
-                      [attr.markerWidth]="arrowMarkerBoxSize(shape)"
-                      [attr.markerHeight]="arrowMarkerBoxSize(shape)"
+                      [attr.viewBox]="arrowMarkerViewBox(shape)"
+                      [attr.markerWidth]="arrowMarkerWidth(shape)"
+                      [attr.markerHeight]="arrowMarkerHeight(shape)"
                       [attr.refX]="arrowMarkerRefX(shape, 'start')"
                       [attr.refY]="arrowMarkerRefY(shape)"
                       orient="auto-start-reverse"
+                      overflow="visible"
                       markerUnits="strokeWidth">
                       <path
                         [attr.d]="arrowMarkerPath(shape)"
@@ -632,11 +636,13 @@
                     <defs>
                       <marker
                         [attr.id]="arrowMarkerId(previewShape, 'end')"
-                        [attr.markerWidth]="arrowMarkerBoxSize(previewShape)"
-                        [attr.markerHeight]="arrowMarkerBoxSize(previewShape)"
+                        [attr.viewBox]="arrowMarkerViewBox(previewShape)"
+                        [attr.markerWidth]="arrowMarkerWidth(previewShape)"
+                        [attr.markerHeight]="arrowMarkerHeight(previewShape)"
                         [attr.refX]="arrowMarkerRefX(previewShape, 'end')"
                         [attr.refY]="arrowMarkerRefY(previewShape)"
                         orient="auto"
+                        overflow="visible"
                         markerUnits="strokeWidth">
                         <path
                           [attr.d]="arrowMarkerPath(previewShape)"
@@ -650,11 +656,13 @@
                       </marker>
                       <marker
                         [attr.id]="arrowMarkerId(previewShape, 'start')"
-                        [attr.markerWidth]="arrowMarkerBoxSize(previewShape)"
-                        [attr.markerHeight]="arrowMarkerBoxSize(previewShape)"
+                        [attr.viewBox]="arrowMarkerViewBox(previewShape)"
+                        [attr.markerWidth]="arrowMarkerWidth(previewShape)"
+                        [attr.markerHeight]="arrowMarkerHeight(previewShape)"
                         [attr.refX]="arrowMarkerRefX(previewShape, 'start')"
                         [attr.refY]="arrowMarkerRefY(previewShape)"
                         orient="auto-start-reverse"
+                        overflow="visible"
                         markerUnits="strokeWidth">
                         <path
                           [attr.d]="arrowMarkerPath(previewShape)"
@@ -826,6 +834,7 @@
               <rect
                 class="selection-handle"
                 [class.selection-handle--anchor]="handle.variant === 'anchor'"
+                [class.selection-handle--arrow-control]="handle.variant === 'arrow-control'"
                 [class.selection-handle--ghost]="handle.variant === 'ghost-anchor'"
                 [attr.x]="handle.x - selectionHandleOffset()"
                 [attr.y]="handle.y - selectionHandleOffset()"

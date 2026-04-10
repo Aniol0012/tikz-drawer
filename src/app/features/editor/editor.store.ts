@@ -27,6 +27,8 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         arrowOpen: shape.arrowOpen ?? false,
         arrowRound: shape.arrowRound ?? false,
         arrowScale: shape.arrowScale ?? 1,
+        arrowLengthScale: shape.arrowLengthScale ?? 1,
+        arrowWidthScale: shape.arrowWidthScale ?? 1,
         arrowBendMode: shape.arrowBendMode ?? 'none'
       } as CanvasShape;
     case 'rectangle':
@@ -257,6 +259,8 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         arrowOpen: shape.arrowOpen ?? false,
         arrowRound: shape.arrowRound ?? false,
         arrowScale: shape.arrowScale ?? 1,
+        arrowLengthScale: shape.arrowLengthScale ?? 1,
+        arrowWidthScale: shape.arrowWidthScale ?? 1,
         arrowBendMode: shape.arrowBendMode ?? 'none'
       };
     case 'rectangle':

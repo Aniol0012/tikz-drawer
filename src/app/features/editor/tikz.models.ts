@@ -35,6 +35,8 @@ export interface LineShape extends CanvasShapeBase {
   readonly arrowOpen: boolean;
   readonly arrowRound: boolean;
   readonly arrowScale: number;
+  readonly arrowLengthScale: number;
+  readonly arrowWidthScale: number;
   readonly arrowBendMode: 'none' | 'flex' | 'flex-prime' | 'bend';
 }
 

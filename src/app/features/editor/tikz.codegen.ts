@@ -21,6 +21,9 @@ export interface TikzExportOptions {
   readonly colorMode?: LatexColorMode;
 }
 
+const DEFAULT_ARROW_TIP_LENGTH = 8;
+const DEFAULT_ARROW_TIP_WIDTH = 6;
+
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
@@ -141,6 +144,12 @@ const arrowTipSpec = (shape: LineShape): string => {
   }
   if (shape.arrowScale !== 1) {
     options.push(`scale=${formatNumber(shape.arrowScale)}`);
+  }
+  if (shape.arrowLengthScale !== 1) {
+    options.push(`length=${formatNumber(DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale)}pt`);
+  }
+  if (shape.arrowWidthScale !== 1) {
+    options.push(`width=${formatNumber(DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale)}pt`);
   }
   if (shape.arrowBendMode === 'flex') {
     options.push('flex');
