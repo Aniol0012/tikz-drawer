@@ -2505,7 +2505,7 @@ button:disabled {
 
 @media (max-width: 760px) {
   .editor-shell {
-    --topbar-height: 136px;
+    --topbar-height: 128px;
   }
 
   .topbar {
@@ -2565,11 +2565,11 @@ button:disabled {
   .workspace {
     grid-template-columns: 1fr;
     grid-template-rows:
-      minmax(280px, 1fr)
+      minmax(320px, 1fr)
       14px
-      minmax(160px, var(--mobile-right-sidebar-height, 250px))
+      minmax(140px, var(--mobile-right-sidebar-height, 220px))
       14px
-      minmax(160px, var(--mobile-left-sidebar-height, 300px));
+      minmax(140px, var(--mobile-left-sidebar-height, 250px));
   }
 
   .form-grid,
@@ -2758,7 +2758,7 @@ button:disabled {
   .canvas-panel {
     grid-column: 1;
     grid-row: 1;
-    padding: 8px;
+    padding: 6px;
   }
 
   .sidebar-scroll,

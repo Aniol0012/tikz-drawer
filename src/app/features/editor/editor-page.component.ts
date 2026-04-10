@@ -215,6 +215,11 @@ interface SidebarResizeState {
   readonly startSize: number;
 }
 
+interface PinchZoomState {
+  readonly initialDistance: number;
+  readonly initialScale: number;
+}
+
 interface RecentTextTap {
   readonly shapeId: string;
   readonly timestamp: number;
@@ -422,12 +427,13 @@ export class EditorPageComponent {
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
-  readonly mobileRightSidebarHeight = signal(250);
-  readonly mobileLeftSidebarHeight = signal(300);
+  readonly mobileRightSidebarHeight = signal(220);
+  readonly mobileLeftSidebarHeight = signal(250);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
   readonly coarsePointer = signal(false);
   readonly mobileLayout = signal(false);
   readonly minimapPanPointerId = signal<number | null>(null);
+  private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
     essentials: false,
@@ -2260,6 +2266,9 @@ export class EditorPageComponent {
   }
 
   onCanvasViewportPointerDown(event: PointerEvent): void {
+    if (this.pinchZoomState) {
+      return;
+    }
     this.closeContextMenu();
     this.closeFileMenu();
     const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
@@ -2448,6 +2457,9 @@ export class EditorPageComponent {
   }
 
   onCanvasPointerMove(event: PointerEvent): void {
+    if (this.pinchZoomState) {
+      return;
+    }
     const interactionState = this.interactionState();
     if (!interactionState || interactionState.pointerId !== event.pointerId) {
       return;
@@ -2517,6 +2529,9 @@ export class EditorPageComponent {
   }
 
   endInteraction(event: PointerEvent): void {
+    if (this.pinchZoomState) {
+      return;
+    }
     const interactionState = this.interactionState();
     if (!interactionState || interactionState.pointerId !== event.pointerId) {
       return;
@@ -2573,6 +2588,51 @@ export class EditorPageComponent {
   onCanvasWheel(event: WheelEvent): void {
     event.preventDefault();
     this.setScaleAtClientPoint(this.preferences().scale + (event.deltaY < 0 ? 4 : -4), event.clientX, event.clientY);
+  }
+
+  onCanvasTouchStart(event: TouchEvent): void {
+    if (event.touches.length !== 2) {
+      return;
+    }
+
+    event.preventDefault();
+    this.cancelCurrentInteraction();
+    const [firstTouch, secondTouch] = Array.from(event.touches);
+    const initialDistance = this.touchDistance(firstTouch, secondTouch);
+    if (initialDistance <= 0) {
+      return;
+    }
+
+    this.pinchZoomState = {
+      initialDistance,
+      initialScale: this.preferences().scale
+    };
+    this.ignoreNextCanvasClick.set(true);
+  }
+
+  onCanvasTouchMove(event: TouchEvent): void {
+    if (!this.pinchZoomState || event.touches.length !== 2) {
+      return;
+    }
+
+    event.preventDefault();
+    const [firstTouch, secondTouch] = Array.from(event.touches);
+    const distance = this.touchDistance(firstTouch, secondTouch);
+    if (distance <= 0) {
+      return;
+    }
+
+    const centerX = (firstTouch.clientX + secondTouch.clientX) / 2;
+    const centerY = (firstTouch.clientY + secondTouch.clientY) / 2;
+    const scaleFactor = distance / this.pinchZoomState.initialDistance;
+    this.setScaleAtClientPoint(this.pinchZoomState.initialScale * scaleFactor, centerX, centerY, false);
+  }
+
+  onCanvasTouchEnd(event: TouchEvent): void {
+    if (event.touches.length < 2) {
+      this.pinchZoomState = null;
+      this.ignoreNextCanvasClick.set(true);
+    }
   }
 
   onCanvasBackgroundClick(event: MouseEvent): void {
@@ -3082,8 +3142,9 @@ export class EditorPageComponent {
     );
   }
 
-  private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number): void {
-    const clampedScale = Math.min(120, Math.max(12, Math.round(nextScale)));
+  private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number, roundToInteger: boolean = true): void {
+    const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * 10) / 10;
+    const clampedScale = Math.min(120, Math.max(12, normalizedScale));
     const currentScale = this.preferences().scale;
     if (clampedScale === currentScale) return;
 
@@ -3096,6 +3157,23 @@ export class EditorPageComponent {
 
     this.store.patchPreferences({ scale: clampedScale });
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
+  }
+
+  private touchDistance(firstTouch: Touch, secondTouch: Touch): number {
+    return Math.hypot(secondTouch.clientX - firstTouch.clientX, secondTouch.clientY - firstTouch.clientY);
+  }
+
+  private cancelCurrentInteraction(): void {
+    const interactionState = this.interactionState();
+    if (!interactionState) {
+      return;
+    }
+
+    const canvasSvg = this.canvasSvg().nativeElement;
+    if (canvasSvg.hasPointerCapture(interactionState.pointerId)) {
+      canvasSvg.releasePointerCapture(interactionState.pointerId);
+    }
+    this.interactionState.set(null);
   }
 
   private updateViewportFromMinimapPointer(clientX: number, clientY: number, minimap: MinimapOverview): void {
