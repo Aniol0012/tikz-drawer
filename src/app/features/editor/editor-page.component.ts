@@ -3695,7 +3695,11 @@ export class EditorPageComponent {
   }
 
   private isQuickLineInsertionPreset(preset: ObjectPreset): boolean {
-    return (preset.id === 'segment' || preset.id === 'arrow') && preset.shapes.length === 1 && preset.shapes[0]?.kind === 'line';
+    return (
+      (preset.id === 'segment' || preset.id === 'arrow') &&
+      preset.shapes.length === 1 &&
+      preset.shapes[0]?.kind === 'line'
+    );
   }
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
