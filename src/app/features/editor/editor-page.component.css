@@ -2517,12 +2517,13 @@ button:disabled {
   .topbar__left {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: start;
+    align-items: center;
     gap: 10px;
   }
 
   .brand-lockup {
     min-width: 0;
+    align-self: center;
   }
 
   .scene-input {
@@ -2530,6 +2531,7 @@ button:disabled {
     min-width: 0;
     max-width: none;
     width: 100%;
+    align-self: center;
   }
 
   .topbar-actions {
@@ -2539,6 +2541,7 @@ button:disabled {
   .topbar-actions-menu {
     grid-column: 3;
     justify-self: end;
+    align-self: center;
   }
 
   .topbar__center {
@@ -2620,8 +2623,8 @@ button:disabled {
   .canvas-control-group--zoom input[type='range'] {
     width: 100%;
     min-width: 0;
-    height: 2px;
-    min-height: 10px;
+    height: 3px;
+    min-height: 12px;
     padding: 0;
     border-radius: 0;
     background: transparent;
@@ -2629,22 +2632,26 @@ button:disabled {
   }
 
   .canvas-control-group--zoom input[type='range']::-webkit-slider-runnable-track {
-    height: 2px;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 16%, var(--input-background));
   }
 
   .canvas-control-group--zoom input[type='range']::-webkit-slider-thumb {
-    width: 9px;
-    height: 9px;
-    margin-top: -3px;
+    width: 10px;
+    height: 10px;
+    margin-top: -3.5px;
   }
 
   .canvas-control-group--zoom input[type='range']::-moz-range-track {
-    height: 2px;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 16%, var(--input-background));
   }
 
   .canvas-control-group--zoom input[type='range']::-moz-range-thumb {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
   }
 
   .export-settings-modal,
@@ -2853,19 +2860,31 @@ button:disabled {
   }
 
   .canvas-control-group--zoom input[type='range'] {
-    height: 2px;
-    min-height: 8px;
+    height: 3px;
+    min-height: 10px;
+  }
+
+  .canvas-control-group--zoom input[type='range']::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 18%, var(--input-background));
   }
 
   .canvas-control-group--zoom input[type='range']::-webkit-slider-thumb {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     margin-top: -3px;
   }
 
+  .canvas-control-group--zoom input[type='range']::-moz-range-track {
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 18%, var(--input-background));
+  }
+
   .canvas-control-group--zoom input[type='range']::-moz-range-thumb {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
   }
 }
 
