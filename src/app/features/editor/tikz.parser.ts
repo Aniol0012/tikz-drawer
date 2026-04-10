@@ -174,7 +174,7 @@ const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBen
 };
 
 const parseLine = (line: string): CanvasShape | null => {
-  const match = line.match(/^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/);
+  const match = line.match(/^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/);
 
   if (!match?.groups) {
     return null;
@@ -217,7 +217,7 @@ const parseLine = (line: string): CanvasShape | null => {
 
 const parseSmoothLine = (line: string): CanvasShape | null => {
   const match = line.match(
-    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/
+    /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/
   );
 
   if (!match?.groups) {
@@ -265,7 +265,7 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
 
 const parseRectangle = (line: string): CanvasShape | null => {
   const match = line.match(
-    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/
   );
 
   if (!match?.groups) {
@@ -301,7 +301,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
 
 const parseCircle = (line: string): CanvasShape | null => {
   const match = line.match(
-    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
   );
 
   if (!match?.groups) {
@@ -333,7 +333,7 @@ const parseCircle = (line: string): CanvasShape | null => {
 
 const parseEllipse = (line: string): CanvasShape | null => {
   const match = line.match(
-    /^\\draw(?:\[(?<styles>[^\]]*)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
   );
 
   if (!match?.groups) {
@@ -365,7 +365,7 @@ const parseEllipse = (line: string): CanvasShape | null => {
 };
 
 const parseNode = (line: string): CanvasShape | null => {
-  const match = line.match(/^\\node(?:\[(?<styles>[^\]]*)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/);
+  const match = line.match(/^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/);
 
   if (!match?.groups) {
     return null;

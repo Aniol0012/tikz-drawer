@@ -1,7 +1,11 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Tests
+    types:
+      - completed
     branches:
       - main
       - master
@@ -13,39 +17,38 @@ permissions:
   id-token: write
 
 concurrency:
-  group: repo-writes-deploy-pages-${{ github.ref }}
+  group: repo-writes-deploy-pages-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    env:
+      TARGET_REF_NAME: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+      TARGET_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ env.TARGET_SHA }}
 
-      - name: Detect version change in push range
+      - name: Detect version change in target commit
         id: detect-version-change
-        if: github.event_name == 'push'
+        if: github.event_name == 'workflow_run'
         shell: bash
         run: |
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.sha }}"
+          TARGET_SHA="${TARGET_SHA}"
+          PARENT_SHA="$(git rev-list --parents -n 1 "$TARGET_SHA" | awk '{print $2}')"
 
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            RANGE="$AFTER^..$AFTER"
-          else
-            RANGE="$BEFORE..$AFTER"
-          fi
-
-          if git log --format= --patch "$RANGE" -- package.json | grep -Eq '^[+-][[:space:]]*"version"[[:space:]]*:'; then
+          if [ -n "$PARENT_SHA" ] && git diff --unified=0 "$PARENT_SHA" "$TARGET_SHA" -- package.json | grep -Eq '^[+-][[:space:]]*"version"[[:space:]]*:'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Version in package.json changed in push range ($RANGE)."
+            echo "Version in package.json changed in target commit ($TARGET_SHA)."
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No package.json version change in push range ($RANGE)."
+            echo "No package.json version change detected for target commit ($TARGET_SHA)."
           fi
 
       - name: Setup pnpm
@@ -60,12 +63,12 @@ jobs:
           cache: pnpm
 
       - name: Bump package version (patch)
-        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        if: github.event_name == 'workflow_run' && steps.detect-version-change.outputs.changed == 'false'
         shell: bash
         run: npm version patch --no-git-tag-version
 
       - name: Update README version badge
-        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        if: github.event_name == 'workflow_run' && steps.detect-version-change.outputs.changed == 'false'
         shell: bash
         run: |
           node - <<'NODE'
@@ -91,7 +94,7 @@ jobs:
           NODE
 
       - name: Commit and push bumped version
-        if: github.event_name == 'push' && steps.detect-version-change.outputs.changed == 'false'
+        if: github.event_name == 'workflow_run' && steps.detect-version-change.outputs.changed == 'false'
         shell: bash
         run: |
           if [ -z "$(git status --porcelain package.json README.md)" ]; then
@@ -106,14 +109,14 @@ jobs:
           git commit -m "chore(ci): bump package version"
 
           for attempt in 1 2 3; do
-            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            if git push origin "HEAD:${TARGET_REF_NAME}"; then
               echo "Version bump pushed successfully."
               exit 0
             fi
 
             echo "Push rejected (attempt ${attempt}/3). Rebase and retry..."
-            git fetch origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+            git fetch origin "${TARGET_REF_NAME}"
+            git rebase "origin/${TARGET_REF_NAME}"
           done
 
           echo "Failed to push version bump after 3 attempts."
