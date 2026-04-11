@@ -2183,19 +2183,6 @@
                   <path [attr.d]="iconMap.settings"></path></svg
                 ><span>{{ t('latexSettings') }}</span>
               </button>
-              <label class="field field--code-theme">
-                <span>{{ t('codeTheme') }}</span>
-                <select
-                  [value]="codeHighlightTheme()"
-                  (change)="setCodeHighlightTheme($any($event.target).value)">
-                  <option value="aurora">{{ t('codeThemeAurora') }}</option>
-                  <option value="sunset">{{ t('codeThemeSunset') }}</option>
-                  <option value="midnight">{{ t('codeThemeMidnight') }}</option>
-                  <option value="forest">{{ t('codeThemeForest') }}</option>
-                  <option value="rose">{{ t('codeThemeRose') }}</option>
-                  <option value="graphite">{{ t('codeThemeGraphite') }}</option>
-                </select>
-              </label>
             </div>
           </section>
 
@@ -2797,6 +2784,34 @@
                     (input)="updateLatexExportNumber('standaloneBorderMm', $event, 0, 24)" />
                 </div>
               </label>
+            </div>
+          </section>
+
+          <section
+            class="sidebar-section export-settings-section export-settings-section--code-theme">
+            <div class="section-header section-header--static">
+              <span>{{ t('codeTheme') }}</span>
+            </div>
+            <div class="form-grid export-settings-form-grid">
+              <label class="field field--full">
+                <span>{{ t('codeTheme') }}</span>
+                <select
+                  [value]="codeHighlightTheme()"
+                  (change)="setCodeHighlightTheme($any($event.target).value)">
+                  <option value="aurora">{{ t('codeThemeAurora') }}</option>
+                  <option value="sunset">{{ t('codeThemeSunset') }}</option>
+                  <option value="midnight">{{ t('codeThemeMidnight') }}</option>
+                  <option value="forest">{{ t('codeThemeForest') }}</option>
+                  <option value="rose">{{ t('codeThemeRose') }}</option>
+                  <option value="graphite">{{ t('codeThemeGraphite') }}</option>
+                </select>
+              </label>
+              <div
+                class="code-stack code-stack--theme-preview"
+                [attr.data-code-theme]="codeHighlightTheme()">
+                <pre class="code-block code-block--theme-preview">
+<code [innerHTML]="highlightedCodeThemePreview()"></code></pre>
+              </div>
             </div>
           </section>
 

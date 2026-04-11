@@ -2080,7 +2080,12 @@ kbd {
 
 .export-settings-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+  grid-template-areas:
+    'environment layout'
+    'code-theme standalone'
+    'meta meta'
+    'colors colors';
   gap: 18px;
   align-items: start;
 }
@@ -2099,15 +2104,19 @@ kbd {
 }
 
 .export-settings-section--environment {
-  grid-column: 1;
+  grid-area: environment;
 }
 
 .export-settings-section--layout {
-  grid-column: 2;
+  grid-area: layout;
 }
 
 .export-settings-section--standalone {
-  grid-column: 2;
+  grid-area: standalone;
+}
+
+.export-settings-section--code-theme {
+  grid-area: code-theme;
 }
 
 .export-settings-section--meta,
@@ -2362,6 +2371,15 @@ kbd {
   color: var(--muted-foreground);
   font-size: 0.84rem;
   line-height: 1.5;
+}
+
+.code-stack--theme-preview {
+  gap: 0;
+}
+
+.code-block--theme-preview {
+  min-height: 0;
+  padding-right: 14px;
 }
 
 .tool-button svg,
@@ -2744,11 +2762,19 @@ button:disabled {
   .export-settings-modal,
   .export-settings-layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'environment'
+      'layout'
+      'standalone'
+      'code-theme'
+      'meta'
+      'colors';
   }
 
   .export-settings-section--environment,
   .export-settings-section--layout,
   .export-settings-section--standalone,
+  .export-settings-section--code-theme,
   .export-settings-section--meta,
   .export-settings-section--colors {
     grid-column: 1;

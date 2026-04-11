@@ -874,6 +874,9 @@ export class EditorPageComponent {
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
   readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
   readonly highlightedImportCode = computed(() => highlightLatex(this.store.importCode() || ' '));
+  readonly highlightedCodeThemePreview = computed(() =>
+    highlightLatex('\\begin{tikzpicture}\n\\draw (0,0) -- (1.6,0.8);\n\\end{tikzpicture}')
+  );
   readonly selectionHandleSize = computed(() => (this.coarsePointer() ? 18 : 10));
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
