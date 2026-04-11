@@ -46,11 +46,13 @@ describe('presets', () => {
     expect(texts).toEqual(['Pendiente', 'En curso', 'Hecho']);
   });
 
-  it('uses the updated browser, phone, folder, kanban and document compositions', () => {
+  it('uses the updated browser, phone, folder, message, kanban, sticky note and document compositions', () => {
     const browserPreset = objectPresets.find((preset) => preset.id === 'browser');
     const phonePreset = objectPresets.find((preset) => preset.id === 'phone');
     const folderPreset = objectPresets.find((preset) => preset.id === 'folder');
+    const messagePreset = objectPresets.find((preset) => preset.id === 'message');
     const kanbanPreset = objectPresets.find((preset) => preset.id === 'kanban');
+    const stickyNotePreset = objectPresets.find((preset) => preset.id === 'sticky-note');
     const documentPreset = objectPresets.find((preset) => preset.id === 'document');
 
     expect(browserPreset?.shapes.map((shape) => shape.kind)).toEqual([
@@ -61,14 +63,9 @@ describe('presets', () => {
       'circle',
       'rectangle'
     ]);
-    expect(phonePreset?.shapes.map((shape) => shape.kind)).toEqual([
-      'rectangle',
-      'rectangle',
-      'rectangle',
-      'circle',
-      'line'
-    ]);
+    expect(phonePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'rectangle', 'rectangle', 'line']);
     expect(folderPreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'rectangle', 'text']);
+    expect(messagePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'line', 'text']);
     expect(kanbanPreset?.shapes.map((shape) => shape.kind)).toEqual([
       'rectangle',
       'line',
@@ -77,6 +74,7 @@ describe('presets', () => {
       'text',
       'text'
     ]);
+    expect(stickyNotePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'line', 'line', 'text']);
     expect(documentPreset?.shapes.map((shape) => shape.kind)).toEqual([
       'rectangle',
       'rectangle',
@@ -95,7 +93,10 @@ describe('presets', () => {
       throw new Error('Expected folder preset to include a text label');
     }
 
-    expect(folderLabel.y).toBeLessThan(-2);
+    if (folderLabel?.kind === 'text') {
+      expect(folderLabel.textBox).toBe(true);
+      expect(folderLabel.y).toBeGreaterThan(-1.3);
+    }
 
     const browserAddressBar = browserPreset?.shapes.find(
       (shape) => shape.kind === 'rectangle' && shape.name === 'Browser address bar'
@@ -115,7 +116,31 @@ describe('presets', () => {
     }
 
     const phoneNotch = phonePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Phone notch');
-    expect(phoneNotch?.kind).toBe('rectangle');
+    expect(phoneNotch?.kind).toBeUndefined();
+
+    const phoneIsland = phonePreset?.shapes.find(
+      (shape) => shape.kind === 'rectangle' && shape.name === 'Phone island'
+    );
+    expect(phoneIsland?.kind).toBe('rectangle');
+
+    const stickyNoteLabel = stickyNotePreset?.shapes.find(
+      (shape) => shape.kind === 'text' && shape.name === 'Note label'
+    );
+    expect(stickyNoteLabel?.kind).toBe('text');
+    if (stickyNoteLabel?.kind === 'text') {
+      expect(stickyNoteLabel.textBox).toBe(true);
+      expect(stickyNoteLabel.boxWidth).toBe(2.4);
+      expect(stickyNoteLabel.x).toBe(-1.22);
+      expect(stickyNoteLabel.fontSize).toBe(0.34);
+    }
+
+    const messageLabel = messagePreset?.shapes.find((shape) => shape.kind === 'text' && shape.name === 'Message text');
+    expect(messageLabel?.kind).toBe('text');
+    if (messageLabel?.kind === 'text') {
+      expect(messageLabel.textBox).toBe(true);
+      expect(messageLabel.boxWidth).toBe(2.9);
+      expect(messageLabel.x).toBe(-1.45);
+    }
 
     const documentFold = documentPreset?.shapes.find(
       (shape) => shape.kind === 'rectangle' && shape.name === 'Document fold'

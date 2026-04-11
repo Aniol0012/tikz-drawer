@@ -586,38 +586,37 @@ export const objectPresets: readonly ObjectPreset[] = [
     [
       createRectangle({
         name: 'Phone body',
-        x: -1.35,
-        y: -2.7,
-        width: 2.7,
-        height: 5.4,
-        cornerRadius: 0.42,
+        x: -1.45,
+        y: -2.95,
+        width: 2.9,
+        height: 5.9,
+        cornerRadius: 0.46,
         fill: '#fbfbfb'
       }),
       createRectangle({
         name: 'Phone screen',
-        x: -1.1,
-        y: -2.42,
-        width: 2.2,
-        height: 4.86,
-        cornerRadius: 0.34,
+        x: -1.18,
+        y: -2.58,
+        width: 2.36,
+        height: 5.16,
+        cornerRadius: 0.38,
         fill: '#f7f7f7'
       }),
       createRectangle({
-        name: 'Phone notch',
-        x: -0.45,
-        y: 2.05,
-        width: 0.9,
-        height: 0.22,
-        cornerRadius: 0.11,
+        name: 'Phone island',
+        x: -0.42,
+        y: 2.06,
+        width: 0.84,
+        height: 0.2,
+        cornerRadius: 0.1,
         fill: '#1f1f1f',
         stroke: '#1f1f1f',
         strokeWidth: 0.05
       }),
-      createCircle({ name: 'Phone camera', cx: 0.5, cy: 2.16, r: 0.05, fill: '#1f1f1f', stroke: '#1f1f1f' }),
       createLine({
         name: 'Phone home indicator',
-        from: { x: -0.42, y: -2.03 },
-        to: { x: 0.42, y: -2.03 },
+        from: { x: -0.34, y: -2.1 },
+        to: { x: 0.34, y: -2.1 },
         stroke: '#c6c8cb',
         strokeWidth: 0.09
       })
@@ -808,29 +807,46 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Note',
     'Sticky note style block for quick annotations.',
     [
-      createRectangle({ name: 'Note body', width: 3.4, height: 3.1, fill: '#fafafa', cornerRadius: 0.12 }),
+      createRectangle({
+        name: 'Note body',
+        x: -1.8,
+        y: -1.6,
+        width: 3.4,
+        height: 3.1,
+        fill: '#fafafa',
+        cornerRadius: 0.12
+      }),
       createLine({
         name: 'Note fold a',
-        from: { x: 1, y: 1.55 },
-        to: { x: 1.7, y: 0.9 },
+        from: { x: 1.0, y: 1.5 },
+        to: { x: 1.68, y: 0.86 },
         stroke: '#8b8b8b',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Note fold b',
-        from: { x: 1.7, y: 0.9 },
-        to: { x: 1.7, y: 1.55 },
+        from: { x: 1.68, y: 0.86 },
+        to: { x: 1.68, y: 1.5 },
         stroke: '#8b8b8b',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Note fold c',
-        from: { x: 1, y: 1.55 },
-        to: { x: 1.7, y: 1.55 },
+        from: { x: 1.0, y: 1.5 },
+        to: { x: 1.68, y: 1.5 },
         stroke: '#8b8b8b',
         strokeWidth: 0.05
       }),
-      createText({ name: 'Note label', text: 'Note', y: 0 })
+      createText({
+        name: 'Note label',
+        text: 'Note',
+        x: -1.22,
+        y: 0.2,
+        textBox: true,
+        boxWidth: 2.4,
+        fontSize: 0.34,
+        textAlign: 'left'
+      })
     ],
     { searchTerms: ['note', 'sticky', 'annotation'] }
   ),
@@ -892,23 +908,32 @@ export const objectPresets: readonly ObjectPreset[] = [
     [
       createRectangle({
         name: 'Folder body',
-        x: -3.1,
-        y: -1.35,
-        width: 6.2,
-        height: 2.9,
+        x: -2.45,
+        y: -1.5,
+        width: 4.9,
+        height: 3.0,
         fill: '#fbfbfb',
         cornerRadius: 0.14
       }),
       createRectangle({
         name: 'Folder tab',
-        x: -2.85,
-        y: -1.28,
-        width: 1.85,
-        height: 0.58,
+        x: -2.25,
+        y: 0.9,
+        width: 1.4,
+        height: 0.52,
         fill: '#f5f5f5',
         cornerRadius: 0.08
       }),
-      createText({ name: 'Folder label', text: 'Folder', y: -2.25, fontSize: 0.46 })
+      createText({
+        name: 'Folder label',
+        text: 'Folder',
+        x: -1.78,
+        y: -0.95,
+        textBox: true,
+        boxWidth: 3.45,
+        fontSize: 0.34,
+        textAlign: 'left'
+      })
     ],
     { searchTerms: ['folder', 'files', 'directory', 'collection'] }
   ),
@@ -919,10 +944,37 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Message',
     'Speech bubble for comments and chat flows.',
     [
-      createRectangle({ name: 'Message bubble', width: 4.4, height: 2.2, fill: '#f7f9ff', cornerRadius: 0.24 }),
-      createLine({ name: 'Message tail a', from: { x: -1.1, y: -1.1 }, to: { x: -1.8, y: -1.8 }, strokeWidth: 0.06 }),
-      createLine({ name: 'Message tail b', from: { x: -0.4, y: -1.1 }, to: { x: -1.8, y: -1.8 }, strokeWidth: 0.06 }),
-      createText({ name: 'Message text', text: 'Message', y: 0.05 })
+      createRectangle({
+        name: 'Message bubble',
+        x: -2.2,
+        y: -1.15,
+        width: 4.4,
+        height: 2.3,
+        fill: '#f7f9ff',
+        cornerRadius: 0.24
+      }),
+      createLine({
+        name: 'Message tail a',
+        from: { x: -1.15, y: -1.15 },
+        to: { x: -1.95, y: -1.95 },
+        strokeWidth: 0.06
+      }),
+      createLine({
+        name: 'Message tail b',
+        from: { x: -0.45, y: -1.15 },
+        to: { x: -1.95, y: -1.95 },
+        strokeWidth: 0.06
+      }),
+      createText({
+        name: 'Message text',
+        text: 'Message',
+        x: -1.45,
+        y: 0,
+        textBox: true,
+        boxWidth: 2.9,
+        fontSize: 0.34,
+        textAlign: 'left'
+      })
     ],
     { searchTerms: ['message', 'chat', 'comment', 'bubble'] }
   ),
