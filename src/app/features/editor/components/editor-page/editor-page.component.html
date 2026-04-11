@@ -1835,6 +1835,625 @@
                 <div class="empty-panel">
                   {{ t('tableRecognizedHint') }}
                 </div>
+              } @else if (multiEditShape(); as shape) {
+                <div class="selection-title">
+                  <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>
+                  <span>{{ localizedShapeKind(shape.kind) }}</span>
+                </div>
+                <div class="property-group property-group--actions">
+                  <div class="inline-actions">
+                    <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.copy"></path></svg
+                      ><span>{{ t('duplicate') }}</span>
+                    </button>
+                    <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.front"></path></svg
+                      ><span>{{ t('bringToFront') }}</span>
+                    </button>
+                    <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.back"></path></svg
+                      ><span>{{ t('sendToBack') }}</span>
+                    </button>
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      (click)="openSaveTemplateDialog()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.library"></path></svg
+                      ><span>{{ t('saveAsTemplate') }}</span>
+                    </button>
+                  </div>
+                </div>
+                @if (shape.kind !== 'text') {
+                  <div class="property-group">
+                    <div class="property-group__title">{{ t('appearance') }}</div>
+                    <div class="color-pair-controls">
+                      <label class="color-chip-field">
+                        <small>{{ t('stroke') }}</small>
+                        <input
+                          class="color-swatch"
+                          type="color"
+                          [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
+                          (input)="updateShapeText('stroke', $event)" />
+                        <input
+                          class="color-opacity-input"
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          [value]="shape.strokeOpacity"
+                          (input)="updateShapeOpacity('strokeOpacity', $event)" />
+                        <small>{{ t('opacity') }} {{ opacityPercent(shape.strokeOpacity) }}%</small>
+                      </label>
+                      @if (
+                        shape.kind === 'rectangle' ||
+                        shape.kind === 'circle' ||
+                        shape.kind === 'ellipse'
+                      ) {
+                        <label class="color-chip-field">
+                          <small>{{ t('fill') }}</small>
+                          <input
+                            class="color-swatch"
+                            type="color"
+                            [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
+                            (input)="updateShapeText('fill', $event)" />
+                          <input
+                            class="color-opacity-input"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.fillOpacity"
+                            (input)="updateShapeOpacity('fillOpacity', $event)" />
+                          <small>{{ t('opacity') }} {{ opacityPercent(shape.fillOpacity) }}%</small>
+                        </label>
+                      }
+                    </div>
+                    <label class="field field--full field--stroke-width">
+                      <span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
+                      <div class="range-field">
+                        <input
+                          type="range"
+                          min="0.02"
+                          max="8"
+                          step="0.02"
+                          [value]="shape.strokeWidth"
+                          (input)="updateShapeNumber('strokeWidth', $event)" />
+                        <input
+                          class="color-metric-input"
+                          type="number"
+                          min="0.02"
+                          max="8"
+                          step="0.02"
+                          [value]="shape.strokeWidth"
+                          (input)="updateShapeNumber('strokeWidth', $event)" />
+                      </div>
+                    </label>
+                  </div>
+                }
+                @switch (shape.kind) {
+                  @case ('line') {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('arrow') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field field--full"
+                          ><span>{{ t('arrowDirection') }}</span
+                          ><select
+                            [value]="lineArrowDirection(shape)"
+                            (change)="setLineArrowDirection($any($event.target).value)">
+                            <option value="none">{{ t('arrowDirectionNone') }}</option>
+                            <option value="forward">{{ t('arrowDirectionForward') }}</option>
+                            <option value="backward">{{ t('arrowDirectionBackward') }}</option>
+                            <option value="both">{{ t('arrowDirectionBoth') }}</option>
+                          </select></label
+                        >
+                        <label class="field field--full"
+                          ><span>{{ t('lineMode') }}</span
+                          ><select
+                            [value]="shape.lineMode"
+                            (change)="setLineMode($any($event.target).value)">
+                            <option value="straight">{{ t('lineModeStraight') }}</option>
+                            <option value="curved">{{ t('lineModeCurved') }}</option>
+                          </select></label
+                        >
+                      </div>
+                      <div class="field field--full">
+                        <span>{{ t('arrowType') }}</span>
+                        <div class="arrow-tip-grid">
+                          @for (arrowType of arrowTipOptions; track arrowType.id) {
+                            <button
+                              class="arrow-tip-button"
+                              type="button"
+                              [class.is-active]="shape.arrowType === arrowType.id"
+                              [title]="arrowTipLabel(arrowType.id)"
+                              [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              (click)="setLineArrowType(arrowType.id)">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
+                              </svg>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="field field--full">
+                        <span>{{ t('arrowAppearance') }}</span>
+                        <div class="arrow-style-grid">
+                          <label class="color-chip-field">
+                            <small>{{ t('arrowColor') }}</small>
+                            <input
+                              class="color-swatch"
+                              type="color"
+                              [value]="shape.arrowColor"
+                              (input)="updateShapeText('arrowColor', $event)" />
+                            <input
+                              class="color-opacity-input"
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              [value]="shape.arrowOpacity"
+                              (input)="updateShapeOpacity('arrowOpacity', $event)" />
+                            <small
+                              >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
+                            >
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowOpen"
+                              (change)="updateShapeBoolean('arrowOpen', $event)" />
+                            <span>{{ t('arrowOpen') }}</span>
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowRound"
+                              (change)="updateShapeBoolean('arrowRound', $event)" />
+                            <span>{{ t('arrowRound') }}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('arrowScale') }} · {{ formatValue(shape.arrowScale) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" />
+                            <input
+                              type="number"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('arrowBendMode') }}</span
+                          ><select
+                            [value]="shape.arrowBendMode"
+                            (change)="setLineArrowBendMode($any($event.target).value)">
+                            <option value="none">{{ t('arrowBendNone') }}</option>
+                            <option value="flex">{{ t('arrowBendFlex') }}</option>
+                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
+                            <option value="bend">{{ t('arrowBendBend') }}</option>
+                          </select></label
+                        >
+                      </div>
+                    </div>
+                  }
+                  @case ('rectangle') {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('geometry') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.2"
+                              max="20"
+                              step="0.1"
+                              [value]="shape.width"
+                              (input)="updateShapeNumber('width', $event)" /><input
+                              type="number"
+                              min="0.2"
+                              step="0.1"
+                              [value]="shape.width"
+                              (input)="updateShapeNumber('width', $event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.2"
+                              max="20"
+                              step="0.1"
+                              [value]="shape.height"
+                              (input)="updateShapeNumber('height', $event)" /><input
+                              type="number"
+                              min="0.2"
+                              step="0.1"
+                              [value]="shape.height"
+                              (input)="updateShapeNumber('height', $event)" /></div
+                        ></label>
+                        <label class="field field--full"
+                          ><span
+                            >{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span
+                          >
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0"
+                              max="4"
+                              step="0.1"
+                              [value]="shape.cornerRadius"
+                              (input)="updateShapeNumber('cornerRadius', $event)" /><input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              [value]="shape.cornerRadius"
+                              (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                        ></label>
+                      </div>
+                    </div>
+                  }
+                  @case ('circle') {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('geometry') }}</div>
+                      <label class="field field--full"
+                        ><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="12"
+                            step="0.1"
+                            [value]="shape.r"
+                            (input)="updateShapeNumber('r', $event)" /><input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            [value]="shape.r"
+                            (input)="updateShapeNumber('r', $event)" /></div
+                      ></label>
+                    </div>
+                  }
+                  @case ('ellipse') {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('geometry') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('rx') }} · {{ formatValue(shape.rx) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="12"
+                              step="0.1"
+                              [value]="shape.rx"
+                              (input)="updateShapeNumber('rx', $event)" /><input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              [value]="shape.rx"
+                              (input)="updateShapeNumber('rx', $event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('ry') }} · {{ formatValue(shape.ry) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.1"
+                              max="12"
+                              step="0.1"
+                              [value]="shape.ry"
+                              (input)="updateShapeNumber('ry', $event)" /><input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              [value]="shape.ry"
+                              (input)="updateShapeNumber('ry', $event)" /></div
+                        ></label>
+                      </div>
+                    </div>
+                  }
+                  @case ('text') {
+                    <div class="property-group">
+                      <div class="property-group__title">{{ t('general') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field field--full"
+                          ><span>{{ t('text') }}</span
+                          ><textarea
+                            rows="3"
+                            [value]="shape.text"
+                            (input)="updateShapeText('text', $event)"></textarea>
+                        </label>
+                        <label class="toggle-field field--full">
+                          <input
+                            type="checkbox"
+                            [checked]="shape.textBox"
+                            (change)="setTextBoxEnabled($event)" />
+                          <span>{{ t('textContent') }}</span>
+                        </label>
+                        @if (shape.textBox) {
+                          <label class="field field--full"
+                            ><span>{{ t('width') }} · {{ formatValue(shape.boxWidth) }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.4"
+                                max="12"
+                                step="0.1"
+                                [value]="shape.boxWidth"
+                                (input)="updateShapeNumber('boxWidth', $event)" /><input
+                                type="number"
+                                min="0.4"
+                                step="0.1"
+                                [value]="shape.boxWidth"
+                                (input)="updateShapeNumber('boxWidth', $event)" /></div
+                          ></label>
+                        }
+                      </div>
+                    </div>
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('textStyleSection') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <div class="field field--full">
+                          <span>{{ t('textFormatting') }}</span>
+                          <div class="text-style-toolbar">
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textStyleBold')"
+                              [class.is-active]="isTextStyleActive(shape, 'fontWeight', 'bold')"
+                              (click)="toggleTextStyle('fontWeight')">
+                              <span class="text-style-glyph text-style-glyph--bold">B</span>
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textStyleItalic')"
+                              [class.is-active]="isTextStyleActive(shape, 'fontStyle', 'italic')"
+                              (click)="toggleTextStyle('fontStyle')">
+                              <span class="text-style-glyph text-style-glyph--italic">I</span>
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textStyleUnderline')"
+                              [class.is-active]="
+                                isTextStyleActive(shape, 'textDecoration', 'underline')
+                              "
+                              (click)="toggleTextStyle('textDecoration')">
+                              <span class="text-style-glyph text-style-glyph--underline">U</span>
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textAlignLeft')"
+                              [class.is-active]="isTextStyleActive(shape, 'textAlign', 'left')"
+                              (click)="setTextStyle('textAlign', 'left')">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 7h14M5 12h10M5 17h14"></path>
+                              </svg>
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textAlignCenter')"
+                              [class.is-active]="isTextStyleActive(shape, 'textAlign', 'center')"
+                              (click)="setTextStyle('textAlign', 'center')">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 7h14M7 12h10M5 17h14"></path>
+                              </svg>
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              [title]="t('textAlignRight')"
+                              [class.is-active]="isTextStyleActive(shape, 'textAlign', 'right')"
+                              (click)="setTextStyle('textAlign', 'right')">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M5 7h14M9 12h10M5 17h14"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="field field--full">
+                          <span>{{ t('fontSize') }}</span>
+                          <div class="chip-row">
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="setTextPresetSize(0.42)">
+                              S
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="setTextPresetSize(0.72)">
+                              M
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="setTextPresetSize(1.08)">
+                              L
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="transformSelectedText('uppercase')">
+                              AA
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="transformSelectedText('lowercase')">
+                              aa
+                            </button>
+                            <button
+                              class="secondary-button secondary-button--compact"
+                              type="button"
+                              (click)="transformSelectedText('titlecase')">
+                              Aa
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('transform') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('fontSize') }} · {{ formatValue(shape.fontSize) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.2"
+                              max="2"
+                              step="0.05"
+                              [value]="shape.fontSize"
+                              (input)="updateShapeNumber('fontSize', $event)" /><input
+                              type="number"
+                              min="0.2"
+                              step="0.05"
+                              [value]="shape.fontSize"
+                              (input)="updateShapeNumber('fontSize', $event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation) }}°</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="-180"
+                              max="180"
+                              step="1"
+                              [value]="shape.rotation"
+                              (input)="updateShapeNumber('rotation', $event)" /><input
+                              type="number"
+                              min="-180"
+                              max="180"
+                              step="1"
+                              [value]="shape.rotation"
+                              (input)="updateShapeNumber('rotation', $event)" /></div
+                        ></label>
+                      </div>
+                      <div class="field field--full">
+                        <span>{{ t('rotationPresets') }}</span>
+                        <div class="chip-row">
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextRotation(-90)">
+                            -90
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextRotation(-45)">
+                            -45
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextRotation(0)">
+                            0
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextRotation(45)">
+                            45
+                          </button>
+                          <button
+                            class="secondary-button secondary-button--compact"
+                            type="button"
+                            (click)="setTextRotation(90)">
+                            90
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('appearance') }}</div>
+                      <label class="field"
+                        ><span>{{ t('color') }}</span>
+                        <div class="color-inline-field">
+                          <input
+                            class="color-swatch"
+                            type="color"
+                            [value]="shape.color"
+                            (input)="updateShapeText('color', $event)" /><input
+                            class="color-opacity-input"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.colorOpacity"
+                            (input)="updateShapeOpacity('colorOpacity', $event)" /><small
+                            >{{ t('opacity') }} {{ opacityPercent(shape.colorOpacity) }}%</small
+                          >
+                        </div></label
+                      >
+                    </div>
+                  }
+                  @case ('image') {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ t('geometry') }}</div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="16"
+                              step="0.1"
+                              [value]="shape.width"
+                              (input)="updateImageDimension('width', $event)" /><input
+                              type="number"
+                              min="0.4"
+                              step="0.1"
+                              [value]="shape.width"
+                              (input)="updateImageDimension('width', $event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="16"
+                              step="0.1"
+                              [value]="shape.height"
+                              (input)="updateImageDimension('height', $event)" /><input
+                              type="number"
+                              min="0.4"
+                              step="0.1"
+                              [value]="shape.height"
+                              (input)="updateImageDimension('height', $event)" /></div
+                        ></label>
+                        <label class="field field--full">
+                          <span>{{ t('latexImageSource') }}</span>
+                          <input
+                            type="text"
+                            [value]="shape.latexSource"
+                            (input)="updateImageText('latexSource', $event)" />
+                        </label>
+                      </div>
+                    </div>
+                  }
+                }
               } @else {
                 <div class="selection-title">
                   <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>

@@ -88,6 +88,11 @@ export interface HandleDescriptor {
   readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control';
 }
 
+export interface HomogeneousSelectionInfo {
+  readonly kind: CanvasShape['kind'];
+  readonly shapes: readonly CanvasShape[];
+}
+
 export interface MoveInteractionState {
   readonly kind: 'move';
   readonly pointerId: number;

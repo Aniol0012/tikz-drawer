@@ -574,6 +574,19 @@ export class EditorStore {
     }));
   }
 
+  patchSelectedShapes(mutator: (shape: CanvasShape) => CanvasShape): void {
+    const selectedShapeIdSet = new Set(this.selectedShapeIds());
+
+    if (selectedShapeIdSet.size === 0) {
+      return;
+    }
+
+    this.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? mutator(shape) : shape))
+    }));
+  }
+
   replaceShapes(nextShapes: readonly CanvasShape[]): void {
     const nextShapeMap = new Map(nextShapes.map((shape) => [shape.id, shape]));
     if (nextShapeMap.size === 0) {

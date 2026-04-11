@@ -25,6 +25,7 @@ import {
   type ExportSvgDocument,
   type FreehandInteractionState,
   type HandleDescriptor,
+  type HomogeneousSelectionInfo,
   type InlineTextEditorState,
   type InspectorTab,
   type InteractionState,
@@ -342,6 +343,23 @@ export class EditorPageComponent {
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
   readonly selectedTable = computed<TableSelectionInfo | null>(() => getTableSelectionInfo(this.selectedShapes()));
+  readonly multiEditSelection = computed<HomogeneousSelectionInfo | null>(() => {
+    if (this.selectionCount() < 2 || this.selectedTable()) {
+      return null;
+    }
+
+    const shapes = this.selectedShapes();
+    const firstShape = shapes[0];
+    if (!firstShape || shapes.some((shape) => shape.kind !== firstShape.kind)) {
+      return null;
+    }
+
+    return {
+      kind: firstShape.kind,
+      shapes
+    };
+  });
+  readonly multiEditShape = computed<CanvasShape | null>(() => this.multiEditSelection()?.shapes[0] ?? null);
   readonly selectedMergeIds = computed(() =>
     Array.from(
       new Set(
@@ -1608,26 +1626,26 @@ export class EditorPageComponent {
 
   updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor', event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
-    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
   setTextStyle(
     key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
     value: TextShape['fontWeight'] | TextShape['fontStyle'] | TextShape['textDecoration'] | TextShape['textAlign']
   ): void {
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape
     );
   }
 
   setTextRotation(value: number): void {
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape
     );
   }
 
   toggleTextStyle(key: 'fontWeight' | 'fontStyle' | 'textDecoration'): void {
-    this.store.patchSelectedShape((shape) => {
+    this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') return shape;
       if (key === 'fontWeight') {
         return { ...shape, fontWeight: shape.fontWeight === 'bold' ? 'normal' : 'bold' } as CanvasShape;
@@ -1664,7 +1682,7 @@ export class EditorPageComponent {
 
   updateShapeOpacity(key: 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity', event: Event): void {
     const value = Math.min(1, Math.max(0, Number((event.target as HTMLInputElement).value)));
-    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
   updateInlineTextEditor(event: Event): void {
@@ -1740,7 +1758,7 @@ export class EditorPageComponent {
 
   updateImageText(key: 'src' | 'latexSource', event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'image' ? ({ ...shape, [key]: value } as CanvasShape) : shape
     );
   }
@@ -1751,7 +1769,7 @@ export class EditorPageComponent {
       return;
     }
 
-    this.store.patchSelectedShape((shape) => {
+    this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'image') {
         return shape;
       }
@@ -1780,7 +1798,7 @@ export class EditorPageComponent {
     const dimensions = await this.loadImageDimensions(dataUrl);
     this.selectedImageFilename.set(file.name);
 
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'image'
         ? ({
             ...shape,
@@ -1799,11 +1817,11 @@ export class EditorPageComponent {
   }
 
   setTextPresetSize(fontSize: number): void {
-    this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape));
+    this.patchInspectorSelection((shape) => (shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape));
   }
 
   transformSelectedText(mode: 'uppercase' | 'lowercase' | 'titlecase'): void {
-    this.store.patchSelectedShape((shape) => {
+    this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') return shape;
       const text =
         mode === 'uppercase'
@@ -1834,17 +1852,17 @@ export class EditorPageComponent {
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
-    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
   updateShapeBoolean(key: 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound', event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
-    this.store.patchSelectedShape((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
   updateLineArrowScale(event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'line'
         ? ({
             ...shape,
@@ -1855,7 +1873,7 @@ export class EditorPageComponent {
   }
 
   setLineArrowBendMode(value: string): void {
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'line' && (value === 'none' || value === 'flex' || value === 'flex-prime' || value === 'bend')
         ? ({ ...shape, arrowBendMode: value } as LineShape)
         : shape
@@ -1863,7 +1881,7 @@ export class EditorPageComponent {
   }
 
   setLineArrowDirection(direction: 'none' | 'forward' | 'backward' | 'both'): void {
-    this.store.patchSelectedShape((shape) => {
+    this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'line') {
         return shape;
       }
@@ -1884,13 +1902,13 @@ export class EditorPageComponent {
   }
 
   setLineArrowType(value: string): void {
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind } as LineShape) : shape
     );
   }
 
   setLineMode(value: string): void {
-    this.store.patchSelectedShape((shape) =>
+    this.patchInspectorSelection((shape) =>
       shape.kind === 'line' && (value === 'straight' || value === 'curved')
         ? ({
             ...shape,
@@ -1906,7 +1924,7 @@ export class EditorPageComponent {
 
   setTextBoxEnabled(event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
-    this.store.patchSelectedShape((shape) => {
+    this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') {
         return shape;
       }
@@ -1929,6 +1947,15 @@ export class EditorPageComponent {
 
       return { ...shape, textBox: value, x: alignedX } as CanvasShape;
     });
+  }
+
+  private patchInspectorSelection(mutator: (shape: CanvasShape) => CanvasShape): void {
+    if (this.selectionCount() > 1) {
+      this.store.patchSelectedShapes(mutator);
+      return;
+    }
+
+    this.store.patchSelectedShape(mutator);
   }
 
   updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
