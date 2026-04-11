@@ -541,6 +541,15 @@
   min-height: 34px;
   padding: 0 10px 0 12px;
   border-radius: 999px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.language-select:hover {
+  border-color: var(--tool-border-strong);
+  background: color-mix(in srgb, var(--tool-surface) 90%, var(--toolbar-background-hover));
 }
 
 .language-select select,
@@ -571,19 +580,40 @@
 }
 
 .language-select select option {
-  background: var(--panel-background);
+  background-color: var(--panel-background);
   color: var(--app-foreground);
+  font-weight: 600;
+}
+
+.language-select select option:checked {
+  background-color: color-mix(in srgb, var(--accent) 16%, var(--panel-background));
+  color: var(--accent-strong);
+}
+
+.language-select select option:hover {
+  background-color: color-mix(in srgb, var(--accent) 10%, var(--panel-background));
 }
 
 .language-select svg {
   position: absolute;
-  right: 10px;
-  width: 14px;
-  height: 14px;
+  right: 11px;
+  width: 13px;
+  height: 13px;
   pointer-events: none;
   stroke: var(--muted-foreground);
   fill: none;
   stroke-width: 1.8;
+  opacity: 0.88;
+  transition:
+    stroke 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.language-select:hover svg,
+.language-select:focus-within svg {
+  stroke: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
+  opacity: 1;
 }
 
 :host([data-theme='dark']) .language-select {
@@ -591,13 +621,26 @@
   border-color: var(--tool-border-strong);
 }
 
+:host([data-theme='dark']) .language-select:hover {
+  background: color-mix(in srgb, var(--tool-surface) 86%, var(--toolbar-background-hover));
+}
+
 :host([data-theme='dark']) .language-select select {
   color: #f8fafc;
 }
 
 :host([data-theme='dark']) .language-select select option {
-  background: #111827;
+  background-color: #111827;
   color: #f8fafc;
+}
+
+:host([data-theme='dark']) .language-select select option:checked {
+  background-color: color-mix(in srgb, var(--accent) 24%, #111827);
+  color: #dbe8ff;
+}
+
+:host([data-theme='dark']) .language-select select option:hover {
+  background-color: color-mix(in srgb, var(--accent) 16%, #111827);
 }
 
 .icon-button--github .icon-button__github-mark {
