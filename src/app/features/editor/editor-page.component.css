@@ -1032,6 +1032,11 @@ kbd {
   fill: none;
 }
 
+.selection-outline--interactive {
+  pointer-events: all;
+  cursor: move;
+}
+
 .selection-handle {
   fill: var(--handle-fill);
   stroke: var(--accent);

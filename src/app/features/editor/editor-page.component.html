@@ -814,10 +814,13 @@
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"
+              [class.selection-outline--interactive]="selectionCount() > 1"
               [attr.x]="outline.x"
               [attr.y]="outline.y"
               [attr.width]="outline.width"
-              [attr.height]="outline.height"></rect>
+              [attr.height]="outline.height"
+              [attr.fill]="selectionCount() > 1 ? 'transparent' : null"
+              (pointerdown)="selectionCount() > 1 && startSelectionMove($event)"></rect>
           }
 
           @if (marqueeBounds(); as marquee) {

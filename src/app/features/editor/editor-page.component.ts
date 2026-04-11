@@ -2472,6 +2472,24 @@ export class EditorPageComponent {
     this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
   }
 
+  startSelectionMove(event: PointerEvent): void {
+    if (this.activeTool() !== 'select' || event.button !== 0 || this.spacePressed() || this.selectionCount() === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.setInspectorTab('properties');
+    this.store.recordHistoryCheckpoint();
+    this.interactionState.set({
+      kind: 'move',
+      pointerId: event.pointerId,
+      startWorldPoint: this.toScenePoint(event.clientX, event.clientY),
+      initialShapes: structuredClone(this.selectedShapes())
+    });
+    this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+  }
+
   startResize(event: PointerEvent, handle: ResizeHandle): void {
     const selectedShape = this.selectedShape();
     const selectedShapes = this.selectedShapes();
