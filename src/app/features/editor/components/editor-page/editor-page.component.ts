@@ -11,9 +11,50 @@ import {
   signal,
   viewChild
 } from '@angular/core';
-import packageManifest from '../../../../package.json';
-import { getIconPath, iconPaths } from './editor-icons';
-import { EditorTopbarComponent } from './editor-topbar.component';
+import packageManifest from '../../../../../../package.json';
+import { getIconPath, iconPaths } from '../../editor-icons';
+import {
+  type ArrowControlHandle,
+  type ArrowTipOption,
+  type ClipboardShapeSet,
+  type CodeHighlightTheme,
+  type ContextMenuState,
+  DEFAULT_ARROW_TIP_LENGTH,
+  DEFAULT_ARROW_TIP_WIDTH,
+  type ExportMode,
+  type ExportSvgDocument,
+  type FreehandInteractionState,
+  type HandleDescriptor,
+  type InlineTextEditorState,
+  type InspectorTab,
+  type InteractionState,
+  LATEX_ALIGNMENTS,
+  LATEX_COLOR_MODES,
+  type LatexAlignment,
+  type LatexExportConfig,
+  type LatexFontSize,
+  LATEX_FONT_SIZES,
+  type LibrarySection,
+  type MinimapImageShape,
+  type MinimapLineShape,
+  type MinimapOverview,
+  type MinimapRect,
+  type MinimapShape,
+  type MoveInteractionState,
+  type PanInteractionState,
+  type PinchZoomState,
+  type RecentTextTap,
+  type ResizeHandle,
+  type SavedTemplate,
+  type SceneReplaceDialogState,
+  type SidebarResizeState,
+  type TextSymbolGroup,
+  type TextSymbolPalettePosition,
+  type ToastNotification,
+  type ToolDescriptor,
+  type ToolId
+} from './editor-page.types';
+import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -22,19 +63,20 @@ import {
   localizedShapeKinds,
   type SharedScenePayload,
   translations
-} from './editor-page.i18n';
+} from '../../editor-page.i18n';
 import {
   decodeSharePayload,
   encodeSharePayload,
   formatValue,
   highlightLatex,
   resizeGroupedShapes,
+  type SelectionBounds,
   transformCanvasShape,
   translateShapeBy
-} from './editor-page.utils';
-import { localizePresetCanvasShapes as localizePresetTemplateShapes } from './presets';
-import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from './tikz.codegen';
-import { EditorStore } from './editor.store';
+} from '../../editor-page.utils';
+import { localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets';
+import { sceneToTikzBundle, type LatexColorMode, type TikzExportOptions } from '../../tikz.codegen';
+import { EditorStore } from '../../editor.store';
 import type {
   ArrowTipKind,
   CanvasShape,
@@ -49,298 +91,7 @@ import type {
   TextAlign,
   TextShape,
   ThemeMode
-} from './tikz.models';
-
-type InspectorTab = 'properties' | 'scene' | 'code';
-type ExportMode = 'snippet' | 'standalone';
-type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
-type ToolId = 'select' | string;
-type ArrowControlHandle = 'arrow-length-start' | 'arrow-length-end' | 'arrow-width-start' | 'arrow-width-end';
-type ResizeHandle =
-  | 'nw'
-  | 'n'
-  | 'ne'
-  | 'e'
-  | 'se'
-  | 's'
-  | 'sw'
-  | 'w'
-  | 'from'
-  | 'to'
-  | ArrowControlHandle
-  | `anchor-${number}`
-  | `insert-anchor-${number}`;
-type ContextTarget = 'canvas' | 'shape';
-
-const DEFAULT_ARROW_TIP_LENGTH = 8;
-const DEFAULT_ARROW_TIP_WIDTH = 6;
-
-interface ToastNotification {
-  readonly id: string;
-  readonly message: string;
-  readonly tone: 'info' | 'warning';
-}
-
-type LatexAlignment = 'center' | 'left' | 'right';
-type LatexFontSize = 'tiny' | 'scriptsize' | 'footnotesize' | 'small' | 'normalsize' | 'large';
-const LATEX_ALIGNMENTS = ['center', 'left', 'right'] as const;
-const LATEX_FONT_SIZES = ['tiny', 'scriptsize', 'footnotesize', 'small', 'normalsize', 'large'] as const;
-const LATEX_COLOR_MODES = ['direct-rgb', 'define-colors'] as const;
-
-interface LatexExportConfig {
-  readonly colorMode: LatexColorMode;
-  readonly wrapInFigure: boolean;
-  readonly figurePlacement: string;
-  readonly alignment: LatexAlignment;
-  readonly scaleToWidth: boolean;
-  readonly includeFrame: boolean;
-  readonly maxWidthPercent: number;
-  readonly standaloneBorderMm: number;
-  readonly fontSize: LatexFontSize;
-  readonly includeCaption: boolean;
-  readonly caption: string;
-  readonly includeLabel: boolean;
-  readonly label: string;
-}
-
-interface ToolDescriptor {
-  readonly id: ToolId;
-  readonly label: string;
-  readonly description: string;
-  readonly iconPath: string;
-  readonly shortcut?: string;
-}
-
-interface LibrarySection {
-  readonly category: PresetCategory;
-  readonly title: string;
-  readonly iconPath: string;
-  readonly presets: readonly ObjectPreset[];
-}
-
-interface SavedTemplate {
-  readonly id: string;
-  readonly title: string;
-  readonly description: string;
-  readonly icon: string;
-  readonly pinned?: boolean;
-  readonly shapes: readonly CanvasShape[];
-}
-
-interface SelectionBounds {
-  readonly left: number;
-  readonly right: number;
-  readonly top: number;
-  readonly bottom: number;
-}
-
-interface HandleDescriptor {
-  readonly id: ResizeHandle;
-  readonly x: number;
-  readonly y: number;
-  readonly cursor: string;
-  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control';
-}
-
-interface MoveInteractionState {
-  readonly kind: 'move';
-  readonly pointerId: number;
-  readonly startWorldPoint: Point;
-  readonly initialShapes: readonly CanvasShape[];
-}
-
-interface PanInteractionState {
-  readonly kind: 'pan';
-  readonly pointerId: number;
-  readonly lastClientPoint: Point;
-}
-
-interface ResizeInteractionState {
-  readonly kind: 'resize';
-  readonly pointerId: number;
-  readonly handle: ResizeHandle;
-  readonly initialShape: CanvasShape | null;
-  readonly initialShapes: readonly CanvasShape[];
-  readonly initialBounds: SelectionBounds | null;
-}
-
-interface MarqueeInteractionState {
-  readonly kind: 'marquee';
-  readonly pointerId: number;
-  readonly startWorldPoint: Point;
-  readonly currentWorldPoint: Point;
-  readonly additive: boolean;
-}
-
-interface InsertInteractionState {
-  readonly kind: 'insert';
-  readonly pointerId: number;
-  readonly toolId: ToolId;
-  readonly startWorldPoint: Point;
-  readonly currentWorldPoint: Point;
-}
-
-interface FreehandInteractionState {
-  readonly kind: 'freehand';
-  readonly pointerId: number;
-  readonly points: readonly Point[];
-}
-
-type InteractionState =
-  | MoveInteractionState
-  | PanInteractionState
-  | ResizeInteractionState
-  | MarqueeInteractionState
-  | InsertInteractionState
-  | FreehandInteractionState;
-
-interface ContextMenuState {
-  readonly clientX: number;
-  readonly clientY: number;
-  readonly target: ContextTarget;
-  readonly shapeId: string | null;
-}
-
-interface InlineTextEditorState {
-  readonly shapeId: string;
-  readonly value: string;
-}
-
-interface TextSymbolGroup {
-  readonly label: string;
-  readonly symbols: readonly {
-    readonly label: string;
-    readonly insert: string;
-    readonly title: string;
-  }[];
-}
-
-interface SceneReplaceDialogState {
-  readonly presetId: string;
-  readonly title: string;
-}
-
-interface ClipboardShapeSet {
-  readonly shapes: readonly CanvasShape[];
-  readonly pasteCount: number;
-}
-
-interface SidebarResizeState {
-  readonly side: 'left' | 'right';
-  readonly axis: 'x' | 'y';
-  readonly startPointer: number;
-  readonly startSize: number;
-}
-
-interface PinchZoomState {
-  readonly initialDistance: number;
-  readonly initialScale: number;
-}
-
-interface RecentTextTap {
-  readonly shapeId: string;
-  readonly timestamp: number;
-}
-
-interface TextSymbolPalettePosition {
-  readonly top: number;
-  readonly left: number;
-  readonly maxHeight: number;
-}
-
-interface ArrowTipOption {
-  readonly id: ArrowTipKind;
-  readonly title: string;
-}
-
-interface ExportSvgDocument {
-  readonly markup: string;
-  readonly width: number;
-  readonly height: number;
-}
-
-interface MinimapRect {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
-
-interface MinimapShapeBase {
-  readonly kind: CanvasShape['kind'];
-  readonly stroke: string;
-  readonly strokeWidth: number;
-}
-
-interface MinimapLineShape extends MinimapShapeBase {
-  readonly kind: 'line';
-  readonly path: string;
-}
-
-interface MinimapRectangleShape extends MinimapShapeBase {
-  readonly kind: 'rectangle';
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly fill: string;
-  readonly rx: number;
-}
-
-interface MinimapCircleShape extends MinimapShapeBase {
-  readonly kind: 'circle';
-  readonly cx: number;
-  readonly cy: number;
-  readonly r: number;
-  readonly fill: string;
-}
-
-interface MinimapEllipseShape extends MinimapShapeBase {
-  readonly kind: 'ellipse';
-  readonly cx: number;
-  readonly cy: number;
-  readonly rx: number;
-  readonly ry: number;
-  readonly fill: string;
-}
-
-interface MinimapTextShape extends MinimapShapeBase {
-  readonly kind: 'text';
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly fill: string;
-}
-
-interface MinimapImageShape extends MinimapShapeBase {
-  readonly kind: 'image';
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly href: string;
-}
-
-type MinimapShape =
-  | MinimapLineShape
-  | MinimapRectangleShape
-  | MinimapCircleShape
-  | MinimapEllipseShape
-  | MinimapTextShape
-  | MinimapImageShape;
-
-interface MinimapOverview {
-  readonly viewBoxWidth: number;
-  readonly viewBoxHeight: number;
-  readonly viewportRect: MinimapRect;
-  readonly worldLeft: number;
-  readonly worldTop: number;
-  readonly mapScale: number;
-  readonly offsetX: number;
-  readonly offsetY: number;
-  readonly shapes: readonly MinimapShape[];
-}
+} from '../../tikz.models';
 
 @Component({
   selector: 'app-editor-page',

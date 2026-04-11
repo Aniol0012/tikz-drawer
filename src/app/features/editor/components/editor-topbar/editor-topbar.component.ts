@@ -12,16 +12,9 @@ import {
   signal,
   viewChild
 } from '@angular/core';
-import type { LanguageCode } from './editor-page.i18n';
-import type { ThemeMode } from './tikz.models';
-
-interface TopbarTool {
-  readonly id: string;
-  readonly label: string;
-  readonly description: string;
-  readonly iconPath: string;
-  readonly shortcut?: string;
-}
+import type { LanguageCode } from '../../editor-page.i18n';
+import type { ThemeMode } from '../../tikz.models';
+import type { TopbarTool } from './editor-topbar.types';
 
 @Component({
   selector: 'app-editor-topbar',
