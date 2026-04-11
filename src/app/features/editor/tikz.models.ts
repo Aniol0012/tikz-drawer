@@ -4,6 +4,15 @@ export type TextWeight = 'normal' | 'bold';
 export type TextStyle = 'normal' | 'italic';
 export type TextAlign = 'left' | 'center' | 'right';
 
+export type TableShapeRole = 'frame' | 'row-divider' | 'column-divider';
+
+export interface TableShapeMetadata {
+  readonly id: string;
+  readonly role: TableShapeRole;
+  readonly rows: number;
+  readonly columns: number;
+}
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -17,6 +26,7 @@ export interface CanvasShapeBase {
   readonly strokeOpacity: number;
   readonly strokeWidth: number;
   readonly mergeId?: string;
+  readonly table?: TableShapeMetadata;
 }
 
 export type ArrowTipKind = 'latex' | 'triangle' | 'stealth' | 'diamond' | 'circle' | 'bar' | 'hooks' | 'bracket';

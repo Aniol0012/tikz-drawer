@@ -13,6 +13,8 @@ import type {
   TextShape,
   TikzScene
 } from './tikz.models';
+import { DEFAULT_TABLE_GEOMETRY } from './table.models';
+import { buildTableShapes } from './table.utils';
 
 type PresetTextLocalizer = (key: string, fallback: string) => string;
 
@@ -211,6 +213,14 @@ const createPreset = (
   preserveStyle: options.preserveStyle,
   searchTerms: options.searchTerms
 });
+
+export const buildTablePresetShapes = (
+  overrides: Partial<typeof DEFAULT_TABLE_GEOMETRY> = {}
+): readonly CanvasShape[] =>
+  buildTableShapes({
+    ...DEFAULT_TABLE_GEOMETRY,
+    ...overrides
+  });
 
 export const defaultPreferences: EditorPreferences = {
   theme: 'light',
@@ -760,52 +770,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'table',
     'Table',
     'Simple table block for data layouts and comparisons.',
-    [
-      createRectangle({
-        name: 'Table frame',
-        x: -2.6,
-        y: -1.6,
-        width: 5.2,
-        height: 3.2,
-        fill: '#fafafa',
-        cornerRadius: 0.08
-      }),
-      createLine({
-        name: 'Table row 1',
-        from: { x: -2.6, y: 0.6 },
-        to: { x: 2.6, y: 0.6 },
-        stroke: '#767676',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Table row 2',
-        from: { x: -2.6, y: -0.2 },
-        to: { x: 2.6, y: -0.2 },
-        stroke: '#767676',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Table row 3',
-        from: { x: -2.6, y: -1 },
-        to: { x: 2.6, y: -1 },
-        stroke: '#767676',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Table col 1',
-        from: { x: -0.9, y: 1.6 },
-        to: { x: -0.9, y: -1.6 },
-        stroke: '#767676',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Table col 2',
-        from: { x: 0.9, y: 1.6 },
-        to: { x: 0.9, y: -1.6 },
-        stroke: '#767676',
-        strokeWidth: 0.05
-      })
-    ],
+    buildTablePresetShapes(),
     { searchTerms: ['table', 'grid', 'matrix', 'data'] }
   ),
   createPreset(

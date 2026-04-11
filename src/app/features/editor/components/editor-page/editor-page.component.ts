@@ -55,6 +55,7 @@ import {
   type ToolId
 } from './editor-page.types';
 import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
+import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -74,9 +75,22 @@ import {
   transformCanvasShape,
   translateShapeBy
 } from '../../editor-page.utils';
-import { localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets';
+import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets';
 import { sceneToTikzBundle, type LatexColorMode, type TikzExportOptions } from '../../tikz.codegen';
 import { EditorStore } from '../../editor.store';
+import {
+  DEFAULT_TABLE_DIMENSIONS,
+  type TableDialogState,
+  type TableDimensions,
+  type TableSelectionInfo
+} from '../../table.models';
+import {
+  buildTableShapes,
+  getTableSelectionInfo,
+  normalizeTableDimensions,
+  remapStructuralShapeIds,
+  tableSizeLabel
+} from '../../table.utils';
 import type {
   ArrowTipKind,
   CanvasShape,
@@ -95,7 +109,7 @@ import type {
 
 @Component({
   selector: 'app-editor-page',
-  imports: [EditorTopbarComponent],
+  imports: [EditorTopbarComponent, TableDialogComponent],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -188,6 +202,8 @@ export class EditorPageComponent {
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
   readonly editingTemplateId = signal<string | null>(null);
+  readonly tableDialogState = signal<TableDialogState | null>(null);
+  readonly tablePresetDimensions = signal<TableDimensions>(DEFAULT_TABLE_DIMENSIONS);
   readonly templateTitleInput = signal('');
   readonly templateDescriptionInput = signal('');
   readonly templateIconInput = signal('library');
@@ -325,6 +341,7 @@ export class EditorPageComponent {
     if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
+  readonly selectedTable = computed<TableSelectionInfo | null>(() => getTableSelectionInfo(this.selectedShapes()));
   readonly selectedMergeIds = computed(() =>
     Array.from(
       new Set(
@@ -335,7 +352,9 @@ export class EditorPageComponent {
     )
   );
   readonly canGroupSelection = computed(() => this.selectionCount() > 1 && this.selectedMergeIds().length === 0);
-  readonly canUngroupSelection = computed(() => this.selectedMergeIds().length > 0);
+  readonly canUngroupSelection = computed(
+    () => this.selectedMergeIds().length > 0 || this.selectedShapes().some((shape) => !!shape.table)
+  );
   readonly activePreset = computed(
     () => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null
   );
@@ -1015,6 +1034,17 @@ export class EditorPageComponent {
   }
 
   setActiveTool(toolId: ToolId): void {
+    if (toolId === 'table') {
+      this.openTableDialog({
+        mode: 'create',
+        submitMode: this.activeTool() === 'table' ? 'center-insert' : 'arm-insert',
+        ...this.tablePresetDimensions()
+      });
+      this.closeContextMenu();
+      this.closeFileMenu();
+      return;
+    }
+
     if (toolId !== 'select' && toolId !== 'pencil' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
         this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
@@ -1027,6 +1057,52 @@ export class EditorPageComponent {
     this.activeTool.set(toolId);
     this.closeContextMenu();
     this.closeFileMenu();
+  }
+
+  openSelectedTableDialog(): void {
+    const table = this.selectedTable();
+    if (!table) {
+      return;
+    }
+
+    this.openTableDialog({
+      mode: 'edit',
+      submitMode: 'replace-selection',
+      rows: table.rows,
+      columns: table.columns
+    });
+  }
+
+  closeTableDialog(): void {
+    this.tableDialogState.set(null);
+  }
+
+  confirmTableDialog(dimensions: TableDimensions): void {
+    const dialogState = this.tableDialogState();
+    if (!dialogState) {
+      return;
+    }
+
+    const nextDimensions = normalizeTableDimensions(dimensions);
+    this.tablePresetDimensions.set(nextDimensions);
+    this.tableDialogState.set(null);
+
+    if (dialogState.submitMode === 'replace-selection') {
+      this.runSceneMutation(() => this.replaceSelectedTable(nextDimensions));
+      return;
+    }
+
+    if (dialogState.submitMode === 'center-insert') {
+      this.runSceneMutation(() => {
+        this.insertPresetAt('table', this.snapScenePoint(this.viewportCenter()));
+        this.activeTool.set('select');
+        this.inspectorTab.set('properties');
+      });
+      return;
+    }
+
+    this.activeTool.set('table');
+    this.inspectorTab.set('properties');
   }
 
   openSaveTemplateDialog(): void {
@@ -1366,11 +1442,7 @@ export class EditorPageComponent {
     this.closeInlineTextEditor();
 
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
-      if (shape.mergeId) {
-        this.toggleMergedShapeSelection(shape.mergeId);
-        this.setInspectorTab('properties');
-        return;
-      }
+      this.toggleShapeSetSelection(shape);
       this.setInspectorTab('properties');
       return;
     }
@@ -1455,24 +1527,16 @@ export class EditorPageComponent {
 
     const offsetStep = 0.8;
     const offset = offsetStep * (clipboard.pasteCount + 1);
-    const mergeIdMap = new Map<string, string>();
-    const pastedShapes = clipboard.shapes.map((shape) => {
-      const duplicate = structuredClone(shape);
-      let nextMergeId: string | undefined;
-      if (duplicate.mergeId) {
-        nextMergeId = mergeIdMap.get(duplicate.mergeId);
-        if (!nextMergeId) {
-          nextMergeId = crypto.randomUUID();
-          mergeIdMap.set(duplicate.mergeId, nextMergeId);
-        }
-      }
-      return {
-        ...translateShapeBy(duplicate, offset, -offset),
-        id: crypto.randomUUID(),
-        name: `${duplicate.name} copy`,
-        ...(nextMergeId ? { mergeId: nextMergeId } : { mergeId: undefined })
-      } as CanvasShape;
-    });
+    const pastedShapes = remapStructuralShapeIds(
+      clipboard.shapes.map((shape) => {
+        const duplicate = structuredClone(shape);
+        return {
+          ...translateShapeBy(duplicate, offset, -offset),
+          id: crypto.randomUUID(),
+          name: `${duplicate.name} copy`
+        } as CanvasShape;
+      })
+    );
 
     this.runSceneMutation(() => this.store.addShapes(pastedShapes));
     this.clipboardShapes.set({
@@ -1979,21 +2043,55 @@ export class EditorPageComponent {
     return this.selectedShapes().some((shape) => shape.id === shapeId);
   }
 
+  private shapeSetIds(shape: CanvasShape): readonly string[] {
+    const mergeGroupIds = shape.mergeId
+      ? this.scene()
+          .shapes.filter((entry) => entry.mergeId === shape.mergeId)
+          .map((entry) => entry.id)
+      : [];
+    const tableGroupIds = shape.table
+      ? this.scene()
+          .shapes.filter((entry) => entry.table?.id === shape.table?.id)
+          .map((entry) => entry.id)
+      : [];
+
+    if (
+      mergeGroupIds.length > 1 &&
+      (!tableGroupIds.length ||
+        mergeGroupIds.length !== tableGroupIds.length ||
+        mergeGroupIds.some((id) => !tableGroupIds.includes(id)))
+    ) {
+      return mergeGroupIds;
+    }
+
+    if (tableGroupIds.length > 1) {
+      return tableGroupIds;
+    }
+
+    if (mergeGroupIds.length > 1) {
+      return mergeGroupIds;
+    }
+
+    return [shape.id];
+  }
+
   private selectShapeSet(shape: CanvasShape): void {
-    if (shape.mergeId) {
-      const groupedIds = this.scene()
-        .shapes.filter((entry) => entry.mergeId === shape.mergeId)
-        .map((entry) => entry.id);
-      this.store.setSelectedShapes(groupedIds);
+    const shapeIds = this.shapeSetIds(shape);
+    if (shapeIds.length > 1) {
+      this.store.setSelectedShapes(shapeIds);
       return;
     }
+
     this.store.selectShape(shape.id);
   }
 
-  private toggleMergedShapeSelection(mergeId: string): void {
-    const groupedIds = this.scene()
-      .shapes.filter((entry) => entry.mergeId === mergeId)
-      .map((entry) => entry.id);
+  private toggleShapeSetSelection(shape: CanvasShape): void {
+    const groupedIds = this.shapeSetIds(shape);
+    if (groupedIds.length === 1) {
+      this.store.toggleShapeInSelection(shape.id);
+      return;
+    }
+
     const selectedIds = new Set(this.selectedShapes().map((shape) => shape.id));
     const alreadySelected = groupedIds.every((id) => selectedIds.has(id));
     this.store.setSelectedShapes(
@@ -2181,11 +2279,7 @@ export class EditorPageComponent {
     event.stopPropagation();
 
     if (event.shiftKey || event.ctrlKey || event.metaKey) {
-      if (shape.mergeId) {
-        this.toggleMergedShapeSelection(shape.mergeId);
-      } else {
-        this.store.toggleShapeInSelection(shape.id);
-      }
+      this.toggleShapeSetSelection(shape);
       this.setInspectorTab('properties');
       return;
     }
@@ -2520,6 +2614,10 @@ export class EditorPageComponent {
 
   presetIconPath(icon: string): string {
     return getIconPath(icon);
+  }
+
+  tableDimensionsLabel(columns: number, rows: number): string {
+    return tableSizeLabel(columns, rows);
   }
 
   shapeIcon(shape: CanvasShape): string {
@@ -2968,6 +3066,10 @@ export class EditorPageComponent {
           this.closeDeleteTemplateDialog();
           return;
         }
+        if (this.tableDialogState()) {
+          this.closeTableDialog();
+          return;
+        }
         if (this.templateDialogOpen()) {
           this.closeTemplateDialog();
           return;
@@ -3375,7 +3477,7 @@ export class EditorPageComponent {
     const deltaY = currentPoint.y - startPoint.y;
     const hasDrag = Math.abs(deltaX) > 0.12 || Math.abs(deltaY) > 0.12;
     const keepOwnStyle = this.presetKeepsOwnStyle(toolId);
-    const templateShapes = structuredClone(preset.shapes);
+    const templateShapes = this.resolvePresetTemplateShapes(toolId, preset);
     const templateBounds = this.computeBounds(templateShapes);
     if (!templateBounds) {
       return [];
@@ -3536,22 +3638,25 @@ export class EditorPageComponent {
     }
     const keepOwnStyle = this.presetKeepsOwnStyle(toolId);
 
-    const templateBounds = this.computeBounds(preset.shapes);
+    const templateShapes = this.resolvePresetTemplateShapes(toolId, preset);
+    const templateBounds = this.computeBounds(templateShapes);
     if (!templateBounds) {
       return;
     }
 
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
-    const shapes = this.localizeInsertedPresetShapes(
-      preset,
-      structuredClone(preset.shapes).map((shape) =>
-        this.applyPresetStyle(
-          this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
-          keepOwnStyle
-        )
-      ),
-      keepOwnStyle
+    const shapes = remapStructuralShapeIds(
+      this.localizeInsertedPresetShapes(
+        preset,
+        templateShapes.map((shape) =>
+          this.applyPresetStyle(
+            this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
+            keepOwnStyle
+          )
+        ),
+        keepOwnStyle
+      )
     );
     this.store.addShapes(shapes);
   }
@@ -3566,6 +3671,14 @@ export class EditorPageComponent {
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
     return keepOwnStyle ? shape : this.applyInsertionDefaults(shape);
+  }
+
+  private resolvePresetTemplateShapes(toolId: ToolId, preset: ObjectPreset): readonly CanvasShape[] {
+    if (toolId === 'table') {
+      return buildTablePresetShapes(this.tablePresetDimensions());
+    }
+
+    return structuredClone(preset.shapes);
   }
 
   private localizeInsertedPresetShapes(
@@ -3605,6 +3718,63 @@ export class EditorPageComponent {
     id: string
   ): CanvasShape {
     return transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
+  }
+
+  private openTableDialog(state: TableDialogState): void {
+    this.tableDialogState.set({
+      ...normalizeTableDimensions(state),
+      mode: state.mode,
+      submitMode: state.submitMode
+    });
+  }
+
+  private replaceSelectedTable(dimensions: TableDimensions): void {
+    const table = this.selectedTable();
+    if (!table) {
+      return;
+    }
+
+    const frame = table.shapes.find(
+      (shape): shape is Extract<CanvasShape, { kind: 'rectangle' }> =>
+        shape.kind === 'rectangle' && shape.table?.role === 'frame'
+    );
+    if (!frame) {
+      return;
+    }
+
+    const dividerPrototype =
+      table.shapes.find(
+        (shape): shape is Extract<CanvasShape, { kind: 'line' }> =>
+          shape.kind === 'line' && shape.table?.role === 'row-divider'
+      ) ??
+      table.shapes.find(
+        (shape): shape is Extract<CanvasShape, { kind: 'line' }> =>
+          shape.kind === 'line' && shape.table?.role === 'column-divider'
+      );
+
+    const nextShapes = buildTableShapes({
+      ...normalizeTableDimensions(dimensions),
+      x: table.x,
+      y: table.y,
+      width: table.width,
+      height: table.height,
+      tableId: table.tableId,
+      mergeId: table.mergeId,
+      frameStroke: frame.stroke,
+      frameStrokeOpacity: frame.strokeOpacity,
+      frameStrokeWidth: frame.strokeWidth,
+      frameFill: frame.fill,
+      frameFillOpacity: frame.fillOpacity,
+      frameCornerRadius: frame.cornerRadius,
+      dividerStroke: dividerPrototype?.stroke ?? frame.stroke,
+      dividerStrokeOpacity: dividerPrototype?.strokeOpacity ?? 1,
+      dividerStrokeWidth: dividerPrototype?.strokeWidth ?? Math.max(frame.strokeWidth * 0.6, 0.05)
+    });
+
+    this.store.replaceShapeSet(
+      table.shapes.map((shape) => shape.id),
+      nextShapes
+    );
   }
 
   private savedTemplateToPreset(template: SavedTemplate): ObjectPreset {

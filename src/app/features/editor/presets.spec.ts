@@ -1,5 +1,6 @@
-import { localizePresetCanvasShapes, objectPresets } from './presets';
+import { buildTablePresetShapes, localizePresetCanvasShapes, objectPresets } from './presets';
 import { getIconPath } from './editor-icons';
+import { getTableSelectionInfo } from './table.utils';
 
 const translate =
   (dictionary: Record<string, string>) =>
@@ -160,6 +161,8 @@ describe('presets', () => {
       expect(tableFrame.y).toBe(-1.6);
       expect(tableFrame.width).toBe(5.2);
       expect(tableFrame.height).toBe(3.2);
+      expect(tableFrame.table?.rows).toBe(4);
+      expect(tableFrame.table?.columns).toBe(3);
     }
 
     const swimlaneFrame = swimlanePreset?.shapes.find(
@@ -191,5 +194,19 @@ describe('presets', () => {
     expect(getIconPath('hexagon')).not.toBe(getIconPath('node'));
     expect(getIconPath('table')).not.toBe(getIconPath('card'));
     expect(getIconPath('funnel')).not.toBe(getIconPath('triangle'));
+  });
+
+  it('builds tables as structured selections with consistent metadata', () => {
+    const shapes = buildTablePresetShapes({ rows: 2, columns: 4 });
+    const selection = getTableSelectionInfo(shapes);
+
+    expect(shapes).toHaveLength(5);
+    expect(selection).not.toBeNull();
+    expect(selection?.rows).toBe(2);
+    expect(selection?.columns).toBe(4);
+    expect(selection?.width).toBe(5.2);
+    expect(selection?.height).toBe(3.2);
+    expect(new Set(shapes.map((shape) => shape.mergeId)).size).toBe(1);
+    expect(new Set(shapes.map((shape) => shape.table?.id)).size).toBe(1);
   });
 });

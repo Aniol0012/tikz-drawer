@@ -3,6 +3,7 @@ import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '.
 import { sceneToTikz } from './tikz.codegen';
 import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from './tikz.models';
 import { parseTikz } from './tikz.parser';
+import { remapStructuralShapeIds } from './table.utils';
 
 const storageKey = 'tikz-drawer.state';
 const historyLimit = 80;
@@ -529,7 +530,9 @@ export class EditorStore {
       return;
     }
 
-    const duplicatedShapes = selectedShapes.map((shape) => translateShape(cloneShape(shape), 0.6, -0.6));
+    const duplicatedShapes = remapStructuralShapeIds(
+      selectedShapes.map((shape) => translateShape(cloneShape(shape), 0.6, -0.6))
+    );
     this.scene.update((scene) => ({
       ...scene,
       shapes: [...scene.shapes, ...duplicatedShapes]
@@ -583,6 +586,30 @@ export class EditorStore {
     }));
   }
 
+  replaceShapeSet(removedShapeIds: readonly string[], addedShapes: readonly CanvasShape[]): void {
+    const removedShapeIdSet = new Set(removedShapeIds);
+    if (removedShapeIdSet.size === 0) {
+      return;
+    }
+
+    this.scene.update((scene) => {
+      const insertionIndex = scene.shapes.findIndex((shape) => removedShapeIdSet.has(shape.id));
+      const remainingShapes = scene.shapes.filter((shape) => !removedShapeIdSet.has(shape.id));
+      const safeInsertionIndex =
+        insertionIndex >= 0 ? Math.min(insertionIndex, remainingShapes.length) : remainingShapes.length;
+
+      return {
+        ...scene,
+        shapes: [
+          ...remainingShapes.slice(0, safeInsertionIndex),
+          ...addedShapes,
+          ...remainingShapes.slice(safeInsertionIndex)
+        ]
+      };
+    });
+    this.selectedShapeIds.set(addedShapes.map((shape) => shape.id));
+  }
+
   moveSelectedBy(deltaX: number, deltaY: number): void {
     const selectedShapeIdSet = new Set(this.selectedShapeIds());
 
@@ -627,18 +654,24 @@ export class EditorStore {
         .shapes.filter((shape) => selectedShapeIdSet.has(shape.id) && shape.mergeId)
         .map((shape) => shape.mergeId as string)
     );
+    const tableIds = new Set(
+      this.scene()
+        .shapes.filter((shape) => selectedShapeIdSet.has(shape.id) && shape.table)
+        .map((shape) => shape.table?.id as string)
+    );
 
-    if (mergeIds.size === 0) {
+    if (mergeIds.size === 0 && tableIds.size === 0) {
       return;
     }
 
     this.scene.update((scene) => ({
       ...scene,
       shapes: scene.shapes.map((shape) =>
-        shape.mergeId && mergeIds.has(shape.mergeId)
+        (shape.mergeId && mergeIds.has(shape.mergeId)) || (shape.table && tableIds.has(shape.table.id))
           ? ({
               ...shape,
-              mergeId: undefined
+              mergeId: shape.mergeId && mergeIds.has(shape.mergeId) ? undefined : shape.mergeId,
+              table: shape.table && tableIds.has(shape.table.id) ? undefined : shape.table
             } as CanvasShape)
           : shape
       )

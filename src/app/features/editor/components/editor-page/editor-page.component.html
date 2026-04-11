@@ -1805,41 +1805,76 @@
                 }
               </div>
             } @else if (selectionCount() > 1) {
-              <div class="selection-title">
-                <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>
-              </div>
-              <div class="inline-actions">
-                <button class="secondary-button" type="button" (click)="duplicateSelected()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.copy"></path></svg
-                  ><span>{{ t('duplicate') }}</span>
-                </button>
-                <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.front"></path></svg
-                  ><span>{{ t('bringToFront') }}</span>
-                </button>
-                <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.back"></path></svg
-                  ><span>{{ t('sendToBack') }}</span>
-                </button>
-                <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="iconMap.library"></path></svg
-                  ><span>{{ t('saveAsTemplate') }}</span>
-                </button>
-              </div>
-              <div class="selected-shape-list">
-                @for (shape of selectedShapes(); track shape.id) {
-                  <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
-                    <span class="selected-shape-card__title">{{ shape.name }}</span>
-                    <span class="selected-shape-card__meta">{{
-                      localizedShapeKind(shape.kind)
-                    }}</span>
+              @if (selectedTable(); as table) {
+                <div class="selection-title">
+                  <strong>{{ t('preset.table.title') }}</strong>
+                  <span>{{ tableDimensionsLabel(table.columns, table.rows) }}</span>
+                </div>
+                <div class="inline-actions">
+                  <button class="primary-button" type="button" (click)="openSelectedTableDialog()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.table"></path></svg
+                    ><span>{{ t('configureTable') }}</span>
                   </button>
-                }
-              </div>
+                  <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.copy"></path></svg
+                    ><span>{{ t('duplicate') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.front"></path></svg
+                    ><span>{{ t('bringToFront') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.back"></path></svg
+                    ><span>{{ t('sendToBack') }}</span>
+                  </button>
+                </div>
+                <div class="empty-panel">
+                  {{ t('tableRecognizedHint') }}
+                </div>
+              } @else {
+                <div class="selection-title">
+                  <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>
+                </div>
+                <div class="inline-actions">
+                  <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.copy"></path></svg
+                    ><span>{{ t('duplicate') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.front"></path></svg
+                    ><span>{{ t('bringToFront') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.back"></path></svg
+                    ><span>{{ t('sendToBack') }}</span>
+                  </button>
+                  <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.library"></path></svg
+                    ><span>{{ t('saveAsTemplate') }}</span>
+                  </button>
+                </div>
+                <div class="selected-shape-list">
+                  @for (shape of selectedShapes(); track shape.id) {
+                    <button
+                      class="selected-shape-card"
+                      type="button"
+                      (click)="selectShape(shape.id)">
+                      <span class="selected-shape-card__title">{{ shape.name }}</span>
+                      <span class="selected-shape-card__meta">{{
+                        localizedShapeKind(shape.kind)
+                      }}</span>
+                    </button>
+                  }
+                </div>
+              }
             } @else {
               <div class="empty-panel">{{ t('noneSelected') }}</div>
             }
@@ -2715,5 +2750,26 @@
         </div>
       </section>
     </div>
+  }
+
+  @if (tableDialogState(); as tableDialog) {
+    <app-table-dialog
+      [title]="
+        tableDialog.mode === 'edit' ? t('tableDialogEditTitle') : t('tableDialogCreateTitle')
+      "
+      [description]="
+        tableDialog.mode === 'edit'
+          ? t('tableDialogEditDescription')
+          : t('tableDialogCreateDescription')
+      "
+      [confirmLabel]="tableDialog.mode === 'edit' ? t('apply') : t('continue')"
+      [cancelLabel]="t('cancel')"
+      [rowsLabel]="t('tableRows')"
+      [columnsLabel]="t('tableColumns')"
+      [quickPickerLabel]="t('tableQuickPicker')"
+      [initialRows]="tableDialog.rows"
+      [initialColumns]="tableDialog.columns"
+      (cancel)="closeTableDialog()"
+      (confirm)="confirmTableDialog($event)"></app-table-dialog>
   }
 </div>

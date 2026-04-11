@@ -1,0 +1,247 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.table-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 16, 16, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.table-dialog {
+  width: min(520px, calc(100vw - 40px));
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 18px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.table-dialog__header,
+.table-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.table-dialog__header {
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tool-border) 88%, transparent);
+}
+
+.table-dialog__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.table-dialog__copy p,
+.table-dialog__copy span,
+.table-dialog__field span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.table-dialog__copy p,
+.table-dialog__field span {
+  font-weight: 700;
+}
+
+.table-dialog__copy h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.table-dialog__close,
+.table-dialog__button,
+.table-dialog__cell,
+.table-dialog__field input {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease;
+}
+
+.table-dialog__close,
+.table-dialog__button,
+.table-dialog__field input {
+  min-height: 38px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  color: inherit;
+}
+
+.table-dialog__close {
+  width: 38px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.table-dialog__close svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.table-dialog__body {
+  display: grid;
+  gap: 18px;
+}
+
+.table-dialog__picker-shell {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.table-dialog__picker {
+  display: grid;
+  grid-template-columns: repeat(var(--table-picker-columns, 10), 1fr);
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--tool-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--panel-background) 94%, white 6%),
+      var(--panel-background)
+    ),
+    var(--panel-background);
+}
+
+.table-dialog__cell {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--tool-border) 90%, white 10%);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tool-surface) 84%, white 16%);
+}
+
+.table-dialog__cell.is-active {
+  border-color: color-mix(in srgb, var(--accent) 58%, #4f89ff 42%);
+  background: color-mix(in srgb, var(--accent) 22%, #7caeff 78%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.table-dialog__size {
+  font-size: 1.5rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.table-dialog__inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.table-dialog__field {
+  display: grid;
+  gap: 6px;
+}
+
+.table-dialog__field input {
+  width: 100%;
+  padding: 0 12px;
+  background: var(--input-background);
+}
+
+.table-dialog__footer {
+  padding-top: 2px;
+}
+
+.table-dialog__button {
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.table-dialog__button--secondary {
+  min-width: 112px;
+}
+
+.table-dialog__button--primary {
+  min-width: 144px;
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.table-dialog__close:hover,
+.table-dialog__button--secondary:hover,
+.table-dialog__field input:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.table-dialog__button--primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, black 8%);
+}
+
+.table-dialog__close:active,
+.table-dialog__button:active,
+.table-dialog__cell:active {
+  transform: scale(0.97);
+}
+
+.table-dialog__close:focus-visible,
+.table-dialog__button:focus-visible,
+.table-dialog__cell:focus-visible,
+.table-dialog__field input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@media (max-width: 640px) {
+  .table-dialog-backdrop {
+    padding: 16px;
+  }
+
+  .table-dialog {
+    padding: 18px;
+  }
+
+  .table-dialog__picker {
+    grid-template-columns: repeat(var(--table-picker-columns, 10), minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .table-dialog__cell {
+    width: min(100%, 24px);
+    aspect-ratio: 1;
+    height: auto;
+  }
+
+  .table-dialog__inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .table-dialog__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .table-dialog__button {
+    width: 100%;
+  }
+}
