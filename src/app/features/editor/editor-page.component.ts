@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import packageManifest from '../../../../package.json';
 import { getIconPath, iconPaths } from './editor-icons';
+import { EditorTopbarComponent } from './editor-topbar.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -343,6 +344,7 @@ interface MinimapOverview {
 
 @Component({
   selector: 'app-editor-page',
+  imports: [EditorTopbarComponent],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -389,7 +391,6 @@ export class EditorPageComponent {
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
-  readonly topbarActions = viewChild<ElementRef<HTMLDivElement>>('topbarActions');
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
@@ -416,10 +417,10 @@ export class EditorPageComponent {
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
   readonly canvasWidth = signal(1280);
   readonly canvasHeight = signal(840);
+  readonly canvasViewportWidth = signal(1280);
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly fileMenuOpen = signal(false);
-  readonly compactTopbarActions = signal(false);
   readonly exportModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
@@ -474,6 +475,7 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
+  readonly topbarTranslate = (key: string): string => this.t(key);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
     {
       label: 'Greek',
@@ -898,30 +900,15 @@ export class EditorPageComponent {
 
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
-      const topbarActions = this.topbarActions()?.nativeElement ?? null;
       const mobileLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 760px)') ?? null;
       const updateCanvasSize = () => {
+        this.canvasViewportWidth.set(Math.round(viewport.clientWidth));
         this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
         this.canvasHeight.set(Math.max(320, Math.round(viewport.clientHeight)));
-      };
-      const updateTopbarActions = () => {
-        if (!topbarActions) {
-          return;
-        }
-
-        const compact =
-          topbarActions.scrollWidth > topbarActions.clientWidth + 1 ||
-          viewport.clientWidth <= 1180 ||
-          globalThis.innerWidth <= 1320;
-        this.compactTopbarActions.set(compact);
-        if (!compact) {
-          this.closeFileMenu();
-        }
       };
 
       const resizeObserver = new ResizeObserver(() => {
         updateCanvasSize();
-        updateTopbarActions();
       });
       const coarsePointerQuery = this.document.defaultView?.matchMedia?.('(pointer: coarse)') ?? null;
       const updateCoarsePointer = () => {
@@ -937,11 +924,7 @@ export class EditorPageComponent {
       coarsePointerQuery?.addEventListener?.('change', updateCoarsePointer);
       mobileLayoutQuery?.addEventListener?.('change', updateMobileLayout);
       resizeObserver.observe(viewport);
-      if (topbarActions) {
-        resizeObserver.observe(topbarActions);
-      }
       updateCanvasSize();
-      updateTopbarActions();
       this.restoreSavedTemplates();
       this.restorePinnedTools();
       this.pinnedToolsReady.set(true);
@@ -1788,7 +1771,11 @@ export class EditorPageComponent {
   }
 
   onSceneNameInput(event: Event): void {
-    this.store.renameScene((event.target as HTMLInputElement).value);
+    this.onSceneNameInputValue((event.target as HTMLInputElement).value);
+  }
+
+  onSceneNameInputValue(value: string): void {
+    this.store.renameScene(value);
   }
 
   setCodeHighlightTheme(theme: string): void {

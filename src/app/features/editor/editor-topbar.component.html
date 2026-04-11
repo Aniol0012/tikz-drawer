@@ -1,0 +1,198 @@
+<header class="topbar">
+  <div class="topbar__left">
+    <div class="brand-lockup">
+      <strong>{{ t('brand') }}</strong>
+      <span>{{ t('version') }} {{ appVersion() }}</span>
+    </div>
+
+    <label class="scene-input" htmlFor="scene-name-input">
+      <input
+        id="scene-name-input"
+        type="text"
+        [value]="sceneName()"
+        (input)="onSceneNameInput($event)" />
+    </label>
+
+    <div #topbarActions class="topbar-actions">
+      @if (!compactTopbarActions()) {
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [title]="t('newScene')"
+          (click)="newScene.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('plus')"></path></svg>
+          <span>{{ t('newScene') }}</span>
+        </button>
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [title]="t('copyLink')"
+          (click)="copyShareLink.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icon('link')"></path>
+          </svg>
+          <span>{{ t('copyLink') }}</span>
+        </button>
+      }
+    </div>
+
+    @if (compactTopbarActions() || mobileLayout()) {
+      <div class="menu-cluster topbar-actions-menu" (click)="$event.stopPropagation()">
+        <button
+          class="icon-button topbar-menu-button"
+          type="button"
+          [title]="t('moreActions')"
+          (click)="fileMenuToggle.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('menu')"></path></svg>
+        </button>
+
+        @if (fileMenuOpen()) {
+          <div
+            class="dropdown-menu dropdown-menu--topbar"
+            [class.dropdown-menu--topbar-mobile]="mobileLayout()">
+            @if (compactTopbarActions()) {
+              <button class="dropdown-row" type="button" (click)="newScene.emit()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icon('plus')"></path>
+                </svg>
+                <span>{{ t('newScene') }}</span>
+              </button>
+              <button class="dropdown-row" type="button" (click)="copyShareLink.emit()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icon('link')"></path>
+                </svg>
+                <span>{{ t('copyLink') }}</span>
+              </button>
+            }
+
+            @if (mobileLayout()) {
+              @if (compactTopbarActions()) {
+                <div class="dropdown-divider"></div>
+              }
+              <div class="dropdown-menu__group dropdown-menu__group--topbar-mobile">
+                <div class="dropdown-menu__topbar-inline">
+                  <label
+                    class="language-select language-select--menu"
+                    [attr.aria-label]="t('language')">
+                    <select [value]="language()" (change)="onLanguageChange($event, true)">
+                      <option value="en">En</option>
+                      <option value="ca">Ca</option>
+                      <option value="es">Es</option>
+                    </select>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="icon('chevronDown')"></path>
+                    </svg>
+                  </label>
+
+                  <a
+                    class="icon-button icon-button--github"
+                    href="https://github.com/Aniol0012/tikz-drawer/"
+                    target="_blank"
+                    rel="noopener"
+                    aria-label="GitHub"
+                    title="GitHub">
+                    <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+                      <path [attr.d]="icon('github')"></path>
+                    </svg>
+                  </a>
+
+                  <button
+                    class="icon-button"
+                    type="button"
+                    [title]="t('theme')"
+                    (click)="themeToggle.emit()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <button
+                  class="primary-button primary-button--wide"
+                  type="button"
+                  (click)="exportOpen.emit()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="icon('export')"></path>
+                  </svg>
+                  <span>{{ t('export') }}</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="topbar__center">
+    <div class="tool-cluster">
+      @for (tool of defaultToolbarTools(); track tool.id) {
+        <button
+          class="tool-button"
+          type="button"
+          [class.is-active]="activeTool() === tool.id"
+          [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          (click)="activeToolChange.emit(tool.id)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="tool.iconPath"></path></svg>
+          <span>{{ tool.label }}</span>
+        </button>
+      }
+      @if (pinnedToolbarTools().length) {
+        <div class="tool-cluster__separator" aria-hidden="true"></div>
+        @for (tool of pinnedToolbarTools(); track tool.id) {
+          <button
+            class="tool-button tool-button--pinned"
+            type="button"
+            [class.is-active]="activeTool() === tool.id"
+            [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            (click)="activeToolChange.emit(tool.id)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="tool.iconPath"></path>
+            </svg>
+            <span>{{ tool.label }}</span>
+          </button>
+        }
+      }
+    </div>
+  </div>
+
+  @if (!mobileLayout()) {
+    <div class="topbar__right">
+      <label class="language-select" [attr.aria-label]="t('language')">
+        <select [value]="language()" (change)="onLanguageChange($event)">
+          <option value="en">En</option>
+          <option value="ca">Ca</option>
+          <option value="es">Es</option>
+        </select>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="icon('chevronDown')"></path>
+        </svg>
+      </label>
+
+      <a
+        class="icon-button icon-button--github"
+        href="https://github.com/Aniol0012/tikz-drawer/"
+        target="_blank"
+        rel="noopener"
+        aria-label="GitHub"
+        title="GitHub">
+        <svg class="icon-button__github-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+          <path [attr.d]="icon('github')"></path>
+        </svg>
+      </a>
+
+      <button class="icon-button" type="button" [title]="t('theme')" (click)="themeToggle.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
+        </svg>
+      </button>
+
+      <button class="primary-button" type="button" (click)="exportOpen.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('export')"></path></svg>
+        <span>{{ t('export') }}</span>
+      </button>
+    </div>
+  }
+</header>
