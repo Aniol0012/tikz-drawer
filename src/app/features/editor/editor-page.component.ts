@@ -3504,7 +3504,10 @@ export class EditorPageComponent {
   }
 
   private presetKeepsOwnStyle(toolId: ToolId): boolean {
-    return this.savedTemplates().some((template) => template.id === toolId);
+    return (
+      this.savedTemplates().some((template) => template.id === toolId) ||
+      this.objectPresets.some((preset) => preset.id === toolId && preset.preserveStyle)
+    );
   }
 
   private applyInsertionDefaults(shape: CanvasShape): CanvasShape {

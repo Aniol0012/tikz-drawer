@@ -59,8 +59,7 @@ describe('presets', () => {
       'circle',
       'circle',
       'circle',
-      'rectangle',
-      'line'
+      'rectangle'
     ]);
     expect(phonePreset?.shapes.map((shape) => shape.kind)).toEqual([
       'rectangle',
@@ -102,6 +101,18 @@ describe('presets', () => {
       (shape) => shape.kind === 'rectangle' && shape.name === 'Browser address bar'
     );
     expect(browserAddressBar?.kind).toBe('rectangle');
+    if (browserAddressBar?.kind === 'rectangle') {
+      expect(browserAddressBar.width).toBe(4);
+      expect(browserAddressBar.x).toBe(-1.45);
+    }
+
+    expect(browserPreset?.preserveStyle).toBe(true);
+    const browserDot = browserPreset?.shapes.find((shape) => shape.kind === 'circle' && shape.name === 'Browser dot 1');
+    expect(browserDot?.kind).toBe('circle');
+    if (browserDot?.kind === 'circle') {
+      expect(browserDot.fill).toBe('#ff5f57');
+      expect(browserDot.stroke).toBe('#d64b45');
+    }
 
     const phoneNotch = phonePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Phone notch');
     expect(phoneNotch?.kind).toBe('rectangle');

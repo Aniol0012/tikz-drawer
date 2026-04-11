@@ -195,7 +195,11 @@ const createPreset = (
   title: string,
   description: string,
   shapes: readonly CanvasShape[],
-  options: { readonly quickAccess?: boolean; readonly searchTerms?: readonly string[] } = {}
+  options: {
+    readonly quickAccess?: boolean;
+    readonly preserveStyle?: boolean;
+    readonly searchTerms?: readonly string[];
+  } = {}
 ): ObjectPreset => ({
   id,
   category,
@@ -204,6 +208,7 @@ const createPreset = (
   description,
   shapes,
   quickAccess: options.quickAccess,
+  preserveStyle: options.preserveStyle,
   searchTerms: options.searchTerms
 });
 
@@ -541,43 +546,36 @@ export const objectPresets: readonly ObjectPreset[] = [
     [
       createRectangle({
         name: 'Browser frame',
-        x: -2.9,
-        y: -1.05,
-        width: 5.8,
-        height: 3.7,
-        cornerRadius: 0.32,
+        x: -3.05,
+        y: -1.2,
+        width: 6.1,
+        height: 3.95,
+        cornerRadius: 0.34,
         fill: '#fbfbfb'
       }),
       createLine({
         name: 'Browser toolbar divider',
-        from: { x: -2.9, y: 1.75 },
-        to: { x: 2.9, y: 1.75 },
+        from: { x: -3.05, y: 1.82 },
+        to: { x: 3.05, y: 1.82 },
         stroke: '#b8bdc4',
         strokeWidth: 0.05
       }),
-      createCircle({ name: 'Browser dot 1', cx: -2.45, cy: 2.12, r: 0.13, fill: '#ff5f57', stroke: '#d64b45' }),
-      createCircle({ name: 'Browser dot 2', cx: -2.0, cy: 2.12, r: 0.13, fill: '#febc2e', stroke: '#d39a21' }),
-      createCircle({ name: 'Browser dot 3', cx: -1.55, cy: 2.12, r: 0.13, fill: '#28c840', stroke: '#24a437' }),
+      createCircle({ name: 'Browser dot 1', cx: -2.7, cy: 2.22, r: 0.14, fill: '#ff5f57', stroke: '#d64b45' }),
+      createCircle({ name: 'Browser dot 2', cx: -2.28, cy: 2.22, r: 0.14, fill: '#febc2e', stroke: '#d39a21' }),
+      createCircle({ name: 'Browser dot 3', cx: -1.86, cy: 2.22, r: 0.14, fill: '#28c840', stroke: '#24a437' }),
       createRectangle({
         name: 'Browser address bar',
-        x: -0.55,
-        y: 1.92,
-        width: 2.7,
+        x: -1.45,
+        y: 2.03,
+        width: 4.0,
         height: 0.42,
         cornerRadius: 0.18,
         fill: '#f3f5f7',
         stroke: '#cfd6dd',
         strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Browser baseline',
-        from: { x: -3.55, y: -1.58 },
-        to: { x: 2.25, y: -1.58 },
-        stroke: '#1f1f1f',
-        strokeWidth: 0.06
       })
     ],
-    { searchTerms: ['browser', 'window', 'web', 'ui'] }
+    { preserveStyle: true, searchTerms: ['browser', 'window', 'web', 'ui'] }
   ),
   createPreset(
     'phone',

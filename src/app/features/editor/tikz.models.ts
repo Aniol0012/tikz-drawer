@@ -139,6 +139,7 @@ export interface ObjectPreset {
   readonly title: string;
   readonly description: string;
   readonly quickAccess?: boolean;
+  readonly preserveStyle?: boolean;
   readonly searchTerms?: readonly string[];
   readonly shapes: readonly CanvasShape[];
 }
