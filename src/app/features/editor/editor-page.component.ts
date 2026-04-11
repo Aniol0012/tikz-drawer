@@ -346,6 +346,7 @@ interface MinimapOverview {
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
     '(window:keydown)': 'handleWindowKeydown($event)',
+    '(window:paste)': 'handleWindowPaste($event)',
     '(window:keyup)': 'handleWindowKeyup($event)',
     '(window:blur)': 'handleWindowBlur()',
     '(window:pointermove)': 'handleWindowPointerMove($event)',
@@ -1694,7 +1695,17 @@ export class EditorPageComponent {
     this.removeSelected();
   }
 
-  pasteClipboard(): void {
+  async pasteClipboard(): Promise<void> {
+    const imageFile = await this.readImageFileFromNavigatorClipboard();
+    if (imageFile) {
+      await this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+      return;
+    }
+
+    this.pasteInternalClipboard();
+  }
+
+  private pasteInternalClipboard(): void {
     const clipboard = this.clipboardShapes();
     if (!clipboard?.shapes.length) {
       return;
@@ -3096,7 +3107,7 @@ export class EditorPageComponent {
     if (event.key === 'Shift') this.shiftPressed.set(true);
     if (event.key === 'Alt') this.altPressed.set(true);
 
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+    if (this.isEditableTarget(event.target)) {
       return;
     }
 
@@ -3131,8 +3142,6 @@ export class EditorPageComponent {
     }
 
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-      event.preventDefault();
-      this.pasteClipboard();
       return;
     }
 
@@ -3213,6 +3222,26 @@ export class EditorPageComponent {
       case '-':
         this.zoomOut();
         return;
+    }
+  }
+
+  handleWindowPaste(event: ClipboardEvent): void {
+    if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
+    const imageFile = this.getImageFileFromTransfer(event.clipboardData);
+    if (imageFile) {
+      event.preventDefault();
+      event.stopPropagation();
+      void this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+      return;
+    }
+
+    if (this.clipboardShapes()?.shapes.length) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.pasteInternalClipboard();
     }
   }
 
@@ -4534,6 +4563,42 @@ export class EditorPageComponent {
     });
   }
 
+  private getImageFileFromTransfer(transfer: DataTransfer | null | undefined): File | null {
+    const imageItem = Array.from(transfer?.items ?? []).find(
+      (item) => item.kind === 'file' && item.type.startsWith('image/')
+    );
+    const itemFile = imageItem?.getAsFile();
+    if (itemFile) {
+      return itemFile;
+    }
+
+    return Array.from(transfer?.files ?? []).find((file) => file.type.startsWith('image/')) ?? null;
+  }
+
+  private async readImageFileFromNavigatorClipboard(): Promise<File | null> {
+    if (!navigator.clipboard?.read) {
+      return null;
+    }
+
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find((type) => type.startsWith('image/'));
+        if (!imageType) {
+          continue;
+        }
+
+        const blob = await item.getType(imageType);
+        const extension = imageType.split('/')[1] || 'png';
+        return new File([blob], `clipboard-image.${extension}`, { type: imageType });
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
   private async insertImageFileAtPoint(file: File, point: Point): Promise<void> {
     const dataUrl = await this.readFileAsDataUrl(file);
     const dimensions = await this.loadImageDimensions(dataUrl);
@@ -4563,6 +4628,15 @@ export class EditorPageComponent {
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
+  }
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    );
   }
 
   private openInlineTextEditor(shape: Extract<CanvasShape, { kind: 'text' }>): void {
