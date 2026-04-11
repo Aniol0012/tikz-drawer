@@ -14,6 +14,8 @@ import type {
   TikzScene
 } from './tikz.models';
 
+type PresetTextLocalizer = (key: string, fallback: string) => string;
+
 const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Line',
@@ -105,11 +107,70 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   rotation: overrides.rotation ?? 0
 });
 
-const imagePlaceholder =
+const buildImagePlaceholder = (label: string): string =>
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'><rect width='640' height='420' fill='#eef4ff'/><rect x='36' y='36' width='568' height='348' rx='20' fill='#dbe9ff' stroke='#9db7f2' stroke-width='6'/><circle cx='180' cy='160' r='40' fill='#8fb1ff'/><path d='M120 300 250 210 340 280 430 180 520 300H120Z' fill='#6b8fe8'/><text x='320' y='360' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' fill='#3251a8'>Image</text></svg>"
+    `<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'><rect width='640' height='420' fill='#eef4ff'/><rect x='36' y='36' width='568' height='348' rx='20' fill='#dbe9ff' stroke='#9db7f2' stroke-width='6'/><circle cx='180' cy='160' r='40' fill='#8fb1ff'/><path d='M120 300 250 210 340 280 430 180 520 300H120Z' fill='#6b8fe8'/><text x='320' y='360' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' fill='#3251a8'>${label}</text></svg>`
   );
+
+const defaultImagePlaceholder = buildImagePlaceholder('Image');
+
+const textTranslationKeyByShapeName: Readonly<Record<string, string>> = {
+  Note: 'preset.note.title',
+  Text: 'preset.label.title',
+  'Decision label': 'preset.decision.title',
+  'Terminator label': 'presetText.terminator.start',
+  'IO label': 'preset.input-output.title',
+  'Database label': 'preset.database.title',
+  'Label 1': 'presetText.timeline.kickoff',
+  'Label 2': 'presetText.timeline.review',
+  'Label 3': 'presetText.timeline.launch',
+  'Callout text': 'presetText.callout.label',
+  'Cloud label': 'preset.cloud.title',
+  'Stage 1 label': 'presetText.pipeline.input',
+  'Stage 2 label': 'presetText.pipeline.transform',
+  'Stage 3 label': 'presetText.pipeline.output',
+  'Hexagon label': 'presetText.hexagon.label',
+  'Note label': 'preset.sticky-note.title',
+  'Swimlane title': 'presetText.swimlane.label',
+  'Actor label': 'presetText.actor.label',
+  'Folder label': 'preset.folder.title',
+  'Message text': 'preset.message.title',
+  'Kanban todo': 'presetText.kanban.todo',
+  'Kanban doing': 'presetText.kanban.doing',
+  'Kanban done': 'presetText.kanban.done',
+  'Process label': 'sceneText.flow-starter.process',
+  'Client label': 'sceneText.system-map.client',
+  'API label': 'sceneText.system-map.api',
+  'Growth note': 'sceneText.metrics-board.note'
+};
+
+export const localizePresetCanvasShapes = (
+  shapes: readonly CanvasShape[],
+  localize: PresetTextLocalizer
+): readonly CanvasShape[] =>
+  shapes.map((shape) => {
+    if (shape.kind === 'text') {
+      const key = textTranslationKeyByShapeName[shape.name];
+      if (!key) {
+        return shape;
+      }
+
+      return {
+        ...shape,
+        text: localize(key, shape.text)
+      } satisfies TextShape;
+    }
+
+    if (shape.kind === 'image' && shape.latexSource === 'images/example.png') {
+      return {
+        ...shape,
+        src: buildImagePlaceholder(localize('preset.image.title', 'Image'))
+      } satisfies ImageShape;
+    }
+
+    return shape;
+  });
 
 const createImage = (overrides: Partial<ImageShape> = {}): ImageShape => ({
   id: overrides.id ?? crypto.randomUUID(),
@@ -123,7 +184,7 @@ const createImage = (overrides: Partial<ImageShape> = {}): ImageShape => ({
   width: overrides.width ?? 4.8,
   height: overrides.height ?? 3.2,
   aspectRatio: overrides.aspectRatio ?? 1.5,
-  src: overrides.src ?? imagePlaceholder,
+  src: overrides.src ?? defaultImagePlaceholder,
   latexSource: overrides.latexSource ?? 'images/example.png'
 });
 
@@ -290,25 +351,70 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Document',
     'Document block for reports and generated output.',
     [
-      createRectangle({ name: 'Document frame', width: 4.2, height: 2.8, fill: '#fafafa' }),
+      createRectangle({
+        name: 'Document page',
+        x: -1.8,
+        y: -2.35,
+        width: 3.6,
+        height: 4.9,
+        fill: '#fbfbfb',
+        cornerRadius: 0.08
+      }),
+      createRectangle({
+        name: 'Document fold',
+        x: 0.95,
+        y: 1.8,
+        width: 0.7,
+        height: 0.7,
+        fill: '#f3f3f3',
+        cornerRadius: 0.06
+      }),
+      createLine({
+        name: 'Document fold diagonal',
+        from: { x: 0.95, y: 1.8 },
+        to: { x: 1.65, y: 2.5 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Document title',
+        from: { x: -1.2, y: 1.5 },
+        to: { x: 0.55, y: 1.5 },
+        stroke: '#5c6065',
+        strokeWidth: 0.08
+      }),
       createLine({
         name: 'Document line 1',
-        from: { x: -1.5, y: 0.8 },
-        to: { x: 1.4, y: 0.8 },
+        from: { x: -1.2, y: 0.85 },
+        to: { x: 1.2, y: 0.85 },
         stroke: '#8a918b',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Document line 2',
-        from: { x: -1.5, y: 0.25 },
-        to: { x: 1.4, y: 0.25 },
+        from: { x: -1.2, y: 0.3 },
+        to: { x: 1.2, y: 0.3 },
         stroke: '#8a918b',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Document line 3',
-        from: { x: -1.5, y: -0.3 },
-        to: { x: 1, y: -0.3 },
+        from: { x: -1.2, y: -0.25 },
+        to: { x: 1.2, y: -0.25 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Document line 4',
+        from: { x: -1.2, y: -0.8 },
+        to: { x: 1.2, y: -0.8 },
+        stroke: '#8a918b',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Document line 5',
+        from: { x: -1.2, y: -1.35 },
+        to: { x: 0.65, y: -1.35 },
         stroke: '#8a918b',
         strokeWidth: 0.05
       })
@@ -433,17 +539,43 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Browser Window',
     'Quick browser frame for UI sketches.',
     [
-      createRectangle({ name: 'Browser frame', width: 5.2, height: 3.4, cornerRadius: 0.24, fill: '#fbfbfb' }),
+      createRectangle({
+        name: 'Browser frame',
+        x: -2.9,
+        y: -1.05,
+        width: 5.8,
+        height: 3.7,
+        cornerRadius: 0.32,
+        fill: '#fbfbfb'
+      }),
       createLine({
-        name: 'Browser divider',
-        from: { x: -2.6, y: 1.1 },
-        to: { x: 2.6, y: 1.1 },
-        stroke: '#9ea39e',
+        name: 'Browser toolbar divider',
+        from: { x: -2.9, y: 1.75 },
+        to: { x: 2.9, y: 1.75 },
+        stroke: '#b8bdc4',
         strokeWidth: 0.05
       }),
-      createCircle({ name: 'Browser dot 1', cx: -2.1, cy: 1.55, r: 0.12, fill: '#d9a16f', stroke: '#d9a16f' }),
-      createCircle({ name: 'Browser dot 2', cx: -1.7, cy: 1.55, r: 0.12, fill: '#d7c28d', stroke: '#d7c28d' }),
-      createCircle({ name: 'Browser dot 3', cx: -1.3, cy: 1.55, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' })
+      createCircle({ name: 'Browser dot 1', cx: -2.45, cy: 2.12, r: 0.13, fill: '#ff5f57', stroke: '#d64b45' }),
+      createCircle({ name: 'Browser dot 2', cx: -2.0, cy: 2.12, r: 0.13, fill: '#febc2e', stroke: '#d39a21' }),
+      createCircle({ name: 'Browser dot 3', cx: -1.55, cy: 2.12, r: 0.13, fill: '#28c840', stroke: '#24a437' }),
+      createRectangle({
+        name: 'Browser address bar',
+        x: -0.55,
+        y: 1.92,
+        width: 2.7,
+        height: 0.42,
+        cornerRadius: 0.18,
+        fill: '#f3f5f7',
+        stroke: '#cfd6dd',
+        strokeWidth: 0.05
+      }),
+      createLine({
+        name: 'Browser baseline',
+        from: { x: -3.55, y: -1.58 },
+        to: { x: 2.25, y: -1.58 },
+        stroke: '#1f1f1f',
+        strokeWidth: 0.06
+      })
     ],
     { searchTerms: ['browser', 'window', 'web', 'ui'] }
   ),
@@ -454,17 +586,43 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Phone Screen',
     'Mobile device frame.',
     [
-      createRectangle({ name: 'Phone body', width: 2.6, height: 5, cornerRadius: 0.4, fill: '#fbfbfb' }),
+      createRectangle({
+        name: 'Phone body',
+        x: -1.35,
+        y: -2.7,
+        width: 2.7,
+        height: 5.4,
+        cornerRadius: 0.42,
+        fill: '#fbfbfb'
+      }),
       createRectangle({
         name: 'Phone screen',
-        x: -1.05,
-        y: -1.85,
-        width: 2.1,
-        height: 3.95,
-        cornerRadius: 0.18,
-        fill: '#f3f3f3'
+        x: -1.1,
+        y: -2.42,
+        width: 2.2,
+        height: 4.86,
+        cornerRadius: 0.34,
+        fill: '#f7f7f7'
       }),
-      createCircle({ name: 'Phone camera', cx: 0, cy: 2.1, r: 0.08, fill: '#8b8f89', stroke: '#8b8f89' })
+      createRectangle({
+        name: 'Phone notch',
+        x: -0.45,
+        y: 2.05,
+        width: 0.9,
+        height: 0.22,
+        cornerRadius: 0.11,
+        fill: '#1f1f1f',
+        stroke: '#1f1f1f',
+        strokeWidth: 0.05
+      }),
+      createCircle({ name: 'Phone camera', cx: 0.5, cy: 2.16, r: 0.05, fill: '#1f1f1f', stroke: '#1f1f1f' }),
+      createLine({
+        name: 'Phone home indicator',
+        from: { x: -0.42, y: -2.03 },
+        to: { x: 0.42, y: -2.03 },
+        stroke: '#c6c8cb',
+        strokeWidth: 0.09
+      })
     ],
     { searchTerms: ['phone', 'mobile', 'device', 'app'] }
   ),
@@ -734,17 +892,25 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Folder',
     'Folder-style block for files, groups and collections.',
     [
-      createRectangle({ name: 'Folder body', width: 4.8, height: 2.7, fill: '#faf7e8', cornerRadius: 0.12 }),
+      createRectangle({
+        name: 'Folder body',
+        x: -3.1,
+        y: -1.35,
+        width: 6.2,
+        height: 2.9,
+        fill: '#fbfbfb',
+        cornerRadius: 0.14
+      }),
       createRectangle({
         name: 'Folder tab',
-        x: -1.8,
-        y: 1.55,
-        width: 1.6,
-        height: 0.55,
-        fill: '#f3e5a3',
+        x: -2.85,
+        y: -1.28,
+        width: 1.85,
+        height: 0.58,
+        fill: '#f5f5f5',
         cornerRadius: 0.08
       }),
-      createText({ name: 'Folder label', text: 'Folder', y: 0.05 })
+      createText({ name: 'Folder label', text: 'Folder', y: -2.25, fontSize: 0.46 })
     ],
     { searchTerms: ['folder', 'files', 'directory', 'collection'] }
   ),
@@ -769,24 +935,32 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Kanban',
     'Three-column board for workflows and task planning.',
     [
-      createRectangle({ name: 'Kanban frame', width: 7.2, height: 3.8, fill: '#fbfbfb', cornerRadius: 0.14 }),
+      createRectangle({
+        name: 'Kanban frame',
+        x: -3.45,
+        y: 0.25,
+        width: 6.9,
+        height: 1.75,
+        fill: '#fbfbfb',
+        cornerRadius: 0.08
+      }),
       createLine({
         name: 'Kanban divider 1',
-        from: { x: -1.2, y: 1.9 },
-        to: { x: -1.2, y: -1.9 },
+        from: { x: -2.05, y: 0.45 },
+        to: { x: -2.05, y: -1.7 },
         stroke: '#90959a',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Kanban divider 2',
-        from: { x: 1.2, y: 1.9 },
-        to: { x: 1.2, y: -1.9 },
+        from: { x: 0.25, y: 0.45 },
+        to: { x: 0.25, y: -1.7 },
         stroke: '#90959a',
         strokeWidth: 0.05
       }),
-      createText({ name: 'Kanban todo', text: 'To do', x: -2.4, y: 1.2, fontSize: 0.3 }),
-      createText({ name: 'Kanban doing', text: 'Doing', x: 0, y: 1.2, fontSize: 0.3 }),
-      createText({ name: 'Kanban done', text: 'Done', x: 2.4, y: 1.2, fontSize: 0.3 })
+      createText({ name: 'Kanban todo', text: 'To do', x: -3.0, y: 0.05, fontSize: 0.22 }),
+      createText({ name: 'Kanban doing', text: 'Doing', x: -0.9, y: 0.05, fontSize: 0.22 }),
+      createText({ name: 'Kanban done', text: 'Done', x: 1.45, y: 0.05, fontSize: 0.22 })
     ],
     { searchTerms: ['kanban', 'board', 'tasks', 'workflow'] }
   ),

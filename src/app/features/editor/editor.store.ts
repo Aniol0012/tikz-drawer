@@ -441,6 +441,12 @@ export class EditorStore {
     this.parserWarnings.set([]);
   }
 
+  applyScene(scene: TikzScene): void {
+    this.setScene(scene);
+    this.importCode.set(sceneToTikz(scene));
+    this.parserWarnings.set([]);
+  }
+
   addPreset(presetId: string): readonly CanvasShape[] {
     const preset = this.objectPresets.find((entry) => entry.id === presetId);
 

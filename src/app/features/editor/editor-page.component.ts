@@ -29,6 +29,7 @@ import {
   highlightLatex,
   translateShapeBy
 } from './editor-page.utils';
+import { localizePresetCanvasShapes as localizePresetTemplateShapes } from './presets';
 import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from './tikz.codegen';
 import { EditorStore } from './editor.store';
 import type {
@@ -41,6 +42,7 @@ import type {
   Point,
   PresetCategory,
   ScenePreset,
+  TikzScene,
   TextAlign,
   TextShape,
   ThemeMode
@@ -1407,7 +1409,11 @@ export class EditorPageComponent {
   private applyScenePresetConfirmed(presetId: string): void {
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === presetId);
-      this.store.applyScenePreset(presetId);
+      if (preset) {
+        this.store.applyScene(this.localizedScenePreset(preset.scene));
+      } else {
+        this.store.applyScenePreset(presetId);
+      }
       this.store.patchPreferences({ scale: this.defaultScale });
       if (preset) {
         this.store.renameScene(this.scenePresetTitle(preset));
@@ -1427,7 +1433,11 @@ export class EditorPageComponent {
   private resetSceneConfirmed(): void {
     this.runSceneMutation(() => {
       const preset = this.scenePresets.find((entry) => entry.id === 'blank');
-      this.store.applyScenePreset('blank');
+      if (preset) {
+        this.store.applyScene(this.localizedScenePreset(preset.scene));
+      } else {
+        this.store.applyScenePreset('blank');
+      }
       this.store.patchPreferences({ scale: this.defaultScale });
       if (preset) {
         this.store.renameScene(this.scenePresetTitle(preset));
@@ -3748,12 +3758,25 @@ export class EditorPageComponent {
     shapes: readonly CanvasShape[],
     keepOwnStyle: boolean
   ): readonly CanvasShape[] {
-    if (keepOwnStyle || shapes.length !== 1) {
-      return shapes;
+    const localizedShapes = keepOwnStyle ? shapes : this.localizePresetCanvasShapes(shapes);
+
+    if (keepOwnStyle || localizedShapes.length !== 1) {
+      return localizedShapes;
     }
 
     const localizedName = this.presetTitle(preset);
-    return shapes.map((shape) => ({ ...shape, name: localizedName }) as CanvasShape);
+    return localizedShapes.map((shape) => ({ ...shape, name: localizedName }) as CanvasShape);
+  }
+
+  private localizePresetCanvasShapes(shapes: readonly CanvasShape[]): readonly CanvasShape[] {
+    return localizePresetTemplateShapes(shapes, (key, fallback) => this.tOrFallback(key, fallback));
+  }
+
+  private localizedScenePreset(scene: TikzScene): TikzScene {
+    return {
+      ...structuredClone(scene),
+      shapes: this.localizePresetCanvasShapes(structuredClone(scene.shapes))
+    };
   }
 
   private transformShape(
