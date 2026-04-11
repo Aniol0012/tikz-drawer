@@ -633,7 +633,9 @@
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"
-              [class.selection-outline--interactive]="selectionCount() > 1"
+              [class.selection-outline--interactive]="
+                selectionCount() > 1 && !selectionModifierPressed()
+              "
               [attr.x]="outline.x"
               [attr.y]="outline.y"
               [attr.width]="outline.width"

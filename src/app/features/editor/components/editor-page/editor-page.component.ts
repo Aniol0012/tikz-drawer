@@ -215,6 +215,7 @@ export class EditorPageComponent {
   readonly textSymbolPalettePosition = signal<TextSymbolPalettePosition>({ top: 0, left: 0, maxHeight: 320 });
   readonly recentTextTap = signal<RecentTextTap | null>(null);
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
+  readonly ignoreNextShapeClickId = signal<string | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
   readonly mobileRightSidebarHeight = signal(220);
@@ -240,6 +241,8 @@ export class EditorPageComponent {
   });
   readonly spacePressed = signal(false);
   readonly shiftPressed = signal(false);
+  readonly controlPressed = signal(false);
+  readonly metaPressed = signal(false);
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
@@ -342,6 +345,9 @@ export class EditorPageComponent {
     if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
+  readonly selectionModifierPressed = computed(
+    () => this.shiftPressed() || this.controlPressed() || this.metaPressed()
+  );
   readonly selectedTable = computed<TableSelectionInfo | null>(() => getTableSelectionInfo(this.selectedShapes()));
   readonly multiEditSelection = computed<HomogeneousSelectionInfo | null>(() => {
     if (this.selectionCount() < 2 || this.selectedTable()) {
@@ -1444,6 +1450,11 @@ export class EditorPageComponent {
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
     event.stopPropagation();
 
+    if (this.ignoreNextShapeClickId() === shape.id) {
+      this.ignoreNextShapeClickId.set(null);
+      return;
+    }
+
     if (this.activeTool() !== 'select') {
       this.closeInlineTextEditor();
       if (!this.canPreviewInsert(this.activeTool())) {
@@ -2308,6 +2319,7 @@ export class EditorPageComponent {
     if (event.shiftKey || event.ctrlKey || event.metaKey) {
       this.toggleShapeSetSelection(shape);
       this.setInspectorTab('properties');
+      this.ignoreNextShapeClickId.set(shape.id);
       return;
     }
 
@@ -2598,6 +2610,8 @@ export class EditorPageComponent {
   }
 
   onCanvasBackgroundClick(event: MouseEvent): void {
+    this.ignoreNextShapeClickId.set(null);
+
     if (this.ignoreNextCanvasClick()) {
       this.ignoreNextCanvasClick.set(false);
       return;
@@ -3013,6 +3027,8 @@ export class EditorPageComponent {
       }
     }
     if (event.key === 'Shift') this.shiftPressed.set(true);
+    if (event.key === 'Control') this.controlPressed.set(true);
+    if (event.key === 'Meta') this.metaPressed.set(true);
     if (event.key === 'Alt') this.altPressed.set(true);
 
     if (this.isEditableTarget(event.target)) {
@@ -3160,13 +3176,18 @@ export class EditorPageComponent {
   handleWindowKeyup(event: KeyboardEvent): void {
     if (event.key === ' ') this.spacePressed.set(false);
     if (event.key === 'Shift') this.shiftPressed.set(false);
+    if (event.key === 'Control') this.controlPressed.set(false);
+    if (event.key === 'Meta') this.metaPressed.set(false);
     if (event.key === 'Alt') this.altPressed.set(false);
   }
 
   handleWindowBlur(): void {
     this.spacePressed.set(false);
     this.shiftPressed.set(false);
+    this.controlPressed.set(false);
+    this.metaPressed.set(false);
     this.altPressed.set(false);
+    this.ignoreNextShapeClickId.set(null);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
     this.minimapPanPointerId.set(null);
