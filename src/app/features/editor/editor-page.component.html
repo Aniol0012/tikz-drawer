@@ -829,7 +829,7 @@
               [attr.height]="marquee.height"></rect>
           }
 
-          @if (selectionCount() === 1) {
+          @if (selectionCount() > 0) {
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               <rect
                 class="selection-handle"

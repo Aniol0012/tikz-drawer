@@ -27,6 +27,8 @@ import {
   encodeSharePayload,
   formatValue,
   highlightLatex,
+  resizeGroupedShapes,
+  transformCanvasShape,
   translateShapeBy
 } from './editor-page.utils';
 import { localizePresetCanvasShapes as localizePresetTemplateShapes } from './presets';
@@ -156,7 +158,9 @@ interface ResizeInteractionState {
   readonly kind: 'resize';
   readonly pointerId: number;
   readonly handle: ResizeHandle;
-  readonly initialShape: CanvasShape;
+  readonly initialShape: CanvasShape | null;
+  readonly initialShapes: readonly CanvasShape[];
+  readonly initialBounds: SelectionBounds | null;
 }
 
 interface MarqueeInteractionState {
@@ -776,8 +780,9 @@ export class EditorPageComponent {
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShape = this.selectedShape();
-    if (!selectedShape) return [];
-    if (selectedShape.kind === 'line') {
+    const selectedShapes = this.selectedShapes();
+    if (!selectedShapes.length) return [];
+    if (selectedShape?.kind === 'line') {
       const points = this.linePoints(selectedShape);
       const fromAdjacentPoint = points[1] ?? selectedShape.to;
       const toAdjacentPoint = points.at(-2) ?? selectedShape.from;
@@ -2469,14 +2474,16 @@ export class EditorPageComponent {
 
   startResize(event: PointerEvent, handle: ResizeHandle): void {
     const selectedShape = this.selectedShape();
-    if (!selectedShape || this.activeTool() !== 'select' || event.button !== 0) {
+    const selectedShapes = this.selectedShapes();
+    const selectionBounds = this.selectionBounds();
+    if ((!selectedShape && selectedShapes.length === 0) || this.activeTool() !== 'select' || event.button !== 0) {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
 
-    if (selectedShape.kind === 'line' && handle.startsWith('insert-anchor-')) {
+    if (selectedShape?.kind === 'line' && handle.startsWith('insert-anchor-')) {
       const segmentIndex = Number(handle.slice('insert-anchor-'.length));
       const points = this.linePoints(selectedShape);
       const fromPoint = points[segmentIndex];
@@ -2501,7 +2508,9 @@ export class EditorPageComponent {
         kind: 'resize',
         pointerId: event.pointerId,
         handle: `anchor-${segmentIndex}` as ResizeHandle,
-        initialShape: structuredClone(this.selectedShape() ?? selectedShape)
+        initialShape: structuredClone(this.selectedShape() ?? selectedShape),
+        initialShapes: structuredClone(this.selectedShapes()),
+        initialBounds: structuredClone(this.selectionBounds())
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
       return;
@@ -2512,7 +2521,9 @@ export class EditorPageComponent {
       kind: 'resize',
       pointerId: event.pointerId,
       handle,
-      initialShape: structuredClone(selectedShape)
+      initialShape: selectedShape ? structuredClone(selectedShape) : null,
+      initialShapes: structuredClone(selectedShapes),
+      initialBounds: structuredClone(selectionBounds)
     });
     this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
   }
@@ -2581,12 +2592,25 @@ export class EditorPageComponent {
       return;
     }
 
-    const resizedShape = this.resizeShape(
-      interactionState.initialShape,
-      interactionState.handle,
-      this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
+    const nextPoint = this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY));
+    if (interactionState.initialShape) {
+      const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
+      this.store.patchSelectedShape(() => resizedShape);
+      return;
+    }
+
+    if (!interactionState.initialBounds || interactionState.initialShapes.length === 0) {
+      return;
+    }
+
+    this.store.replaceShapes(
+      this.resizeShapeSelection(
+        interactionState.initialShapes,
+        interactionState.initialBounds,
+        interactionState.handle,
+        nextPoint
+      )
     );
-    this.store.patchSelectedShape(() => resizedShape);
   }
 
   endInteraction(event: PointerEvent): void {
@@ -3824,66 +3848,7 @@ export class EditorPageComponent {
     originY: number,
     id: string
   ): CanvasShape {
-    const scalePoint = (point: Point): Point => ({
-      x: (point.x - originX) * scaleX + originX + deltaX,
-      y: (point.y - originY) * scaleY + originY + deltaY
-    });
-
-    switch (shape.kind) {
-      case 'line':
-        return {
-          ...shape,
-          id,
-          from: scalePoint(shape.from),
-          to: scalePoint(shape.to),
-          anchors: shape.anchors.map((anchor) => scalePoint(anchor))
-        };
-      case 'rectangle':
-        return {
-          ...shape,
-          id,
-          x: (shape.x - originX) * scaleX + originX + deltaX,
-          y: (shape.y - originY) * scaleY + originY + deltaY,
-          width: Math.max(shape.width * scaleX, 0.2),
-          height: Math.max(shape.height * scaleY, 0.2),
-          cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
-        };
-      case 'circle':
-        return {
-          ...shape,
-          id,
-          cx: (shape.cx - originX) * scaleX + originX + deltaX,
-          cy: (shape.cy - originY) * scaleY + originY + deltaY,
-          r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), 0.2), 0.1)
-        };
-      case 'ellipse':
-        return {
-          ...shape,
-          id,
-          cx: (shape.cx - originX) * scaleX + originX + deltaX,
-          cy: (shape.cy - originY) * scaleY + originY + deltaY,
-          rx: Math.max(shape.rx * scaleX, 0.1),
-          ry: Math.max(shape.ry * scaleY, 0.1)
-        };
-      case 'text':
-        return {
-          ...shape,
-          id,
-          x: (shape.x - originX) * scaleX + originX + deltaX,
-          y: (shape.y - originY) * scaleY + originY + deltaY,
-          boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, 1.2) : shape.boxWidth,
-          fontSize: Math.max(shape.fontSize * Math.max(Math.min(scaleX, scaleY), 0.7), 0.2)
-        };
-      case 'image':
-        return {
-          ...shape,
-          id,
-          x: (shape.x - originX) * scaleX + originX + deltaX,
-          y: (shape.y - originY) * scaleY + originY + deltaY,
-          width: Math.max(shape.width * scaleX, 0.4),
-          height: Math.max(shape.height * scaleY, 0.4)
-        };
-    }
+    return transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
   }
 
   private savedTemplateToPreset(template: SavedTemplate): ObjectPreset {
@@ -4350,6 +4315,21 @@ export class EditorPageComponent {
       case 'image':
         return this.resizeRectangle(shape, handle, point);
     }
+  }
+
+  private resizeShapeSelection(
+    shapes: readonly CanvasShape[],
+    selectionBounds: SelectionBounds,
+    handle: ResizeHandle,
+    point: Point
+  ): readonly CanvasShape[] {
+    return resizeGroupedShapes(
+      shapes,
+      selectionBounds,
+      handle as Extract<ResizeHandle, 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'>,
+      point,
+      this.shiftPressed()
+    );
   }
 
   private resizeText(shape: Extract<CanvasShape, { kind: 'text' }>, handle: ResizeHandle, point: Point): CanvasShape {

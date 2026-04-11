@@ -1,6 +1,156 @@
-import type { CanvasShape } from './tikz.models';
+import type { CanvasShape, Point } from './tikz.models';
 import type { SharedScenePayload } from './editor-page.i18n';
 import { sceneToTikz } from './tikz.codegen';
+
+export interface SelectionBounds {
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+export type SelectionResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+
+export const transformCanvasShape = (
+  shape: CanvasShape,
+  deltaX: number,
+  deltaY: number,
+  scaleX: number,
+  scaleY: number,
+  originX: number,
+  originY: number,
+  id: string = shape.id
+): CanvasShape => {
+  const scalePoint = (point: Point): Point => ({
+    x: (point.x - originX) * scaleX + originX + deltaX,
+    y: (point.y - originY) * scaleY + originY + deltaY
+  });
+
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        id,
+        from: scalePoint(shape.from),
+        to: scalePoint(shape.to),
+        anchors: shape.anchors.map((anchor) => scalePoint(anchor))
+      };
+    case 'rectangle':
+      return {
+        ...shape,
+        id,
+        x: (shape.x - originX) * scaleX + originX + deltaX,
+        y: (shape.y - originY) * scaleY + originY + deltaY,
+        width: Math.max(shape.width * scaleX, 0.2),
+        height: Math.max(shape.height * scaleY, 0.2),
+        cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
+      };
+    case 'circle':
+      return {
+        ...shape,
+        id,
+        cx: (shape.cx - originX) * scaleX + originX + deltaX,
+        cy: (shape.cy - originY) * scaleY + originY + deltaY,
+        r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), 0.2), 0.1)
+      };
+    case 'ellipse':
+      return {
+        ...shape,
+        id,
+        cx: (shape.cx - originX) * scaleX + originX + deltaX,
+        cy: (shape.cy - originY) * scaleY + originY + deltaY,
+        rx: Math.max(shape.rx * scaleX, 0.1),
+        ry: Math.max(shape.ry * scaleY, 0.1)
+      };
+    case 'text':
+      return {
+        ...shape,
+        id,
+        x: (shape.x - originX) * scaleX + originX + deltaX,
+        y: (shape.y - originY) * scaleY + originY + deltaY,
+        boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, 1.2) : shape.boxWidth,
+        fontSize: Math.max(shape.fontSize * Math.max(Math.min(scaleX, scaleY), 0.7), 0.2)
+      };
+    case 'image':
+      return {
+        ...shape,
+        id,
+        x: (shape.x - originX) * scaleX + originX + deltaX,
+        y: (shape.y - originY) * scaleY + originY + deltaY,
+        width: Math.max(shape.width * scaleX, 0.4),
+        height: Math.max(shape.height * scaleY, 0.4)
+      };
+  }
+};
+
+const resizeSelectionBounds = (
+  selectionBounds: SelectionBounds,
+  handle: SelectionResizeHandle,
+  point: Point,
+  minimumWidth: number,
+  minimumHeight: number,
+  aspectRatio?: number
+): SelectionBounds => {
+  let left = selectionBounds.left;
+  let right = selectionBounds.right;
+  let top = selectionBounds.top;
+  let bottom = selectionBounds.bottom;
+
+  if (handle.includes('w')) left = Math.min(point.x, right - minimumWidth);
+  if (handle.includes('e')) right = Math.max(point.x, left + minimumWidth);
+  if (handle.includes('n')) top = Math.max(point.y, bottom + minimumHeight);
+  if (handle.includes('s')) bottom = Math.min(point.y, top - minimumHeight);
+
+  if (aspectRatio) {
+    const currentWidth = Math.max(right - left, minimumWidth);
+    const currentHeight = Math.max(top - bottom, minimumHeight);
+    const nextHeight = currentWidth / aspectRatio;
+    const nextWidth = currentHeight * aspectRatio;
+
+    if (handle === 'n' || handle === 's') {
+      const adjustedWidth = Math.max(nextWidth, minimumWidth);
+      const centerX = (left + right) / 2;
+      left = centerX - adjustedWidth / 2;
+      right = centerX + adjustedWidth / 2;
+    } else {
+      const adjustedHeight = Math.max(nextHeight, minimumHeight);
+      if (handle.includes('n')) {
+        top = bottom + adjustedHeight;
+      } else {
+        bottom = top - adjustedHeight;
+      }
+    }
+  }
+
+  return { left, right, top, bottom };
+};
+
+export const resizeGroupedShapes = (
+  shapes: readonly CanvasShape[],
+  selectionBounds: SelectionBounds,
+  handle: SelectionResizeHandle,
+  point: Point,
+  lockAspectRatio: boolean = false
+): readonly CanvasShape[] => {
+  const width = Math.max(selectionBounds.right - selectionBounds.left, 0.2);
+  const height = Math.max(selectionBounds.top - selectionBounds.bottom, 0.2);
+  const resizedBounds = resizeSelectionBounds(
+    selectionBounds,
+    handle,
+    point,
+    0.2,
+    0.2,
+    lockAspectRatio ? width / height : undefined
+  );
+  const scaleX = Math.max((resizedBounds.right - resizedBounds.left) / width, 0.01);
+  const scaleY = Math.max((resizedBounds.top - resizedBounds.bottom) / height, 0.01);
+  const deltaX = resizedBounds.left - selectionBounds.left;
+  const deltaY = resizedBounds.bottom - selectionBounds.bottom;
+
+  return shapes.map((shape) =>
+    transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, selectionBounds.left, selectionBounds.bottom, shape.id)
+  );
+};
 
 export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
   switch (shape.kind) {
