@@ -740,7 +740,7 @@ export const objectPresets: readonly ObjectPreset[] = [
   createPreset(
     'hexagon',
     'geometry',
-    'node',
+    'hexagon',
     'Hexagon',
     'Six-sided block for systems and conceptual diagrams.',
     [
@@ -757,11 +757,19 @@ export const objectPresets: readonly ObjectPreset[] = [
   createPreset(
     'table',
     'data',
-    'card',
+    'table',
     'Table',
     'Simple table block for data layouts and comparisons.',
     [
-      createRectangle({ name: 'Table frame', width: 5.2, height: 3.2, fill: '#fafafa', cornerRadius: 0.08 }),
+      createRectangle({
+        name: 'Table frame',
+        x: -2.6,
+        y: -1.6,
+        width: 5.2,
+        height: 3.2,
+        fill: '#fafafa',
+        cornerRadius: 0.08
+      }),
       createLine({
         name: 'Table row 1',
         from: { x: -2.6, y: 0.6 },
@@ -853,11 +861,19 @@ export const objectPresets: readonly ObjectPreset[] = [
   createPreset(
     'swimlane',
     'flow',
-    'pipeline',
+    'swimlane',
     'Swimlane',
     'Horizontal flow lane with grouped stages.',
     [
-      createRectangle({ name: 'Swimlane frame', width: 7.6, height: 3.4, fill: '#fbfbfb', cornerRadius: 0.08 }),
+      createRectangle({
+        name: 'Swimlane frame',
+        x: -3.8,
+        y: -1.7,
+        width: 7.6,
+        height: 3.4,
+        fill: '#fbfbfb',
+        cornerRadius: 0.08
+      }),
       createLine({
         name: 'Swimlane divider 1',
         from: { x: -1.25, y: 1.7 },
@@ -1017,7 +1033,7 @@ export const objectPresets: readonly ObjectPreset[] = [
   createPreset(
     'funnel',
     'data',
-    'triangle',
+    'funnel',
     'Funnel',
     'Simple funnel shape for conversion or filtering flows.',
     [

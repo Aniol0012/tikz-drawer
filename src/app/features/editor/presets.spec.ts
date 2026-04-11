@@ -1,4 +1,5 @@
 import { localizePresetCanvasShapes, objectPresets } from './presets';
+import { getIconPath } from './editor-icons';
 
 const translate =
   (dictionary: Record<string, string>) =>
@@ -146,5 +147,49 @@ describe('presets', () => {
       (shape) => shape.kind === 'rectangle' && shape.name === 'Document fold'
     );
     expect(documentFold?.kind).toBe('rectangle');
+  });
+
+  it('keeps table and swimlane frames aligned with their internal grid', () => {
+    const tablePreset = objectPresets.find((preset) => preset.id === 'table');
+    const swimlanePreset = objectPresets.find((preset) => preset.id === 'swimlane');
+
+    const tableFrame = tablePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Table frame');
+    expect(tableFrame?.kind).toBe('rectangle');
+    if (tableFrame?.kind === 'rectangle') {
+      expect(tableFrame.x).toBe(-2.6);
+      expect(tableFrame.y).toBe(-1.6);
+      expect(tableFrame.width).toBe(5.2);
+      expect(tableFrame.height).toBe(3.2);
+    }
+
+    const swimlaneFrame = swimlanePreset?.shapes.find(
+      (shape) => shape.kind === 'rectangle' && shape.name === 'Swimlane frame'
+    );
+    expect(swimlaneFrame?.kind).toBe('rectangle');
+    if (swimlaneFrame?.kind === 'rectangle') {
+      expect(swimlaneFrame.x).toBe(-3.8);
+      expect(swimlaneFrame.y).toBe(-1.7);
+      expect(swimlaneFrame.width).toBe(7.6);
+      expect(swimlaneFrame.height).toBe(3.4);
+    }
+  });
+
+  it('uses dedicated icons for swimlane, hexagon, table and funnel presets', () => {
+    const swimlanePreset = objectPresets.find((preset) => preset.id === 'swimlane');
+    const hexagonPreset = objectPresets.find((preset) => preset.id === 'hexagon');
+    const tablePreset = objectPresets.find((preset) => preset.id === 'table');
+    const funnelPreset = objectPresets.find((preset) => preset.id === 'funnel');
+    const vennPreset = objectPresets.find((preset) => preset.id === 'venn');
+
+    expect(swimlanePreset?.icon).toBe('swimlane');
+    expect(hexagonPreset?.icon).toBe('hexagon');
+    expect(tablePreset?.icon).toBe('table');
+    expect(funnelPreset?.icon).toBe('funnel');
+    expect(vennPreset?.icon).toBe('venn');
+
+    expect(getIconPath('swimlane')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('hexagon')).not.toBe(getIconPath('node'));
+    expect(getIconPath('table')).not.toBe(getIconPath('card'));
+    expect(getIconPath('funnel')).not.toBe(getIconPath('triangle'));
   });
 });
