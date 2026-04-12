@@ -8,6 +8,7 @@ export type ExportMode = 'snippet' | 'standalone';
 export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 export type ToolId = 'select' | string;
 export type ArrowControlHandle = 'arrow-length-start' | 'arrow-length-end' | 'arrow-width-start' | 'arrow-width-end';
+export type ArrowDirection = 'none' | 'forward' | 'backward' | 'both';
 export type ResizeHandle =
   | 'nw'
   | 'n'

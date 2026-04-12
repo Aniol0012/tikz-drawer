@@ -1926,7 +1926,7 @@ export class EditorPageComponent {
     );
   }
 
-  setLineArrowDirection(direction: 'none' | 'forward' | 'backward' | 'both'): void {
+  setLineArrowDirection(direction: ArrowDirection): void {
     this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'line') {
         return shape;
@@ -1940,7 +1940,7 @@ export class EditorPageComponent {
     });
   }
 
-  lineArrowDirection(shape: LineShape): 'none' | 'forward' | 'backward' | 'both' {
+  lineArrowDirection(shape: LineShape): ArrowDirection {
     if (shape.arrowStart && shape.arrowEnd) return 'both';
     if (shape.arrowStart) return 'backward';
     if (shape.arrowEnd) return 'forward';
