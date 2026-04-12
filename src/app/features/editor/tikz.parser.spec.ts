@@ -32,4 +32,25 @@ describe('parseTikz', () => {
     expect(result.scene.shapes).toHaveLength(0);
     expect(result.warnings).toEqual(['Unsupported line skipped: \\foo{bar}']);
   });
+
+  it('stores rectangle y as the lower edge when importing TikZ rectangles', () => {
+    const result = parseTikz(
+      '\\begin{tikzpicture}\n\\draw[fill=#f1f1f1] (-14.857, 9.101) rectangle (4.841, 4.007);\n\\node[anchor=center] at (-4.536, 7.404) {Text};\n\\end{tikzpicture}'
+    );
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(2);
+
+    const rectangle = result.scene.shapes[0];
+    expect(rectangle.kind).toBe('rectangle');
+
+    if (rectangle.kind !== 'rectangle') {
+      throw new Error('Expected a rectangle shape');
+    }
+
+    expect(rectangle.x).toBeCloseTo(-14.857);
+    expect(rectangle.y).toBeCloseTo(4.007);
+    expect(rectangle.width).toBeCloseTo(19.698);
+    expect(rectangle.height).toBeCloseTo(5.094);
+  });
 });

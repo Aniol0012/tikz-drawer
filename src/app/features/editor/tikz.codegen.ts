@@ -262,7 +262,7 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
     entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
   }
 
-  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y - shape.height)});`;
+  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
 };
 
 const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string =>

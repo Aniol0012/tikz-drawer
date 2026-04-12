@@ -286,7 +286,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
     ...sharedStroke(styles),
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     x: Math.min(from.x, to.x),
-    y: Math.max(from.y, to.y),
+    y: Math.min(from.y, to.y),
     width: Math.abs(to.x - from.x),
     height: Math.abs(from.y - to.y),
     fill: styles['fill'] ?? 'none',

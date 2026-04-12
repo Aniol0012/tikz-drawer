@@ -1,5 +1,6 @@
 import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
-import type { LineShape, TextShape, TikzScene } from './tikz.models';
+import { parseTikz } from './tikz.parser';
+import type { LineShape, RectangleShape, TextShape, TikzScene } from './tikz.models';
 
 const baseLine: LineShape = {
   id: 'line-1',
@@ -45,6 +46,22 @@ const textWithInlineMath: TextShape = {
   textDecoration: 'none',
   textAlign: 'center',
   rotation: 0
+};
+
+const rectangleWithInnerText: RectangleShape = {
+  id: 'rect-1',
+  name: 'Container',
+  kind: 'rectangle',
+  stroke: '#1f1f1f',
+  strokeOpacity: 1,
+  strokeWidth: 0.08,
+  x: -14.857,
+  y: 4.007,
+  width: 19.698,
+  height: 5.094,
+  fill: '#f1f1f1',
+  fillOpacity: 1,
+  cornerRadius: 0.297
 };
 
 describe('sceneToTikzBundle', () => {
@@ -95,5 +112,48 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain(
       '\\ensuremath{\\int}\\ensuremath{\\gamma}\\ensuremath{\\delta}\\ensuremath{\\exists}'
     );
+  });
+
+  it('exports rectangle coordinates using the bottom edge as the stored y origin', () => {
+    const scene: TikzScene = {
+      name: 'Rectangle scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [rectangleWithInnerText, textWithInlineMath]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain('(-14.857, 9.101) rectangle (4.841, 4.007);');
+    expect(bundle.code).toContain('\\node[');
+    expect(bundle.code).toContain('at (1, 2)');
+  });
+
+  it('round-trips rectangle and text positions without vertical drift', () => {
+    const scene: TikzScene = {
+      name: 'Roundtrip scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [rectangleWithInnerText, { ...textWithInlineMath, x: -4.536, y: 7.404, text: 'Text' }]
+    };
+
+    const exported = sceneToTikzBundle(scene).code;
+    const parsed = parseTikz(exported);
+    const rectangle = parsed.scene.shapes.find((shape) => shape.kind === 'rectangle');
+    const text = parsed.scene.shapes.find((shape) => shape.kind === 'text');
+
+    expect(parsed.warnings).toHaveLength(0);
+    expect(rectangle?.kind).toBe('rectangle');
+    expect(text?.kind).toBe('text');
+
+    if (rectangle?.kind !== 'rectangle' || text?.kind !== 'text') {
+      throw new Error('Expected a rectangle and a text shape after roundtrip');
+    }
+
+    expect(rectangle.x).toBeCloseTo(-14.857);
+    expect(rectangle.y).toBeCloseTo(4.007);
+    expect(rectangle.width).toBeCloseTo(19.698);
+    expect(rectangle.height).toBeCloseTo(5.094);
+    expect(text.x).toBeCloseTo(-4.536);
+    expect(text.y).toBeCloseTo(7.404);
+    expect(text.text).toBe('Text');
   });
 });
