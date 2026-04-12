@@ -1,4 +1,3 @@
-import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH } from '../../constants/editor.constants';
 import type { LatexColorMode } from '../../tikz/tikz.codegen';
 import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';

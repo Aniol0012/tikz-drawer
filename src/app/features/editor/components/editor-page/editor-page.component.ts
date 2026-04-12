@@ -20,9 +20,6 @@ import {
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   FREEHAND_POINT_MIN_DISTANCE,
   MIN_IMAGE_DIMENSION,
-  MINIMAP_MIN_IMAGE_DIMENSION,
-  MINIMAP_MIN_RADIUS,
-  MINIMAP_MIN_TEXT_HEIGHT,
   MIN_POINTER_DRAG_DELTA,
   MIN_RENDER_STROKE_WIDTH,
   MIN_SHAPE_DIMENSION,
@@ -30,6 +27,9 @@ import {
   MIN_TEXT_FONT_SIZE,
   MIN_TEXT_RESIZE_HEIGHT,
   MIN_TEXT_RESIZE_WIDTH,
+  MINIMAP_MIN_IMAGE_DIMENSION,
+  MINIMAP_MIN_RADIUS,
+  MINIMAP_MIN_TEXT_HEIGHT,
   SHAPE_STROKE_SCALE_FACTOR,
   TEXT_DOUBLE_TAP_WINDOW_MS,
   TEXT_MIN_HEIGHT_FACTOR,
@@ -39,13 +39,13 @@ import {
 import { getIconPath, iconPaths } from '../../config/editor-icons';
 import {
   type ArrowControlHandle,
+  type ArrowDirection,
   type ArrowTipOption,
   type ClipboardShapeSet,
   type CodeHighlightTheme,
   type ContextMenuState,
   type ExportMode,
   type ExportSvgDocument,
-  type FreehandInteractionState,
   type HandleDescriptor,
   type HomogeneousSelectionInfo,
   type InlineTextEditorState,
@@ -53,18 +53,14 @@ import {
   type InteractionState,
   LATEX_ALIGNMENTS,
   LATEX_COLOR_MODES,
+  LATEX_FONT_SIZES,
   type LatexAlignment,
   type LatexExportConfig,
   type LatexFontSize,
-  LATEX_FONT_SIZES,
   type LibrarySection,
-  type MinimapImageShape,
-  type MinimapLineShape,
   type MinimapOverview,
   type MinimapRect,
   type MinimapShape,
-  type MoveInteractionState,
-  type PanInteractionState,
   type PinchZoomState,
   type RecentTextTap,
   type ResizeHandle,
@@ -102,7 +98,7 @@ import {
   buildTablePresetShapes,
   localizePresetCanvasShapes as localizePresetTemplateShapes
 } from '../../presets/presets';
-import { sceneToTikzBundle, type LatexColorMode, type TikzExportOptions } from '../../tikz/tikz.codegen';
+import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
 import {
   DEFAULT_TABLE_DIMENSIONS,
@@ -127,20 +123,16 @@ import type {
   Point,
   PresetCategory,
   ScenePreset,
-  TikzScene,
   TextAlign,
   TextShape,
-  ThemeMode
+  ThemeMode,
+  TikzScene
 } from '../../models/tikz.models';
 import {
-  displayTextLines,
   displayTextLinesForShape,
   estimateTextHeight,
   estimateTextWidth,
-  renderDisplayText,
-  textLeftForWidth,
-  textLines,
-  wrapTextLine
+  textLeftForWidth
 } from '../../utils/text.utils';
 
 @Component({
@@ -204,7 +196,6 @@ export class EditorPageComponent {
   readonly selectedShape = this.store.selectedShape;
   readonly selectedShapes = this.store.selectedShapes;
   readonly selectionCount = this.store.selectionCount;
-  readonly exportedCode = this.store.exportedCode;
   readonly parserWarnings = this.store.parserWarnings;
   readonly objectPresets = this.store.objectPresets;
   readonly scenePresets = this.store.scenePresets;
@@ -417,13 +408,6 @@ export class EditorPageComponent {
   readonly activePreset = computed(
     () => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null
   );
-  readonly activeToolLabel = computed(() => {
-    if (this.activeTool() === 'pencil') {
-      return this.t('freeDraw');
-    }
-    const preset = this.activePreset();
-    return preset ? this.presetTitle(preset) : this.t('selection');
-  });
   readonly visibleWorldBounds = computed(() => {
     const scale = this.preferences().scale;
     const halfWidth = this.canvasWidth() / 2 / scale;
@@ -691,7 +675,6 @@ export class EditorPageComponent {
       interactionState.currentWorldPoint
     );
   });
-  readonly insertionPreviewShape = computed<CanvasShape | null>(() => this.insertionPreviewShapes()[0] ?? null);
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
   }));
@@ -704,7 +687,6 @@ export class EditorPageComponent {
   readonly displayedExportImports = computed(() =>
     this.exportMode() === 'snippet' ? this.snippetExport().imports : ''
   );
-  readonly highlightedSnippetCode = computed(() => highlightLatex(this.snippetExport().combined));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
@@ -845,7 +827,7 @@ export class EditorPageComponent {
   }
 
   canPinPreset(preset: ObjectPreset): boolean {
-    return !preset.quickAccess || !!this.savedTemplates().find((template) => template.id === preset.id);
+    return !preset.quickAccess || this.savedTemplates().some((template) => template.id === preset.id);
   }
 
   isToolPinned(toolId: string): boolean {
@@ -874,10 +856,6 @@ export class EditorPageComponent {
 
   scenePresetTitle(preset: ScenePreset): string {
     return this.tOrFallback(`scenePreset.${preset.id}.title`, preset.title);
-  }
-
-  scenePresetDescription(preset: ScenePreset): string {
-    return this.tOrFallback(`scenePreset.${preset.id}.description`, preset.description);
   }
 
   toolShortcut(toolId: ToolId): string | undefined {
@@ -1649,10 +1627,6 @@ export class EditorPageComponent {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
   }
 
-  onSceneNameInput(event: Event): void {
-    this.onSceneNameInputValue((event.target as HTMLInputElement).value);
-  }
-
   onSceneNameInputValue(value: string): void {
     this.store.renameScene(value);
   }
@@ -2093,10 +2067,6 @@ export class EditorPageComponent {
     };
   }
 
-  positiveSliderMax(value: number, minimum: number): number {
-    return Number(Math.max(value, minimum).toFixed(2));
-  }
-
   opacityPercent(value: number): number {
     return Math.round(value * 100);
   }
@@ -2213,7 +2183,7 @@ export class EditorPageComponent {
         this.cutSelected();
         break;
       case 'paste':
-        this.pasteClipboard();
+        void this.pasteClipboard();
         break;
       case 'duplicate':
         this.duplicateSelected();
@@ -4544,7 +4514,7 @@ export class EditorPageComponent {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => reject(reader.error);
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read file.'));
       reader.readAsDataURL(file);
     });
   }
@@ -4638,14 +4608,6 @@ export class EditorPageComponent {
     });
   }
 
-  textLines(value: string): readonly string[] {
-    return textLines(value);
-  }
-
-  displayTextLines(value: string): readonly string[] {
-    return displayTextLines(value);
-  }
-
   displayTextLinesForShape(shape: TextShape): readonly string[] {
     return displayTextLinesForShape(shape);
   }
@@ -4699,10 +4661,6 @@ export class EditorPageComponent {
     );
   }
 
-  private renderDisplayText(value: string): string {
-    return renderDisplayText(value);
-  }
-
   private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {
     if (!shape.textBox) {
       void scale;
@@ -4717,10 +4675,6 @@ export class EditorPageComponent {
 
   private estimateTextWidth(shape: TextShape, scale: number): number {
     return estimateTextWidth(shape, scale, undefined, this.displayTextLinesForShape(shape));
-  }
-
-  private wrapTextLine(line: string, maxChars: number): readonly string[] {
-    return wrapTextLine(line, maxChars);
   }
 
   private buildCanvasExportDocument(): ExportSvgDocument {
@@ -4821,10 +4775,10 @@ export class EditorPageComponent {
 
   private escapeXml(value: string): string {
     return value
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&apos;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 }
