@@ -22,7 +22,7 @@ export class TableDialogComponent implements OnInit {
   readonly maxPickerRows = input(6);
   readonly maxPickerColumns = input(10);
 
-  readonly cancel = output<void>();
+  readonly cancelDialog = output<void>();
   readonly confirm = output<TableDimensions>();
 
   readonly selectedRows = signal(1);

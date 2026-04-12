@@ -3390,7 +3390,7 @@
       [quickPickerLabel]="t('tableQuickPicker')"
       [initialRows]="tableDialog.rows"
       [initialColumns]="tableDialog.columns"
-      (cancel)="closeTableDialog()"
+      (cancelDialog)="closeTableDialog()"
       (confirm)="confirmTableDialog($event)"></app-table-dialog>
   }
 </div>

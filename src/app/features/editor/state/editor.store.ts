@@ -264,46 +264,6 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
   }
 };
 
-const moveShapeToPoint = (shape: CanvasShape, point: { x: number; y: number }): CanvasShape => {
-  switch (shape.kind) {
-    case 'line': {
-      const centerX = (shape.from.x + shape.to.x) / 2;
-      const centerY = (shape.from.y + shape.to.y) / 2;
-      return translateShape(shape, point.x - centerX, point.y - centerY);
-    }
-    case 'rectangle':
-      return {
-        ...shape,
-        x: point.x - shape.width / 2,
-        y: point.y - shape.height / 2
-      };
-    case 'circle':
-      return {
-        ...shape,
-        cx: point.x,
-        cy: point.y
-      };
-    case 'ellipse':
-      return {
-        ...shape,
-        cx: point.x,
-        cy: point.y
-      };
-    case 'text':
-      return {
-        ...shape,
-        x: point.x,
-        y: point.y
-      };
-    case 'image':
-      return {
-        ...shape,
-        x: point.x - shape.width / 2,
-        y: point.y - shape.height / 2
-      };
-  }
-};
-
 @Injectable()
 export class EditorStore {
   private readonly storage = typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;

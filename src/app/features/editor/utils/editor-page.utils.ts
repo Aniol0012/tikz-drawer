@@ -109,10 +109,18 @@ const resizeSelectionBounds = (
   let top = selectionBounds.top;
   let bottom = selectionBounds.bottom;
 
-  if (handle.includes('w')) left = Math.min(point.x, right - minimumWidth);
-  if (handle.includes('e')) right = Math.max(point.x, left + minimumWidth);
-  if (handle.includes('n')) top = Math.max(point.y, bottom + minimumHeight);
-  if (handle.includes('s')) bottom = Math.min(point.y, top - minimumHeight);
+  if (handle.includes('w')) {
+    left = Math.min(point.x, right - minimumWidth);
+  }
+  if (handle.includes('e')) {
+    right = Math.max(point.x, left + minimumWidth);
+  }
+  if (handle.includes('n')) {
+    top = Math.max(point.y, bottom + minimumHeight);
+  }
+  if (handle.includes('s')) {
+    bottom = Math.min(point.y, top - minimumHeight);
+  }
 
   if (aspectRatio) {
     const currentWidth = Math.max(right - left, minimumWidth);

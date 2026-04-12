@@ -55,7 +55,9 @@ export const displayTextLines = (value: string): readonly string[] =>
   textLines(value).map((line) => renderDisplayText(line));
 
 export const wrapTextLine = (line: string, maxChars: number): readonly string[] => {
-  if (line.length <= maxChars) return [line || ' '];
+  if (line.length <= maxChars) {
+    return [line || ' '];
+  }
 
   const words = line.split(/\s+/).filter(Boolean);
   if (!words.length) {

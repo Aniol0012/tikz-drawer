@@ -116,13 +116,27 @@ const styleOpacity = (styles: Record<string, string>, key: string): number => {
 
 const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
   const raw = `${styles['arrow meta'] ?? styles['>='] ?? styles['<='] ?? ''}`.toLowerCase();
-  if (raw.includes('bracket')) return 'bracket';
-  if (raw.includes('hooks')) return 'hooks';
-  if (raw.includes('bar')) return 'bar';
-  if (raw.includes('diamond')) return 'diamond';
-  if (raw.includes('circle')) return 'circle';
-  if (raw.includes('stealth')) return 'stealth';
-  if (raw.includes('triangle')) return 'triangle';
+  if (raw.includes('bracket')) {
+    return 'bracket';
+  }
+  if (raw.includes('hooks')) {
+    return 'hooks';
+  }
+  if (raw.includes('bar')) {
+    return 'bar';
+  }
+  if (raw.includes('diamond')) {
+    return 'diamond';
+  }
+  if (raw.includes('circle')) {
+    return 'circle';
+  }
+  if (raw.includes('stealth')) {
+    return 'stealth';
+  }
+  if (raw.includes('triangle')) {
+    return 'triangle';
+  }
   return 'latex';
 };
 
@@ -173,9 +187,15 @@ const parseArrowDimensionScale = (
 
 const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
   const raw = styles['arrow meta'] ?? '';
-  if (/(?:\[|,)\s*bend(?:\s*[,}\]])/i.test(raw)) return 'bend';
-  if (/flex'\s*(?:=|[,}\]])/i.test(raw)) return 'flex-prime';
-  if (/flex\s*(?:=|[,}\]])/i.test(raw)) return 'flex';
+  if (/(?:\[|,)\s*bend(?:\s*[,}\]])/i.test(raw)) {
+    return 'bend';
+  }
+  if (/flex'\s*(?:=|[,}\]])/i.test(raw)) {
+    return 'flex-prime';
+  }
+  if (/flex\s*(?:=|[,}\]])/i.test(raw)) {
+    return 'flex';
+  }
   return 'none';
 };
 

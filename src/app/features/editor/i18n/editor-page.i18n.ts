@@ -57,7 +57,11 @@ export const categoryTranslationKey: Record<PresetCategory, string> = {
 
 export const detectLanguage = (): LanguageCode => {
   const browserLanguage = globalThis.navigator?.language?.toLowerCase() ?? 'en';
-  if (browserLanguage.startsWith('ca')) return 'ca';
-  if (browserLanguage.startsWith('es')) return 'es';
+  if (browserLanguage.startsWith('ca')) {
+    return 'ca';
+  }
+  if (browserLanguage.startsWith('es')) {
+    return 'es';
+  }
   return 'en';
 };

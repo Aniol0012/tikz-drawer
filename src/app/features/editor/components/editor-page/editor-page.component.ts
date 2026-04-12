@@ -406,8 +406,12 @@ export class EditorPageComponent {
     ...this.objectPresets
   ]);
   readonly selectionLabel = computed(() => {
-    if (this.selectionCount() === 0) return this.t('noneSelected');
-    if (this.selectionCount() === 1) return this.selectedShape()?.name ?? this.t('noneSelected');
+    if (this.selectionCount() === 0) {
+      return this.t('noneSelected');
+    }
+    if (this.selectionCount() === 1) {
+      return this.selectedShape()?.name ?? this.t('noneSelected');
+    }
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
   readonly selectionModifierPressed = computed(
@@ -470,7 +474,9 @@ export class EditorPageComponent {
   });
   readonly minimapOverview = computed<MinimapOverview | null>(() => {
     const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) return null;
+    if (!sceneBounds) {
+      return null;
+    }
 
     const visibleBounds = this.visibleWorldBounds();
     const padding = 1.5;
@@ -514,7 +520,9 @@ export class EditorPageComponent {
       return false;
     }
     const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) return false;
+    if (!sceneBounds) {
+      return false;
+    }
     const visibleBounds = this.visibleWorldBounds();
     const sceneFitsInView =
       sceneBounds.left >= visibleBounds.left &&
@@ -606,8 +614,12 @@ export class EditorPageComponent {
     return categoryOrder
       .map((category) => {
         const presets = this.objectPresets.filter((preset) => {
-          if (preset.category !== category) return false;
-          if (!query) return true;
+          if (preset.category !== category) {
+            return false;
+          }
+          if (!query) {
+            return true;
+          }
           const haystack = [
             this.presetTitle(preset),
             this.presetDescription(preset),
@@ -635,7 +647,9 @@ export class EditorPageComponent {
   readonly visibleSavedTemplates = computed<readonly SavedTemplate[]>(() => {
     const query = this.libraryQuery().trim().toLowerCase();
     return this.savedTemplates().filter((template) => {
-      if (!query) return true;
+      if (!query) {
+        return true;
+      }
       return [template.title, template.description].join(' ').toLowerCase().includes(query);
     });
   });
@@ -643,7 +657,9 @@ export class EditorPageComponent {
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShape = this.selectedShape();
     const selectedShapes = this.selectedShapes();
-    if (!selectedShapes.length) return [];
+    if (!selectedShapes.length) {
+      return [];
+    }
     if (selectedShape?.kind === 'line') {
       const points = this.linePoints(selectedShape);
       const fromAdjacentPoint = points[1] ?? selectedShape.to;
@@ -673,7 +689,9 @@ export class EditorPageComponent {
       ];
     }
     const selectionBounds = this.selectionBounds();
-    if (!selectionBounds) return [];
+    if (!selectionBounds) {
+      return [];
+    }
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
     const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
     return [
@@ -694,7 +712,9 @@ export class EditorPageComponent {
   });
   readonly marqueeBounds = computed(() => {
     const interactionState = this.interactionState();
-    if (!interactionState || interactionState.kind !== 'marquee') return null;
+    if (!interactionState || interactionState.kind !== 'marquee') {
+      return null;
+    }
     const left = Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x);
     const right = Math.max(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x);
     const bottom = Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y);
@@ -1733,7 +1753,9 @@ export class EditorPageComponent {
 
   toggleTextStyle(key: 'fontWeight' | 'fontStyle' | 'textDecoration'): void {
     this.patchInspectorSelection((shape) => {
-      if (shape.kind !== 'text') return shape;
+      if (shape.kind !== 'text') {
+        return shape;
+      }
       if (key === 'fontWeight') {
         return { ...shape, fontWeight: shape.fontWeight === 'bold' ? 'normal' : 'bold' } as CanvasShape;
       }
@@ -1908,7 +1930,9 @@ export class EditorPageComponent {
   async onImageFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const dataUrl = await this.readFileAsDataUrl(file);
     const dimensions = await this.loadImageDimensions(dataUrl);
@@ -1938,7 +1962,9 @@ export class EditorPageComponent {
 
   transformSelectedText(mode: 'uppercase' | 'lowercase' | 'titlecase'): void {
     this.patchInspectorSelection((shape) => {
-      if (shape.kind !== 'text') return shape;
+      if (shape.kind !== 'text') {
+        return shape;
+      }
       const text =
         mode === 'uppercase'
           ? shape.text.toUpperCase()
@@ -2011,9 +2037,15 @@ export class EditorPageComponent {
   }
 
   lineArrowDirection(shape: LineShape): ArrowDirection {
-    if (shape.arrowStart && shape.arrowEnd) return 'both';
-    if (shape.arrowStart) return 'backward';
-    if (shape.arrowEnd) return 'forward';
+    if (shape.arrowStart && shape.arrowEnd) {
+      return 'both';
+    }
+    if (shape.arrowStart) {
+      return 'backward';
+    }
+    if (shape.arrowEnd) {
+      return 'forward';
+    }
     return 'none';
   }
 
@@ -2826,7 +2858,9 @@ export class EditorPageComponent {
     readonly height: number;
   } | null {
     const selectionBounds = this.selectionBounds();
-    if (!selectionBounds) return null;
+    if (!selectionBounds) {
+      return null;
+    }
     return {
       x: this.toSvgX(selectionBounds.left),
       y: this.toSvgY(selectionBounds.top),
@@ -2837,7 +2871,9 @@ export class EditorPageComponent {
 
   lineSelectionPath(): string | null {
     const selectedShape = this.selectedShape();
-    if (!selectedShape || selectedShape.kind !== 'line') return null;
+    if (!selectedShape || selectedShape.kind !== 'line') {
+      return null;
+    }
     return this.lineSvgPath(selectedShape);
   }
 
@@ -3136,10 +3172,18 @@ export class EditorPageComponent {
         event.preventDefault();
       }
     }
-    if (event.key === 'Shift') this.shiftPressed.set(true);
-    if (event.key === 'Control') this.controlPressed.set(true);
-    if (event.key === 'Meta') this.metaPressed.set(true);
-    if (event.key === 'Alt') this.altPressed.set(true);
+    if (event.key === 'Shift') {
+      this.shiftPressed.set(true);
+    }
+    if (event.key === 'Control') {
+      this.controlPressed.set(true);
+    }
+    if (event.key === 'Meta') {
+      this.metaPressed.set(true);
+    }
+    if (event.key === 'Alt') {
+      this.altPressed.set(true);
+    }
 
     if (this.isEditableTarget(event.target)) {
       return;
@@ -3284,11 +3328,21 @@ export class EditorPageComponent {
   }
 
   handleWindowKeyup(event: KeyboardEvent): void {
-    if (event.key === ' ') this.spacePressed.set(false);
-    if (event.key === 'Shift') this.shiftPressed.set(false);
-    if (event.key === 'Control') this.controlPressed.set(false);
-    if (event.key === 'Meta') this.metaPressed.set(false);
-    if (event.key === 'Alt') this.altPressed.set(false);
+    if (event.key === ' ') {
+      this.spacePressed.set(false);
+    }
+    if (event.key === 'Shift') {
+      this.shiftPressed.set(false);
+    }
+    if (event.key === 'Control') {
+      this.controlPressed.set(false);
+    }
+    if (event.key === 'Meta') {
+      this.metaPressed.set(false);
+    }
+    if (event.key === 'Alt') {
+      this.altPressed.set(false);
+    }
   }
 
   handleWindowBlur(): void {
@@ -3314,7 +3368,9 @@ export class EditorPageComponent {
     }
 
     const resizeState = this.sidebarResizeState();
-    if (!resizeState) return;
+    if (!resizeState) {
+      return;
+    }
 
     if (resizeState.axis === 'y') {
       const delta = event.clientY - resizeState.startPointer;
@@ -3472,7 +3528,9 @@ export class EditorPageComponent {
     const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * 10) / 10;
     const clampedScale = Math.min(120, Math.max(12, normalizedScale));
     const currentScale = this.preferences().scale;
-    if (clampedScale === currentScale) return;
+    if (clampedScale === currentScale) {
+      return;
+    }
 
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
     const offsetX = clientX - viewportRect.left - viewportRect.width / 2;
@@ -4196,8 +4254,12 @@ export class EditorPageComponent {
 
     return shapes.reduce<SelectionBounds | null>((currentBounds, shape) => {
       const nextBounds = this.shapeBounds(shape);
-      if (!nextBounds) return currentBounds;
-      if (!currentBounds) return nextBounds;
+      if (!nextBounds) {
+        return currentBounds;
+      }
+      if (!currentBounds) {
+        return nextBounds;
+      }
       return {
         left: Math.min(currentBounds.left, nextBounds.left),
         right: Math.max(currentBounds.right, nextBounds.right),
@@ -4581,10 +4643,18 @@ export class EditorPageComponent {
     let top = selectionBounds.top;
     let bottom = selectionBounds.bottom;
 
-    if (handle.includes('w')) left = Math.min(point.x, right - minimumWidth);
-    if (handle.includes('e')) right = Math.max(point.x, left + minimumWidth);
-    if (handle.includes('n')) top = Math.max(point.y, bottom + minimumHeight);
-    if (handle.includes('s')) bottom = Math.min(point.y, top - minimumHeight);
+    if (handle.includes('w')) {
+      left = Math.min(point.x, right - minimumWidth);
+    }
+    if (handle.includes('e')) {
+      right = Math.max(point.x, left + minimumWidth);
+    }
+    if (handle.includes('n')) {
+      top = Math.max(point.y, bottom + minimumHeight);
+    }
+    if (handle.includes('s')) {
+      bottom = Math.min(point.y, top - minimumHeight);
+    }
 
     if (aspectRatio && (this.shiftPressed() || this.selectedShape()?.kind === 'image')) {
       const currentWidth = Math.max(right - left, minimumWidth);
@@ -4730,8 +4800,12 @@ export class EditorPageComponent {
   }
 
   textAnchor(align: TextAlign): 'start' | 'middle' | 'end' {
-    if (align === 'left') return 'start';
-    if (align === 'right') return 'end';
+    if (align === 'left') {
+      return 'start';
+    }
+    if (align === 'right') {
+      return 'end';
+    }
     return 'middle';
   }
 
@@ -4781,8 +4855,12 @@ export class EditorPageComponent {
     }
     const width = shape.boxWidth * scale;
     const left = textLeftForWidth(shape, projectX(shape.x), width);
-    if (shape.textAlign === 'right') return left + width;
-    if (shape.textAlign === 'center') return left + width / 2;
+    if (shape.textAlign === 'right') {
+      return left + width;
+    }
+    if (shape.textAlign === 'center') {
+      return left + width / 2;
+    }
     return left;
   }
 

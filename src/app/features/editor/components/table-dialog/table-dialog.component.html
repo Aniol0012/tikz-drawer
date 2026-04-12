@@ -1,4 +1,4 @@
-<div class="table-dialog-backdrop" (click)="cancel.emit()">
+<div class="table-dialog-backdrop" (click)="cancelDialog.emit()">
   <section class="table-dialog" (click)="$event.stopPropagation()">
     <header class="table-dialog__header">
       <div class="table-dialog__copy">
@@ -9,7 +9,7 @@
       <button
         class="table-dialog__close"
         type="button"
-        (click)="cancel.emit()"
+        (click)="cancelDialog.emit()"
         [attr.aria-label]="cancelLabel()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -66,7 +66,7 @@
       <button
         class="table-dialog__button table-dialog__button--secondary"
         type="button"
-        (click)="cancel.emit()">
+        (click)="cancelDialog.emit()">
         {{ cancelLabel() }}
       </button>
       <button

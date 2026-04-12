@@ -9,10 +9,13 @@
     "generate:latex-validation": "tsx scripts/generate-tikz-validation-output.mts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "prettier --check \"**/*.{ts,html,css,scss,json,md}\"",
-    "lint-fix": "prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
+    "lint": "pnpm run lint:eslint && pnpm run lint:format",
+    "lint:eslint": "eslint . --max-warnings=0",
+    "lint:eslint:fix": "eslint . --fix",
+    "lint-fix": "pnpm run lint:eslint:fix && prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
     "format": "prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
-    "lint-format": "pnpm run lint-fix"
+    "lint-format": "pnpm run lint-fix",
+    "lint:format": "prettier --check \"**/*.{ts,html,css,scss,json,md}\""
   },
   "private": true,
   "packageManager": "pnpm@10.17.1",
@@ -27,12 +30,16 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
     "@angular/build": "^21.2.7",
     "@angular/cli": "^21.2.7",
     "@angular/compiler-cli": "^21.2.7",
+    "angular-eslint": "^21.2.0",
+    "eslint": "^9.37.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.2",
     "tsx": "^4.21.0",
+    "typescript-eslint": "^8.46.1",
     "typescript": "~5.9.2",
     "vitest": "^4.1.4"
   }
