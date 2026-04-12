@@ -1,6 +1,17 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { buildLatexValidationDocument, latexValidationFixtures } from '../src/app/features/editor/tikz/tikz.validation.fixtures.ts';
+
+const validationModule = await import('../src/app/features/editor/tikz/tikz.validation.fixtures.ts');
+const buildLatexValidationDocument =
+  validationModule.buildLatexValidationDocument ??
+  (validationModule.default as { buildLatexValidationDocument?: unknown } | undefined)?.buildLatexValidationDocument;
+const latexValidationFixtures =
+  validationModule.latexValidationFixtures ??
+  (validationModule.default as { latexValidationFixtures?: unknown } | undefined)?.latexValidationFixtures;
+
+if (typeof buildLatexValidationDocument !== 'function' || !Array.isArray(latexValidationFixtures)) {
+  throw new Error('Unable to load TikZ LaTeX validation exports from tikz.validation.fixtures.ts');
+}
 
 const outputDirectory = path.resolve('.artifacts', 'tikz-validation');
 const outputPath = path.join(outputDirectory, 'output.tex');
