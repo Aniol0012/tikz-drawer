@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-0.2.51-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
+[![Version](https://img.shields.io/badge/version-0.2.52-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
 
 <br>
