@@ -1,6 +1,6 @@
 {
   "name": "tikz-drawer",
-  "version": "0.2.57",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
