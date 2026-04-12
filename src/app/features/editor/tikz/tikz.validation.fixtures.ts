@@ -30,12 +30,5 @@ export const buildLatexValidationDocument = (
     .map(({ id, title, bundle }) => [`% Fixture: ${id} (${title})`, '\\par\\noindent', bundle.code].join('\n'))
     .join('\n\n\\bigskip\n\n');
 
-  return [
-    '\\documentclass[tikz]{standalone}',
-    ...imports,
-    '\\begin{document}',
-    body,
-    '\\end{document}',
-    ''
-  ].join('\n');
+  return ['\\documentclass[tikz]{standalone}', ...imports, '\\begin{document}', body, '\\end{document}', ''].join('\n');
 };
