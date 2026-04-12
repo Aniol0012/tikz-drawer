@@ -1,6 +1,6 @@
 import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
 import { parseTikz } from './tikz.parser';
-import type { LineShape, RectangleShape, TextShape, TikzScene } from './tikz.models';
+import type { LineShape, RectangleShape, TextShape, TikzScene } from '../models/tikz.models';
 
 const baseLine: LineShape = {
   id: 'line-1',

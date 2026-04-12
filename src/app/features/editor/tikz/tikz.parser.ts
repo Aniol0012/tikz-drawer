@@ -7,7 +7,13 @@ import type {
   RectangleShape,
   TextShape,
   TikzScene
-} from './tikz.models';
+} from '../models/tikz.models';
+import {
+  DEFAULT_ARROW_TIP_LENGTH,
+  DEFAULT_ARROW_TIP_WIDTH,
+  DEFAULT_TEXT_BOX_WIDTH,
+  DEFAULT_TEXT_FONT_SIZE
+} from '../constants/editor.constants';
 
 const defaultSceneBounds = {
   width: 960,
@@ -207,8 +213,8 @@ const parseLine = (line: string): CanvasShape | null => {
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
     arrowScale: parseArrowScale(styles),
-    arrowLengthScale: parseArrowDimensionScale(styles, 'length', 8),
-    arrowWidthScale: parseArrowDimensionScale(styles, 'width', 6),
+    arrowLengthScale: parseArrowDimensionScale(styles, 'length', DEFAULT_ARROW_TIP_LENGTH),
+    arrowWidthScale: parseArrowDimensionScale(styles, 'width', DEFAULT_ARROW_TIP_WIDTH),
     arrowBendMode: parseArrowBendMode(styles)
   };
 
@@ -255,8 +261,8 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
     arrowScale: parseArrowScale(styles),
-    arrowLengthScale: parseArrowDimensionScale(styles, 'length', 8),
-    arrowWidthScale: parseArrowDimensionScale(styles, 'width', 6),
+    arrowLengthScale: parseArrowDimensionScale(styles, 'length', DEFAULT_ARROW_TIP_LENGTH),
+    arrowWidthScale: parseArrowDimensionScale(styles, 'width', DEFAULT_ARROW_TIP_WIDTH),
     arrowBendMode: parseArrowBendMode(styles)
   };
 
@@ -390,8 +396,10 @@ const parseNode = (line: string): CanvasShape | null => {
     y: point.y,
     text: match.groups['text'].trim(),
     textBox: /text width=/.test(match.groups['styles'] ?? ''),
-    boxWidth: Number.parseFloat((styles['text width'] ?? '4').replace(/cm/g, '').trim()) || 4,
-    fontSize: 0.42 * scale,
+    boxWidth:
+      Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replace(/cm/g, '').trim()) ||
+      DEFAULT_TEXT_BOX_WIDTH,
+    fontSize: DEFAULT_TEXT_FONT_SIZE * scale,
     color: styles['text'] ?? '#0f172a',
     colorOpacity: styleOpacity(styles, 'text opacity'),
     fontWeight: match.groups['text'].includes('\\bfseries') ? 'bold' : 'normal',

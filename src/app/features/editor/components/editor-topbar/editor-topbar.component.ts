@@ -12,8 +12,8 @@ import {
   signal,
   viewChild
 } from '@angular/core';
-import type { LanguageCode } from '../../editor-page.i18n';
-import type { ThemeMode } from '../../tikz.models';
+import type { LanguageCode } from '../../i18n/editor-page.i18n';
+import type { ThemeMode } from '../../models/tikz.models';
 import type { TopbarTool } from './editor-topbar.types';
 
 @Component({

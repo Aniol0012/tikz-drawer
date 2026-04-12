@@ -8,7 +8,12 @@ import type {
   RectangleShape,
   TextShape,
   TikzScene
-} from './tikz.models';
+} from '../models/tikz.models';
+import {
+  DEFAULT_ARROW_TIP_LENGTH,
+  DEFAULT_ARROW_TIP_WIDTH,
+  DEFAULT_TEXT_FONT_SIZE
+} from '../constants/editor.constants';
 
 export interface TikzExportBundle {
   readonly imports: string;
@@ -21,8 +26,6 @@ export interface TikzExportOptions {
   readonly colorMode?: LatexColorMode;
 }
 
-const DEFAULT_ARROW_TIP_LENGTH = 8;
-const DEFAULT_ARROW_TIP_WIDTH = 6;
 const INLINE_MATH_COMMANDS = [
   'alpha',
   'beta',
@@ -275,7 +278,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   const nodeOptions = [
     `text=${context.registerColor(shape.color)}`,
     `text opacity=${formatNumber(shape.colorOpacity)}`,
-    `scale=${formatNumber(Math.max(shape.fontSize / 0.42, 0.6))}`,
+    `scale=${formatNumber(Math.max(shape.fontSize / DEFAULT_TEXT_FONT_SIZE, 0.6))}`,
     `anchor=${shape.textAlign === 'left' ? 'west' : shape.textAlign === 'right' ? 'east' : 'center'}`
   ];
 

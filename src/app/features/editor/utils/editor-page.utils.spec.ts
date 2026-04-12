@@ -1,4 +1,4 @@
-import type { SharedScenePayload } from './editor-page.i18n';
+import type { SharedScenePayload } from '../i18n/editor-page.i18n';
 import {
   decodeSharePayload,
   encodeSharePayload,
@@ -8,8 +8,8 @@ import {
   transformCanvasShape,
   translateShapeBy
 } from './editor-page.utils';
-import { sceneToTikz } from './tikz.codegen';
-import type { CanvasShape, EditorPreferences, LineShape } from './tikz.models';
+import { sceneToTikz } from '../tikz/tikz.codegen';
+import type { CanvasShape, EditorPreferences, LineShape } from '../models/tikz.models';
 import { afterEach, vi } from 'vitest';
 
 const preferences: EditorPreferences = {

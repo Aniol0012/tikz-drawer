@@ -1,6 +1,6 @@
 import { buildTablePresetShapes, localizePresetCanvasShapes, objectPresets } from './presets';
-import { getIconPath } from './editor-icons';
-import { getTableSelectionInfo } from './table.utils';
+import { getIconPath } from '../config/editor-icons';
+import { getTableSelectionInfo } from '../utils/table.utils';
 
 const translate =
   (dictionary: Record<string, string>) =>

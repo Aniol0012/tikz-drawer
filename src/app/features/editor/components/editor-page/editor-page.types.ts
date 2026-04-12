@@ -1,6 +1,7 @@
-import type { LatexColorMode } from '../../tikz.codegen';
-import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory } from '../../tikz.models';
-import type { SelectionBounds } from '../../editor-page.utils';
+import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH } from '../../constants/editor.constants';
+import type { LatexColorMode } from '../../tikz/tikz.codegen';
+import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory } from '../../models/tikz.models';
+import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene' | 'code';
 export type ExportMode = 'snippet' | 'standalone';
@@ -22,9 +23,6 @@ export type ResizeHandle =
   | `anchor-${number}`
   | `insert-anchor-${number}`;
 export type ContextTarget = 'canvas' | 'shape';
-
-export const DEFAULT_ARROW_TIP_LENGTH = 8;
-export const DEFAULT_ARROW_TIP_WIDTH = 6;
 
 export interface ToastNotification {
   readonly id: string;

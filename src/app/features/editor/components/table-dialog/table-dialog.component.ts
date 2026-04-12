@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
-import type { TableDimensions } from '../../table.models';
-import { normalizeTableDimensions, tableSizeLabel } from '../../table.utils';
+import type { TableDimensions } from '../../models/table.models';
+import { normalizeTableDimensions, tableSizeLabel } from '../../utils/table.utils';
 import type { TableDialogCell } from './table-dialog.types';
 
 @Component({

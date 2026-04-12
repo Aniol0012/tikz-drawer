@@ -1,6 +1,16 @@
-import type { CanvasShape, Point } from './tikz.models';
-import type { SharedScenePayload } from './editor-page.i18n';
-import { sceneToTikz } from './tikz.codegen';
+import {
+  MIN_CIRCLE_RADIUS,
+  MIN_IMAGE_DIMENSION,
+  MIN_ELLIPSE_RADIUS,
+  MIN_SCALE_FACTOR,
+  MIN_SHAPE_DIMENSION,
+  MIN_TEXT_BOX_WIDTH,
+  MIN_TEXT_FONT_SIZE,
+  MIN_TEXT_SCALE_FACTOR
+} from '../constants/editor.constants';
+import type { SharedScenePayload } from '../i18n/editor-page.i18n';
+import type { CanvasShape, Point } from '../models/tikz.models';
+import { sceneToTikz } from '../tikz/tikz.codegen';
 
 export interface SelectionBounds {
   readonly left: number;
@@ -41,8 +51,8 @@ export const transformCanvasShape = (
         id,
         x: (shape.x - originX) * scaleX + originX + deltaX,
         y: (shape.y - originY) * scaleY + originY + deltaY,
-        width: Math.max(shape.width * scaleX, 0.2),
-        height: Math.max(shape.height * scaleY, 0.2),
+        width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
+        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
         cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
       };
     case 'circle':
@@ -51,7 +61,7 @@ export const transformCanvasShape = (
         id,
         cx: (shape.cx - originX) * scaleX + originX + deltaX,
         cy: (shape.cy - originY) * scaleY + originY + deltaY,
-        r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), 0.2), 0.1)
+        r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), MIN_SHAPE_DIMENSION), MIN_CIRCLE_RADIUS)
       };
     case 'ellipse':
       return {
@@ -59,8 +69,8 @@ export const transformCanvasShape = (
         id,
         cx: (shape.cx - originX) * scaleX + originX + deltaX,
         cy: (shape.cy - originY) * scaleY + originY + deltaY,
-        rx: Math.max(shape.rx * scaleX, 0.1),
-        ry: Math.max(shape.ry * scaleY, 0.1)
+        rx: Math.max(shape.rx * scaleX, MIN_ELLIPSE_RADIUS),
+        ry: Math.max(shape.ry * scaleY, MIN_ELLIPSE_RADIUS)
       };
     case 'text':
       return {
@@ -68,8 +78,11 @@ export const transformCanvasShape = (
         id,
         x: (shape.x - originX) * scaleX + originX + deltaX,
         y: (shape.y - originY) * scaleY + originY + deltaY,
-        boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, 1.2) : shape.boxWidth,
-        fontSize: Math.max(shape.fontSize * Math.max(Math.min(scaleX, scaleY), 0.7), 0.2)
+        boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, MIN_TEXT_BOX_WIDTH) : shape.boxWidth,
+        fontSize: Math.max(
+          shape.fontSize * Math.max(Math.min(scaleX, scaleY), MIN_TEXT_SCALE_FACTOR),
+          MIN_TEXT_FONT_SIZE
+        )
       };
     case 'image':
       return {
@@ -77,8 +90,8 @@ export const transformCanvasShape = (
         id,
         x: (shape.x - originX) * scaleX + originX + deltaX,
         y: (shape.y - originY) * scaleY + originY + deltaY,
-        width: Math.max(shape.width * scaleX, 0.4),
-        height: Math.max(shape.height * scaleY, 0.4)
+        width: Math.max(shape.width * scaleX, MIN_IMAGE_DIMENSION),
+        height: Math.max(shape.height * scaleY, MIN_IMAGE_DIMENSION)
       };
   }
 };
@@ -132,18 +145,18 @@ export const resizeGroupedShapes = (
   point: Point,
   lockAspectRatio: boolean = false
 ): readonly CanvasShape[] => {
-  const width = Math.max(selectionBounds.right - selectionBounds.left, 0.2);
-  const height = Math.max(selectionBounds.top - selectionBounds.bottom, 0.2);
+  const width = Math.max(selectionBounds.right - selectionBounds.left, MIN_SHAPE_DIMENSION);
+  const height = Math.max(selectionBounds.top - selectionBounds.bottom, MIN_SHAPE_DIMENSION);
   const resizedBounds = resizeSelectionBounds(
     selectionBounds,
     handle,
     point,
-    0.2,
-    0.2,
+    MIN_SHAPE_DIMENSION,
+    MIN_SHAPE_DIMENSION,
     lockAspectRatio ? width / height : undefined
   );
-  const scaleX = Math.max((resizedBounds.right - resizedBounds.left) / width, 0.01);
-  const scaleY = Math.max((resizedBounds.top - resizedBounds.bottom) / height, 0.01);
+  const scaleX = Math.max((resizedBounds.right - resizedBounds.left) / width, MIN_SCALE_FACTOR);
+  const scaleY = Math.max((resizedBounds.top - resizedBounds.bottom) / height, MIN_SCALE_FACTOR);
   const deltaX = resizedBounds.left - selectionBounds.left;
   const deltaY = resizedBounds.bottom - selectionBounds.bottom;
 

@@ -12,9 +12,26 @@ import type {
   ImageShape,
   TextShape,
   TikzScene
-} from './tikz.models';
-import { DEFAULT_TABLE_GEOMETRY } from './table.models';
-import { buildTableShapes } from './table.utils';
+} from '../models/tikz.models';
+import {
+  DEFAULT_ARROW_SCALE,
+  DEFAULT_CIRCLE_RADIUS,
+  DEFAULT_ELLIPSE_RX,
+  DEFAULT_ELLIPSE_RY,
+  DEFAULT_FILL_COLOR,
+  DEFAULT_LINE_COLOR,
+  DEFAULT_LINE_STROKE_WIDTH,
+  DEFAULT_RECTANGLE_CORNER_RADIUS,
+  DEFAULT_RECTANGLE_HEIGHT,
+  DEFAULT_RECTANGLE_WIDTH,
+  DEFAULT_RECTANGLE_Y,
+  DEFAULT_SHAPE_STROKE_WIDTH,
+  DEFAULT_TEXT_BOX_WIDTH,
+  DEFAULT_TEXT_COLOR,
+  DEFAULT_TEXT_FONT_SIZE
+} from '../constants/editor.constants';
+import { DEFAULT_TABLE_GEOMETRY } from '../models/table.models';
+import { buildTableShapes } from '../utils/table.utils';
 
 type PresetTextLocalizer = (key: string, fallback: string) => string;
 
@@ -22,9 +39,9 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Line',
   kind: 'line',
-  stroke: overrides.stroke ?? '#1f1f1f',
+  stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
-  strokeWidth: overrides.strokeWidth ?? 0.18,
+  strokeWidth: overrides.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH,
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
   anchors: overrides.anchors ?? [],
@@ -32,11 +49,11 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   arrowStart: overrides.arrowStart ?? false,
   arrowEnd: overrides.arrowEnd ?? false,
   arrowType: overrides.arrowType ?? ('triangle' satisfies ArrowTipKind),
-  arrowColor: overrides.arrowColor ?? overrides.stroke ?? '#1f1f1f',
+  arrowColor: overrides.arrowColor ?? overrides.stroke ?? DEFAULT_LINE_COLOR,
   arrowOpacity: overrides.arrowOpacity ?? overrides.strokeOpacity ?? 1,
   arrowOpen: overrides.arrowOpen ?? false,
   arrowRound: overrides.arrowRound ?? false,
-  arrowScale: overrides.arrowScale ?? 1.35,
+  arrowScale: overrides.arrowScale ?? DEFAULT_ARROW_SCALE,
   arrowLengthScale: overrides.arrowLengthScale ?? 1,
   arrowWidthScale: overrides.arrowWidthScale ?? 1,
   arrowBendMode: overrides.arrowBendMode ?? 'none'
@@ -46,28 +63,28 @@ const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShap
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Rectangle',
   kind: 'rectangle',
-  stroke: overrides.stroke ?? '#1f1f1f',
+  stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
-  strokeWidth: overrides.strokeWidth ?? 0.08,
+  strokeWidth: overrides.strokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
   x: overrides.x ?? -2,
-  y: overrides.y ?? 1.5,
-  width: overrides.width ?? 4,
-  height: overrides.height ?? 2.4,
-  fill: overrides.fill ?? '#f1f1f1',
+  y: overrides.y ?? DEFAULT_RECTANGLE_Y,
+  width: overrides.width ?? DEFAULT_RECTANGLE_WIDTH,
+  height: overrides.height ?? DEFAULT_RECTANGLE_HEIGHT,
+  fill: overrides.fill ?? DEFAULT_FILL_COLOR,
   fillOpacity: overrides.fillOpacity ?? 1,
-  cornerRadius: overrides.cornerRadius ?? 0.14
+  cornerRadius: overrides.cornerRadius ?? DEFAULT_RECTANGLE_CORNER_RADIUS
 });
 
 const createCircle = (overrides: Partial<CircleShape> = {}): CircleShape => ({
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Circle',
   kind: 'circle',
-  stroke: overrides.stroke ?? '#1f1f1f',
+  stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
-  strokeWidth: overrides.strokeWidth ?? 0.08,
+  strokeWidth: overrides.strokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
-  r: overrides.r ?? 1.4,
+  r: overrides.r ?? DEFAULT_CIRCLE_RADIUS,
   fill: overrides.fill ?? '#f5f5f5',
   fillOpacity: overrides.fillOpacity ?? 1
 });
@@ -76,13 +93,13 @@ const createEllipse = (overrides: Partial<EllipseShape> = {}): EllipseShape => (
   id: overrides.id ?? crypto.randomUUID(),
   name: overrides.name ?? 'Ellipse',
   kind: 'ellipse',
-  stroke: overrides.stroke ?? '#1f1f1f',
+  stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
-  strokeWidth: overrides.strokeWidth ?? 0.08,
+  strokeWidth: overrides.strokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
   cx: overrides.cx ?? 0,
   cy: overrides.cy ?? 0,
-  rx: overrides.rx ?? 2,
-  ry: overrides.ry ?? 1.1,
+  rx: overrides.rx ?? DEFAULT_ELLIPSE_RX,
+  ry: overrides.ry ?? DEFAULT_ELLIPSE_RY,
   fill: overrides.fill ?? '#f5f5f5',
   fillOpacity: overrides.fillOpacity ?? 1
 });
@@ -98,9 +115,9 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   y: overrides.y ?? 0,
   text: overrides.text ?? 'label',
   textBox: overrides.textBox ?? false,
-  boxWidth: overrides.boxWidth ?? 4,
-  fontSize: overrides.fontSize ?? 0.42,
-  color: overrides.color ?? '#161616',
+  boxWidth: overrides.boxWidth ?? DEFAULT_TEXT_BOX_WIDTH,
+  fontSize: overrides.fontSize ?? DEFAULT_TEXT_FONT_SIZE,
+  color: overrides.color ?? DEFAULT_TEXT_COLOR,
   colorOpacity: overrides.colorOpacity ?? 1,
   fontWeight: overrides.fontWeight ?? 'normal',
   fontStyle: overrides.fontStyle ?? 'normal',

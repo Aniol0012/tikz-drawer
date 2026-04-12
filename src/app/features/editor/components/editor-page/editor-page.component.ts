@@ -12,15 +12,37 @@ import {
   viewChild
 } from '@angular/core';
 import packageManifest from '../../../../../../package.json';
-import { getIconPath, iconPaths } from '../../editor-icons';
+import {
+  DEFAULT_ARROW_TIP_LENGTH,
+  DEFAULT_ARROW_TIP_WIDTH,
+  DEFAULT_EDITOR_SCALE,
+  EDITOR_STORAGE_KEYS,
+  EDITOR_THEME_TOGGLE_COOLDOWN_MS,
+  FREEHAND_POINT_MIN_DISTANCE,
+  MIN_IMAGE_DIMENSION,
+  MINIMAP_MIN_IMAGE_DIMENSION,
+  MINIMAP_MIN_RADIUS,
+  MINIMAP_MIN_TEXT_HEIGHT,
+  MIN_POINTER_DRAG_DELTA,
+  MIN_RENDER_STROKE_WIDTH,
+  MIN_SHAPE_DIMENSION,
+  MIN_TEXT_BOX_WIDTH,
+  MIN_TEXT_FONT_SIZE,
+  MIN_TEXT_RESIZE_HEIGHT,
+  MIN_TEXT_RESIZE_WIDTH,
+  SHAPE_STROKE_SCALE_FACTOR,
+  TEXT_DOUBLE_TAP_WINDOW_MS,
+  TEXT_MIN_HEIGHT_FACTOR,
+  TEXT_RENDER_LINE_HEIGHT_FACTOR,
+  TEXT_TSPAN_LINE_STEP_FACTOR
+} from '../../constants/editor.constants';
+import { getIconPath, iconPaths } from '../../config/editor-icons';
 import {
   type ArrowControlHandle,
   type ArrowTipOption,
   type ClipboardShapeSet,
   type CodeHighlightTheme,
   type ContextMenuState,
-  DEFAULT_ARROW_TIP_LENGTH,
-  DEFAULT_ARROW_TIP_WIDTH,
   type ExportMode,
   type ExportSvgDocument,
   type FreehandInteractionState,
@@ -65,7 +87,7 @@ import {
   localizedShapeKinds,
   type SharedScenePayload,
   translations
-} from '../../editor-page.i18n';
+} from '../../i18n/editor-page.i18n';
 import {
   decodeSharePayload,
   encodeSharePayload,
@@ -75,23 +97,26 @@ import {
   type SelectionBounds,
   transformCanvasShape,
   translateShapeBy
-} from '../../editor-page.utils';
-import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets';
-import { sceneToTikzBundle, type LatexColorMode, type TikzExportOptions } from '../../tikz.codegen';
-import { EditorStore } from '../../editor.store';
+} from '../../utils/editor-page.utils';
+import {
+  buildTablePresetShapes,
+  localizePresetCanvasShapes as localizePresetTemplateShapes
+} from '../../presets/presets';
+import { sceneToTikzBundle, type LatexColorMode, type TikzExportOptions } from '../../tikz/tikz.codegen';
+import { EditorStore } from '../../state/editor.store';
 import {
   DEFAULT_TABLE_DIMENSIONS,
   type TableDialogState,
   type TableDimensions,
   type TableSelectionInfo
-} from '../../table.models';
+} from '../../models/table.models';
 import {
   buildTableShapes,
   getTableSelectionInfo,
   normalizeTableDimensions,
   remapStructuralShapeIds,
   tableSizeLabel
-} from '../../table.utils';
+} from '../../utils/table.utils';
 import type {
   ArrowTipKind,
   CanvasShape,
@@ -106,7 +131,17 @@ import type {
   TextAlign,
   TextShape,
   ThemeMode
-} from '../../tikz.models';
+} from '../../models/tikz.models';
+import {
+  displayTextLines,
+  displayTextLinesForShape,
+  estimateTextHeight,
+  estimateTextWidth,
+  renderDisplayText,
+  textLeftForWidth,
+  textLines,
+  wrapTextLine
+} from '../../utils/text.utils';
 
 @Component({
   selector: 'app-editor-page',
@@ -126,14 +161,14 @@ import type {
   }
 })
 export class EditorPageComponent {
-  private static readonly themeToggleCooldownMs = 180;
-  private readonly savedTemplatesStorageKey = 'tikz-drawer.saved-templates';
-  private readonly pinnedToolsStorageKey = 'tikz-drawer.pinned-tools';
-  private readonly languageStorageKey = 'tikz-drawer.language';
-  private readonly codeThemeStorageKey = 'tikz-drawer.code-theme';
-  private readonly latexExportConfigStorageKey = 'tikz-drawer.latex-export-config';
-  private readonly editorStateStorageKey = 'tikz-drawer.state';
-  private readonly defaultScale = 24;
+  private static readonly themeToggleCooldownMs = EDITOR_THEME_TOGGLE_COOLDOWN_MS;
+  private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
+  private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
+  private readonly languageStorageKey = EDITOR_STORAGE_KEYS.language;
+  private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
+  private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
+  private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
+  private readonly defaultScale = DEFAULT_EDITOR_SCALE;
   private readonly defaultLatexExportConfig = {
     colorMode: 'direct-rgb',
     wrapInFigure: false,
@@ -1790,12 +1825,12 @@ export class EditorPageComponent {
         ? ({
             ...shape,
             width: value,
-            height: Math.max(value / Math.max(aspectRatio, 0.01), 0.2)
+            height: Math.max(value / Math.max(aspectRatio, 0.01), MIN_SHAPE_DIMENSION)
           } as CanvasShape)
         : ({
             ...shape,
             height: value,
-            width: Math.max(value * Math.max(aspectRatio, 0.01), 0.2)
+            width: Math.max(value * Math.max(aspectRatio, 0.01), MIN_SHAPE_DIMENSION)
           } as CanvasShape);
     });
   }
@@ -2471,7 +2506,7 @@ export class EditorPageComponent {
         return;
       }
       const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
-      if (distance < 0.18) {
+      if (distance < FREEHAND_POINT_MIN_DISTANCE) {
         return;
       }
       this.interactionState.set({
@@ -2646,7 +2681,7 @@ export class EditorPageComponent {
   }
 
   scaledStrokeWidth(strokeWidth: number): number {
-    return Math.max(strokeWidth * this.preferences().scale * 0.05, 1);
+    return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
   }
 
   selectionHandleOffset(): number {
@@ -3523,7 +3558,7 @@ export class EditorPageComponent {
     }
     const deltaX = currentPoint.x - startPoint.x;
     const deltaY = currentPoint.y - startPoint.y;
-    const hasDrag = Math.abs(deltaX) > 0.12 || Math.abs(deltaY) > 0.12;
+    const hasDrag = Math.abs(deltaX) > MIN_POINTER_DRAG_DELTA || Math.abs(deltaY) > MIN_POINTER_DRAG_DELTA;
     const keepOwnStyle = this.presetKeepsOwnStyle(toolId);
     const templateShapes = this.resolvePresetTemplateShapes(toolId, preset);
     const templateBounds = this.computeBounds(templateShapes);
@@ -3568,10 +3603,10 @@ export class EditorPageComponent {
 
     const targetLeft = Math.min(startPoint.x, currentPoint.x);
     const targetBottom = Math.min(startPoint.y, currentPoint.y);
-    const targetWidth = Math.max(Math.abs(deltaX), 0.2);
-    const targetHeight = Math.max(Math.abs(deltaY), 0.2);
-    const templateWidth = Math.max(templateBounds.right - templateBounds.left, 0.2);
-    const templateHeight = Math.max(templateBounds.top - templateBounds.bottom, 0.2);
+    const targetWidth = Math.max(Math.abs(deltaX), MIN_SHAPE_DIMENSION);
+    const targetHeight = Math.max(Math.abs(deltaY), MIN_SHAPE_DIMENSION);
+    const templateWidth = Math.max(templateBounds.right - templateBounds.left, MIN_SHAPE_DIMENSION);
+    const templateHeight = Math.max(templateBounds.top - templateBounds.bottom, MIN_SHAPE_DIMENSION);
     const scaleX = targetWidth / templateWidth;
     const scaleY = targetHeight / templateHeight;
 
@@ -3604,7 +3639,7 @@ export class EditorPageComponent {
       }
 
       const previous = accumulator.at(-1);
-      if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) >= 0.18) {
+      if (!previous || Math.hypot(point.x - previous.x, point.y - previous.y) >= FREEHAND_POINT_MIN_DISTANCE) {
         accumulator.push(point);
       }
       return accumulator;
@@ -4157,8 +4192,8 @@ export class EditorPageComponent {
           fill: shape.fill,
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, 1.4),
-          height: Math.max(shape.height * scale, 1.4),
+          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
+          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
           rx: Math.max(shape.cornerRadius * scale, 0.6)
         };
       case 'circle':
@@ -4169,7 +4204,7 @@ export class EditorPageComponent {
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),
-          r: Math.max(shape.r * scale, 0.9)
+          r: Math.max(shape.r * scale, MINIMAP_MIN_RADIUS)
         };
       case 'ellipse':
         return {
@@ -4179,20 +4214,20 @@ export class EditorPageComponent {
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),
-          rx: Math.max(shape.rx * scale, 0.9),
-          ry: Math.max(shape.ry * scale, 0.9)
+          rx: Math.max(shape.rx * scale, MINIMAP_MIN_RADIUS),
+          ry: Math.max(shape.ry * scale, MINIMAP_MIN_RADIUS)
         };
       case 'text': {
         const lines = this.displayTextLinesForShape(shape);
         const width = this.estimateTextWidth(shape, scale);
-        const height = Math.max(lines.length * shape.fontSize * 0.88 * scale, 1.2);
-        const left = shape.textBox
-          ? toMapX(shape.x)
-          : shape.textAlign === 'left'
-            ? toMapX(shape.x)
-            : shape.textAlign === 'right'
-              ? toMapX(shape.x) - width
-              : toMapX(shape.x) - width / 2;
+        const height = estimateTextHeight(
+          shape,
+          lines.length,
+          scale,
+          TEXT_RENDER_LINE_HEIGHT_FACTOR,
+          MINIMAP_MIN_TEXT_HEIGHT
+        );
+        const left = textLeftForWidth(shape, toMapX(shape.x), width);
         return {
           kind: 'text',
           stroke: 'transparent',
@@ -4211,8 +4246,8 @@ export class EditorPageComponent {
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, 1.4),
-          height: Math.max(shape.height * scale, 1.4),
+          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
+          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
           href: shape.src
         };
     }
@@ -4254,14 +4289,8 @@ export class EditorPageComponent {
       case 'text': {
         const lines = this.displayTextLinesForShape(shape);
         const width = this.estimateTextWidth(shape, 1);
-        const height = Math.max(lines.length * shape.fontSize * 0.88, shape.fontSize * 0.72);
-        const left = shape.textBox
-          ? shape.x
-          : shape.textAlign === 'left'
-            ? shape.x
-            : shape.textAlign === 'right'
-              ? shape.x - width
-              : shape.x - width / 2;
+        const height = estimateTextHeight(shape, lines.length, 1, TEXT_RENDER_LINE_HEIGHT_FACTOR);
+        const left = textLeftForWidth(shape, shape.x, width);
         return {
           left,
           right: left + width,
@@ -4312,11 +4341,11 @@ export class EditorPageComponent {
       return shape;
     }
 
-    const resizedBounds = this.resizeBounds(bounds, handle, point, 0.4, 0.24);
+    const resizedBounds = this.resizeBounds(bounds, handle, point, MIN_TEXT_RESIZE_WIDTH, MIN_TEXT_RESIZE_HEIGHT);
     const originalWidth = Math.max(bounds.right - bounds.left, shape.fontSize);
-    const originalHeight = Math.max(bounds.top - bounds.bottom, shape.fontSize * 0.72);
-    const nextWidth = Math.max(resizedBounds.right - resizedBounds.left, 0.4);
-    const nextHeight = Math.max(resizedBounds.top - resizedBounds.bottom, 0.24);
+    const originalHeight = Math.max(bounds.top - bounds.bottom, shape.fontSize * TEXT_MIN_HEIGHT_FACTOR);
+    const nextWidth = Math.max(resizedBounds.right - resizedBounds.left, MIN_TEXT_RESIZE_WIDTH);
+    const nextHeight = Math.max(resizedBounds.top - resizedBounds.bottom, MIN_TEXT_RESIZE_HEIGHT);
     const scaleX = nextWidth / originalWidth;
     const scaleY = nextHeight / originalHeight;
     const scale = Math.max(Math.min(scaleX, scaleY), 0.35);
@@ -4326,8 +4355,8 @@ export class EditorPageComponent {
         ...shape,
         x: resizedBounds.left,
         y: (resizedBounds.top + resizedBounds.bottom) / 2,
-        boxWidth: Math.max(resizedBounds.right - resizedBounds.left, 1.2),
-        fontSize: Math.max(shape.fontSize * scale, 0.2)
+        boxWidth: Math.max(resizedBounds.right - resizedBounds.left, MIN_TEXT_BOX_WIDTH),
+        fontSize: Math.max(shape.fontSize * scale, MIN_TEXT_FONT_SIZE)
       };
     }
 
@@ -4335,7 +4364,7 @@ export class EditorPageComponent {
       ...shape,
       x: (resizedBounds.left + resizedBounds.right) / 2,
       y: (resizedBounds.top + resizedBounds.bottom) / 2,
-      fontSize: Math.max(shape.fontSize * scale, 0.2)
+      fontSize: Math.max(shape.fontSize * scale, MIN_TEXT_FONT_SIZE)
     };
   }
 
@@ -4348,8 +4377,8 @@ export class EditorPageComponent {
       { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
       handle,
       point,
-      0.2,
-      0.2,
+      MIN_SHAPE_DIMENSION,
+      MIN_SHAPE_DIMENSION,
       shape.kind === 'image' ? shape.aspectRatio : shape.width / shape.height
     );
     const resizedShape = {
@@ -4561,7 +4590,7 @@ export class EditorPageComponent {
     const dimensions = await this.loadImageDimensions(dataUrl);
     const aspectRatio = dimensions && dimensions.height > 0 ? Math.max(dimensions.width / dimensions.height, 0.01) : 1;
     const width = 8;
-    const height = Math.max(width / aspectRatio, 0.4);
+    const height = Math.max(width / aspectRatio, MIN_IMAGE_DIMENSION);
     const imageShape = this.applyInsertionDefaults({
       id: crypto.randomUUID(),
       name: file.name.replace(/\.[^/.]+$/, '') || 'Image',
@@ -4610,21 +4639,15 @@ export class EditorPageComponent {
   }
 
   textLines(value: string): readonly string[] {
-    return value.split('\n').map((line) => line || ' ');
+    return textLines(value);
   }
 
   displayTextLines(value: string): readonly string[] {
-    return this.textLines(value).map((line) => this.renderDisplayText(line));
+    return displayTextLines(value);
   }
 
   displayTextLinesForShape(shape: TextShape): readonly string[] {
-    const sourceLines = this.displayTextLines(shape.text);
-    if (!shape.textBox) {
-      return sourceLines;
-    }
-
-    const maxChars = Math.max(Math.floor(shape.boxWidth / Math.max(shape.fontSize * 0.48, 0.12)), 4);
-    return sourceLines.flatMap((line) => this.wrapTextLine(line, maxChars));
+    return displayTextLinesForShape(shape);
   }
 
   textSymbolGroupLabel(label: string): string {
@@ -4671,45 +4694,13 @@ export class EditorPageComponent {
 
   private isRepeatedTextTap(shapeId: string): boolean {
     const previousTap = this.recentTextTap();
-    return !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < 320;
+    return (
+      !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS
+    );
   }
 
   private renderDisplayText(value: string): string {
-    return value
-      .replaceAll('\\alpha', 'α')
-      .replaceAll('\\beta', 'β')
-      .replaceAll('\\gamma', 'γ')
-      .replaceAll('\\delta', 'δ')
-      .replaceAll('\\epsilon', 'ε')
-      .replaceAll('\\theta', 'θ')
-      .replaceAll('\\lambda', 'λ')
-      .replaceAll('\\mu', 'μ')
-      .replaceAll('\\pi', 'π')
-      .replaceAll('\\sigma', 'σ')
-      .replaceAll('\\phi', 'φ')
-      .replaceAll('\\omega', 'ω')
-      .replaceAll('\\leftarrow', '←')
-      .replaceAll('\\rightarrow', '→')
-      .replaceAll('\\uparrow', '↑')
-      .replaceAll('\\downarrow', '↓')
-      .replaceAll('\\leftrightarrow', '↔')
-      .replaceAll('\\Rightarrow', '⇒')
-      .replaceAll('\\Leftarrow', '⇐')
-      .replaceAll('\\Leftrightarrow', '⇔')
-      .replaceAll('\\times', '×')
-      .replaceAll('\\div', '÷')
-      .replaceAll('\\pm', '±')
-      .replaceAll('\\infty', '∞')
-      .replaceAll('\\sum', '∑')
-      .replaceAll('\\prod', '∏')
-      .replaceAll('\\int', '∫')
-      .replaceAll('\\partial', '∂')
-      .replaceAll('\\forall', '∀')
-      .replaceAll('\\exists', '∃')
-      .replaceAll('\\in', '∈')
-      .replaceAll('\\notin', '∉')
-      .replaceAll('\\cup', '∪')
-      .replaceAll('\\cap', '∩');
+    return renderDisplayText(value);
   }
 
   private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {
@@ -4718,38 +4709,18 @@ export class EditorPageComponent {
       return projectX(shape.x);
     }
     const width = shape.boxWidth * scale;
-    if (shape.textAlign === 'left') return projectX(shape.x);
-    if (shape.textAlign === 'right') return projectX(shape.x) + width;
-    return projectX(shape.x) + width / 2;
+    const left = textLeftForWidth(shape, projectX(shape.x), width);
+    if (shape.textAlign === 'right') return left + width;
+    if (shape.textAlign === 'center') return left + width / 2;
+    return left;
   }
 
   private estimateTextWidth(shape: TextShape, scale: number): number {
-    if (shape.textBox) {
-      return Math.max(shape.boxWidth * scale, shape.fontSize * scale);
-    }
-    const lines = this.displayTextLinesForShape(shape);
-    return Math.max(
-      ...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48 * scale, shape.fontSize * 0.7 * scale))
-    );
+    return estimateTextWidth(shape, scale, undefined, this.displayTextLinesForShape(shape));
   }
 
   private wrapTextLine(line: string, maxChars: number): readonly string[] {
-    if (line.length <= maxChars) return [line || ' '];
-    const words = line.split(/\s+/).filter(Boolean);
-    if (!words.length) return [line.slice(0, maxChars), ...this.wrapTextLine(line.slice(maxChars), maxChars)];
-    const rows: string[] = [];
-    let current = '';
-    for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (candidate.length <= maxChars || !current) {
-        current = candidate;
-      } else {
-        rows.push(current);
-        current = word;
-      }
-    }
-    if (current) rows.push(current);
-    return rows;
+    return wrapTextLine(line, maxChars);
   }
 
   private buildCanvasExportDocument(): ExportSvgDocument {
@@ -4806,14 +4777,14 @@ export class EditorPageComponent {
               : '';
             return `<path d="${this.escapeXml(
               this.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
-            )}" fill="none" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
+            )}" fill="none" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
           }
           case 'rectangle':
-            return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+            return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
           case 'circle':
-            return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+            return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
           case 'ellipse':
-            return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * 0.05, 1)}" />`;
+            return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
           case 'text': {
             const renderX = this.textRenderXAt(shape, projectX, scale);
             const anchor = this.textAnchor(shape.textAlign);
@@ -4823,7 +4794,7 @@ export class EditorPageComponent {
             const lines = this.displayTextLinesForShape(shape)
               .map(
                 (line, index) =>
-                  `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * 1.14}">${this.escapeXml(line)}</tspan>`
+                  `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${this.escapeXml(line)}</tspan>`
               )
               .join('');
             return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${this.escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="Geist, Arial, sans-serif" xml:space="preserve"${rotate}>${lines}</text>`;

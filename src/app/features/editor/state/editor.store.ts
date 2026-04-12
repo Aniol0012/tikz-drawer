@@ -1,12 +1,17 @@
 import { computed, effect, Injectable, signal } from '@angular/core';
-import { defaultPreferences, defaultScene, objectPresets, scenePresets } from './presets';
-import { sceneToTikz } from './tikz.codegen';
-import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from './tikz.models';
-import { parseTikz } from './tikz.parser';
-import { remapStructuralShapeIds } from './table.utils';
-
-const storageKey = 'tikz-drawer.state';
-const historyLimit = 80;
+import { DEFAULT_TEXT_BOX_WIDTH, EDITOR_HISTORY_LIMIT, EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
+import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '../presets/presets';
+import { sceneToTikz } from '../tikz/tikz.codegen';
+import { parseTikz } from '../tikz/tikz.parser';
+import type {
+  CanvasShape,
+  EditorPreferences,
+  ParsedTikzResult,
+  PersistedEditorState,
+  TikzScene
+} from '../models/tikz.models';
+import { remapStructuralShapeIds } from '../utils/table.utils';
+import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
 
 const cloneShape = (shape: CanvasShape): CanvasShape => ({
   ...structuredClone(shape),
@@ -45,7 +50,7 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
         textBox: shape.textBox ?? false,
-        boxWidth: shape.boxWidth ?? 4,
+        boxWidth: shape.boxWidth ?? DEFAULT_TEXT_BOX_WIDTH,
         colorOpacity: shape.colorOpacity ?? 1,
         fontWeight: shape.fontWeight ?? 'normal',
         fontStyle: shape.fontStyle ?? 'normal',
@@ -104,47 +109,10 @@ const shapeBounds = (
         }
       );
     case 'text': {
-      const lines = shape.textBox
-        ? shape.text.split('\n').flatMap((line) => {
-            const safeLine = line || ' ';
-            const maxChars = Math.max(Math.floor(shape.boxWidth / Math.max(shape.fontSize * 0.48, 0.12)), 4);
-            if (safeLine.length <= maxChars) {
-              return [safeLine];
-            }
-
-            const words = safeLine.split(/\s+/).filter(Boolean);
-            if (!words.length) {
-              return [safeLine];
-            }
-
-            const rows: string[] = [];
-            let current = '';
-            for (const word of words) {
-              const candidate = current ? `${current} ${word}` : word;
-              if (candidate.length <= maxChars || !current) {
-                current = candidate;
-              } else {
-                rows.push(current);
-                current = word;
-              }
-            }
-            if (current) {
-              rows.push(current);
-            }
-            return rows;
-          })
-        : shape.text.split('\n');
-      const width = shape.textBox
-        ? Math.max(shape.boxWidth, shape.fontSize)
-        : Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize)));
-      const height = Math.max(lines.length * shape.fontSize * 0.9, shape.fontSize * 0.72);
-      const left = shape.textBox
-        ? shape.x
-        : shape.textAlign === 'left'
-          ? shape.x
-          : shape.textAlign === 'right'
-            ? shape.x - width
-            : shape.x - width / 2;
+      const lines = displayTextLinesForShape(shape);
+      const width = estimateTextWidth(shape, 1, 1, lines);
+      const height = estimateTextHeight(shape, lines.length);
+      const left = textLeftForWidth(shape, shape.x, width);
       return {
         left,
         right: left + width,
@@ -380,13 +348,13 @@ export class EditorStore {
         importCode: this.importCode()
       };
 
-      this.storage?.setItem(storageKey, JSON.stringify(state));
+      this.storage?.setItem(EDITOR_STORAGE_KEYS.state, JSON.stringify(state));
     });
   }
 
   recordHistoryCheckpoint(): void {
     const snapshot = this.createSnapshot();
-    this.undoSnapshots.update((snapshots) => [...snapshots.slice(-(historyLimit - 1)), snapshot]);
+    this.undoSnapshots.update((snapshots) => [...snapshots.slice(-(EDITOR_HISTORY_LIMIT - 1)), snapshot]);
     this.redoSnapshots.set([]);
   }
 
@@ -739,7 +707,7 @@ export class EditorStore {
   }
 
   private restoreState(): void {
-    const raw = this.storage?.getItem(storageKey);
+    const raw = this.storage?.getItem(EDITOR_STORAGE_KEYS.state);
 
     if (!raw) {
       return;

@@ -1,7 +1,7 @@
-import en from './i18n/en.json';
-import ca from './i18n/ca.json';
-import es from './i18n/es.json';
-import type { CanvasShape, PersistedEditorState, Point, PresetCategory } from './tikz.models';
+import en from './en.json';
+import ca from './ca.json';
+import es from './es.json';
+import type { CanvasShape, PersistedEditorState, Point, PresetCategory } from '../models/tikz.models';
 
 export type LanguageCode = 'en' | 'ca' | 'es';
 export type TranslationDictionary = Record<string, string>;

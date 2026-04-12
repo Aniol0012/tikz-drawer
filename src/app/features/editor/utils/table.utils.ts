@@ -1,7 +1,14 @@
-import type { BuildTableShapesOptions, TableDimensions, TableSelectionInfo } from './table.models';
-import type { CanvasShape, LineShape, RectangleShape, TableShapeMetadata } from './tikz.models';
-
-const minimumTableAxis = 1;
+import {
+  DEFAULT_ARROW_SCALE,
+  DEFAULT_LINE_COLOR,
+  DEFAULT_SHAPE_STROKE_WIDTH,
+  DEFAULT_TABLE_AXIS,
+  DEFAULT_TABLE_DIVIDER_COLOR,
+  DEFAULT_TABLE_DIVIDER_STROKE_WIDTH,
+  DEFAULT_TABLE_FILL_COLOR
+} from '../constants/editor.constants';
+import type { BuildTableShapesOptions, TableDimensions, TableSelectionInfo } from '../models/table.models';
+import type { CanvasShape, LineShape, RectangleShape, TableShapeMetadata } from '../models/tikz.models';
 
 const clampInteger = (value: number, minimumValue: number): number => {
   if (!Number.isFinite(value)) {
@@ -12,8 +19,8 @@ const clampInteger = (value: number, minimumValue: number): number => {
 };
 
 export const normalizeTableDimensions = (dimensions: TableDimensions): TableDimensions => ({
-  rows: clampInteger(dimensions.rows, minimumTableAxis),
-  columns: clampInteger(dimensions.columns, minimumTableAxis)
+  rows: clampInteger(dimensions.rows, DEFAULT_TABLE_AXIS),
+  columns: clampInteger(dimensions.columns, DEFAULT_TABLE_AXIS)
 });
 
 const buildTableMetadata = (
@@ -38,10 +45,10 @@ export const buildTableShapes = (options: BuildTableShapesOptions): readonly Can
     id: crypto.randomUUID(),
     name: 'Table frame',
     kind: 'rectangle',
-    stroke: options.frameStroke ?? '#1f1f1f',
+    stroke: options.frameStroke ?? DEFAULT_LINE_COLOR,
     strokeOpacity: options.frameStrokeOpacity ?? 1,
-    strokeWidth: options.frameStrokeWidth ?? 0.08,
-    fill: options.frameFill ?? '#fafafa',
+    strokeWidth: options.frameStrokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
+    fill: options.frameFill ?? DEFAULT_TABLE_FILL_COLOR,
     fillOpacity: options.frameFillOpacity ?? 1,
     x: options.x,
     y: options.y,
@@ -58,9 +65,9 @@ export const buildTableShapes = (options: BuildTableShapesOptions): readonly Can
       id: crypto.randomUUID(),
       name: `Table row ${index + 1}`,
       kind: 'line',
-      stroke: options.dividerStroke ?? '#767676',
+      stroke: options.dividerStroke ?? DEFAULT_TABLE_DIVIDER_COLOR,
       strokeOpacity: options.dividerStrokeOpacity ?? 1,
-      strokeWidth: options.dividerStrokeWidth ?? 0.05,
+      strokeWidth: options.dividerStrokeWidth ?? DEFAULT_TABLE_DIVIDER_STROKE_WIDTH,
       from: { x: options.x, y: dividerY },
       to: { x: options.x + options.width, y: dividerY },
       anchors: [],
@@ -68,11 +75,11 @@ export const buildTableShapes = (options: BuildTableShapesOptions): readonly Can
       arrowStart: false,
       arrowEnd: false,
       arrowType: 'triangle',
-      arrowColor: options.dividerStroke ?? '#767676',
+      arrowColor: options.dividerStroke ?? DEFAULT_TABLE_DIVIDER_COLOR,
       arrowOpacity: options.dividerStrokeOpacity ?? 1,
       arrowOpen: false,
       arrowRound: false,
-      arrowScale: 1.35,
+      arrowScale: DEFAULT_ARROW_SCALE,
       arrowLengthScale: 1,
       arrowWidthScale: 1,
       arrowBendMode: 'none',
@@ -87,9 +94,9 @@ export const buildTableShapes = (options: BuildTableShapesOptions): readonly Can
       id: crypto.randomUUID(),
       name: `Table col ${index + 1}`,
       kind: 'line',
-      stroke: options.dividerStroke ?? '#767676',
+      stroke: options.dividerStroke ?? DEFAULT_TABLE_DIVIDER_COLOR,
       strokeOpacity: options.dividerStrokeOpacity ?? 1,
-      strokeWidth: options.dividerStrokeWidth ?? 0.05,
+      strokeWidth: options.dividerStrokeWidth ?? DEFAULT_TABLE_DIVIDER_STROKE_WIDTH,
       from: { x: dividerX, y: options.y + options.height },
       to: { x: dividerX, y: options.y },
       anchors: [],
@@ -97,11 +104,11 @@ export const buildTableShapes = (options: BuildTableShapesOptions): readonly Can
       arrowStart: false,
       arrowEnd: false,
       arrowType: 'triangle',
-      arrowColor: options.dividerStroke ?? '#767676',
+      arrowColor: options.dividerStroke ?? DEFAULT_TABLE_DIVIDER_COLOR,
       arrowOpacity: options.dividerStrokeOpacity ?? 1,
       arrowOpen: false,
       arrowRound: false,
-      arrowScale: 1.35,
+      arrowScale: DEFAULT_ARROW_SCALE,
       arrowLengthScale: 1,
       arrowWidthScale: 1,
       arrowBendMode: 'none',
