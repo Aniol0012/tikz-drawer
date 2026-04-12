@@ -101,3 +101,6 @@ baseline.json
 
 # pnpm store
 .pnpm-store
+
+# Generated LaTeX validation artifacts
+.artifacts/

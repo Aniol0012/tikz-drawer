@@ -41,3 +41,27 @@ jobs:
 
       - name: Run Vitest
         run: pnpm test
+
+      - name: Generate LaTeX validation fixture
+        run: pnpm generate:latex-validation
+
+      - name: Ensure output.tex is not empty
+        run: |
+          test -s .artifacts/tikz-validation/output.tex
+          grep -q '\\begin{tikzpicture}' .artifacts/tikz-validation/output.tex
+
+      - name: Compile TikZ validation fixture with Tectonic
+        uses: docker://dxjoke/tectonic-docker:latest
+        with:
+          args: >-
+            -X compile
+            .artifacts/tikz-validation/output.tex
+            --outdir
+            .artifacts/tikz-validation
+
+      - name: Upload TikZ validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikz-validation
+          path: .artifacts/tikz-validation
