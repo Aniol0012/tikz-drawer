@@ -86,7 +86,7 @@ jobs:
         run: pnpm run test
 
       - name: Build production app
-        run: pnpm run build -- --configuration production
+        run: pnpm run build --configuration production
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
