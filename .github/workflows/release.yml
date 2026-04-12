@@ -1,0 +1,166 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: Mark this release as a pre-release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+concurrency:
+  group: repo-writes-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bump package version
+        run: pnpm version "${{ inputs.version }}" --no-git-tag-version
+
+      - name: Sync README version badge
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const version = packageJson.version;
+          const encodedVersion = encodeURIComponent(version);
+          const badgeUrl = `https://img.shields.io/badge/version-${encodedVersion}-blue?style=flat-square&logo=git&logoColor=white`;
+
+          const readmePath = 'README.md';
+          const original = fs.readFileSync(readmePath, 'utf8');
+          const badgeRegex = /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[^)]*\)\]\(([^)]+)\)/;
+          const next = original.replace(badgeRegex, `[![Version](${badgeUrl})]($1)`);
+
+          if (next !== original) {
+            fs.writeFileSync(readmePath, next);
+            console.log(`README version badge updated to ${version}.`);
+          } else {
+            console.log('README version badge already up to date.');
+          }
+          NODE
+
+      - name: Run lint
+        run: pnpm run lint
+
+      - name: Run unit tests
+        run: pnpm run test
+
+      - name: Build production app
+        run: pnpm run build -- --configuration production
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Generate release screenshots
+        run: pnpm run capture:release
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push release metadata
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain package.json pnpm-lock.yaml README.md)" ]; then
+            echo "No release metadata changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json README.md
+            if [ -f pnpm-lock.yaml ]; then
+              git add pnpm-lock.yaml
+            fi
+            git commit -m "chore(release): bump version to ${{ steps.meta.outputs.version }}"
+
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                echo "Release metadata pushed successfully."
+                break
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "Failed to push release metadata after 3 attempts."
+                exit 1
+              fi
+              echo "Push rejected (attempt ${attempt}/3). Rebase and retry..."
+              git fetch origin "${GITHUB_REF_NAME}"
+              git rebase "origin/${GITHUB_REF_NAME}"
+            done
+          fi
+
+      - name: Create and push git tag
+        shell: bash
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+      - name: Package release artifacts
+        shell: bash
+        run: |
+          mkdir -p .artifacts/release
+          tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-dist.tar.gz" -C dist/tikz-drawer/browser .
+          tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-screenshots.tar.gz" screenshots
+
+      - name: Upload release artifacts (workflow)
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ steps.meta.outputs.version }}
+          path: .artifacts/release
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Release ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          prerelease: ${{ inputs.prerelease }}
+          files: |
+            .artifacts/release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
