@@ -174,9 +174,10 @@ export interface ClipboardShapeSet {
   readonly pasteCount: number;
 }
 
+export type Axis = 'x' | 'y';
 export interface SidebarResizeState {
   readonly side: 'left' | 'right';
-  readonly axis: 'x' | 'y';
+  readonly axis: Axis;
   readonly startPointer: number;
   readonly startSize: number;
 }

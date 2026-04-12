@@ -41,6 +41,7 @@ import {
   type ArrowControlHandle,
   type ArrowDirection,
   type ArrowTipOption,
+  Axis,
   type ClipboardShapeSet,
   type CodeHighlightTheme,
   type ContextMenuState,
@@ -154,6 +155,44 @@ import {
 })
 export class EditorPageComponent {
   private static readonly themeToggleCooldownMs = EDITOR_THEME_TOGGLE_COOLDOWN_MS;
+  private static readonly inlineTextEditorMetrics = {
+    minFontSize: 14,
+    minPaddingX: 6,
+    minPaddingY: 4,
+    minBoxWidth: 56,
+    minLineWidth: 36,
+    characterWidthFactor: 0.56,
+    minLineWidthFactor: 1.4,
+    lineHeightFactor: 1.08
+  } as const;
+  private static readonly textSymbolPopoverMetrics = {
+    viewportWidthFallback: 1280,
+    viewportHeightFallback: 800,
+    maxWidth: 420,
+    minWidth: 280,
+    preferredHeight: 420,
+    minHeight: 220,
+    edgePadding: 12,
+    offset: 8,
+    openUpwardThreshold: 260
+  } as const;
+  private static readonly selectionHandleSizeByPointer = {
+    coarse: 18,
+    fine: 10
+  } as const;
+  private static readonly sidebarResizeLimits = {
+    mobileMinHeight: 160,
+    mobileMaxHeight: 420,
+    leftMinWidth: 220,
+    leftMaxWidth: 420,
+    rightMinWidth: 260,
+    rightMaxWidth: 460
+  } as const;
+  private static readonly defaultSliderRange = {
+    min: -20,
+    max: 20
+  } as const;
+  private static readonly notificationDurationMs = 2400;
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
   private readonly languageStorageKey = EDITOR_STORAGE_KEYS.language;
@@ -495,17 +534,25 @@ export class EditorPageComponent {
       return null;
     }
 
-    const fontSize = Math.max(shape.fontSize * this.preferences().scale, 14);
+    const metrics = EditorPageComponent.inlineTextEditorMetrics;
+    const fontSize = Math.max(shape.fontSize * this.preferences().scale, metrics.minFontSize);
     const lines = this.displayTextLinesForShape({ ...shape, text: editor.value });
-    const paddingX = Math.max(6, fontSize * 0.08);
-    const paddingY = Math.max(4, fontSize * 0.08);
+    const paddingX = Math.max(metrics.minPaddingX, fontSize * 0.08);
+    const paddingY = Math.max(metrics.minPaddingY, fontSize * 0.08);
     const width = shape.textBox
-      ? Math.max(shape.boxWidth * this.preferences().scale, 56)
-      : Math.max(...lines.map((line) => Math.max(line.length * fontSize * 0.56, fontSize * 1.4, 36)));
-    const height = Math.max(lines.length * fontSize * 1.08 + paddingY * 2, fontSize + paddingY * 2);
+      ? Math.max(shape.boxWidth * this.preferences().scale, metrics.minBoxWidth)
+      : Math.max(
+          ...lines.map((line) =>
+            Math.max(
+              line.length * fontSize * metrics.characterWidthFactor,
+              fontSize * metrics.minLineWidthFactor,
+              metrics.minLineWidth
+            )
+          )
+        );
+    const height = Math.max(lines.length * fontSize * metrics.lineHeightFactor + paddingY * 2, fontSize + paddingY * 2);
     const anchorX = this.toSvgX(shape.x);
-    const left =
-      shape.textAlign === 'left' ? anchorX : shape.textAlign === 'right' ? anchorX - width : anchorX - width / 2;
+    const left = textLeftForWidth(shape, anchorX, width);
     return {
       x: left - paddingX,
       y: this.toSvgY(shape.y) - height / 2,
@@ -695,7 +742,11 @@ export class EditorPageComponent {
   readonly highlightedCodeThemePreview = computed(() =>
     highlightLatex('\\begin{tikzpicture}\n\\draw (0,0) -- (1.6,0.8);\n\\end{tikzpicture}')
   );
-  readonly selectionHandleSize = computed(() => (this.coarsePointer() ? 18 : 10));
+  readonly selectionHandleSize = computed(() =>
+    this.coarsePointer()
+      ? EditorPageComponent.selectionHandleSizeByPointer.coarse
+      : EditorPageComponent.selectionHandleSizeByPointer.fine
+  );
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
@@ -922,18 +973,34 @@ export class EditorPageComponent {
     event.preventDefault();
     event.stopPropagation();
     const mobileLayout = this.mobileLayout();
+    const axis = mobileLayout ? 'y' : 'x';
     this.sidebarResizeState.set({
       side,
-      axis: mobileLayout ? 'y' : 'x',
-      startPointer: mobileLayout ? event.clientY : event.clientX,
-      startSize: mobileLayout
-        ? side === 'left'
-          ? this.mobileLeftSidebarHeight()
-          : this.mobileRightSidebarHeight()
-        : side === 'left'
-          ? this.leftSidebarWidth()
-          : this.rightSidebarWidth()
+      axis,
+      startPointer: axis === 'y' ? event.clientY : event.clientX,
+      startSize: this.sidebarResizeStartSize(side, mobileLayout)
     });
+  }
+
+  private sidebarResizeStartSize(side: 'left' | 'right', mobileLayout: boolean): number {
+    if (mobileLayout) {
+      return side === 'left' ? this.mobileLeftSidebarHeight() : this.mobileRightSidebarHeight();
+    }
+
+    return side === 'left' ? this.leftSidebarWidth() : this.rightSidebarWidth();
+  }
+
+  private clampSidebarSize(side: 'mobile-left' | 'mobile-right' | 'left' | 'right', value: number): number {
+    const limits = EditorPageComponent.sidebarResizeLimits;
+    switch (side) {
+      case 'mobile-left':
+      case 'mobile-right':
+        return Math.min(limits.mobileMaxHeight, Math.max(limits.mobileMinHeight, value));
+      case 'left':
+        return Math.min(limits.leftMaxWidth, Math.max(limits.leftMinWidth, value));
+      case 'right':
+        return Math.min(limits.rightMaxWidth, Math.max(limits.rightMinWidth, value));
+    }
   }
 
   setTheme(theme: ThemeMode): void {
@@ -1750,30 +1817,59 @@ export class EditorPageComponent {
     event?.stopPropagation();
     const trigger = event?.currentTarget as HTMLElement | null;
     if (trigger) {
-      const rect = trigger.getBoundingClientRect();
-      const viewportWidth = this.document.defaultView?.innerWidth ?? 1280;
-      const viewportHeight = this.document.defaultView?.innerHeight ?? 800;
-      const popoverWidth = Math.min(420, Math.max(viewportWidth - 24, 280));
-      const preferredHeight = 420;
-      const spaceBelow = viewportHeight - rect.bottom - 12;
-      const spaceAbove = rect.top - 12;
-      const maxHeight = Math.max(220, Math.min(preferredHeight, Math.max(spaceBelow, spaceAbove)));
-      const openUpward = spaceBelow < 260 && spaceAbove > spaceBelow;
-      const top = openUpward
-        ? Math.max(12, rect.top - Math.min(preferredHeight, maxHeight) - 8)
-        : Math.max(12, Math.min(rect.bottom + 8, viewportHeight - maxHeight - 12));
-      const left = Math.max(12, Math.min(rect.right - popoverWidth, viewportWidth - popoverWidth - 12));
-      this.textSymbolPalettePosition.set({
-        top,
-        left,
-        maxHeight
-      });
+      this.textSymbolPalettePosition.set(this.computeTextSymbolPalettePosition(trigger));
     }
     this.textSymbolPaletteOpen.update((isOpen) => !isOpen);
   }
 
   closeTextSymbolPalette(): void {
     this.textSymbolPaletteOpen.set(false);
+  }
+
+  private computeTextSymbolPalettePosition(trigger: HTMLElement): TextSymbolPalettePosition {
+    const metrics = EditorPageComponent.textSymbolPopoverMetrics;
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = this.document.defaultView?.innerWidth ?? metrics.viewportWidthFallback;
+    const viewportHeight = this.document.defaultView?.innerHeight ?? metrics.viewportHeightFallback;
+    const popoverWidth = Math.min(
+      metrics.maxWidth,
+      Math.max(viewportWidth - metrics.edgePadding * 2, metrics.minWidth)
+    );
+    const spaceBelow = viewportHeight - rect.bottom - metrics.edgePadding;
+    const spaceAbove = rect.top - metrics.edgePadding;
+    const maxHeight = Math.max(metrics.minHeight, Math.min(metrics.preferredHeight, Math.max(spaceBelow, spaceAbove)));
+    const top = this.computeTextSymbolPaletteTop(rect, viewportHeight, maxHeight, spaceBelow, spaceAbove);
+    const left = Math.max(
+      metrics.edgePadding,
+      Math.min(rect.right - popoverWidth, viewportWidth - popoverWidth - metrics.edgePadding)
+    );
+
+    return {
+      top,
+      left,
+      maxHeight
+    };
+  }
+
+  private computeTextSymbolPaletteTop(
+    rect: DOMRect,
+    viewportHeight: number,
+    maxHeight: number,
+    spaceBelow: number,
+    spaceAbove: number
+  ): number {
+    const metrics = EditorPageComponent.textSymbolPopoverMetrics;
+    const renderedHeight = Math.min(metrics.preferredHeight, maxHeight);
+    const openUpward = spaceBelow < metrics.openUpwardThreshold && spaceAbove > spaceBelow;
+
+    if (openUpward) {
+      return Math.max(metrics.edgePadding, rect.top - renderedHeight - metrics.offset);
+    }
+
+    return Math.max(
+      metrics.edgePadding,
+      Math.min(rect.bottom + metrics.offset, viewportHeight - maxHeight - metrics.edgePadding)
+    );
   }
 
   updateImageText(key: 'src' | 'latexSource', event: Event): void {
@@ -1953,17 +2049,7 @@ export class EditorPageComponent {
         return shape;
       }
 
-      const alignedX = value
-        ? shape.textAlign === 'left'
-          ? shape.x
-          : shape.textAlign === 'right'
-            ? shape.x - shape.boxWidth
-            : shape.x - shape.boxWidth / 2
-        : shape.textAlign === 'left'
-          ? shape.x
-          : shape.textAlign === 'right'
-            ? shape.x + shape.boxWidth
-            : shape.x + shape.boxWidth / 2;
+      const alignedX = this.textBoxAnchorX(shape, value);
 
       return { ...shape, textBox: value, x: alignedX } as CanvasShape;
     });
@@ -1978,7 +2064,20 @@ export class EditorPageComponent {
     this.store.patchSelectedShape(mutator);
   }
 
-  updateLinePoint(target: 'from' | 'to', axis: 'x' | 'y', event: Event): void {
+  private textBoxAnchorX(shape: Extract<CanvasShape, { kind: 'text' }>, textBoxEnabled: boolean): number {
+    if (shape.textAlign === 'left') {
+      return shape.x;
+    }
+
+    const direction = textBoxEnabled ? -1 : 1;
+    if (shape.textAlign === 'right') {
+      return shape.x + shape.boxWidth * direction;
+    }
+
+    return shape.x + (shape.boxWidth / 2) * direction;
+  }
+
+  updateLinePoint(target: 'from' | 'to', axis: Axis, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.store.patchSelectedShape((shape) => {
       if (shape.kind !== 'line') {
@@ -1995,7 +2094,7 @@ export class EditorPageComponent {
     });
   }
 
-  updateLineAnchorPoint(index: number, axis: 'x' | 'y', event: Event): void {
+  updateLineAnchorPoint(index: number, axis: Axis, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.store.patchSelectedShape((shape) => {
       if (shape.kind !== 'line' || !shape.anchors[index]) {
@@ -2050,10 +2149,10 @@ export class EditorPageComponent {
     });
   }
 
-  sliderRange(axis: 'x' | 'y'): { readonly min: number; readonly max: number } {
+  sliderRange(axis: Axis): { readonly min: number; readonly max: number } {
     const bounds = this.sceneContentBounds();
     if (!bounds) {
-      return axis === 'x' ? { min: -20, max: 20 } : { min: -20, max: 20 };
+      return EditorPageComponent.defaultSliderRange;
     }
 
     const maxAbs =
@@ -2667,9 +2766,15 @@ export class EditorPageComponent {
   }
 
   shapeIcon(shape: CanvasShape): string {
-    return getIconPath(
-      shape.kind === 'line' && shape.arrowEnd ? 'arrow' : shape.kind === 'line' ? 'segment' : shape.kind
-    );
+    return getIconPath(this.shapeIconName(shape));
+  }
+
+  private shapeIconName(shape: CanvasShape): CanvasShape['kind'] | 'arrow' | 'segment' {
+    if (shape.kind !== 'line') {
+      return shape.kind;
+    }
+
+    return shape.arrowEnd ? 'arrow' : 'segment';
   }
 
   arrowTipIconPath(arrowType: ArrowTipKind): string {
@@ -3214,21 +3319,21 @@ export class EditorPageComponent {
     if (resizeState.axis === 'y') {
       const delta = event.clientY - resizeState.startPointer;
       if (resizeState.side === 'left') {
-        this.mobileLeftSidebarHeight.set(Math.min(420, Math.max(160, resizeState.startSize - delta)));
+        this.mobileLeftSidebarHeight.set(this.clampSidebarSize('mobile-left', resizeState.startSize - delta));
         return;
       }
-      this.mobileRightSidebarHeight.set(Math.min(420, Math.max(160, resizeState.startSize - delta)));
+      this.mobileRightSidebarHeight.set(this.clampSidebarSize('mobile-right', resizeState.startSize - delta));
       return;
     }
 
     if (resizeState.side === 'left') {
       const delta = event.clientX - resizeState.startPointer;
-      this.leftSidebarWidth.set(Math.min(420, Math.max(220, resizeState.startSize + delta)));
+      this.leftSidebarWidth.set(this.clampSidebarSize('left', resizeState.startSize + delta));
       return;
     }
 
     const delta = resizeState.startPointer - event.clientX;
-    this.rightSidebarWidth.set(Math.min(460, Math.max(260, resizeState.startSize + delta)));
+    this.rightSidebarWidth.set(this.clampSidebarSize('right', resizeState.startSize + delta));
   }
 
   handleWindowPointerUp(): void {
@@ -3241,7 +3346,7 @@ export class EditorPageComponent {
     this.notifications.update((notifications) => [...notifications, { id, message, tone }]);
     globalThis.setTimeout(() => {
       this.notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
-    }, 2400);
+    }, EditorPageComponent.notificationDurationMs);
   }
 
   private showExportNotification(format: 'png' | 'svg'): void {
@@ -3316,11 +3421,19 @@ export class EditorPageComponent {
       return;
     }
 
-    const preset = presetId === 'blank' ? null : this.scenePresets.find((entry) => entry.id === presetId);
+    const preset = presetId === 'blank' ? null : (this.scenePresets.find((entry) => entry.id === presetId) ?? null);
     this.sceneReplaceDialog.set({
       presetId,
-      title: presetId === 'blank' ? this.t('newScene') : preset ? this.scenePresetTitle(preset) : this.t('newScene')
+      title: this.sceneReplacementTitle(presetId, preset)
     });
+  }
+
+  private sceneReplacementTitle(presetId: string, preset: ScenePreset | null): string {
+    if (presetId === 'blank' || !preset) {
+      return this.t('newScene');
+    }
+
+    return this.scenePresetTitle(preset);
   }
 
   confirmSceneReplaceDialog(): void {
