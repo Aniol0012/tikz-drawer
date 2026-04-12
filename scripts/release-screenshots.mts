@@ -3,14 +3,32 @@ import { mkdir, readFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright';
-import { defaultPreferences, scenePresets } from '../src/app/features/editor/presets/presets';
-import { sceneToTikz } from '../src/app/features/editor/tikz/tikz.codegen';
-import { encodeSharePayload } from '../src/app/features/editor/utils/editor-page.utils';
 
 const DIST_DIR = normalize(join(process.cwd(), 'dist', 'tikz-drawer', 'browser'));
 const OUTPUT_DIR = normalize(join(process.cwd(), 'screenshots'));
 const HOST = '127.0.0.1';
-const RELEASE_SCENE_PRESET_ID = 'metrics-board';
+
+type ExampleScenePayload = {
+  readonly scene: {
+    readonly name: string;
+    readonly bounds: { readonly width: number; readonly height: number };
+    readonly shapes: readonly unknown[];
+  };
+  readonly preferences: {
+    readonly theme: 'light';
+    readonly snapToGrid: boolean;
+    readonly showGrid: boolean;
+    readonly showAxes: boolean;
+    readonly scale: number;
+    readonly snapStep: number;
+    readonly defaultStroke: string;
+    readonly defaultFill: string;
+    readonly defaultStrokeWidth: number;
+    readonly defaultArrowScale: number;
+  };
+  readonly importCode: string;
+  readonly viewportCenter: { readonly x: number; readonly y: number };
+};
 
 const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
@@ -36,16 +54,190 @@ function resolveAssetPath(urlPath: string): string {
   return normalize(join(DIST_DIR, requestPath));
 }
 
-async function createExampleSceneUrl(baseUrl: string): Promise<string> {
-  const preset = scenePresets.find((entry) => entry.id === RELEASE_SCENE_PRESET_ID) ?? scenePresets[1] ?? scenePresets[0];
-  const payload = {
-    scene: preset.scene,
-    preferences: defaultPreferences,
-    importCode: sceneToTikz(preset.scene),
+function encodeBase64Json(value: unknown): string {
+  return Buffer.from(JSON.stringify(value), 'utf8').toString('base64');
+}
+
+function createExampleScenePayload(): ExampleScenePayload {
+  return {
+    scene: {
+      name: 'Release snapshot',
+      bounds: { width: 960, height: 640 },
+      shapes: [
+        {
+          id: 'client-box',
+          name: 'Client',
+          kind: 'rectangle',
+          stroke: '#1f1f1f',
+          strokeOpacity: 1,
+          strokeWidth: 0.08,
+          x: -7.4,
+          y: -1.6,
+          width: 4,
+          height: 2.2,
+          fill: '#edf4ff',
+          fillOpacity: 1,
+          cornerRadius: 0.14
+        },
+        {
+          id: 'client-label',
+          name: 'Client label',
+          kind: 'text',
+          stroke: 'none',
+          strokeOpacity: 1,
+          strokeWidth: 0,
+          x: -5.4,
+          y: -0.4,
+          text: 'Client',
+          textBox: false,
+          boxWidth: 4,
+          fontSize: 0.42,
+          color: '#161616',
+          colorOpacity: 1,
+          fontWeight: 'bold',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'center',
+          rotation: 0
+        },
+        {
+          id: 'api-box',
+          name: 'API',
+          kind: 'rectangle',
+          stroke: '#1f1f1f',
+          strokeOpacity: 1,
+          strokeWidth: 0.08,
+          x: -1.5,
+          y: -1.6,
+          width: 4,
+          height: 2.2,
+          fill: '#ececec',
+          fillOpacity: 1,
+          cornerRadius: 0.14
+        },
+        {
+          id: 'api-label',
+          name: 'API label',
+          kind: 'text',
+          stroke: 'none',
+          strokeOpacity: 1,
+          strokeWidth: 0,
+          x: 0.5,
+          y: -0.4,
+          text: 'API',
+          textBox: false,
+          boxWidth: 4,
+          fontSize: 0.42,
+          color: '#161616',
+          colorOpacity: 1,
+          fontWeight: 'bold',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'center',
+          rotation: 0
+        },
+        {
+          id: 'db-box',
+          name: 'Database',
+          kind: 'circle',
+          stroke: '#1f1f1f',
+          strokeOpacity: 1,
+          strokeWidth: 0.08,
+          cx: 6.5,
+          cy: -0.5,
+          r: 1.4,
+          fill: '#f5f5f5',
+          fillOpacity: 1
+        },
+        {
+          id: 'db-label',
+          name: 'Database label',
+          kind: 'text',
+          stroke: 'none',
+          strokeOpacity: 1,
+          strokeWidth: 0,
+          x: 6.5,
+          y: -0.4,
+          text: 'Database',
+          textBox: false,
+          boxWidth: 4,
+          fontSize: 0.42,
+          color: '#161616',
+          colorOpacity: 1,
+          fontWeight: 'bold',
+          fontStyle: 'normal',
+          textDecoration: 'none',
+          textAlign: 'center',
+          rotation: 0
+        },
+        {
+          id: 'client-to-api',
+          name: 'Client to API',
+          kind: 'line',
+          stroke: '#1f1f1f',
+          strokeOpacity: 1,
+          strokeWidth: 0.18,
+          from: { x: -3.4, y: -0.5 },
+          to: { x: -1.5, y: -0.5 },
+          anchors: [],
+          lineMode: 'straight',
+          arrowStart: false,
+          arrowEnd: true,
+          arrowType: 'triangle',
+          arrowColor: '#1f1f1f',
+          arrowOpacity: 1,
+          arrowOpen: false,
+          arrowRound: false,
+          arrowScale: 1.35,
+          arrowLengthScale: 1,
+          arrowWidthScale: 1,
+          arrowBendMode: 'none'
+        },
+        {
+          id: 'api-to-db',
+          name: 'API to database',
+          kind: 'line',
+          stroke: '#1f1f1f',
+          strokeOpacity: 1,
+          strokeWidth: 0.18,
+          from: { x: 2.5, y: -0.5 },
+          to: { x: 5.1, y: -0.5 },
+          anchors: [],
+          lineMode: 'straight',
+          arrowStart: false,
+          arrowEnd: true,
+          arrowType: 'triangle',
+          arrowColor: '#1f1f1f',
+          arrowOpacity: 1,
+          arrowOpen: false,
+          arrowRound: false,
+          arrowScale: 1.35,
+          arrowLengthScale: 1,
+          arrowWidthScale: 1,
+          arrowBendMode: 'none'
+        }
+      ]
+    },
+    preferences: {
+      theme: 'light',
+      snapToGrid: true,
+      showGrid: true,
+      showAxes: true,
+      scale: 24,
+      snapStep: 0.25,
+      defaultStroke: '#1f1f1f',
+      defaultFill: '#f1f1f1',
+      defaultStrokeWidth: 0.28,
+      defaultArrowScale: 1.35
+    },
+    importCode: '% release snapshot scene',
     viewportCenter: { x: 0, y: 0 }
   };
+}
 
-  const sharePayload = await encodeSharePayload(payload);
+function createExampleSceneUrl(baseUrl: string): string {
+  const payload = createExampleScenePayload();
+  const sharePayload = encodeBase64Json(payload);
   const url = new URL(baseUrl);
   url.searchParams.set('share', sharePayload);
   return url.toString();
@@ -91,7 +283,7 @@ async function run(): Promise<void> {
   }
 
   const baseUrl = `http://${HOST}:${address.port}`;
-  const exampleSceneUrl = await createExampleSceneUrl(baseUrl);
+  const exampleSceneUrl = createExampleSceneUrl(baseUrl);
   await mkdir(OUTPUT_DIR, { recursive: true });
   await Promise.all([
     rm(join(OUTPUT_DIR, 'editor-dark.png'), { force: true }),
