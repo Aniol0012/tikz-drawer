@@ -100,8 +100,32 @@ jobs:
         run: |
           VERSION="$(node -p "require('./package.json').version")"
           TAG="v${VERSION}"
+          REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+          RELEASE_URL="${REPO_URL}/releases/tag/${TAG}"
+          APP_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/?version=${VERSION}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "repo_url=${REPO_URL}" >> "$GITHUB_OUTPUT"
+          echo "release_url=${RELEASE_URL}" >> "$GITHUB_OUTPUT"
+          echo "app_url=${APP_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Build release body with snapshots
+        shell: bash
+        run: |
+          mkdir -p .artifacts/release
+          cat > .artifacts/release/release-body.md <<EOF
+          ## Tikz Drawer ${{ steps.meta.outputs.tag }}
+
+          **Version:** [${{ steps.meta.outputs.tag }}](${{ steps.meta.outputs.release_url }})
+
+          **Open app with version:** ${{ steps.meta.outputs.app_url }}
+
+          ### Snapshots
+
+          ![Editor light](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-light.png)
+          ![Editor dark](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-dark.png)
+          ![Editor mobile dark](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-mobile-dark.png)
+          EOF
 
       - name: Commit and push release metadata
         shell: bash
@@ -145,6 +169,9 @@ jobs:
           mkdir -p .artifacts/release
           tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-dist.tar.gz" -C dist/tikz-drawer/browser .
           tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-screenshots.tar.gz" screenshots
+          cp screenshots/editor-light.png .artifacts/release/editor-light.png
+          cp screenshots/editor-dark.png .artifacts/release/editor-dark.png
+          cp screenshots/editor-mobile-dark.png .artifacts/release/editor-mobile-dark.png
 
       - name: Upload release artifacts (workflow)
         uses: actions/upload-artifact@v4
@@ -157,7 +184,7 @@ jobs:
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: Release ${{ steps.meta.outputs.tag }}
-          generate_release_notes: true
+          body_path: .artifacts/release/release-body.md
           prerelease: ${{ inputs.prerelease }}
           files: |
             .artifacts/release/*
