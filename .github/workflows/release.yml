@@ -120,12 +120,15 @@ jobs:
 
           **Open app with version:** ${{ steps.meta.outputs.app_url }}
 
-          ### Snapshots
+          EOF
+
+          if [ -f screenshots/editor-light.png ]; then
+            cat >> .artifacts/release/release-body.md <<EOF
+          ### Snapshot (Desktop Light)
 
           ![Editor light](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-light.png)
-          ![Editor dark](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-dark.png)
-          ![Editor mobile dark](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-mobile-dark.png)
           EOF
+          fi
 
       - name: Commit and push release metadata
         shell: bash
@@ -168,10 +171,10 @@ jobs:
         run: |
           mkdir -p .artifacts/release
           tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-dist.tar.gz" -C dist/tikz-drawer/browser .
-          tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-screenshots.tar.gz" screenshots
-          cp screenshots/editor-light.png .artifacts/release/editor-light.png
-          cp screenshots/editor-dark.png .artifacts/release/editor-dark.png
-          cp screenshots/editor-mobile-dark.png .artifacts/release/editor-mobile-dark.png
+          if [ -f screenshots/editor-light.png ]; then
+            tar -czf ".artifacts/release/tikz-drawer-${{ steps.meta.outputs.version }}-screenshot-light.tar.gz" -C screenshots editor-light.png
+            cp screenshots/editor-light.png .artifacts/release/editor-light.png
+          fi
 
       - name: Upload release artifacts (workflow)
         uses: actions/upload-artifact@v4
@@ -184,6 +187,8 @@ jobs:
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: Release ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          append_body: true
           body_path: .artifacts/release/release-body.md
           prerelease: ${{ inputs.prerelease }}
           files: |

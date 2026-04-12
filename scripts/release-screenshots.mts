@@ -1,12 +1,16 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright';
+import { defaultPreferences, scenePresets } from '../src/app/features/editor/presets/presets';
+import { sceneToTikz } from '../src/app/features/editor/tikz/tikz.codegen';
+import { encodeSharePayload } from '../src/app/features/editor/utils/editor-page.utils';
 
 const DIST_DIR = normalize(join(process.cwd(), 'dist', 'tikz-drawer', 'browser'));
 const OUTPUT_DIR = normalize(join(process.cwd(), 'screenshots'));
 const HOST = '127.0.0.1';
+const RELEASE_SCENE_PRESET_ID = 'metrics-board';
 
 const MIME_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
@@ -30,6 +34,21 @@ function resolveAssetPath(urlPath: string): string {
   const cleanPath = urlPath.split('?')[0].split('#')[0];
   const requestPath = cleanPath === '/' ? '/index.html' : cleanPath;
   return normalize(join(DIST_DIR, requestPath));
+}
+
+async function createExampleSceneUrl(baseUrl: string): Promise<string> {
+  const preset = scenePresets.find((entry) => entry.id === RELEASE_SCENE_PRESET_ID) ?? scenePresets[1] ?? scenePresets[0];
+  const payload = {
+    scene: preset.scene,
+    preferences: defaultPreferences,
+    importCode: sceneToTikz(preset.scene),
+    viewportCenter: { x: 0, y: 0 }
+  };
+
+  const sharePayload = await encodeSharePayload(payload);
+  const url = new URL(baseUrl);
+  url.searchParams.set('share', sharePayload);
+  return url.toString();
 }
 
 async function run(): Promise<void> {
@@ -72,32 +91,31 @@ async function run(): Promise<void> {
   }
 
   const baseUrl = `http://${HOST}:${address.port}`;
+  const exampleSceneUrl = await createExampleSceneUrl(baseUrl);
   await mkdir(OUTPUT_DIR, { recursive: true });
+  await Promise.all([
+    rm(join(OUTPUT_DIR, 'editor-dark.png'), { force: true }),
+    rm(join(OUTPUT_DIR, 'editor-mobile-dark.png'), { force: true })
+  ]);
   const browser = await chromium.launch({ headless: true });
 
   try {
     const lightContext = await browser.newContext({ colorScheme: 'light', viewport: { width: 1600, height: 900 } });
     const lightPage = await lightContext.newPage();
-    await lightPage.goto(baseUrl, { waitUntil: 'networkidle' });
+    await lightPage.goto(exampleSceneUrl, { waitUntil: 'networkidle' });
     await lightPage.screenshot({ path: join(OUTPUT_DIR, 'editor-light.png'), fullPage: true });
     await lightContext.close();
 
-    const darkContext = await browser.newContext({ colorScheme: 'dark', viewport: { width: 1600, height: 900 } });
-    const darkPage = await darkContext.newPage();
-    await darkPage.goto(baseUrl, { waitUntil: 'networkidle' });
-    await darkPage.screenshot({ path: join(OUTPUT_DIR, 'editor-dark.png'), fullPage: true });
-    await darkContext.close();
-
     const mobileContext = await browser.newContext({
-      colorScheme: 'dark',
+      colorScheme: 'light',
       viewport: { width: 390, height: 844 },
       deviceScaleFactor: 2,
       isMobile: true,
       hasTouch: true
     });
     const mobilePage = await mobileContext.newPage();
-    await mobilePage.goto(baseUrl, { waitUntil: 'networkidle' });
-    await mobilePage.screenshot({ path: join(OUTPUT_DIR, 'editor-mobile-dark.png'), fullPage: true });
+    await mobilePage.goto(exampleSceneUrl, { waitUntil: 'networkidle' });
+    await mobilePage.screenshot({ path: join(OUTPUT_DIR, 'editor-mobile-light.png'), fullPage: true });
     await mobileContext.close();
   } finally {
     await browser.close();

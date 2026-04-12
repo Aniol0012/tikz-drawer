@@ -104,3 +104,4 @@ baseline.json
 
 # Generated LaTeX validation artifacts
 .artifacts/
+screenshots/
