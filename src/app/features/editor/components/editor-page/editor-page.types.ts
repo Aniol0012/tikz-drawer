@@ -1,5 +1,12 @@
 import type { LatexColorMode } from '../../tikz/tikz.codegen';
-import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory, TextShape } from '../../models/tikz.models';
+import type {
+  ArrowTipKind,
+  CanvasShape,
+  ObjectPreset,
+  Point,
+  PresetCategory,
+  TextShape
+} from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene' | 'code';
