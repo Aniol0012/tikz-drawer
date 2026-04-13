@@ -802,15 +802,27 @@
                       [attr.stroke-width]="shape.strokeWidth"></ellipse>
                   }
                   @case ('text') {
-                    <rect
+                    <text
                       class="minimap__shape minimap__shape--text"
                       [attr.x]="shape.x"
                       [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
                       [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></rect>
+                      [attr.fill-opacity]="shape.fillOpacity"
+                      [attr.font-size]="shape.fontSize"
+                      [attr.font-weight]="shape.fontWeight"
+                      [attr.font-style]="shape.fontStyle"
+                      [attr.text-decoration]="shape.textDecoration"
+                      [attr.text-anchor]="shape.textAnchor"
+                      [attr.transform]="shape.transform">
+                      @for (line of shape.lines; track $index) {
+                        <tspan
+                          [attr.x]="shape.x"
+                          [attr.text-anchor]="shape.textAnchor"
+                          [attr.dy]="$index === 0 ? 0 : shape.fontSize * 1.14">
+                          {{ line }}
+                        </tspan>
+                      }
+                    </text>
                   }
                   @case ('image') {
                     <image

@@ -1,5 +1,5 @@
 import type { LatexColorMode } from '../../tikz/tikz.codegen';
-import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory } from '../../models/tikz.models';
+import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory, TextShape } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene' | 'code';
@@ -258,9 +258,15 @@ export interface MinimapTextShape extends MinimapShapeBase {
   readonly kind: 'text';
   readonly x: number;
   readonly y: number;
-  readonly width: number;
-  readonly height: number;
+  readonly lines: readonly string[];
+  readonly fontSize: number;
   readonly fill: string;
+  readonly fillOpacity: number;
+  readonly textAnchor: 'start' | 'middle' | 'end';
+  readonly fontWeight: TextShape['fontWeight'];
+  readonly fontStyle: TextShape['fontStyle'];
+  readonly textDecoration: TextShape['textDecoration'];
+  readonly transform: string | null;
 }
 
 export interface MinimapImageShape extends MinimapShapeBase {

@@ -4364,24 +4364,21 @@ export class EditorPageComponent {
         };
       case 'text': {
         const lines = this.displayTextLinesForShape(shape);
-        const width = this.estimateTextWidth(shape, scale);
-        const height = estimateTextHeight(
-          shape,
-          lines.length,
-          scale,
-          TEXT_RENDER_LINE_HEIGHT_FACTOR,
-          MINIMAP_MIN_TEXT_HEIGHT
-        );
-        const left = textLeftForWidth(shape, toMapX(shape.x), width);
         return {
           kind: 'text',
           stroke: 'transparent',
           strokeWidth: 0,
           fill: shape.color,
-          x: left,
-          y: toMapY(shape.y) - height / 2,
-          width,
-          height
+          fillOpacity: shape.colorOpacity,
+          x: this.textRenderXAt(shape, toMapX, scale),
+          y: toMapY(shape.y),
+          lines,
+          fontSize: Math.max(shape.fontSize * scale, MINIMAP_MIN_TEXT_HEIGHT),
+          textAnchor: this.textAnchor(shape.textAlign),
+          fontWeight: shape.fontWeight,
+          fontStyle: shape.fontStyle,
+          textDecoration: shape.textDecoration,
+          transform: shape.rotation ? `rotate(${shape.rotation} ${toMapX(shape.x)} ${toMapY(shape.y)})` : null
         };
       }
       case 'image':

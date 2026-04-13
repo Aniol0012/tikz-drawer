@@ -1179,6 +1179,7 @@ kbd {
 
 .minimap__shape--text {
   opacity: 0.8;
+  font-family: Geist, Arial, sans-serif;
 }
 
 .minimap__viewport {
