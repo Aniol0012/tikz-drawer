@@ -18,8 +18,8 @@ import type {
   TikzScene
 } from '../src/app/features/editor/models/tikz.models.ts';
 import * as presetsModule from '../src/app/features/editor/presets/presets.ts';
-import { sceneToTikz } from '../src/app/features/editor/tikz/tikz.codegen.ts';
-import { encodeSharePayload, transformCanvasShape } from '../src/app/features/editor/utils/editor-page.utils.ts';
+import * as tikzCodegenModule from '../src/app/features/editor/tikz/tikz.codegen.ts';
+import * as editorPageUtilsModule from '../src/app/features/editor/utils/editor-page.utils.ts';
 
 const DIST_DIR = normalize(join(process.cwd(), 'dist', 'tikz-drawer', 'browser'));
 const OUTPUT_DIR = normalize(join(process.cwd(), 'screenshots'));
@@ -92,6 +92,40 @@ type RuntimePresetExports = {
   };
 };
 
+type RuntimeTikzCodegenExports = {
+  readonly sceneToTikz?: (scene: TikzScene) => string;
+  readonly default?: {
+    readonly sceneToTikz?: (scene: TikzScene) => string;
+  };
+};
+
+type RuntimeEditorPageUtilsExports = {
+  readonly encodeSharePayload?: (payload: SharedScenePayload) => Promise<string>;
+  readonly transformCanvasShape?: (
+    shape: CanvasShape,
+    deltaX: number,
+    deltaY: number,
+    scaleX: number,
+    scaleY: number,
+    originX: number,
+    originY: number,
+    id?: string
+  ) => CanvasShape;
+  readonly default?: {
+    readonly encodeSharePayload?: (payload: SharedScenePayload) => Promise<string>;
+    readonly transformCanvasShape?: (
+      shape: CanvasShape,
+      deltaX: number,
+      deltaY: number,
+      scaleX: number,
+      scaleY: number,
+      originX: number,
+      originY: number,
+      id?: string
+    ) => CanvasShape;
+  };
+};
+
 const FALLBACK_DEFAULT_PREFERENCES: EditorPreferences = {
   theme: 'light',
   snapToGrid: true,
@@ -120,9 +154,51 @@ function resolvePresetExport<T>(name: 'defaultPreferences' | 'objectPresets' | '
   return resolved as T;
 }
 
+function resolveTikzCodegenExport<T>(name: 'sceneToTikz'): T {
+  const runtimeModule = tikzCodegenModule as RuntimeTikzCodegenExports;
+  const resolved =
+    runtimeModule[name] ??
+    runtimeModule.default?.[name] ??
+    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
+
+  if (resolved === undefined) {
+    throw new Error(`release-screenshots: "${name}" was not found in tikz.codegen module.`);
+  }
+
+  return resolved as T;
+}
+
+function resolveEditorPageUtilsExport<T>(name: 'encodeSharePayload' | 'transformCanvasShape'): T {
+  const runtimeModule = editorPageUtilsModule as RuntimeEditorPageUtilsExports;
+  const resolved =
+    runtimeModule[name] ??
+    runtimeModule.default?.[name] ??
+    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
+
+  if (resolved === undefined) {
+    throw new Error(`release-screenshots: "${name}" was not found in editor-page.utils module.`);
+  }
+
+  return resolved as T;
+}
+
 const defaultPreferences = resolvePresetExport<EditorPreferences>('defaultPreferences', FALLBACK_DEFAULT_PREFERENCES);
 const objectPresets = resolvePresetExport<readonly ObjectPreset[]>('objectPresets');
 const scenePresets = resolvePresetExport<readonly ScenePreset[]>('scenePresets');
+const sceneToTikz = resolveTikzCodegenExport<(scene: TikzScene) => string>('sceneToTikz');
+const encodeSharePayload = resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
+const transformCanvasShape = resolveEditorPageUtilsExport<
+  (
+    shape: CanvasShape,
+    deltaX: number,
+    deltaY: number,
+    scaleX: number,
+    scaleY: number,
+    originX: number,
+    originY: number,
+    id?: string
+  ) => CanvasShape
+>('transformCanvasShape');
 
 const PALETTES: readonly Palette[] = [
   {
