@@ -17,7 +17,7 @@ import type {
   TextShape,
   TikzScene
 } from '../src/app/features/editor/models/tikz.models.ts';
-import { defaultPreferences, objectPresets, scenePresets } from '../src/app/features/editor/presets/presets.ts';
+import * as presetsModule from '../src/app/features/editor/presets/presets.ts';
 import { sceneToTikz } from '../src/app/features/editor/tikz/tikz.codegen.ts';
 import { encodeSharePayload, transformCanvasShape } from '../src/app/features/editor/utils/editor-page.utils.ts';
 
@@ -80,6 +80,49 @@ type SceneComposer = (rng: SeededRandom, palette: Palette) => GeneratedScreensho
 
 const DESKTOP_VIEWPORT = { width: 1600, height: 900 } as const;
 const MOBILE_VIEWPORT = { width: 390, height: 844 } as const;
+
+type RuntimePresetExports = {
+  readonly defaultPreferences?: EditorPreferences;
+  readonly objectPresets?: readonly ObjectPreset[];
+  readonly scenePresets?: readonly ScenePreset[];
+  readonly default?: {
+    readonly defaultPreferences?: EditorPreferences;
+    readonly objectPresets?: readonly ObjectPreset[];
+    readonly scenePresets?: readonly ScenePreset[];
+  };
+};
+
+const FALLBACK_DEFAULT_PREFERENCES: EditorPreferences = {
+  theme: 'light',
+  snapToGrid: true,
+  showGrid: true,
+  showAxes: true,
+  scale: 24,
+  snapStep: 0.25,
+  defaultStroke: '#1f1f1f',
+  defaultFill: '#f1f1f1',
+  defaultStrokeWidth: 0.28,
+  defaultArrowScale: 1.35
+};
+
+function resolvePresetExport<T>(name: 'defaultPreferences' | 'objectPresets' | 'scenePresets', fallback?: T): T {
+  const runtimeModule = presetsModule as RuntimePresetExports;
+  const resolved =
+    runtimeModule[name] ??
+    runtimeModule.default?.[name] ??
+    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name] ??
+    fallback;
+
+  if (resolved === undefined) {
+    throw new Error(`release-screenshots: "${name}" was not found in presets module.`);
+  }
+
+  return resolved as T;
+}
+
+const defaultPreferences = resolvePresetExport<EditorPreferences>('defaultPreferences', FALLBACK_DEFAULT_PREFERENCES);
+const objectPresets = resolvePresetExport<readonly ObjectPreset[]>('objectPresets');
+const scenePresets = resolvePresetExport<readonly ScenePreset[]>('scenePresets');
 
 const PALETTES: readonly Palette[] = [
   {
