@@ -1008,6 +1008,11 @@ kbd {
   white-space: pre;
 }
 
+.inline-text-editor::selection {
+  background: color-mix(in srgb, var(--accent) 82%, white);
+  color: white;
+}
+
 .shape-layer.is-selected line,
 .shape-layer.is-selected path,
 .shape-layer.is-selected rect,

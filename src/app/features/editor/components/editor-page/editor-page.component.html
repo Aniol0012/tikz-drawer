@@ -214,7 +214,7 @@
       <div
         #canvasViewport
         class="canvas-viewport"
-        [class.is-panning]="interactionState()?.kind === 'pan'"
+        [class.is-panning]="interactionState()?.kind === 'pan' || interactionState()?.kind === 'pending-pan'"
         [class.is-insert]="activeTool() !== 'select'"
         (pointerdown)="onCanvasViewportPointerDown($event)"
         (touchstart)="onCanvasTouchStart($event)"

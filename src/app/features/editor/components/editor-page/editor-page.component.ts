@@ -16,6 +16,9 @@ import {
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
   DEFAULT_EDITOR_SCALE,
+  DEFAULT_TEXT_BOX_WIDTH,
+  DEFAULT_TEXT_COLOR,
+  DEFAULT_TEXT_FONT_SIZE,
   EDITOR_STORAGE_KEYS,
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   FREEHAND_POINT_MIN_DISTANCE,
@@ -279,6 +282,8 @@ export class EditorPageComponent {
   readonly textSymbolPaletteOpen = signal(false);
   readonly textSymbolPalettePosition = signal<TextSymbolPalettePosition>({ top: 0, left: 0, maxHeight: 320 });
   readonly recentTextTap = signal<RecentTextTap | null>(null);
+  readonly recentSelectedShapeTap = signal<RecentTextTap | null>(null);
+  readonly suppressContextMenuUntil = signal(0);
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly ignoreNextShapeClickId = signal<string | null>(null);
   readonly leftSidebarWidth = signal(288);
@@ -1555,7 +1560,10 @@ export class EditorPageComponent {
       return;
     }
 
+    const wasSingleSelected = this.selectionCount() === 1 && this.selectedShape()?.id === shape.id;
+
     if (this.activeTool() !== 'select') {
+      this.recentSelectedShapeTap.set(null);
       this.closeInlineTextEditor();
       if (!this.canPreviewInsert(this.activeTool())) {
         this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
@@ -1564,13 +1572,35 @@ export class EditorPageComponent {
     }
 
     if (shape.kind === 'text' && event.detail >= 2) {
-      this.openInlineTextEditor(shape);
+      event.preventDefault();
+      this.startTextEditing(shape);
       return;
+    }
+
+    if (shape.kind !== 'text') {
+      if (wasSingleSelected && this.isRepeatedSelectedShapeTap(shape.id)) {
+        event.preventDefault();
+        const textShape = this.insertCenteredTextForSelectedShape(shape);
+        if (textShape) {
+          this.openInlineTextEditor(textShape);
+        }
+        this.recentSelectedShapeTap.set(null);
+        return;
+      }
+
+      if (event.detail === 1 && wasSingleSelected) {
+        this.recentSelectedShapeTap.set({ shapeId: shape.id, timestamp: Date.now() });
+      } else if (event.detail === 1) {
+        this.recentSelectedShapeTap.set(null);
+      }
+    } else {
+      this.recentSelectedShapeTap.set(null);
     }
 
     this.closeInlineTextEditor();
 
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      this.recentSelectedShapeTap.set(null);
       this.toggleShapeSetSelection(shape);
       this.setInspectorTab('properties');
       return;
@@ -1583,14 +1613,23 @@ export class EditorPageComponent {
   }
 
   onShapeDoubleClick(event: MouseEvent, shape: CanvasShape): void {
-    if (this.activeTool() !== 'select' || shape.kind !== 'text') {
+    if (this.activeTool() !== 'select') {
+      this.recentSelectedShapeTap.set(null);
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
-    this.selectShape(shape.id);
-    this.openInlineTextEditor(shape);
+
+    if (shape.kind === 'text') {
+      this.startTextEditing(shape);
+      return;
+    }
+
+    const textShape = this.insertCenteredTextForSelectedShape(shape);
+    if (textShape) {
+      this.openInlineTextEditor(textShape);
+    }
   }
 
   onImportCodeInput(event: Event): void {
@@ -2274,6 +2313,12 @@ export class EditorPageComponent {
   }
 
   openCanvasContextMenu(event: MouseEvent): void {
+    if (this.shouldSuppressContextMenu()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     this.contextMenu.set({
@@ -2285,6 +2330,12 @@ export class EditorPageComponent {
   }
 
   openShapeContextMenu(event: MouseEvent, shape: CanvasShape): void {
+    if (this.shouldSuppressContextMenu()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     if (!this.selectionContainsShape(shape.id)) {
@@ -2348,6 +2399,18 @@ export class EditorPageComponent {
     this.closeContextMenu();
     this.closeFileMenu();
     const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
+
+    if (event.button === 2) {
+      event.preventDefault();
+      this.interactionState.set({
+        kind: 'pending-pan',
+        pointerId: event.pointerId,
+        startClientPoint: { x: event.clientX, y: event.clientY },
+        lastClientPoint: { x: event.clientX, y: event.clientY }
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
 
     if (event.button === 1 || (event.button === 0 && (this.spacePressed() || touchSelectPan))) {
       event.preventDefault();
@@ -2422,16 +2485,16 @@ export class EditorPageComponent {
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
     if (this.activeTool() !== 'select' || event.button !== 0 || this.spacePressed()) {
+      this.recentSelectedShapeTap.set(null);
       return;
     }
 
     if (shape.kind === 'text') {
+      this.recentSelectedShapeTap.set(null);
       if (event.detail >= 2 || this.isRepeatedTextTap(shape.id)) {
         event.preventDefault();
         event.stopPropagation();
-        this.selectShape(shape.id);
-        this.openInlineTextEditor(shape);
-        this.recentTextTap.set(null);
+        this.startTextEditing(shape);
         return;
       }
 
@@ -2562,6 +2625,27 @@ export class EditorPageComponent {
       return;
     }
 
+    if (interactionState.kind === 'pending-pan') {
+      const deltaClientX = event.clientX - interactionState.startClientPoint.x;
+      const deltaClientY = event.clientY - interactionState.startClientPoint.y;
+      const distance = Math.hypot(deltaClientX, deltaClientY);
+      if (distance < 6) {
+        this.interactionState.set({
+          ...interactionState,
+          lastClientPoint: { x: event.clientX, y: event.clientY }
+        });
+        return;
+      }
+
+      this.suppressContextMenuBriefly();
+      this.interactionState.set({
+        kind: 'pan',
+        pointerId: interactionState.pointerId,
+        lastClientPoint: { x: event.clientX, y: event.clientY }
+      });
+      return;
+    }
+
     if (interactionState.kind === 'move') {
       const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
       const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
@@ -2687,6 +2771,14 @@ export class EditorPageComponent {
       }
     }
 
+    if (interactionState.kind === 'pending-pan') {
+      if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
+        this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
+      }
+      this.interactionState.set(null);
+      return;
+    }
+
     if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
       this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
     }
@@ -2697,7 +2789,16 @@ export class EditorPageComponent {
 
   onCanvasWheel(event: WheelEvent): void {
     event.preventDefault();
-    this.setScaleAtClientPoint(this.preferences().scale + (event.deltaY < 0 ? 4 : -4), event.clientX, event.clientY);
+
+    if (event.ctrlKey) {
+      const zoomDelta = this.normalizeWheelDelta(event).y;
+      const zoomFactor = Math.exp(-zoomDelta * 0.0015);
+      this.setScaleAtClientPoint(this.preferences().scale * zoomFactor, event.clientX, event.clientY, false);
+      return;
+    }
+
+    const delta = this.normalizeWheelDelta(event);
+    this.panViewportByClientDelta(delta.x, delta.y);
   }
 
   onCanvasTouchStart(event: TouchEvent): void {
@@ -2747,6 +2848,7 @@ export class EditorPageComponent {
 
   onCanvasBackgroundClick(event: MouseEvent): void {
     this.ignoreNextShapeClickId.set(null);
+    this.recentSelectedShapeTap.set(null);
 
     if (this.ignoreNextCanvasClick()) {
       this.ignoreNextCanvasClick.set(false);
@@ -3415,6 +3517,32 @@ export class EditorPageComponent {
     this.closeContextMenu();
     this.store.recordHistoryCheckpoint();
     action();
+  }
+
+  private shouldSuppressContextMenu(): boolean {
+    return this.suppressContextMenuUntil() > Date.now();
+  }
+
+  private suppressContextMenuBriefly(): void {
+    this.suppressContextMenuUntil.set(Date.now() + 400);
+  }
+
+  private normalizeWheelDelta(event: WheelEvent): { readonly x: number; readonly y: number } {
+    const lineHeight = 16;
+    const pageHeight = this.canvasViewport().nativeElement.clientHeight || 800;
+    const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? lineHeight : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? pageHeight : 1;
+    return {
+      x: event.deltaX * multiplier,
+      y: event.deltaY * multiplier
+    };
+  }
+
+  private panViewportByClientDelta(deltaClientX: number, deltaClientY: number): void {
+    const scale = this.preferences().scale;
+    this.viewportCenter.update((viewportCenter) => ({
+      x: viewportCenter.x + deltaClientX / scale,
+      y: viewportCenter.y - deltaClientY / scale
+    }));
   }
 
   private buildSharePayload(): SharedScenePayload {
@@ -4781,10 +4909,92 @@ export class EditorPageComponent {
       value: shape.text
     });
     this.ignoreNextCanvasClick.set(true);
+    this.focusInlineTextInput();
+  }
+
+  private startTextEditing(shape: Extract<CanvasShape, { kind: 'text' }>): void {
+    this.selectShape(shape.id);
+    this.openInlineTextEditor(shape);
+    this.recentTextTap.set(null);
+    this.recentSelectedShapeTap.set(null);
+  }
+
+  private insertCenteredTextForSelectedShape(shape: CanvasShape): Extract<CanvasShape, { kind: 'text' }> | null {
+    if (shape.kind === 'text') {
+      return null;
+    }
+
+    if (this.selectionCount() !== 1 || this.selectedShape()?.id !== shape.id) {
+      this.recentSelectedShapeTap.set(null);
+      return null;
+    }
+
+    const bounds = this.shapeBounds(shape);
+    if (!bounds) {
+      this.recentSelectedShapeTap.set(null);
+      return null;
+    }
+
+    const mergeId = shape.mergeId ?? crypto.randomUUID();
+
+    const textShape = this.applyInsertionDefaults({
+      id: crypto.randomUUID(),
+      name: this.t('text'),
+      kind: 'text',
+      stroke: 'none',
+      strokeOpacity: 1,
+      strokeWidth: 0,
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2,
+      text: this.t('text'),
+      textBox: false,
+      boxWidth: DEFAULT_TEXT_BOX_WIDTH,
+      fontSize: DEFAULT_TEXT_FONT_SIZE,
+      color: DEFAULT_TEXT_COLOR,
+      colorOpacity: 1,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textAlign: 'center',
+      rotation: 0,
+      mergeId
+    }) as Extract<CanvasShape, { kind: 'text' }>;
+
+    this.runSceneMutation(() => {
+      if (shape.mergeId !== mergeId) {
+        this.store.replaceShapes([{ ...shape, mergeId }]);
+      }
+      this.store.addShapes([textShape]);
+      this.inspectorTab.set('properties');
+    });
+    this.recentSelectedShapeTap.set(null);
+    return textShape;
+  }
+
+  private focusInlineTextInput(): void {
     afterNextRender(() => {
-      const input = this.inlineTextInput()?.nativeElement;
-      input?.focus();
-      input?.select();
+      const runSelection = () => {
+        const input = this.inlineTextInput()?.nativeElement;
+        if (!input) {
+          return;
+        }
+
+        input.focus({ preventScroll: true });
+        const end = input.value.length;
+        input.setSelectionRange(0, end, 'forward');
+        input.select();
+      };
+
+      const view = this.document.defaultView;
+      if (!view) {
+        runSelection();
+        return;
+      }
+
+      view.requestAnimationFrame(() => {
+        runSelection();
+        view.setTimeout(runSelection, 0);
+      });
     });
   }
 
@@ -4840,6 +5050,13 @@ export class EditorPageComponent {
 
   private isRepeatedTextTap(shapeId: string): boolean {
     const previousTap = this.recentTextTap();
+    return (
+      !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS
+    );
+  }
+
+  private isRepeatedSelectedShapeTap(shapeId: string): boolean {
+    const previousTap = this.recentSelectedShapeTap();
     return (
       !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS
     );

@@ -111,6 +111,13 @@ export interface PanInteractionState {
   readonly lastClientPoint: Point;
 }
 
+export interface PendingPanInteractionState {
+  readonly kind: 'pending-pan';
+  readonly pointerId: number;
+  readonly startClientPoint: Point;
+  readonly lastClientPoint: Point;
+}
+
 export interface ResizeInteractionState {
   readonly kind: 'resize';
   readonly pointerId: number;
@@ -145,6 +152,7 @@ export interface FreehandInteractionState {
 export type InteractionState =
   | MoveInteractionState
   | PanInteractionState
+  | PendingPanInteractionState
   | ResizeInteractionState
   | MarqueeInteractionState
   | InsertInteractionState
