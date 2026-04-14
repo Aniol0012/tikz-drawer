@@ -101,14 +101,17 @@ export interface HomogeneousSelectionInfo {
 export interface MoveInteractionState {
   readonly kind: 'move';
   readonly pointerId: number;
+  readonly startClientPoint: Point;
   readonly startWorldPoint: Point;
   readonly initialShapes: readonly CanvasShape[];
+  readonly tapEligibleShapeId: string | null;
 }
 
 export interface PanInteractionState {
   readonly kind: 'pan';
   readonly pointerId: number;
   readonly lastClientPoint: Point;
+  readonly sourceButton: number;
 }
 
 export interface PendingPanInteractionState {
@@ -116,6 +119,7 @@ export interface PendingPanInteractionState {
   readonly pointerId: number;
   readonly startClientPoint: Point;
   readonly lastClientPoint: Point;
+  readonly sourceButton: number;
 }
 
 export interface ResizeInteractionState {

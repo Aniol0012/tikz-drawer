@@ -643,6 +643,7 @@
               [attr.width]="outline.width"
               [attr.height]="outline.height"
               [attr.fill]="selectionCount() > 1 ? 'transparent' : null"
+              (dblclick)="onSelectionOutlineDoubleClick($event)"
               (pointerdown)="selectionCount() > 1 && startSelectionMove($event)"></rect>
           }
 
