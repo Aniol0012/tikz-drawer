@@ -2787,7 +2787,12 @@ export class EditorPageComponent {
       if (tapShapeId && tapDistance < 6) {
         if (this.isRepeatedSelectedShapeTap(tapShapeId)) {
           const shape = this.scene().shapes.find((candidate) => candidate.id === tapShapeId);
-          if (shape && shape.kind !== 'text' && this.selectionCount() === 1 && this.selectedShape()?.id === tapShapeId) {
+          if (
+            shape &&
+            shape.kind !== 'text' &&
+            this.selectionCount() === 1 &&
+            this.selectedShape()?.id === tapShapeId
+          ) {
             const textShape = this.insertCenteredTextForSelectedShape(shape);
             if (textShape) {
               this.openInlineTextEditor(textShape);
