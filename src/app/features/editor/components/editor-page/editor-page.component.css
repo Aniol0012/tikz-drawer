@@ -2441,6 +2441,88 @@ kbd {
   padding-right: 14px;
 }
 
+:host([data-theme='dark']) .export-settings-modal {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 98%, #202020 2%), var(--panel-background));
+  border-color: color-mix(in srgb, white 16%, var(--tool-border-strong));
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+:host([data-theme='dark']) .export-settings-layout .sidebar-section {
+  border-color: color-mix(in srgb, white 14%, var(--tool-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--tool-surface) 96%, #262626 4%),
+      color-mix(in srgb, var(--input-background) 88%, #101010 12%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+:host([data-theme='dark']) .export-settings-layout .section-header--static {
+  border-bottom-color: color-mix(in srgb, white 10%, var(--tool-border));
+}
+
+:host([data-theme='dark']) .export-settings-layout .section-header--static span {
+  color: color-mix(in srgb, white 88%, var(--muted-foreground));
+}
+
+:host([data-theme='dark']) .export-settings-layout .field,
+:host([data-theme='dark']) .export-settings-layout .toggle-field {
+  border-color: color-mix(in srgb, white 12%, var(--tool-border));
+  background: color-mix(in srgb, var(--input-background) 82%, #202020 18%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+:host([data-theme='dark']) .export-settings-layout .field span,
+:host([data-theme='dark']) .export-settings-layout .toggle-field span,
+:host([data-theme='dark']) .export-settings-note {
+  color: color-mix(in srgb, white 74%, var(--muted-foreground));
+}
+
+:host([data-theme='dark']) .export-settings-note {
+  border-color: color-mix(in srgb, white 14%, var(--tool-border));
+  background: color-mix(in srgb, var(--tool-surface) 78%, #1a1a1a 22%);
+}
+
+:host([data-theme='dark']) .mode-switch--full {
+  background: color-mix(in srgb, var(--input-background) 78%, #252525 22%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 8%, transparent);
+}
+
+:host([data-theme='dark']) .mode-switch--full button {
+  color: color-mix(in srgb, white 66%, var(--muted-foreground));
+}
+
+:host([data-theme='dark']) .mode-switch--full button.is-active {
+  background: color-mix(in srgb, var(--accent) 28%, #26324f 72%);
+  color: color-mix(in srgb, white 90%, var(--accent-strong));
+}
+
+:host([data-theme='dark']) .export-option-card {
+  border-color: color-mix(in srgb, white 10%, var(--tool-border));
+  background: color-mix(in srgb, var(--tool-surface) 86%, #212121 14%);
+}
+
+:host([data-theme='dark']) .export-option-card span {
+  color: color-mix(in srgb, white 68%, var(--muted-foreground));
+}
+
+:host([data-theme='dark']) .export-option-card.is-active {
+  border-color: color-mix(in srgb, var(--accent) 44%, white 8%);
+  background: color-mix(in srgb, var(--accent) 18%, #1f2a44 82%);
+}
+
+:host([data-theme='dark']) .code-stack--theme-preview {
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--input-background) 78%, #202020 22%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 8%, transparent);
+}
+
 .tool-button svg,
 .menu-button svg,
 .icon-button svg,
