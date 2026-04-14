@@ -3530,7 +3530,12 @@ export class EditorPageComponent {
   private normalizeWheelDelta(event: WheelEvent): { readonly x: number; readonly y: number } {
     const lineHeight = 16;
     const pageHeight = this.canvasViewport().nativeElement.clientHeight || 800;
-    const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? lineHeight : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? pageHeight : 1;
+    const multiplier =
+      event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? lineHeight
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? pageHeight
+          : 1;
     return {
       x: event.deltaX * multiplier,
       y: event.deltaY * multiplier
