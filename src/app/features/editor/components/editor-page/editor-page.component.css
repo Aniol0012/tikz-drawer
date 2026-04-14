@@ -2442,8 +2442,11 @@ kbd {
 }
 
 :host([data-theme='dark']) .export-settings-modal {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 98%, #202020 2%), var(--panel-background));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel-background) 98%, #202020 2%),
+    var(--panel-background)
+  );
   border-color: color-mix(in srgb, white 16%, var(--tool-border-strong));
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.34),
@@ -2452,12 +2455,11 @@ kbd {
 
 :host([data-theme='dark']) .export-settings-layout .sidebar-section {
   border-color: color-mix(in srgb, white 14%, var(--tool-border));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--tool-surface) 96%, #262626 4%),
-      color-mix(in srgb, var(--input-background) 88%, #101010 12%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tool-surface) 96%, #262626 4%),
+    color-mix(in srgb, var(--input-background) 88%, #101010 12%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 0 0 1px rgba(255, 255, 255, 0.02);
