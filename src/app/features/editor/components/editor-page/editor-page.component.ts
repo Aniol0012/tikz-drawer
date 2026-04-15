@@ -2838,6 +2838,12 @@ export class EditorPageComponent {
     }
 
     const delta = this.normalizeWheelDelta(event);
+    if (event.shiftKey) {
+      const horizontalDelta = Math.abs(delta.x) > Math.abs(delta.y) ? delta.x : delta.y;
+      this.panViewportByClientDelta(horizontalDelta, 0);
+      return;
+    }
+
     this.panViewportByClientDelta(delta.x, delta.y);
   }
 
