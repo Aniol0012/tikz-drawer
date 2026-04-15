@@ -939,6 +939,15 @@ kbd {
   cursor: crosshair;
 }
 
+.canvas-viewport.is-insert .shape-layer,
+.canvas-viewport.is-insert .selection-outline--interactive {
+  cursor: crosshair;
+}
+
+.canvas-viewport.is-insert .selection-handle {
+  cursor: crosshair !important;
+}
+
 .canvas-surface {
   width: 100%;
   height: 100%;
