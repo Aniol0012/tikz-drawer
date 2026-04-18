@@ -262,8 +262,11 @@
   height: calc(100dvh - var(--topbar-height));
   display: grid;
   grid-template-columns:
-    minmax(240px, var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr)
-    10px minmax(280px, var(--right-sidebar-width, 340px));
+    minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(
+      0,
+      1fr
+    )
+    10px minmax(var(--right-sidebar-min-width, 280px), var(--right-sidebar-width, 340px));
   overflow: hidden;
 }
 
@@ -287,6 +290,19 @@
 .right-sidebar {
   padding: 0;
   border-left: 1px solid var(--border);
+}
+
+.left-sidebar.is-collapsed,
+.right-sidebar.is-collapsed {
+  overflow: hidden;
+}
+
+.left-sidebar.is-collapsed {
+  padding: 10px 8px;
+}
+
+.right-sidebar.is-collapsed {
+  padding: 0 8px 8px;
 }
 
 .sidebar-scroll {
@@ -907,6 +923,11 @@ kbd {
 
 .sidebar-resizer:hover::before {
   background: var(--accent-soft-border);
+}
+
+.sidebar-resizer.is-disabled {
+  pointer-events: none;
+  opacity: 0.35;
 }
 
 .canvas-panel {
@@ -2715,7 +2736,7 @@ button:disabled {
   .workspace {
     height: calc(100dvh - var(--topbar-height));
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(420px, 1fr) minmax(280px, 38dvh);
+    grid-template-rows: minmax(420px, 1fr) minmax(var(--tablet-sidebars-min-height, 280px), 38dvh);
   }
 
   .sidebar-resizer {
@@ -2853,9 +2874,15 @@ button:disabled {
     grid-template-rows:
       minmax(320px, 1fr)
       14px
-      minmax(140px, var(--mobile-right-sidebar-height, 220px))
+      minmax(
+        var(--mobile-right-sidebar-min-height, 140px),
+        var(--mobile-right-sidebar-height, 220px)
+      )
       14px
-      minmax(140px, var(--mobile-left-sidebar-height, 250px));
+      minmax(
+        var(--mobile-left-sidebar-min-height, 140px),
+        var(--mobile-left-sidebar-height, 250px)
+      );
   }
 
   .form-grid,

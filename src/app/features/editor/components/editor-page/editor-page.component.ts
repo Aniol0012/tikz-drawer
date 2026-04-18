@@ -78,6 +78,8 @@ import {
   type ToolId
 } from './editor-page.types';
 import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
+import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-sidebar.component';
+import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import {
   categoryOrder,
@@ -141,7 +143,7 @@ import {
 
 @Component({
   selector: 'app-editor-page',
-  imports: [EditorTopbarComponent, TableDialogComponent],
+  imports: [EditorTopbarComponent, EditorLeftSidebarComponent, EditorRightSidebarComponent, TableDialogComponent],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -191,6 +193,10 @@ export class EditorPageComponent {
     rightMinWidth: 260,
     rightMaxWidth: 460
   } as const;
+  private static readonly collapsedSidebarSize = {
+    desktopWidth: 56,
+    mobileHeight: 56
+  } as const;
   private static readonly defaultSliderRange = {
     min: -20,
     max: 20
@@ -229,7 +235,6 @@ export class EditorPageComponent {
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
-  readonly rightSidebar = viewChild<ElementRef<HTMLElement>>('rightSidebar');
   readonly sidebarScroll = viewChild<ElementRef<HTMLElement>>('sidebarScroll');
 
   readonly appVersion = packageManifest.version;
@@ -294,6 +299,8 @@ export class EditorPageComponent {
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
   readonly coarsePointer = signal(false);
   readonly mobileLayout = signal(false);
+  readonly leftSidebarCollapsed = signal(false);
+  readonly rightSidebarCollapsed = signal(false);
   readonly minimapPanPointerId = signal<number | null>(null);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
@@ -537,6 +544,35 @@ export class EditorPageComponent {
       sceneBounds.top <= visibleBounds.top;
     return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
   });
+  readonly effectiveLeftSidebarWidth = computed(() =>
+    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : this.leftSidebarWidth()
+  );
+  readonly effectiveRightSidebarWidth = computed(() =>
+    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : this.rightSidebarWidth()
+  );
+  readonly effectiveMobileRightSidebarHeight = computed(() =>
+    this.rightSidebarCollapsed()
+      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
+      : this.mobileRightSidebarHeight()
+  );
+  readonly effectiveMobileLeftSidebarHeight = computed(() =>
+    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : this.mobileLeftSidebarHeight()
+  );
+  readonly leftSidebarMinWidth = computed(() =>
+    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : 240
+  );
+  readonly rightSidebarMinWidth = computed(() =>
+    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : 280
+  );
+  readonly mobileRightSidebarMinHeight = computed(() =>
+    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : 140
+  );
+  readonly mobileLeftSidebarMinHeight = computed(() =>
+    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : 140
+  );
+  readonly tabletSidebarMinHeight = computed(() =>
+    this.leftSidebarCollapsed() && this.rightSidebarCollapsed() ? 96 : 280
+  );
   readonly inlineTextEditorLayout = computed(() => {
     const editor = this.inlineTextEditor();
     if (!editor) {
@@ -995,7 +1031,21 @@ export class EditorPageComponent {
     }));
   }
 
+  toggleSidebarCollapsed(side: 'left' | 'right'): void {
+    if (side === 'left') {
+      this.leftSidebarCollapsed.update((collapsed) => !collapsed);
+      this.sidebarResizeState.set(null);
+      return;
+    }
+
+    this.rightSidebarCollapsed.update((collapsed) => !collapsed);
+    this.sidebarResizeState.set(null);
+  }
+
   startSidebarResize(event: PointerEvent, side: 'left' | 'right'): void {
+    if ((side === 'left' && this.leftSidebarCollapsed()) || (side === 'right' && this.rightSidebarCollapsed())) {
+      return;
+    }
     event.preventDefault();
     event.stopPropagation();
     const mobileLayout = this.mobileLayout();
@@ -1138,13 +1188,13 @@ export class EditorPageComponent {
   }
 
   openSceneLayers(): void {
+    this.rightSidebarCollapsed.set(false);
     this.inspectorTab.set('scene');
     this.collapsedSections.update((sections) => ({
       ...sections,
       layers: false
     }));
     afterNextRender(() => {
-      this.rightSidebar()?.nativeElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       const scrollIntoLayers = () => {
         const sidebarScroll = this.sidebarScroll()?.nativeElement;
         const layersSection = this.layersSection()?.nativeElement;

@@ -1,9 +1,14 @@
 <div
   class="editor-shell"
-  [style.--left-sidebar-width.px]="leftSidebarWidth()"
-  [style.--right-sidebar-width.px]="rightSidebarWidth()"
-  [style.--mobile-right-sidebar-height.px]="mobileRightSidebarHeight()"
-  [style.--mobile-left-sidebar-height.px]="mobileLeftSidebarHeight()"
+  [style.--left-sidebar-width.px]="effectiveLeftSidebarWidth()"
+  [style.--right-sidebar-width.px]="effectiveRightSidebarWidth()"
+  [style.--left-sidebar-min-width.px]="leftSidebarMinWidth()"
+  [style.--right-sidebar-min-width.px]="rightSidebarMinWidth()"
+  [style.--mobile-right-sidebar-height.px]="effectiveMobileRightSidebarHeight()"
+  [style.--mobile-left-sidebar-height.px]="effectiveMobileLeftSidebarHeight()"
+  [style.--mobile-right-sidebar-min-height.px]="mobileRightSidebarMinHeight()"
+  [style.--mobile-left-sidebar-min-height.px]="mobileLeftSidebarMinHeight()"
+  [style.--tablet-sidebars-min-height.px]="tabletSidebarMinHeight()"
   (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <app-editor-topbar
     [appVersion]="appVersion"
@@ -39,7 +44,14 @@
   }
 
   <div class="workspace">
-    <aside class="left-sidebar">
+    <app-editor-left-sidebar
+      class="left-sidebar"
+      [class.is-collapsed]="leftSidebarCollapsed()"
+      [collapsed]="leftSidebarCollapsed()"
+      [mobileLayout]="mobileLayout()"
+      [iconMap]="iconMap"
+      [translate]="topbarTranslate"
+      (toggleCollapsed)="toggleSidebarCollapsed('left')">
       <section class="sidebar-block sidebar-block--intro">
         <div class="section-header section-header--static">
           <span>{{ t('library') }}</span>
@@ -204,10 +216,11 @@
           }
         </section>
       }
-    </aside>
+    </app-editor-left-sidebar>
 
     <div
       class="sidebar-resizer sidebar-resizer--left"
+      [class.is-disabled]="leftSidebarCollapsed()"
       (pointerdown)="startSidebarResize($event, 'left')"></div>
 
     <section class="canvas-panel">
@@ -862,9 +875,17 @@
 
     <div
       class="sidebar-resizer sidebar-resizer--right"
+      [class.is-disabled]="rightSidebarCollapsed()"
       (pointerdown)="startSidebarResize($event, 'right')"></div>
 
-    <aside #rightSidebar class="right-sidebar">
+    <app-editor-right-sidebar
+      class="right-sidebar"
+      [class.is-collapsed]="rightSidebarCollapsed()"
+      [collapsed]="rightSidebarCollapsed()"
+      [mobileLayout]="mobileLayout()"
+      [iconMap]="iconMap"
+      [translate]="topbarTranslate"
+      (toggleCollapsed)="toggleSidebarCollapsed('right')">
       <div class="sidebar-tabs">
         <button
           type="button"
@@ -2777,7 +2798,7 @@
           </section>
         }
       </div>
-    </aside>
+    </app-editor-right-sidebar>
   </div>
 
   @if (contextMenu(); as menu) {

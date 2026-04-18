@@ -1,0 +1,63 @@
+:host {
+  min-height: 0;
+}
+
+.sidebar-shell-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 12px 12px 0;
+  border-bottom: 1px solid transparent;
+}
+
+.sidebar-shell-toggle {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--tool-surface);
+  color: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.sidebar-shell-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.sidebar-shell-toggle svg.sidebar-shell-toggle__icon--collapsed {
+  transform: rotate(90deg);
+}
+
+.sidebar-shell-toggle svg.sidebar-shell-toggle__icon--mobile {
+  transform: rotate(0deg);
+}
+
+.sidebar-shell-toggle svg.sidebar-shell-toggle__icon--mobile.sidebar-shell-toggle__icon--collapsed {
+  transform: rotate(180deg);
+}
+
+.sidebar-shell-toggle:hover {
+  border-color: var(--tool-border-strong);
+  background: var(--toolbar-background-hover);
+}
+
+.sidebar-shell-toggle:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
