@@ -1,11 +1,11 @@
 # tikz-drawer
 
 <div align="center">
+  <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
 
-[![Version](https://img.shields.io/badge/version-1.0.13-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
+[![Version](https://img.shields.io/badge/version-1.0.12-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
 
-<br>
 
 [![Angular](https://img.shields.io/badge/Angular-21.2.0-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
@@ -13,11 +13,6 @@
 [![Vitest](https://img.shields.io/badge/Vitest-4.0.8-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.1-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.17.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
-
-</div>
-
-<div align="center">
-  <img width="150" height="150" alt="tikz-drawer" src="public/logo.png" />
 </div>
 
 ## Description
