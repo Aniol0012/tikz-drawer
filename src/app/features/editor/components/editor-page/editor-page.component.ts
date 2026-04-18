@@ -187,14 +187,14 @@ export class EditorPageComponent {
   } as const;
   private static readonly sidebarResizeLimits = {
     mobileMinHeight: 160,
-    mobileMaxHeight: 420,
+    mobileMaxHeight: 640,
     leftMinWidth: 220,
     leftMaxWidth: 420,
     rightMinWidth: 260,
     rightMaxWidth: 460
   } as const;
   private static readonly collapsedSidebarSize = {
-    desktopWidth: 56,
+    desktopWidth: 0,
     mobileHeight: 56
   } as const;
   private static readonly defaultSliderRange = {
@@ -294,11 +294,13 @@ export class EditorPageComponent {
   readonly ignoreNextShapeClickId = signal<string | null>(null);
   readonly leftSidebarWidth = signal(288);
   readonly rightSidebarWidth = signal(340);
-  readonly mobileRightSidebarHeight = signal(220);
-  readonly mobileLeftSidebarHeight = signal(250);
+  readonly mobileRightSidebarHeight = signal(320);
+  readonly mobileLeftSidebarHeight = signal(320);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
   readonly coarsePointer = signal(false);
   readonly mobileLayout = signal(false);
+  readonly sidebarsOverlayLayout = signal(false);
+  readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
   readonly rightSidebarCollapsed = signal(false);
   readonly minimapPanPointerId = signal<number | null>(null);
@@ -529,7 +531,7 @@ export class EditorPageComponent {
     };
   });
   readonly showMinimap = computed(() => {
-    if (this.mobileLayout()) {
+    if (this.mobileLayout() || this.sidebarsOverlayLayout()) {
       return false;
     }
     const sceneBounds = this.sceneContentBounds();
@@ -565,13 +567,14 @@ export class EditorPageComponent {
     this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : 280
   );
   readonly mobileRightSidebarMinHeight = computed(() =>
-    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : 140
+    this.rightSidebarCollapsed()
+      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
+      : this.mobileLayout()
+        ? 200
+        : 260
   );
   readonly mobileLeftSidebarMinHeight = computed(() =>
     this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : 140
-  );
-  readonly tabletSidebarMinHeight = computed(() =>
-    this.leftSidebarCollapsed() && this.rightSidebarCollapsed() ? 96 : 280
   );
   readonly inlineTextEditorLayout = computed(() => {
     const editor = this.inlineTextEditor();
@@ -825,6 +828,7 @@ export class EditorPageComponent {
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
       const mobileLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 760px)') ?? null;
+      const sidebarsOverlayLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 1220px)') ?? null;
       const updateCanvasSize = () => {
         this.canvasViewportWidth.set(Math.round(viewport.clientWidth));
         this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
@@ -841,12 +845,23 @@ export class EditorPageComponent {
         );
       };
       const updateMobileLayout = () => {
-        this.mobileLayout.set(mobileLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 760);
+        const isMobile = mobileLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 760;
+        this.mobileLayout.set(isMobile);
+      };
+      const updateSidebarsOverlayLayout = () => {
+        const useOverlayLayout =
+          sidebarsOverlayLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 1220;
+        this.sidebarsOverlayLayout.set(useOverlayLayout);
+        if (!useOverlayLayout) {
+          this.mobileLibraryPanelOpen.set(false);
+        }
       };
       updateCoarsePointer();
       updateMobileLayout();
+      updateSidebarsOverlayLayout();
       coarsePointerQuery?.addEventListener?.('change', updateCoarsePointer);
       mobileLayoutQuery?.addEventListener?.('change', updateMobileLayout);
+      sidebarsOverlayLayoutQuery?.addEventListener?.('change', updateSidebarsOverlayLayout);
       resizeObserver.observe(viewport);
       updateCanvasSize();
       this.restoreSavedTemplates();
@@ -887,6 +902,9 @@ export class EditorPageComponent {
       this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
       this.destroyRef.onDestroy(() => coarsePointerQuery?.removeEventListener?.('change', updateCoarsePointer));
       this.destroyRef.onDestroy(() => mobileLayoutQuery?.removeEventListener?.('change', updateMobileLayout));
+      this.destroyRef.onDestroy(() =>
+        sidebarsOverlayLayoutQuery?.removeEventListener?.('change', updateSidebarsOverlayLayout)
+      );
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
 
@@ -1048,18 +1066,18 @@ export class EditorPageComponent {
     }
     event.preventDefault();
     event.stopPropagation();
-    const mobileLayout = this.mobileLayout();
-    const axis = mobileLayout ? 'y' : 'x';
+    const stackedLayout = this.sidebarsOverlayLayout();
+    const axis = stackedLayout ? 'y' : 'x';
     this.sidebarResizeState.set({
       side,
       axis,
       startPointer: axis === 'y' ? event.clientY : event.clientX,
-      startSize: this.sidebarResizeStartSize(side, mobileLayout)
+      startSize: this.sidebarResizeStartSize(side, stackedLayout)
     });
   }
 
-  private sidebarResizeStartSize(side: 'left' | 'right', mobileLayout: boolean): number {
-    if (mobileLayout) {
+  private sidebarResizeStartSize(side: 'left' | 'right', stackedLayout: boolean): number {
+    if (stackedLayout) {
       return side === 'left' ? this.mobileLeftSidebarHeight() : this.mobileRightSidebarHeight();
     }
 
@@ -1100,12 +1118,37 @@ export class EditorPageComponent {
   }
 
   toggleFileMenu(): void {
-    this.fileMenuOpen.update((isOpen) => !isOpen);
+    this.fileMenuOpen.update((isOpen) => {
+      const nextOpen = !isOpen;
+      if (nextOpen) {
+        this.mobileLibraryPanelOpen.set(false);
+      }
+      return nextOpen;
+    });
   }
 
   closeFileMenu(): void {
     this.fileMenuOpen.set(false);
     this.textSymbolPaletteOpen.set(false);
+  }
+
+  openMobileLibraryPanel(): void {
+    if (!this.sidebarsOverlayLayout()) {
+      return;
+    }
+
+    this.leftSidebarCollapsed.set(false);
+    this.mobileLibraryPanelOpen.set(true);
+  }
+
+  closeMobileLibraryPanel(): void {
+    this.mobileLibraryPanelOpen.set(false);
+  }
+
+  private closeMobileLibraryPanelIfNeeded(): void {
+    if (this.sidebarsOverlayLayout()) {
+      this.mobileLibraryPanelOpen.set(false);
+    }
   }
 
   openExportModal(mode: ExportMode = 'snippet'): void {
@@ -1222,6 +1265,7 @@ export class EditorPageComponent {
       });
       this.closeContextMenu();
       this.closeFileMenu();
+      this.closeMobileLibraryPanelIfNeeded();
       return;
     }
 
@@ -1231,12 +1275,14 @@ export class EditorPageComponent {
         this.activeTool.set('select');
         this.inspectorTab.set('properties');
       });
+      this.closeMobileLibraryPanelIfNeeded();
       return;
     }
 
     this.activeTool.set(toolId);
     this.closeContextMenu();
     this.closeFileMenu();
+    this.closeMobileLibraryPanelIfNeeded();
   }
 
   openSelectedTableDialog(): void {
@@ -1402,6 +1448,7 @@ export class EditorPageComponent {
   }
 
   applyScenePreset(presetId: string): void {
+    this.closeMobileLibraryPanelIfNeeded();
     this.requestSceneReplacement(presetId);
   }
 
@@ -3503,6 +3550,10 @@ export class EditorPageComponent {
           this.closeFileMenu();
           return;
         }
+        if (this.mobileLibraryPanelOpen()) {
+          this.closeMobileLibraryPanel();
+          return;
+        }
         if (this.contextMenu()) {
           this.closeContextMenu();
           return;
@@ -3571,6 +3622,7 @@ export class EditorPageComponent {
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
     this.minimapPanPointerId.set(null);
+    this.mobileLibraryPanelOpen.set(false);
   }
 
   handleWindowPointerMove(event: PointerEvent): void {

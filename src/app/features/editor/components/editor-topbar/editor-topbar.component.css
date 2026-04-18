@@ -412,6 +412,10 @@
   text-align: left;
 }
 
+.dropdown-row--mobile-library {
+  min-height: 38px;
+}
+
 .dropdown-divider {
   height: 1px;
   background: var(--border);

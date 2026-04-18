@@ -36,6 +36,7 @@ export class EditorTopbarComponent {
   readonly theme = input.required<ThemeMode>();
   readonly language = input.required<LanguageCode>();
   readonly mobileLayout = input.required<boolean>();
+  readonly overlayLibraryLayout = input.required<boolean>();
   readonly viewportWidth = input.required<number>();
   readonly fileMenuOpen = input.required<boolean>();
   readonly activeTool = input.required<string>();
@@ -52,6 +53,7 @@ export class EditorTopbarComponent {
   readonly copyShareLink = output<void>();
   readonly fileMenuToggle = output<void>();
   readonly fileMenuClose = output<void>();
+  readonly mobileLibraryOpen = output<void>();
   readonly exportOpen = output<void>();
 
   readonly compactTopbarActions = signal(false);

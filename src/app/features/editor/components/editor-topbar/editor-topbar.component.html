@@ -65,8 +65,25 @@
               </button>
             }
 
-            @if (mobileLayout()) {
+            @if (overlayLibraryLayout()) {
               @if (compactTopbarActions()) {
+                <div class="dropdown-divider"></div>
+              }
+              <button
+                class="dropdown-row dropdown-row--mobile-library"
+                type="button"
+                (click)="mobileLibraryOpen.emit(); fileMenuClose.emit()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icon('library')"></path>
+                </svg>
+                <span>{{ t('library') }}</span>
+              </button>
+            }
+
+            @if (mobileLayout()) {
+              @if (overlayLibraryLayout()) {
+                <div class="dropdown-divider"></div>
+              } @else if (compactTopbarActions()) {
                 <div class="dropdown-divider"></div>
               }
               <div class="dropdown-menu__group dropdown-menu__group--topbar-mobile">

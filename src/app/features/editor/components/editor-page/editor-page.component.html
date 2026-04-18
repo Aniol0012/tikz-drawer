@@ -8,7 +8,6 @@
   [style.--mobile-left-sidebar-height.px]="effectiveMobileLeftSidebarHeight()"
   [style.--mobile-right-sidebar-min-height.px]="mobileRightSidebarMinHeight()"
   [style.--mobile-left-sidebar-min-height.px]="mobileLeftSidebarMinHeight()"
-  [style.--tablet-sidebars-min-height.px]="tabletSidebarMinHeight()"
   (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <app-editor-topbar
     [appVersion]="appVersion"
@@ -16,6 +15,7 @@
     [theme]="preferences().theme"
     [language]="language()"
     [mobileLayout]="mobileLayout()"
+    [overlayLibraryLayout]="sidebarsOverlayLayout()"
     [viewportWidth]="canvasViewportWidth()"
     [fileMenuOpen]="fileMenuOpen()"
     [activeTool]="activeTool()"
@@ -31,6 +31,7 @@
     (copyShareLink)="copyShareLink()"
     (fileMenuToggle)="toggleFileMenu()"
     (fileMenuClose)="closeFileMenu()"
+    (mobileLibraryOpen)="openMobileLibraryPanel()"
     (exportOpen)="openExportModal()"></app-editor-topbar>
 
   @if (notifications().length) {
@@ -46,12 +47,9 @@
   <div class="workspace">
     <app-editor-left-sidebar
       class="left-sidebar"
-      [class.is-collapsed]="leftSidebarCollapsed()"
-      [collapsed]="leftSidebarCollapsed()"
-      [mobileLayout]="mobileLayout()"
-      [iconMap]="iconMap"
-      [translate]="topbarTranslate"
-      (toggleCollapsed)="toggleSidebarCollapsed('left')">
+      [class.is-overlay-layout]="sidebarsOverlayLayout()"
+      [class.is-overlay-panel-open]="sidebarsOverlayLayout() && mobileLibraryPanelOpen()"
+      [class.is-collapsed]="leftSidebarCollapsed()">
       <section class="sidebar-block sidebar-block--intro">
         <div class="section-header section-header--static">
           <span>{{ t('library') }}</span>
@@ -218,10 +216,26 @@
       }
     </app-editor-left-sidebar>
 
-    <div
-      class="sidebar-resizer sidebar-resizer--left"
-      [class.is-disabled]="leftSidebarCollapsed()"
-      (pointerdown)="startSidebarResize($event, 'left')"></div>
+    @if (!sidebarsOverlayLayout()) {
+      <div
+        class="sidebar-resizer sidebar-resizer--left"
+        [class.is-collapsed]="leftSidebarCollapsed()"
+        (pointerdown)="startSidebarResize($event, 'left')">
+        <button
+          class="sidebar-resizer-toggle sidebar-resizer-toggle--left"
+          type="button"
+          [title]="leftSidebarCollapsed() ? t('expand') : t('collapse')"
+          [attr.aria-label]="leftSidebarCollapsed() ? t('expand') : t('collapse')"
+          [attr.aria-expanded]="!leftSidebarCollapsed()"
+          [class.is-collapsed]="leftSidebarCollapsed()"
+          (pointerdown)="$event.stopPropagation()"
+          (click)="toggleSidebarCollapsed('left')">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.chevronDown"></path>
+          </svg>
+        </button>
+      </div>
+    }
 
     <section class="canvas-panel">
       <div
@@ -875,17 +889,26 @@
 
     <div
       class="sidebar-resizer sidebar-resizer--right"
-      [class.is-disabled]="rightSidebarCollapsed()"
-      (pointerdown)="startSidebarResize($event, 'right')"></div>
-
-    <app-editor-right-sidebar
-      class="right-sidebar"
       [class.is-collapsed]="rightSidebarCollapsed()"
-      [collapsed]="rightSidebarCollapsed()"
-      [mobileLayout]="mobileLayout()"
-      [iconMap]="iconMap"
-      [translate]="topbarTranslate"
-      (toggleCollapsed)="toggleSidebarCollapsed('right')">
+      [class.is-stacked]="sidebarsOverlayLayout()"
+      (pointerdown)="startSidebarResize($event, 'right')">
+      <button
+        class="sidebar-resizer-toggle sidebar-resizer-toggle--right"
+        type="button"
+        [title]="rightSidebarCollapsed() ? t('expand') : t('collapse')"
+        [attr.aria-label]="rightSidebarCollapsed() ? t('expand') : t('collapse')"
+        [attr.aria-expanded]="!rightSidebarCollapsed()"
+        [class.is-collapsed]="rightSidebarCollapsed()"
+        [class.is-stacked]="sidebarsOverlayLayout()"
+        (pointerdown)="$event.stopPropagation()"
+        (click)="toggleSidebarCollapsed('right')">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.chevronDown"></path>
+        </svg>
+      </button>
+    </div>
+
+    <app-editor-right-sidebar class="right-sidebar" [class.is-collapsed]="rightSidebarCollapsed()">
       <div class="sidebar-tabs">
         <button
           type="button"
@@ -2800,6 +2823,14 @@
       </div>
     </app-editor-right-sidebar>
   </div>
+
+  @if (sidebarsOverlayLayout() && mobileLibraryPanelOpen()) {
+    <button
+      class="mobile-library-backdrop"
+      type="button"
+      [attr.aria-label]="t('close')"
+      (click)="closeMobileLibraryPanel()"></button>
+  }
 
   @if (contextMenu(); as menu) {
     <div
