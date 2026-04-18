@@ -555,7 +555,9 @@ export class EditorPageComponent {
   );
   readonly effectiveMobileRightSidebarHeight = computed(() =>
     this.rightSidebarCollapsed()
-      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
+      ? this.sidebarsOverlayLayout()
+        ? 0
+        : EditorPageComponent.collapsedSidebarSize.mobileHeight
       : this.mobileRightSidebarHeight()
   );
   readonly effectiveMobileLeftSidebarHeight = computed(() =>
@@ -569,7 +571,9 @@ export class EditorPageComponent {
   );
   readonly mobileRightSidebarMinHeight = computed(() =>
     this.rightSidebarCollapsed()
-      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
+      ? this.sidebarsOverlayLayout()
+        ? 0
+        : EditorPageComponent.collapsedSidebarSize.mobileHeight
       : this.mobileLayout()
         ? 200
         : 260
