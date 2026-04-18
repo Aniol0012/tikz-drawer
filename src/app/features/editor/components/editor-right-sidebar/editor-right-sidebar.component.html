@@ -1,1 +1,26 @@
-<ng-content></ng-content>
+@if (showSidebarContent()) {
+  <div class="sidebar-tabs">
+    <button
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'properties'"
+      (click)="editor().setInspectorTab('properties')">
+      {{ editor().t('properties') }}
+    </button>
+    <button
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'scene'"
+      (click)="editor().setInspectorTab('scene')">
+      {{ editor().t('sceneTab') }}
+    </button>
+    <button
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'code'"
+      (click)="editor().setInspectorTab('code')">
+      {{ editor().t('code') }}
+    </button>
+  </div>
+
+  <div #sidebarScroll class="sidebar-scroll">
+    <ng-content></ng-content>
+  </div>
+}

@@ -235,9 +235,10 @@ export class EditorPageComponent {
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
-  readonly sidebarScroll = viewChild<ElementRef<HTMLElement>>('sidebarScroll');
+  readonly rightSidebar = viewChild(EditorRightSidebarComponent);
 
   readonly appVersion = packageManifest.version;
+  readonly editorApi = this;
   readonly scene = this.store.scene;
   readonly preferences = this.store.preferences;
   readonly selectedShape = this.store.selectedShape;
@@ -1239,7 +1240,7 @@ export class EditorPageComponent {
     }));
     afterNextRender(() => {
       const scrollIntoLayers = () => {
-        const sidebarScroll = this.sidebarScroll()?.nativeElement;
+        const sidebarScroll = this.rightSidebar()?.sidebarScroll()?.nativeElement;
         const layersSection = this.layersSection()?.nativeElement;
         if (sidebarScroll && layersSection) {
           const top = Math.max(layersSection.offsetTop - 12, 0);
