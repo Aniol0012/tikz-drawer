@@ -17,7 +17,7 @@
 </div>
 
 <div align="center">
-  <img width="150" height="150" alt="tikz-drawer" src="https://github.com/user-attachments/assets/505031a2-ebfa-4339-a4f8-0dac3717d3bf" />
+  <img width="150" height="150" alt="tikz-drawer" src="public/logo.png" />
 </div>
 
 ## Description
