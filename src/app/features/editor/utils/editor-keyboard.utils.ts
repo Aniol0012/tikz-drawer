@@ -3,6 +3,7 @@ import type { ToolId } from '../components/editor-page/editor-page.types';
 export type ModifierKey = 'space' | 'shift' | 'control' | 'meta' | 'alt';
 
 type KeyboardShortcutEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
+type SelectionModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>;
 
 const TOOL_ID_BY_SHORTCUT_KEY: Readonly<Record<PropertyKey, ToolId>> = {
   v: 'select',
@@ -42,6 +43,9 @@ export const pressedModifierFromKey = (key: string): ModifierKey | null => {
 
 const isPrimaryModifierPressed = (event: Pick<KeyboardEvent, 'ctrlKey' | 'metaKey'>): boolean =>
   event.ctrlKey || event.metaKey;
+
+export const isSelectionModifierPressed = (event: SelectionModifierEvent): boolean =>
+  event.shiftKey || event.ctrlKey || event.metaKey;
 
 export const isSelectAllShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'a';

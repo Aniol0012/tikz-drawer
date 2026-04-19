@@ -175,6 +175,7 @@ import {
   isEscapeShortcutKey,
   isPasteShortcut,
   isRedoShortcut,
+  isSelectionModifierPressed,
   isSelectAllShortcut,
   isUndoShortcut,
   isZoomInShortcutKey,
@@ -964,7 +965,7 @@ export class EditorPageComponent {
       this.restoreSavedTemplates();
       this.restorePinnedTools();
       this.pinnedToolsReady.set(true);
-      void this.restoreSharedSceneFromUrl();
+      this.runAsync(this.restoreSharedSceneFromUrl());
       const handleStorage = (event: StorageEvent) => {
         if (event.key === this.languageStorageKey && event.newValue) {
           if (event.newValue === 'ca' || event.newValue === 'es' || event.newValue === 'en') {
@@ -1011,7 +1012,7 @@ export class EditorPageComponent {
       this.viewportCenter();
       this.store.importCode();
       this.latexExportConfig();
-      void this.refreshShareUrl();
+      this.runAsync(this.refreshShareUrl());
     });
 
     effect(() => {
@@ -1696,15 +1697,15 @@ export class EditorPageComponent {
   }
 
   copyExportedCode(): void {
-    void navigator.clipboard?.writeText(this.snippetExport().code);
+    this.copyTextToClipboard(this.snippetExport().code);
   }
 
   copyStandaloneCode(): void {
-    void navigator.clipboard?.writeText(this.standaloneDocument());
+    this.copyTextToClipboard(this.standaloneDocument());
   }
 
   copySnippetImports(): void {
-    void navigator.clipboard?.writeText(this.snippetExport().imports);
+    this.copyTextToClipboard(this.snippetExport().imports);
   }
 
   copyCurrentExportCode(): void {
@@ -1748,19 +1749,13 @@ export class EditorPageComponent {
     event.stopPropagation();
     this.focusCanvasViewport();
 
-    if (this.ignoreNextShapeClickId() === shape.id) {
-      this.ignoreNextShapeClickId.set(null);
+    if (this.consumeIgnoredShapeClick(shape.id)) {
       return;
     }
 
     const wasSingleSelected = this.selectionCount() === 1 && this.selectedShape()?.id === shape.id;
 
-    if (this.activeTool() !== 'select') {
-      this.recentSelectedShapeTap.set(null);
-      this.closeInlineTextEditor();
-      if (!this.canPreviewInsert(this.activeTool())) {
-        this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
-      }
+    if (this.handleShapeClickWhileToolInactive(event)) {
       return;
     }
 
@@ -1770,32 +1765,13 @@ export class EditorPageComponent {
       return;
     }
 
-    if (shape.kind !== 'text') {
-      if (wasSingleSelected && event.detail >= 2) {
-        event.preventDefault();
-        const textShape = this.insertCenteredTextForSelectedShape(shape);
-        if (textShape) {
-          this.openInlineTextEditor(textShape);
-        }
-        this.recentSelectedShapeTap.set(null);
-        return;
-      }
-
-      if (event.detail === 1 && wasSingleSelected) {
-        this.recentSelectedShapeTap.set({ shapeId: shape.id, timestamp: Date.now() });
-      } else if (event.detail === 1) {
-        this.recentSelectedShapeTap.set(null);
-      }
-    } else {
-      this.recentSelectedShapeTap.set(null);
+    if (this.handleNonTextShapeClick(event, shape, wasSingleSelected)) {
+      return;
     }
 
     this.closeInlineTextEditor();
 
-    if (event.ctrlKey || event.metaKey || event.shiftKey) {
-      this.recentSelectedShapeTap.set(null);
-      this.toggleShapeSetSelection(shape);
-      this.setInspectorTab('properties');
+    if (this.handleShapeClickWithSelectionModifier(event, shape)) {
       return;
     }
 
@@ -1803,6 +1779,62 @@ export class EditorPageComponent {
       this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
+  }
+
+  private consumeIgnoredShapeClick(shapeId: string): boolean {
+    if (this.ignoreNextShapeClickId() !== shapeId) {
+      return false;
+    }
+    this.ignoreNextShapeClickId.set(null);
+    return true;
+  }
+
+  private handleShapeClickWhileToolInactive(event: MouseEvent): boolean {
+    if (this.activeTool() === 'select') {
+      return false;
+    }
+
+    this.recentSelectedShapeTap.set(null);
+    this.closeInlineTextEditor();
+    if (!this.canPreviewInsert(this.activeTool())) {
+      this.addShapeAt(this.toScenePoint(event.clientX, event.clientY));
+    }
+    return true;
+  }
+
+  private handleNonTextShapeClick(event: MouseEvent, shape: CanvasShape, wasSingleSelected: boolean): boolean {
+    if (shape.kind === 'text') {
+      this.recentSelectedShapeTap.set(null);
+      return false;
+    }
+
+    if (wasSingleSelected && event.detail >= 2) {
+      event.preventDefault();
+      const textShape = this.insertCenteredTextForSelectedShape(shape);
+      if (textShape) {
+        this.openInlineTextEditor(textShape);
+      }
+      this.recentSelectedShapeTap.set(null);
+      return true;
+    }
+
+    if (event.detail === 1 && wasSingleSelected) {
+      this.recentSelectedShapeTap.set({ shapeId: shape.id, timestamp: Date.now() });
+    } else if (event.detail === 1) {
+      this.recentSelectedShapeTap.set(null);
+    }
+    return false;
+  }
+
+  private handleShapeClickWithSelectionModifier(event: MouseEvent, shape: CanvasShape): boolean {
+    if (!isSelectionModifierPressed(event)) {
+      return false;
+    }
+
+    this.recentSelectedShapeTap.set(null);
+    this.toggleShapeSetSelection(shape);
+    this.setInspectorTab('properties');
+    return true;
   }
 
   onShapeDoubleClick(event: MouseEvent, shape: CanvasShape): void {
@@ -2519,7 +2551,7 @@ export class EditorPageComponent {
         this.cutSelected();
         break;
       case 'paste':
-        void this.pasteClipboard();
+        this.runAsync(this.pasteClipboard());
         break;
       case 'duplicate':
         this.duplicateSelected();
@@ -2540,7 +2572,7 @@ export class EditorPageComponent {
         this.ungroupSelected();
         break;
       case 'png':
-        void this.downloadCanvasPng();
+        this.runAsync(this.downloadCanvasPng());
         break;
     }
     this.closeContextMenu();
@@ -2609,7 +2641,7 @@ export class EditorPageComponent {
         pointerId: event.pointerId,
         startWorldPoint: this.toScenePoint(event.clientX, event.clientY),
         currentWorldPoint: this.toScenePoint(event.clientX, event.clientY),
-        additive: event.shiftKey || event.ctrlKey || event.metaKey
+        additive: isSelectionModifierPressed(event)
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
     }
@@ -2641,31 +2673,16 @@ export class EditorPageComponent {
   }
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
-    if (this.activeTool() !== 'select' || event.button !== 0 || this.spacePressed()) {
+    if (!this.canStartMove(event)) {
       this.recentSelectedShapeTap.set(null);
       return;
     }
 
-    const plainPrimaryGesture = !event.shiftKey && !event.ctrlKey && !event.metaKey;
+    const plainPrimaryGesture = !isSelectionModifierPressed(event);
     const isSingleSelectedShape = this.selectionCount() === 1 && this.selectedShape()?.id === shape.id;
 
     if (shape.kind === 'text') {
-      this.recentSelectedShapeTap.set(null);
-      if (event.detail >= 2 || this.isRepeatedTextTap(shape.id)) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.startTextEditing(shape);
-        return;
-      }
-
-      this.recentTextTap.set({ shapeId: shape.id, timestamp: Date.now() });
-
-      if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !this.selectionContainsShape(shape.id)) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.selectShapeSet(shape);
-        this.setInspectorTab('properties');
-        this.ignoreNextCanvasClick.set(true);
+      if (this.handleMoveStartForTextShape(event, shape)) {
         return;
       }
     } else {
@@ -2673,14 +2690,48 @@ export class EditorPageComponent {
       this.recentSelectedShapeTap.set(null);
     }
 
+    if (this.prepareMoveSelection(event, shape)) {
+      return;
+    }
+
+    this.beginMoveInteraction(event, shape, plainPrimaryGesture, isSingleSelectedShape);
+  }
+
+  private canStartMove(event: PointerEvent): boolean {
+    return this.activeTool() === 'select' && event.button === 0 && !this.spacePressed();
+  }
+
+  private handleMoveStartForTextShape(event: PointerEvent, shape: TextCanvasShape): boolean {
+    this.recentSelectedShapeTap.set(null);
+    if (event.detail >= 2 || this.isRepeatedTextTap(shape.id)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.startTextEditing(shape);
+      return true;
+    }
+
+    this.recentTextTap.set({ shapeId: shape.id, timestamp: Date.now() });
+    if (!isSelectionModifierPressed(event) && !this.selectionContainsShape(shape.id)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.selectShapeSet(shape);
+      this.setInspectorTab('properties');
+      this.ignoreNextCanvasClick.set(true);
+      return true;
+    }
+
+    return false;
+  }
+
+  private prepareMoveSelection(event: PointerEvent, shape: CanvasShape): boolean {
     event.preventDefault();
     event.stopPropagation();
 
-    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    if (isSelectionModifierPressed(event)) {
       this.toggleShapeSetSelection(shape);
       this.setInspectorTab('properties');
       this.ignoreNextShapeClickId.set(shape.id);
-      return;
+      return true;
     }
 
     if (!this.selectionContainsShape(shape.id)) {
@@ -2688,11 +2739,20 @@ export class EditorPageComponent {
       if (event.pointerType === 'touch') {
         this.setInspectorTab('properties');
         this.ignoreNextCanvasClick.set(true);
-        return;
+        return true;
       }
     }
-    this.setInspectorTab('properties');
 
+    this.setInspectorTab('properties');
+    return false;
+  }
+
+  private beginMoveInteraction(
+    event: PointerEvent,
+    shape: CanvasShape,
+    plainPrimaryGesture: boolean,
+    isSingleSelectedShape: boolean
+  ): void {
     this.store.recordHistoryCheckpoint();
     this.interactionState.set({
       kind: 'move',
@@ -2790,84 +2850,127 @@ export class EditorPageComponent {
       return;
     }
 
-    if (interactionState.kind === 'pending-pan') {
-      const deltaClientX = event.clientX - interactionState.startClientPoint.x;
-      const deltaClientY = event.clientY - interactionState.startClientPoint.y;
-      const distance = Math.hypot(deltaClientX, deltaClientY);
-      if (distance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX) {
-        this.interactionState.set({
-          ...interactionState,
-          lastClientPoint: { x: event.clientX, y: event.clientY }
-        });
+    switch (interactionState.kind) {
+      case 'pending-pan':
+        this.handlePendingPanPointerMove(event, interactionState);
         return;
-      }
-
-      this.suppressContextMenuBriefly();
-      this.suppressNextContextMenu.set(interactionState.sourceButton === 2);
-      this.interactionState.set({
-        kind: 'pan',
-        pointerId: interactionState.pointerId,
-        lastClientPoint: { x: event.clientX, y: event.clientY },
-        sourceButton: interactionState.sourceButton
-      });
-      return;
+      case 'move':
+        this.handleMovePointerMove(event, interactionState);
+        return;
+      case 'pan':
+        this.handlePanPointerMove(event, interactionState);
+        return;
+      case 'marquee':
+        this.handleMarqueePointerMove(event, interactionState);
+        return;
+      case 'insert':
+        this.handleInsertPointerMove(event, interactionState);
+        return;
+      case 'freehand':
+        this.handleFreehandPointerMove(event, interactionState);
+        return;
+      case 'resize':
+        this.handleResizePointerMove(event, interactionState);
+        return;
     }
+  }
 
-    if (interactionState.kind === 'move') {
-      const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
-      const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
-      const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
-      const nextShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
-      this.store.replaceShapes(nextShapes);
-      return;
-    }
-
-    if (interactionState.kind === 'pan') {
-      const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
-      const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
-      const scale = this.preferences().scale;
-      this.viewportCenter.update((viewportCenter) => ({
-        x: viewportCenter.x - deltaClientX / scale,
-        y: viewportCenter.y + deltaClientY / scale
-      }));
-      this.interactionState.set({ ...interactionState, lastClientPoint: { x: event.clientX, y: event.clientY } });
-      return;
-    }
-
-    if (interactionState.kind === 'marquee') {
+  private handlePendingPanPointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'pending-pan' }>
+  ): void {
+    const deltaClientX = event.clientX - interactionState.startClientPoint.x;
+    const deltaClientY = event.clientY - interactionState.startClientPoint.y;
+    const distance = Math.hypot(deltaClientX, deltaClientY);
+    if (distance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX) {
       this.interactionState.set({
         ...interactionState,
-        currentWorldPoint: this.toScenePoint(event.clientX, event.clientY)
+        lastClientPoint: { x: event.clientX, y: event.clientY }
       });
       return;
     }
 
-    if (interactionState.kind === 'insert') {
-      this.interactionState.set({
-        ...interactionState,
-        currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
-      });
+    this.suppressContextMenuBriefly();
+    this.suppressNextContextMenu.set(interactionState.sourceButton === 2);
+    this.interactionState.set({
+      kind: 'pan',
+      pointerId: interactionState.pointerId,
+      lastClientPoint: { x: event.clientX, y: event.clientY },
+      sourceButton: interactionState.sourceButton
+    });
+  }
+
+  private handleMovePointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'move' }>
+  ): void {
+    const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
+    const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
+    const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
+    const nextShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
+    this.store.replaceShapes(nextShapes);
+  }
+
+  private handlePanPointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'pan' }>
+  ): void {
+    const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
+    const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
+    const scale = this.preferences().scale;
+    this.viewportCenter.update((viewportCenter) => ({
+      x: viewportCenter.x - deltaClientX / scale,
+      y: viewportCenter.y + deltaClientY / scale
+    }));
+    this.interactionState.set({ ...interactionState, lastClientPoint: { x: event.clientX, y: event.clientY } });
+  }
+
+  private handleMarqueePointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'marquee' }>
+  ): void {
+    this.interactionState.set({
+      ...interactionState,
+      currentWorldPoint: this.toScenePoint(event.clientX, event.clientY)
+    });
+  }
+
+  private handleInsertPointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'insert' }>
+  ): void {
+    this.interactionState.set({
+      ...interactionState,
+      currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
+    });
+  }
+
+  private handleFreehandPointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'freehand' }>
+  ): void {
+    const nextPoint = this.toScenePoint(event.clientX, event.clientY);
+    const lastPoint = interactionState.points.at(-1);
+    if (!lastPoint) {
+      this.interactionState.set({ ...interactionState, points: [nextPoint] });
       return;
     }
 
-    if (interactionState.kind === 'freehand') {
-      const nextPoint = this.toScenePoint(event.clientX, event.clientY);
-      const lastPoint = interactionState.points.at(-1);
-      if (!lastPoint) {
-        this.interactionState.set({ ...interactionState, points: [nextPoint] });
-        return;
-      }
-      const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
-      if (distance < FREEHAND_POINT_MIN_DISTANCE) {
-        return;
-      }
-      this.interactionState.set({
-        ...interactionState,
-        points: [...interactionState.points, nextPoint]
-      });
+    const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
+    if (distance < FREEHAND_POINT_MIN_DISTANCE) {
       return;
     }
 
+    this.interactionState.set({
+      ...interactionState,
+      points: [...interactionState.points, nextPoint]
+    });
+  }
+
+  private handleResizePointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'resize' }>
+  ): void {
     const nextPoint = this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY));
     if (interactionState.initialShape) {
       const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
@@ -2898,93 +3001,139 @@ export class EditorPageComponent {
       return;
     }
 
-    if (interactionState.kind === 'marquee') {
-      const marqueeShapeIds = this.findShapesInsideBounds({
-        left: Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
-        right: Math.max(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
-        bottom: Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y),
-        top: Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y)
-      });
-      this.store.setSelectedShapes(
-        interactionState.additive
-          ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds]
-          : marqueeShapeIds
-      );
+    switch (interactionState.kind) {
+      case 'marquee':
+        this.finishMarqueeInteraction(interactionState);
+        break;
+      case 'insert':
+        this.finishInsertInteraction(interactionState);
+        break;
+      case 'freehand':
+        this.finishFreehandInteraction(interactionState);
+        break;
+      case 'move':
+        this.finishMoveInteraction(event, interactionState);
+        break;
+      case 'pan':
+        this.finishPanInteraction(interactionState);
+        break;
+      case 'pending-pan':
+        this.releaseCanvasPointerCapture(event.pointerId);
+        this.interactionState.set(null);
+        return;
+      case 'resize':
+        break;
     }
 
-    if (interactionState.kind === 'insert') {
-      const previewShapes = this.buildInsertionPreviewShapes(
-        interactionState.toolId,
-        interactionState.startWorldPoint,
-        interactionState.currentWorldPoint
-      );
-      if (previewShapes.length) {
-        this.runSceneMutation(() => {
-          this.store.addShapes(previewShapes.map((shape) => ({ ...shape, id: crypto.randomUUID() })));
-          this.activeTool.set('select');
-          this.inspectorTab.set('properties');
-        });
-      }
-    }
+    this.releaseCanvasPointerCapture(event.pointerId);
+    this.ignoreNextCanvasClick.set(true);
+    this.interactionState.set(null);
+  }
 
-    if (interactionState.kind === 'freehand') {
-      const line = this.buildFreehandLine(interactionState.points);
-      if (line) {
-        this.runSceneMutation(() => {
-          this.store.addShapes([line]);
-          this.store.selectShape(line.id);
-          this.inspectorTab.set('properties');
-        });
-      }
-    }
+  private finishMarqueeInteraction(interactionState: Extract<InteractionState, { kind: 'marquee' }>): void {
+    const marqueeShapeIds = this.findShapesInsideBounds({
+      left: Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
+      right: Math.max(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x),
+      bottom: Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y),
+      top: Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y)
+    });
+    this.store.setSelectedShapes(
+      interactionState.additive
+        ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds]
+        : marqueeShapeIds
+    );
+  }
 
-    if (interactionState.kind === 'move') {
-      const tapDistance = Math.hypot(
-        event.clientX - interactionState.startClientPoint.x,
-        event.clientY - interactionState.startClientPoint.y
-      );
-      const tapShapeId = interactionState.tapEligibleShapeId;
-      if (tapShapeId && tapDistance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX) {
-        if (this.isRepeatedSelectedShapeTap(tapShapeId)) {
-          const shape = this.scene().shapes.find((candidate) => candidate.id === tapShapeId);
-          if (
-            shape &&
-            shape.kind !== 'text' &&
-            this.selectionCount() === 1 &&
-            this.selectedShape()?.id === tapShapeId
-          ) {
-            const textShape = this.insertCenteredTextForSelectedShape(shape);
-            if (textShape) {
-              this.openInlineTextEditor(textShape);
-            }
-          }
-        } else {
-          this.recentSelectedShapeTap.set({ shapeId: tapShapeId, timestamp: Date.now() });
-        }
-      } else {
-        this.recentSelectedShapeTap.set(null);
-      }
-    }
-
-    if (interactionState.kind === 'pan' && interactionState.sourceButton === 2) {
-      this.suppressNextContextMenu.set(true);
-      this.suppressContextMenuBriefly();
-    }
-
-    if (interactionState.kind === 'pending-pan') {
-      if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
-        this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
-      }
-      this.interactionState.set(null);
+  private finishInsertInteraction(interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
+    const previewShapes = this.buildInsertionPreviewShapes(
+      interactionState.toolId,
+      interactionState.startWorldPoint,
+      interactionState.currentWorldPoint
+    );
+    if (!previewShapes.length) {
       return;
     }
 
-    if (this.canvasSvg().nativeElement.hasPointerCapture(event.pointerId)) {
-      this.canvasSvg().nativeElement.releasePointerCapture(event.pointerId);
+    this.runSceneMutation(() => {
+      this.store.addShapes(previewShapes.map((shape) => ({ ...shape, id: crypto.randomUUID() })));
+      this.activeTool.set('select');
+      this.inspectorTab.set('properties');
+    });
+  }
+
+  private finishFreehandInteraction(interactionState: Extract<InteractionState, { kind: 'freehand' }>): void {
+    const line = this.buildFreehandLine(interactionState.points);
+    if (!line) {
+      return;
     }
 
-    this.ignoreNextCanvasClick.set(true);
-    this.interactionState.set(null);
+    this.runSceneMutation(() => {
+      this.store.addShapes([line]);
+      this.store.selectShape(line.id);
+      this.inspectorTab.set('properties');
+    });
+  }
+
+  private finishMoveInteraction(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'move' }>
+  ): void {
+    const tapShapeId = this.resolveMoveTapShapeId(event, interactionState);
+    if (!tapShapeId) {
+      this.recentSelectedShapeTap.set(null);
+      return;
+    }
+
+    if (this.isRepeatedSelectedShapeTap(tapShapeId)) {
+      this.openInlineEditorForTappedShape(tapShapeId);
+      return;
+    }
+
+    this.recentSelectedShapeTap.set({ shapeId: tapShapeId, timestamp: Date.now() });
+  }
+
+  private resolveMoveTapShapeId(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'move' }>
+  ): string | null {
+    const tapShapeId = interactionState.tapEligibleShapeId;
+    if (!tapShapeId) {
+      return null;
+    }
+
+    const tapDistance = Math.hypot(
+      event.clientX - interactionState.startClientPoint.x,
+      event.clientY - interactionState.startClientPoint.y
+    );
+    return tapDistance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX ? tapShapeId : null;
+  }
+
+  private openInlineEditorForTappedShape(shapeId: string): void {
+    const shape = this.scene().shapes.find((candidate) => candidate.id === shapeId);
+    if (!shape || shape.kind === 'text' || this.selectionCount() !== 1 || this.selectedShape()?.id !== shapeId) {
+      return;
+    }
+
+    const textShape = this.insertCenteredTextForSelectedShape(shape);
+    if (textShape) {
+      this.openInlineTextEditor(textShape);
+    }
+  }
+
+  private finishPanInteraction(interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
+    if (interactionState.sourceButton !== 2) {
+      return;
+    }
+
+    this.suppressNextContextMenu.set(true);
+    this.suppressContextMenuBriefly();
+  }
+
+  private releaseCanvasPointerCapture(pointerId: number): void {
+    const canvas = this.canvasSvg().nativeElement;
+    if (canvas.hasPointerCapture(pointerId)) {
+      canvas.releasePointerCapture(pointerId);
+    }
   }
 
   onCanvasWheel(event: WheelEvent): void {
@@ -3310,8 +3459,11 @@ export class EditorPageComponent {
   }
 
   arrowMarkerRefX(shape: LineShape, side: ArrowEndpoint): number {
-    void side;
-    return this.arrowMarkerGeometry(shape).refX;
+    const sideOffsetByEndpoint: Readonly<Record<ArrowEndpoint, number>> = {
+      start: 0,
+      end: 0
+    };
+    return this.arrowMarkerGeometry(shape).refX + sideOffsetByEndpoint[side];
   }
 
   arrowMarkerRefY(shape: LineShape): number {
@@ -3489,55 +3641,17 @@ export class EditorPageComponent {
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {
-    const modifier = pressedModifierFromKey(event.key);
-    if (modifier) {
-      this.setModifierPressed(modifier, true);
-      if (
-        modifier === 'space' &&
-        !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-      ) {
-        event.preventDefault();
-      }
-    }
+    this.handleModifierKeydown(event);
 
     if (this.isEditableTarget(event.target)) {
       return;
     }
 
-    if (isSelectAllShortcut(event)) {
-      if (this.isCanvasViewportFocused()) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.selectAllSceneShapes();
-      }
+    if (this.handleSelectAllShortcut(event)) {
       return;
     }
 
-    if (isRedoShortcut(event)) {
-      event.preventDefault();
-      this.redo();
-      return;
-    }
-
-    if (isUndoShortcut(event)) {
-      event.preventDefault();
-      this.undo();
-      return;
-    }
-
-    if (isCopyShortcut(event)) {
-      event.preventDefault();
-      this.copySelected();
-      return;
-    }
-
-    if (isCutShortcut(event)) {
-      event.preventDefault();
-      this.cutSelected();
-      return;
-    }
-
-    if (isPasteShortcut(event)) {
+    if (this.handleEditShortcut(event)) {
       return;
     }
 
@@ -3553,47 +3667,7 @@ export class EditorPageComponent {
     }
 
     if (isEscapeShortcutKey(event.key)) {
-      if (this.templateDeleteTarget()) {
-        this.closeDeleteTemplateDialog();
-        return;
-      }
-      if (this.tableDialogState()) {
-        this.closeTableDialog();
-        return;
-      }
-      if (this.templateDialogOpen()) {
-        this.closeTemplateDialog();
-        return;
-      }
-      if (this.exportSettingsModalOpen()) {
-        this.closeExportSettingsModal();
-        return;
-      }
-      if (this.exportModalOpen()) {
-        this.closeExportModal();
-        return;
-      }
-      if (this.sceneReplaceDialog()) {
-        this.closeSceneReplaceDialog();
-        return;
-      }
-      if (this.fileMenuOpen()) {
-        this.closeFileMenu();
-        return;
-      }
-      if (this.mobileLibraryPanelOpen()) {
-        this.closeMobileLibraryPanel();
-        return;
-      }
-      if (this.contextMenu()) {
-        this.closeContextMenu();
-        return;
-      }
-      if (this.activeTool() !== 'select') {
-        this.setActiveTool('select');
-        return;
-      }
-      this.store.selectShape(null);
+      this.handleEscapeShortcut();
       return;
     }
 
@@ -3608,6 +3682,91 @@ export class EditorPageComponent {
     }
   }
 
+  private handleModifierKeydown(event: KeyboardEvent): void {
+    const modifier = pressedModifierFromKey(event.key);
+    if (!modifier) {
+      return;
+    }
+
+    this.setModifierPressed(modifier, true);
+    if (
+      modifier === 'space' &&
+      !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
+    ) {
+      event.preventDefault();
+    }
+  }
+
+  private handleSelectAllShortcut(event: KeyboardEvent): boolean {
+    if (!isSelectAllShortcut(event)) {
+      return false;
+    }
+
+    if (this.isCanvasViewportFocused()) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.selectAllSceneShapes();
+    }
+    return true;
+  }
+
+  private handleEditShortcut(event: KeyboardEvent): boolean {
+    if (this.handlePreventableShortcut(event, isRedoShortcut, () => this.redo())) {
+      return true;
+    }
+    if (this.handlePreventableShortcut(event, isUndoShortcut, () => this.undo())) {
+      return true;
+    }
+    if (this.handlePreventableShortcut(event, isCopyShortcut, () => this.copySelected())) {
+      return true;
+    }
+    if (this.handlePreventableShortcut(event, isCutShortcut, () => this.cutSelected())) {
+      return true;
+    }
+    return isPasteShortcut(event);
+  }
+
+  private handlePreventableShortcut(
+    event: KeyboardEvent,
+    isMatch: (event: KeyboardEvent) => boolean,
+    action: () => void
+  ): boolean {
+    if (!isMatch(event)) {
+      return false;
+    }
+
+    event.preventDefault();
+    action();
+    return true;
+  }
+
+  private handleEscapeShortcut(): void {
+    const closeHandlers: ReadonlyArray<{ readonly isOpen: () => boolean; readonly close: () => void }> = [
+      { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
+      { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
+      { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
+      { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
+      { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
+      { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
+      { isOpen: () => this.fileMenuOpen(), close: () => this.closeFileMenu() },
+      { isOpen: () => this.mobileLibraryPanelOpen(), close: () => this.closeMobileLibraryPanel() },
+      { isOpen: () => !!this.contextMenu(), close: () => this.closeContextMenu() }
+    ];
+
+    for (const handler of closeHandlers) {
+      if (handler.isOpen()) {
+        handler.close();
+        return;
+      }
+    }
+
+    if (this.activeTool() !== 'select') {
+      this.setActiveTool('select');
+      return;
+    }
+    this.store.selectShape(null);
+  }
+
   handleWindowPaste(event: ClipboardEvent): void {
     if (this.isEditableTarget(event.target)) {
       return;
@@ -3617,7 +3776,7 @@ export class EditorPageComponent {
     if (imageFile) {
       event.preventDefault();
       event.stopPropagation();
-      void this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+      this.runAsync(this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter())));
       return;
     }
 
@@ -3700,6 +3859,17 @@ export class EditorPageComponent {
     const scope = this.selectedShapes().length ? 'Selection' : 'Scene';
     const formatKey = format === 'png' ? 'Png' : 'Svg';
     this.showNotification(this.t(`exportNotice${scope}${formatKey}`));
+  }
+
+  private runAsync(task: Promise<unknown>): void {
+    task.catch(() => undefined);
+  }
+
+  private copyTextToClipboard(text: string): void {
+    if (!navigator.clipboard) {
+      return;
+    }
+    this.runAsync(navigator.clipboard.writeText(text));
   }
 
   private runSceneMutation(action: () => void): void {
@@ -4994,7 +5164,6 @@ export class EditorPageComponent {
 
   private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {
     if (!shape.textBox) {
-      void scale;
       return projectX(shape.x);
     }
     const width = shape.boxWidth * scale;

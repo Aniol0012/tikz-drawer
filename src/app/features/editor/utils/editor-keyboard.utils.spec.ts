@@ -5,6 +5,7 @@ import {
   isEscapeShortcutKey,
   isPasteShortcut,
   isRedoShortcut,
+  isSelectionModifierPressed,
   isSelectAllShortcut,
   isSpacebarKey,
   isUndoShortcut,
@@ -21,8 +22,17 @@ type ShortcutEventLike = {
   readonly shiftKey: boolean;
 };
 
+type SelectionModifierEventLike = Pick<ShortcutEventLike, 'ctrlKey' | 'metaKey' | 'shiftKey'>;
+
 const shortcutEvent = (patch: Partial<ShortcutEventLike>): ShortcutEventLike => ({
   key: '',
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  ...patch
+});
+
+const selectionModifierEvent = (patch: Partial<SelectionModifierEventLike>): SelectionModifierEventLike => ({
   ctrlKey: false,
   metaKey: false,
   shiftKey: false,
@@ -69,5 +79,12 @@ describe('editor-keyboard utils', () => {
     expect(isZoomOutShortcutKey('-')).toBe(true);
     expect(isSpacebarKey(' ')).toBe(true);
     expect(isSpacebarKey('x')).toBe(false);
+  });
+
+  it('detects selection modifiers consistently', () => {
+    expect(isSelectionModifierPressed(selectionModifierEvent({ shiftKey: true }))).toBe(true);
+    expect(isSelectionModifierPressed(selectionModifierEvent({ ctrlKey: true }))).toBe(true);
+    expect(isSelectionModifierPressed(selectionModifierEvent({ metaKey: true }))).toBe(true);
+    expect(isSelectionModifierPressed(selectionModifierEvent({}))).toBe(false);
   });
 });
