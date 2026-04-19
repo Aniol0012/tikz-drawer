@@ -86,6 +86,34 @@ describe('editor-export-svg utils', () => {
     expect(document.markup).toContain('fill="#161616"');
   });
 
+  it('applies image opacity using strokeOpacity', () => {
+    const imageShape: Extract<CanvasShape, { kind: 'image' }> = {
+      id: 'img-1',
+      name: 'Image',
+      kind: 'image',
+      x: 0.5,
+      y: 0.25,
+      width: 2,
+      height: 1,
+      aspectRatio: 2,
+      src: 'data:image/png;base64,abc',
+      latexSource: 'images/example.png',
+      stroke: '#111111',
+      strokeOpacity: 0.35,
+      strokeWidth: 0.06
+    };
+
+    const document = buildCanvasExportDocument({
+      selectedShapes: [imageShape],
+      sceneShapes: [imageShape],
+      theme: 'light',
+      helpers
+    });
+
+    expect(document.markup).toContain('<image');
+    expect(document.markup).toContain('opacity="0.35"');
+  });
+
   it('escapes XML values safely', () => {
     expect(escapeXml(`5 < 6 & "ok"`)).toBe('5 &lt; 6 &amp; &quot;ok&quot;');
   });

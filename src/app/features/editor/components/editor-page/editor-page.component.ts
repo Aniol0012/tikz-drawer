@@ -4792,6 +4792,7 @@ export class EditorPageComponent {
           y: toMapY(shape.y + shape.height),
           width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
           height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
+          opacity: shape.strokeOpacity,
           href: shape.src
         };
     }

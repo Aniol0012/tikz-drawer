@@ -139,7 +139,7 @@ export const buildCanvasExportDocument = ({
           return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="${EXPORT_TEXT_FONT_FAMILY}" xml:space="preserve"${rotate}>${lines}</text>`;
         }
         case 'image':
-          return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet" />`;
+          return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet" />`;
       }
     })
     .join('');

@@ -460,6 +460,7 @@
                     [attr.y]="toSvgY(shape.y + shape.height)"
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
+                    [attr.opacity]="shape.strokeOpacity"
                     [attr.href]="shape.src"
                     preserveAspectRatio="xMidYMid meet"></image>
                   <rect
@@ -614,6 +615,7 @@
                       [attr.y]="toSvgY(previewShape.y + previewShape.height)"
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
+                      [attr.opacity]="previewShape.strokeOpacity"
                       [attr.href]="previewShape.src"
                       preserveAspectRatio="xMidYMid meet"></image>
                     <rect
@@ -861,6 +863,7 @@
                       [attr.y]="shape.y"
                       [attr.width]="shape.width"
                       [attr.height]="shape.height"
+                      [attr.opacity]="shape.opacity"
                       [attr.href]="shape.href"
                       preserveAspectRatio="xMidYMid meet"></image>
                     <rect

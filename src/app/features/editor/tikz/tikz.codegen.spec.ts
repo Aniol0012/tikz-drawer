@@ -1,6 +1,6 @@
 import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
 import { parseTikz } from './tikz.parser';
-import type { LineShape, RectangleShape, TextShape, TikzScene } from '../models/tikz.models';
+import type { ImageShape, LineShape, RectangleShape, TextShape, TikzScene } from '../models/tikz.models';
 
 const baseLine: LineShape = {
   id: 'line-1',
@@ -62,6 +62,22 @@ const rectangleWithInnerText: RectangleShape = {
   fill: '#f1f1f1',
   fillOpacity: 1,
   cornerRadius: 0.297
+};
+
+const translucentImage: ImageShape = {
+  id: 'image-1',
+  name: 'Illustration',
+  kind: 'image',
+  x: 1,
+  y: 2,
+  width: 3,
+  height: 1.5,
+  aspectRatio: 2,
+  src: 'data:image/png;base64,abc',
+  latexSource: 'images/example.png',
+  stroke: '#1f1f1f',
+  strokeOpacity: 0.4,
+  strokeWidth: 0.05
 };
 
 describe('sceneToTikzBundle', () => {
@@ -155,5 +171,18 @@ describe('sceneToTikzBundle', () => {
     expect(text.x).toBeCloseTo(-4.536);
     expect(text.y).toBeCloseTo(7.404);
     expect(text.text).toBe('Text');
+  });
+
+  it('exports image opacity when strokeOpacity is below 1', () => {
+    const scene: TikzScene = {
+      name: 'Image scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [translucentImage]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain('\\node[inner sep=0pt, opacity=0.4]');
+    expect(bundle.code).toContain('\\includegraphics[width=3cm,height=1.5cm]{images/example.png}');
   });
 });

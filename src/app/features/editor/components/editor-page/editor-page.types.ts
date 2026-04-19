@@ -339,6 +339,7 @@ export interface MinimapImageShape extends MinimapShapeBase {
   readonly y: number;
   readonly width: number;
   readonly height: number;
+  readonly opacity: number;
   readonly href: string;
 }
 

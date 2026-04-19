@@ -306,8 +306,12 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
 const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
   const centerX = shape.x + shape.width / 2;
   const centerY = shape.y + shape.height / 2;
+  const nodeOptions = ['inner sep=0pt'];
+  if (shape.strokeOpacity < 1) {
+    nodeOptions.push(`opacity=${formatNumber(shape.strokeOpacity)}`);
+  }
   const lines = [
-    `\\node[inner sep=0pt] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
+    `\\node[${nodeOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
   ];
 
   if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
