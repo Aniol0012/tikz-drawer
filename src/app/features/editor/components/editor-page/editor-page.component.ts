@@ -1723,6 +1723,7 @@ export class EditorPageComponent {
 
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
     event.stopPropagation();
+    this.focusCanvasViewport();
 
     if (this.ignoreNextShapeClickId() === shape.id) {
       this.ignoreNextShapeClickId.set(null);
@@ -2557,6 +2558,7 @@ export class EditorPageComponent {
     if (this.pinchZoomState) {
       return;
     }
+    this.focusCanvasViewport();
     this.closeContextMenu();
     this.closeFileMenu();
     const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
@@ -3059,6 +3061,7 @@ export class EditorPageComponent {
   }
 
   onCanvasBackgroundClick(event: MouseEvent): void {
+    this.focusCanvasViewport();
     this.ignoreNextShapeClickId.set(null);
     this.recentSelectedShapeTap.set(null);
 
@@ -3514,6 +3517,15 @@ export class EditorPageComponent {
     }
 
     if (this.isEditableTarget(event.target)) {
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      if (this.isCanvasViewportFocused()) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.selectAllSceneShapes();
+      }
       return;
     }
 
@@ -5133,6 +5145,20 @@ export class EditorPageComponent {
       target instanceof HTMLSelectElement ||
       (target instanceof HTMLElement && target.isContentEditable)
     );
+  }
+
+  private focusCanvasViewport(): void {
+    this.canvasViewport().nativeElement.focus({ preventScroll: true });
+  }
+
+  private isCanvasViewportFocused(): boolean {
+    return this.document.activeElement === this.canvasViewport().nativeElement;
+  }
+
+  private selectAllSceneShapes(): void {
+    this.store.setSelectedShapes(this.scene().shapes.map((shape) => shape.id));
+    this.setInspectorTab('properties');
+    this.closeContextMenu();
   }
 
   private openInlineTextEditor(shape: TextCanvasShape): void {

@@ -1026,6 +1026,17 @@ kbd {
   overscroll-behavior: contain;
   -webkit-user-select: none;
   user-select: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.canvas-viewport:focus {
+  outline: none;
+}
+
+.canvas-viewport:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--tool-border-strong) 78%, var(--tool-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #8f949d 30%, transparent);
 }
 
 .canvas-viewport.is-panning {
