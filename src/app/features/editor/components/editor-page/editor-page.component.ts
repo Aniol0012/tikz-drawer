@@ -160,6 +160,21 @@ import {
   translateShapeBy
 } from '../../utils/editor-page.utils';
 import {
+  type ModifierKey,
+  isCopyShortcut,
+  isCutShortcut,
+  isDeleteShortcutKey,
+  isEscapeShortcutKey,
+  isPasteShortcut,
+  isRedoShortcut,
+  isSelectAllShortcut,
+  isUndoShortcut,
+  isZoomInShortcutKey,
+  isZoomOutShortcutKey,
+  pressedModifierFromKey,
+  toolIdFromShortcutKey
+} from '../../utils/editor-keyboard.utils';
+import {
   buildTablePresetShapes,
   localizePresetCanvasShapes as localizePresetTemplateShapes
 } from '../../presets/presets';
@@ -3497,30 +3512,22 @@ export class EditorPageComponent {
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {
-    if (event.key === ' ') {
-      this.spacePressed.set(true);
-      if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) {
+    const modifier = pressedModifierFromKey(event.key);
+    if (modifier) {
+      this.setModifierPressed(modifier, true);
+      if (
+        modifier === 'space' &&
+        !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
+      ) {
         event.preventDefault();
       }
-    }
-    if (event.key === 'Shift') {
-      this.shiftPressed.set(true);
-    }
-    if (event.key === 'Control') {
-      this.controlPressed.set(true);
-    }
-    if (event.key === 'Meta') {
-      this.metaPressed.set(true);
-    }
-    if (event.key === 'Alt') {
-      this.altPressed.set(true);
     }
 
     if (this.isEditableTarget(event.target)) {
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+    if (isSelectAllShortcut(event)) {
       if (this.isCanvasViewportFocused()) {
         event.preventDefault();
         event.stopPropagation();
@@ -3529,125 +3536,98 @@ export class EditorPageComponent {
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && event.shiftKey) {
+    if (isRedoShortcut(event)) {
       event.preventDefault();
       this.redo();
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
-      event.preventDefault();
-      this.redo();
-      return;
-    }
-
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+    if (isUndoShortcut(event)) {
       event.preventDefault();
       this.undo();
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+    if (isCopyShortcut(event)) {
       event.preventDefault();
       this.copySelected();
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'x') {
+    if (isCutShortcut(event)) {
       event.preventDefault();
       this.cutSelected();
       return;
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+    if (isPasteShortcut(event)) {
       return;
     }
 
-    switch (event.key.toLowerCase()) {
-      case 'v':
+    const toolId = toolIdFromShortcutKey(event.key);
+    if (toolId) {
+      this.setActiveTool(toolId);
+      return;
+    }
+
+    if (isDeleteShortcutKey(event.key)) {
+      this.removeSelected();
+      return;
+    }
+
+    if (isEscapeShortcutKey(event.key)) {
+      if (this.templateDeleteTarget()) {
+        this.closeDeleteTemplateDialog();
+        return;
+      }
+      if (this.tableDialogState()) {
+        this.closeTableDialog();
+        return;
+      }
+      if (this.templateDialogOpen()) {
+        this.closeTemplateDialog();
+        return;
+      }
+      if (this.exportSettingsModalOpen()) {
+        this.closeExportSettingsModal();
+        return;
+      }
+      if (this.exportModalOpen()) {
+        this.closeExportModal();
+        return;
+      }
+      if (this.sceneReplaceDialog()) {
+        this.closeSceneReplaceDialog();
+        return;
+      }
+      if (this.fileMenuOpen()) {
+        this.closeFileMenu();
+        return;
+      }
+      if (this.mobileLibraryPanelOpen()) {
+        this.closeMobileLibraryPanel();
+        return;
+      }
+      if (this.contextMenu()) {
+        this.closeContextMenu();
+        return;
+      }
+      if (this.activeTool() !== 'select') {
         this.setActiveTool('select');
         return;
-      case 'p':
-        this.setActiveTool('pencil');
-        return;
-      case 't':
-        this.setActiveTool('label');
-        return;
-      case 'r':
-        this.setActiveTool('box');
-        return;
-      case 'c':
-        this.setActiveTool('circle');
-        return;
-      case 'l':
-        this.setActiveTool('segment');
-        return;
-      case 'a':
-        this.setActiveTool('arrow');
-        return;
-      case 'n':
-        this.setActiveTool('note');
-        return;
-      case 'e':
-        this.setActiveTool('ellipse');
-        return;
-      case 'i':
-        this.setActiveTool('image');
-        return;
-      case 'delete':
-      case 'backspace':
-        this.removeSelected();
-        return;
-      case 'escape':
-        if (this.templateDeleteTarget()) {
-          this.closeDeleteTemplateDialog();
-          return;
-        }
-        if (this.tableDialogState()) {
-          this.closeTableDialog();
-          return;
-        }
-        if (this.templateDialogOpen()) {
-          this.closeTemplateDialog();
-          return;
-        }
-        if (this.exportSettingsModalOpen()) {
-          this.closeExportSettingsModal();
-          return;
-        }
-        if (this.exportModalOpen()) {
-          this.closeExportModal();
-          return;
-        }
-        if (this.sceneReplaceDialog()) {
-          this.closeSceneReplaceDialog();
-          return;
-        }
-        if (this.fileMenuOpen()) {
-          this.closeFileMenu();
-          return;
-        }
-        if (this.mobileLibraryPanelOpen()) {
-          this.closeMobileLibraryPanel();
-          return;
-        }
-        if (this.contextMenu()) {
-          this.closeContextMenu();
-          return;
-        }
-        if (this.activeTool() !== 'select') {
-          this.setActiveTool('select');
-          return;
-        }
-        this.store.selectShape(null);
-        return;
-      case '=':
-      case '+':
-        this.zoomIn();
-        return;
-      case '-':
-        this.zoomOut();
-        return;
+      }
+      this.store.selectShape(null);
+      return;
+    }
+
+    if (isZoomInShortcutKey(event.key)) {
+      this.zoomIn();
+      return;
+    }
+
+    if (isZoomOutShortcutKey(event.key)) {
+      this.zoomOut();
+      return;
     }
   }
 
@@ -3672,20 +3652,9 @@ export class EditorPageComponent {
   }
 
   handleWindowKeyup(event: KeyboardEvent): void {
-    if (event.key === ' ') {
-      this.spacePressed.set(false);
-    }
-    if (event.key === 'Shift') {
-      this.shiftPressed.set(false);
-    }
-    if (event.key === 'Control') {
-      this.controlPressed.set(false);
-    }
-    if (event.key === 'Meta') {
-      this.metaPressed.set(false);
-    }
-    if (event.key === 'Alt') {
-      this.altPressed.set(false);
+    const modifier = pressedModifierFromKey(event.key);
+    if (modifier) {
+      this.setModifierPressed(modifier, false);
     }
   }
 
@@ -5159,6 +5128,26 @@ export class EditorPageComponent {
     this.store.setSelectedShapes(this.scene().shapes.map((shape) => shape.id));
     this.setInspectorTab('properties');
     this.closeContextMenu();
+  }
+
+  private setModifierPressed(modifier: ModifierKey, pressed: boolean): void {
+    switch (modifier) {
+      case 'space':
+        this.spacePressed.set(pressed);
+        return;
+      case 'shift':
+        this.shiftPressed.set(pressed);
+        return;
+      case 'control':
+        this.controlPressed.set(pressed);
+        return;
+      case 'meta':
+        this.metaPressed.set(pressed);
+        return;
+      case 'alt':
+        this.altPressed.set(pressed);
+        return;
+    }
   }
 
   private openInlineTextEditor(shape: TextCanvasShape): void {
