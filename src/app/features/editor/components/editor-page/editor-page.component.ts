@@ -64,8 +64,7 @@ import {
   SLIDER_DECIMAL_PLACES,
   TEXT_DOUBLE_TAP_WINDOW_MS,
   TEXT_MIN_HEIGHT_FACTOR,
-  TEXT_RENDER_LINE_HEIGHT_FACTOR,
-  TEXT_TSPAN_LINE_STEP_FACTOR
+  TEXT_RENDER_LINE_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
 import {
@@ -76,12 +75,10 @@ import {
   type ArrowTipOption,
   Axis,
   type ClipboardShapeSet,
-  type CircleCanvasShape,
   type CodeHighlightTheme,
   type ContextAction,
   type ContextMenuState,
   type CssTextAlign,
-  type EllipseCanvasShape,
   type ExportMode,
   type ExportSvgDocument,
   type HandleDescriptor,
@@ -91,9 +88,6 @@ import {
   type InlineTextEditorState,
   type InspectorTab,
   type InteractionState,
-  LATEX_ALIGNMENTS,
-  LATEX_COLOR_MODES,
-  LATEX_FONT_SIZES,
   type LatexAlignment,
   type LatexExportBooleanKey,
   type LatexExportConfig,
@@ -113,7 +107,6 @@ import {
   type PreferenceNumberKey,
   type PreferenceTextKey,
   type RecentTextTap,
-  type RectangleOrImageCanvasShape,
   type RectangleCanvasShape,
   type ResizeHandle,
   type ResizeCursor,
@@ -154,11 +147,26 @@ import {
   encodeSharePayload,
   formatValue,
   highlightLatex,
-  resizeGroupedShapes,
   type SelectionBounds,
   transformCanvasShape,
   translateShapeBy
 } from '../../utils/editor-page.utils';
+import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
+import { buildCanvasExportDocument as buildCanvasExportDocumentUtil } from '../../utils/editor-export-svg.utils';
+import {
+  normalizeLatexExportConfig as normalizeLatexExportConfigUtil,
+  parsePinnedToolIdsFromStorage,
+  parseSavedTemplatesFromStorage,
+  parseStoredLatexExportConfig as parseStoredLatexExportConfigUtil,
+  restoreCodeHighlightThemeFromStorage,
+  restoreLanguageFromStorage,
+  serializableLatexExportConfig as serializableLatexExportConfigUtil
+} from '../../utils/editor-storage.utils';
+import {
+  selectionContainsShape as selectionContainsShapeUtil,
+  shapeSetIds as shapeSetIdsUtil,
+  toggledShapeSetSelection
+} from '../../utils/editor-selection.utils';
 import {
   type ModifierKey,
   isCopyShortcut,
@@ -2432,43 +2440,11 @@ export class EditorPageComponent {
   }
 
   selectionContainsShape(shapeId: string): boolean {
-    return this.selectedShapes().some((shape) => shape.id === shapeId);
-  }
-
-  private shapeSetIds(shape: CanvasShape): readonly string[] {
-    const mergeGroupIds = shape.mergeId
-      ? this.scene()
-          .shapes.filter((entry) => entry.mergeId === shape.mergeId)
-          .map((entry) => entry.id)
-      : [];
-    const tableGroupIds = shape.table
-      ? this.scene()
-          .shapes.filter((entry) => entry.table?.id === shape.table?.id)
-          .map((entry) => entry.id)
-      : [];
-
-    if (
-      mergeGroupIds.length > 1 &&
-      (!tableGroupIds.length ||
-        mergeGroupIds.length !== tableGroupIds.length ||
-        mergeGroupIds.some((id) => !tableGroupIds.includes(id)))
-    ) {
-      return mergeGroupIds;
-    }
-
-    if (tableGroupIds.length > 1) {
-      return tableGroupIds;
-    }
-
-    if (mergeGroupIds.length > 1) {
-      return mergeGroupIds;
-    }
-
-    return [shape.id];
+    return selectionContainsShapeUtil(this.selectedShapes(), shapeId);
   }
 
   private selectShapeSet(shape: CanvasShape): void {
-    const shapeIds = this.shapeSetIds(shape);
+    const shapeIds = shapeSetIdsUtil(shape, this.scene().shapes);
     if (shapeIds.length > 1) {
       this.store.setSelectedShapes(shapeIds);
       return;
@@ -2478,16 +2454,17 @@ export class EditorPageComponent {
   }
 
   private toggleShapeSetSelection(shape: CanvasShape): void {
-    const groupedIds = this.shapeSetIds(shape);
+    const groupedIds = shapeSetIdsUtil(shape, this.scene().shapes);
     if (groupedIds.length === 1) {
       this.store.toggleShapeInSelection(shape.id);
       return;
     }
 
-    const selectedIds = new Set(this.selectedShapes().map((shape) => shape.id));
-    const alreadySelected = groupedIds.every((id) => selectedIds.has(id));
     this.store.setSelectedShapes(
-      alreadySelected ? [...selectedIds].filter((id) => !groupedIds.includes(id)) : [...selectedIds, ...groupedIds]
+      toggledShapeSetSelection(
+        this.selectedShapes().map((entry) => entry.id),
+        groupedIds
+      )
     );
   }
 
@@ -4380,37 +4357,12 @@ export class EditorPageComponent {
 
   private restoreSavedTemplates(): void {
     const raw = this.document.defaultView?.localStorage?.getItem(this.savedTemplatesStorageKey);
-    if (!raw) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as SavedTemplate[];
-      this.savedTemplates.set(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      this.savedTemplates.set([]);
-    }
+    this.savedTemplates.set(parseSavedTemplatesFromStorage(raw));
   }
 
   private restorePinnedTools(): void {
     const raw = this.document.defaultView?.localStorage?.getItem(this.pinnedToolsStorageKey);
-    const templatePinnedIds = this.savedTemplates()
-      .filter((template) => template.pinned)
-      .map((template) => template.id);
-    if (!raw) {
-      this.pinnedToolIds.set(templatePinnedIds);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw);
-      const storedIds = Array.isArray(parsed)
-        ? parsed.filter((entry): entry is string => typeof entry === 'string')
-        : [];
-      this.pinnedToolIds.set(Array.from(new Set([...storedIds, ...templatePinnedIds])));
-    } catch {
-      this.pinnedToolIds.set(templatePinnedIds);
-    }
+    this.pinnedToolIds.set(parsePinnedToolIdsFromStorage(raw, this.savedTemplates()));
   }
 
   private persistSavedTemplates(): void {
@@ -4422,19 +4374,12 @@ export class EditorPageComponent {
 
   private restoreLanguage(): LanguageCode {
     const saved = this.document.defaultView?.localStorage?.getItem(this.languageStorageKey);
-    return saved === 'ca' || saved === 'es' || saved === 'en' ? saved : detectLanguage();
+    return restoreLanguageFromStorage(saved, detectLanguage);
   }
 
   private restoreCodeHighlightTheme(): CodeHighlightTheme {
     const saved = this.document.defaultView?.localStorage?.getItem(this.codeThemeStorageKey);
-    return saved === 'aurora' ||
-      saved === 'sunset' ||
-      saved === 'midnight' ||
-      saved === 'forest' ||
-      saved === 'rose' ||
-      saved === 'graphite'
-      ? saved
-      : 'aurora';
+    return restoreCodeHighlightThemeFromStorage(saved, 'aurora');
   }
 
   private restoreLatexExportConfig(): LatexExportConfig {
@@ -4444,84 +4389,18 @@ export class EditorPageComponent {
   }
 
   private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
-    if (!raw) {
-      return { ...this.defaultLatexExportConfig };
-    }
-
-    try {
-      return this.normalizeLatexExportConfig(JSON.parse(raw) as Partial<LatexExportConfig>, false);
-    } catch {
-      return { ...this.defaultLatexExportConfig };
-    }
+    return parseStoredLatexExportConfigUtil(raw, this.defaultLatexExportConfig);
   }
 
   private serializableLatexExportConfig(config: LatexExportConfig): Partial<LatexExportConfig> {
-    return {
-      ...config,
-      caption: '',
-      label: ''
-    };
+    return serializableLatexExportConfigUtil(config);
   }
 
   private normalizeLatexExportConfig(
     config: Partial<LatexExportConfig> | null | undefined,
     preserveFreeText = true
   ): LatexExportConfig {
-    const figurePlacement =
-      typeof config?.figurePlacement === 'string' && config.figurePlacement.trim()
-        ? config.figurePlacement.trim()
-        : this.defaultLatexExportConfig.figurePlacement;
-    return {
-      ...this.defaultLatexExportConfig,
-      colorMode: this.isOneOf(config?.colorMode, LATEX_COLOR_MODES)
-        ? config.colorMode
-        : this.defaultLatexExportConfig.colorMode,
-      wrapInFigure:
-        typeof config?.wrapInFigure === 'boolean' ? config.wrapInFigure : this.defaultLatexExportConfig.wrapInFigure,
-      figurePlacement,
-      alignment: this.isOneOf(config?.alignment, LATEX_ALIGNMENTS)
-        ? config.alignment
-        : this.defaultLatexExportConfig.alignment,
-      scaleToWidth:
-        typeof config?.scaleToWidth === 'boolean' ? config.scaleToWidth : this.defaultLatexExportConfig.scaleToWidth,
-      includeFrame:
-        typeof config?.includeFrame === 'boolean' ? config.includeFrame : this.defaultLatexExportConfig.includeFrame,
-      maxWidthPercent: this.clampLatexConfigNumber(
-        config?.maxWidthPercent,
-        10,
-        100,
-        this.defaultLatexExportConfig.maxWidthPercent
-      ),
-      standaloneBorderMm: this.clampLatexConfigNumber(
-        config?.standaloneBorderMm,
-        0,
-        24,
-        this.defaultLatexExportConfig.standaloneBorderMm
-      ),
-      fontSize: this.isOneOf(config?.fontSize, LATEX_FONT_SIZES)
-        ? config.fontSize
-        : this.defaultLatexExportConfig.fontSize,
-      includeCaption:
-        typeof config?.includeCaption === 'boolean'
-          ? config.includeCaption
-          : this.defaultLatexExportConfig.includeCaption,
-      caption: preserveFreeText && typeof config?.caption === 'string' ? config.caption : '',
-      includeLabel:
-        typeof config?.includeLabel === 'boolean' ? config.includeLabel : this.defaultLatexExportConfig.includeLabel,
-      label: preserveFreeText && typeof config?.label === 'string' ? config.label : ''
-    };
-  }
-
-  private clampLatexConfigNumber(value: unknown, min: number, max: number, fallback: number): number {
-    if (typeof value !== 'number' || !Number.isFinite(value)) {
-      return fallback;
-    }
-
-    return Math.min(max, Math.max(min, value));
-  }
-
-  private isOneOf<const T extends readonly string[]>(value: unknown, options: T): value is T[number] {
-    return typeof value === 'string' && options.includes(value);
+    return normalizeLatexExportConfigUtil(config, this.defaultLatexExportConfig, preserveFreeText);
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
@@ -4799,20 +4678,19 @@ export class EditorPageComponent {
   }
 
   private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    switch (shape.kind) {
-      case 'rectangle':
-        return this.resizeRectangle(shape, handle, point);
-      case 'circle':
-        return this.resizeCircle(shape, handle, point);
-      case 'ellipse':
-        return this.resizeEllipse(shape, handle, point);
-      case 'line':
-        return this.resizeLine(shape, handle, point);
-      case 'text':
-        return this.resizeText(shape, handle, point);
-      case 'image':
-        return this.resizeRectangle(shape, handle, point);
-    }
+    return resizeShapeUtil(shape, handle, point, {
+      shapeBounds: (entry) => this.shapeBounds(entry),
+      lineArrowControlScale: (line, endpoint, targetPoint, kind) =>
+        this.lineArrowControlScale(line, endpoint, targetPoint, kind),
+      selectedShapeKind: this.selectedShape()?.kind ?? null,
+      shiftPressed: this.shiftPressed(),
+      minShapeDimension: MIN_SHAPE_DIMENSION,
+      minTextResizeWidth: MIN_TEXT_RESIZE_WIDTH,
+      minTextResizeHeight: MIN_TEXT_RESIZE_HEIGHT,
+      minTextBoxWidth: MIN_TEXT_BOX_WIDTH,
+      minTextFontSize: MIN_TEXT_FONT_SIZE,
+      textMinHeightFactor: TEXT_MIN_HEIGHT_FACTOR
+    });
   }
 
   private resizeShapeSelection(
@@ -4821,201 +4699,7 @@ export class EditorPageComponent {
     handle: ResizeHandle,
     point: Point
   ): readonly CanvasShape[] {
-    return resizeGroupedShapes(
-      shapes,
-      selectionBounds,
-      handle as Extract<ResizeHandle, 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'>,
-      point,
-      this.shiftPressed()
-    );
-  }
-
-  private resizeText(shape: TextCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    const bounds = this.shapeBounds(shape);
-    if (!bounds) {
-      return shape;
-    }
-
-    const resizedBounds = this.resizeBounds(bounds, handle, point, MIN_TEXT_RESIZE_WIDTH, MIN_TEXT_RESIZE_HEIGHT);
-    const originalWidth = Math.max(bounds.right - bounds.left, shape.fontSize);
-    const originalHeight = Math.max(bounds.top - bounds.bottom, shape.fontSize * TEXT_MIN_HEIGHT_FACTOR);
-    const nextWidth = Math.max(resizedBounds.right - resizedBounds.left, MIN_TEXT_RESIZE_WIDTH);
-    const nextHeight = Math.max(resizedBounds.top - resizedBounds.bottom, MIN_TEXT_RESIZE_HEIGHT);
-    const scaleX = nextWidth / originalWidth;
-    const scaleY = nextHeight / originalHeight;
-    const scale = Math.max(Math.min(scaleX, scaleY), 0.35);
-
-    if (shape.textBox) {
-      return {
-        ...shape,
-        x: resizedBounds.left,
-        y: (resizedBounds.top + resizedBounds.bottom) / 2,
-        boxWidth: Math.max(resizedBounds.right - resizedBounds.left, MIN_TEXT_BOX_WIDTH),
-        fontSize: Math.max(shape.fontSize * scale, MIN_TEXT_FONT_SIZE)
-      };
-    }
-
-    return {
-      ...shape,
-      x: (resizedBounds.left + resizedBounds.right) / 2,
-      y: (resizedBounds.top + resizedBounds.bottom) / 2,
-      fontSize: Math.max(shape.fontSize * scale, MIN_TEXT_FONT_SIZE)
-    };
-  }
-
-  private resizeRectangle(shape: RectangleOrImageCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    const resizedBounds = this.resizeBounds(
-      { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
-      handle,
-      point,
-      MIN_SHAPE_DIMENSION,
-      MIN_SHAPE_DIMENSION,
-      shape.kind === 'image' ? shape.aspectRatio : shape.width / shape.height
-    );
-    const resizedShape = {
-      ...shape,
-      x: resizedBounds.left,
-      y: resizedBounds.bottom,
-      width: resizedBounds.right - resizedBounds.left,
-      height: resizedBounds.top - resizedBounds.bottom
-    };
-    return shape.kind === 'image'
-      ? ({
-          ...resizedShape,
-          aspectRatio: shape.aspectRatio || (resizedShape.height !== 0 ? resizedShape.width / resizedShape.height : 1)
-        } as CanvasShape)
-      : resizedShape;
-  }
-
-  private resizeCircle(shape: CircleCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    const resizedBounds = this.resizeBounds(
-      { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r },
-      handle,
-      point,
-      0.2,
-      0.2,
-      1
-    );
-    const radius = Math.max(
-      (resizedBounds.right - resizedBounds.left) / 2,
-      (resizedBounds.top - resizedBounds.bottom) / 2,
-      0.1
-    );
-    return {
-      ...shape,
-      cx: (resizedBounds.left + resizedBounds.right) / 2,
-      cy: (resizedBounds.top + resizedBounds.bottom) / 2,
-      r: radius
-    };
-  }
-
-  private resizeEllipse(shape: EllipseCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
-    const resizedBounds = this.resizeBounds(
-      { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
-      handle,
-      point,
-      0.2,
-      0.2,
-      aspectRatio
-    );
-    return {
-      ...shape,
-      cx: (resizedBounds.left + resizedBounds.right) / 2,
-      cy: (resizedBounds.top + resizedBounds.bottom) / 2,
-      rx: Math.max((resizedBounds.right - resizedBounds.left) / 2, 0.1),
-      ry: Math.max((resizedBounds.top - resizedBounds.bottom) / 2, 0.1)
-    };
-  }
-
-  private resizeLine(shape: LineCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
-    if (handle === 'from') {
-      return { ...shape, from: point };
-    }
-
-    if (handle === 'to') {
-      return { ...shape, to: point };
-    }
-
-    if (handle === 'arrow-length-start') {
-      return { ...shape, arrowLengthScale: this.lineArrowControlScale(shape, 'start', point, 'length') };
-    }
-
-    if (handle === 'arrow-length-end') {
-      return { ...shape, arrowLengthScale: this.lineArrowControlScale(shape, 'end', point, 'length') };
-    }
-
-    if (handle === 'arrow-width-start') {
-      return { ...shape, arrowWidthScale: this.lineArrowControlScale(shape, 'start', point, 'width') };
-    }
-
-    if (handle === 'arrow-width-end') {
-      return { ...shape, arrowWidthScale: this.lineArrowControlScale(shape, 'end', point, 'width') };
-    }
-
-    if (handle.startsWith('anchor-')) {
-      const anchorIndex = Number(handle.slice('anchor-'.length));
-      if (!Number.isInteger(anchorIndex) || !shape.anchors[anchorIndex]) {
-        return shape;
-      }
-
-      return {
-        ...shape,
-        anchors: shape.anchors.map((anchor, index) => (index === anchorIndex ? point : anchor))
-      };
-    }
-
-    return shape;
-  }
-
-  private resizeBounds(
-    selectionBounds: SelectionBounds,
-    handle: ResizeHandle,
-    point: Point,
-    minimumWidth: number,
-    minimumHeight: number,
-    aspectRatio?: number
-  ): SelectionBounds {
-    let left = selectionBounds.left;
-    let right = selectionBounds.right;
-    let top = selectionBounds.top;
-    let bottom = selectionBounds.bottom;
-
-    if (handle.includes('w')) {
-      left = Math.min(point.x, right - minimumWidth);
-    }
-    if (handle.includes('e')) {
-      right = Math.max(point.x, left + minimumWidth);
-    }
-    if (handle.includes('n')) {
-      top = Math.max(point.y, bottom + minimumHeight);
-    }
-    if (handle.includes('s')) {
-      bottom = Math.min(point.y, top - minimumHeight);
-    }
-
-    if (aspectRatio && (this.shiftPressed() || this.selectedShape()?.kind === 'image')) {
-      const currentWidth = Math.max(right - left, minimumWidth);
-      const currentHeight = Math.max(top - bottom, minimumHeight);
-      const nextHeight = currentWidth / aspectRatio;
-      const nextWidth = currentHeight * aspectRatio;
-
-      if (handle === 'n' || handle === 's') {
-        const adjustedWidth = Math.max(nextWidth, minimumWidth);
-        const centerX = (left + right) / 2;
-        left = centerX - adjustedWidth / 2;
-        right = centerX + adjustedWidth / 2;
-      } else {
-        const adjustedHeight = Math.max(nextHeight, minimumHeight);
-        if (handle.includes('n')) {
-          top = bottom + adjustedHeight;
-        } else {
-          bottom = top - adjustedHeight;
-        }
-      }
-    }
-
-    return { left, right, top, bottom };
+    return resizeSelection(shapes, selectionBounds, handle, point, this.shiftPressed());
   }
 
   private loadImageDimensions(src: string): Promise<{ readonly width: number; readonly height: number } | null> {
@@ -5329,107 +5013,27 @@ export class EditorPageComponent {
   }
 
   private buildCanvasExportDocument(): ExportSvgDocument {
-    const shapes = this.selectedShapes().length ? this.selectedShapes() : this.scene().shapes;
-    const bounds = this.computeBounds(shapes);
-    const background = this.preferences().theme === 'dark' ? '#161616' : '#ffffff';
-
-    if (!bounds || !shapes.length) {
-      const width = 960;
-      const height = 720;
-      return {
-        width,
-        height,
-        markup: [
-          `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-          `<rect x="0" y="0" width="${width}" height="${height}" fill="${background}" />`,
-          '</svg>'
-        ].join('')
-      };
-    }
-
-    const sceneWidth = Math.max(bounds.right - bounds.left, 1);
-    const sceneHeight = Math.max(bounds.top - bounds.bottom, 1);
-    const longestSide = Math.max(sceneWidth, sceneHeight, 1);
-    const scale = Math.min(120, Math.max(42, 1600 / longestSide));
-    const padding = Math.max(28, scale * 0.9);
-    const width = Math.max(Math.ceil(sceneWidth * scale + padding * 2), 320);
-    const height = Math.max(Math.ceil(sceneHeight * scale + padding * 2), 240);
-    const projectX = (value: number) => (value - bounds.left) * scale + padding;
-    const projectY = (value: number) => (bounds.top - value) * scale + padding;
-
-    const defs = shapes
-      .filter((shape): shape is LineShape => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
-      .map(
-        (shape) => `
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'end'))}" viewBox="${this.arrowMarkerViewBox(shape)}" markerWidth="${this.arrowMarkerWidth(shape)}" markerHeight="${this.arrowMarkerHeight(shape)}" refX="${this.arrowMarkerRefX(shape, 'end')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto" overflow="visible" markerUnits="strokeWidth">
-            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
-          </marker>
-          <marker id="${this.escapeXml(this.arrowMarkerId(shape, 'start'))}" viewBox="${this.arrowMarkerViewBox(shape)}" markerWidth="${this.arrowMarkerWidth(shape)}" markerHeight="${this.arrowMarkerHeight(shape)}" refX="${this.arrowMarkerRefX(shape, 'start')}" refY="${this.arrowMarkerRefY(shape)}" orient="auto-start-reverse" overflow="visible" markerUnits="strokeWidth">
-            <path d="${this.escapeXml(this.arrowMarkerPath(shape))}" fill="${this.escapeXml(this.arrowMarkerFill(shape))}" stroke="${this.escapeXml(shape.arrowColor)}" stroke-opacity="${shape.arrowOpacity}" fill-opacity="${shape.arrowOpacity}" stroke-linejoin="${this.arrowMarkerStrokeLineJoin(shape)}" stroke-linecap="${this.arrowMarkerStrokeLineCap(shape)}" />
-          </marker>`
-      )
-      .join('');
-
-    const body = shapes
-      .map((shape) => {
-        switch (shape.kind) {
-          case 'line': {
-            const markerStart = shape.arrowStart
-              ? ` marker-start="url(#${this.escapeXml(this.arrowMarkerId(shape, 'start'))})"`
-              : '';
-            const markerEnd = shape.arrowEnd
-              ? ` marker-end="url(#${this.escapeXml(this.arrowMarkerId(shape, 'end'))})"`
-              : '';
-            return `<path d="${this.escapeXml(
-              this.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
-            )}" fill="none" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
-          }
-          case 'rectangle':
-            return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
-          case 'circle':
-            return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
-          case 'ellipse':
-            return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${this.escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${this.escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
-          case 'text': {
-            const renderX = this.textRenderXAt(shape, projectX, scale);
-            const anchor = this.textAnchor(shape.textAlign);
-            const rotate = shape.rotation
-              ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"`
-              : '';
-            const lines = this.displayTextLinesForShape(shape)
-              .map(
-                (line, index) =>
-                  `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${this.escapeXml(line)}</tspan>`
-              )
-              .join('');
-            return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${this.escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="Geist, Arial, sans-serif" xml:space="preserve"${rotate}>${lines}</text>`;
-          }
-          case 'image':
-            return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" href="${this.escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet" />`;
-        }
-      })
-      .join('');
-
-    const defsMarkup = defs ? `<defs>${defs}</defs>` : '';
-    return {
-      width,
-      height,
-      markup: [
-        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-        `<rect x="0" y="0" width="${width}" height="${height}" fill="${background}" />`,
-        defsMarkup,
-        body,
-        '</svg>'
-      ].join('')
-    };
-  }
-
-  private escapeXml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+    return buildCanvasExportDocumentUtil({
+      selectedShapes: this.selectedShapes(),
+      sceneShapes: this.scene().shapes,
+      theme: this.preferences().theme,
+      helpers: {
+        computeBounds: (shapes) => this.computeBounds(shapes),
+        buildLinePath: (shape, mapPoint) => this.buildLinePath(shape, mapPoint),
+        displayTextLinesForShape: (shape) => this.displayTextLinesForShape(shape),
+        textRenderXAt: (shape, projectX, scale) => this.textRenderXAt(shape, projectX, scale),
+        textAnchor: (align) => this.textAnchor(align),
+        arrowMarkerId: (shape, side) => this.arrowMarkerId(shape, side),
+        arrowMarkerViewBox: (shape) => this.arrowMarkerViewBox(shape),
+        arrowMarkerWidth: (shape) => this.arrowMarkerWidth(shape),
+        arrowMarkerHeight: (shape) => this.arrowMarkerHeight(shape),
+        arrowMarkerRefX: (shape, side) => this.arrowMarkerRefX(shape, side),
+        arrowMarkerRefY: (shape) => this.arrowMarkerRefY(shape),
+        arrowMarkerPath: (shape) => this.arrowMarkerPath(shape),
+        arrowMarkerFill: (shape) => this.arrowMarkerFill(shape),
+        arrowMarkerStrokeLineJoin: (shape) => this.arrowMarkerStrokeLineJoin(shape),
+        arrowMarkerStrokeLineCap: (shape) => this.arrowMarkerStrokeLineCap(shape)
+      }
+    });
   }
 }
