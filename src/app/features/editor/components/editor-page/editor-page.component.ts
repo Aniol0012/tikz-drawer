@@ -15,6 +15,31 @@ import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
+  EDITOR_CANVAS_MIN_HEIGHT,
+  EDITOR_CANVAS_MIN_WIDTH,
+  EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
+  EDITOR_IMAGE_ASPECT_RATIO_EPSILON,
+  EDITOR_LEFT_SIDEBAR_MIN_WIDTH,
+  EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT,
+  EDITOR_LINE_ANCHOR_DECIMALS,
+  EDITOR_LINE_ARROW_SCALE_MAX,
+  EDITOR_LINE_ARROW_SCALE_MIN,
+  EDITOR_MOBILE_BREAKPOINT_PX,
+  EDITOR_PASTE_OFFSET_STEP,
+  EDITOR_PNG_EXPORT_SCALE,
+  EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
+  EDITOR_RIGHT_SIDEBAR_DESKTOP_STACKED_MIN_HEIGHT,
+  EDITOR_RIGHT_SIDEBAR_MIN_WIDTH,
+  EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT,
+  EDITOR_SCALE_DECIMAL_FACTOR,
+  EDITOR_SCALE_MAX,
+  EDITOR_SCALE_MIN,
+  EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX,
+  EDITOR_VIEWPORT_FALLBACK_WIDTH,
+  EDITOR_WHEEL_LINE_HEIGHT_PX,
+  EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK,
+  EDITOR_WHEEL_ZOOM_SENSITIVITY,
+  EDITOR_ZOOM_STEP,
   DEFAULT_EDITOR_SCALE,
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
@@ -33,7 +58,10 @@ import {
   MINIMAP_MIN_IMAGE_DIMENSION,
   MINIMAP_MIN_RADIUS,
   MINIMAP_MIN_TEXT_HEIGHT,
+  OPACITY_MAX,
+  OPACITY_MIN,
   SHAPE_STROKE_SCALE_FACTOR,
+  SLIDER_DECIMAL_PLACES,
   TEXT_DOUBLE_TAP_WINDOW_MS,
   TEXT_MIN_HEIGHT_FACTOR,
   TEXT_RENDER_LINE_HEIGHT_FACTOR,
@@ -255,9 +283,9 @@ export class EditorPageComponent {
   readonly inspectorTab = signal<InspectorTab>('properties');
   readonly activeTool = signal<ToolId>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
-  readonly canvasWidth = signal(1280);
+  readonly canvasWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly canvasHeight = signal(840);
-  readonly canvasViewportWidth = signal(1280);
+  readonly canvasViewportWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly fileMenuOpen = signal(false);
@@ -564,10 +592,12 @@ export class EditorPageComponent {
     this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : this.mobileLeftSidebarHeight()
   );
   readonly leftSidebarMinWidth = computed(() =>
-    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : 240
+    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : EDITOR_LEFT_SIDEBAR_MIN_WIDTH
   );
   readonly rightSidebarMinWidth = computed(() =>
-    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : 280
+    this.rightSidebarCollapsed()
+      ? EditorPageComponent.collapsedSidebarSize.desktopWidth
+      : EDITOR_RIGHT_SIDEBAR_MIN_WIDTH
   );
   readonly mobileRightSidebarMinHeight = computed(() =>
     this.rightSidebarCollapsed()
@@ -575,11 +605,13 @@ export class EditorPageComponent {
         ? 0
         : EditorPageComponent.collapsedSidebarSize.mobileHeight
       : this.mobileLayout()
-        ? 200
-        : 260
+        ? EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT
+        : EDITOR_RIGHT_SIDEBAR_DESKTOP_STACKED_MIN_HEIGHT
   );
   readonly mobileLeftSidebarMinHeight = computed(() =>
-    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : 140
+    this.leftSidebarCollapsed()
+      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
+      : EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT
   );
   readonly inlineTextEditorLayout = computed(() => {
     const editor = this.inlineTextEditor();
@@ -832,12 +864,14 @@ export class EditorPageComponent {
 
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
-      const mobileLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 760px)') ?? null;
-      const sidebarsOverlayLayoutQuery = this.document.defaultView?.matchMedia?.('(max-width: 1220px)') ?? null;
+      const mobileLayoutQuery =
+        this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_MOBILE_BREAKPOINT_PX}px)`) ?? null;
+      const sidebarsOverlayLayoutQuery =
+        this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX}px)`) ?? null;
       const updateCanvasSize = () => {
         this.canvasViewportWidth.set(Math.round(viewport.clientWidth));
-        this.canvasWidth.set(Math.max(420, Math.round(viewport.clientWidth)));
-        this.canvasHeight.set(Math.max(320, Math.round(viewport.clientHeight)));
+        this.canvasWidth.set(Math.max(EDITOR_CANVAS_MIN_WIDTH, Math.round(viewport.clientWidth)));
+        this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, Math.round(viewport.clientHeight)));
       };
 
       const resizeObserver = new ResizeObserver(() => {
@@ -850,12 +884,16 @@ export class EditorPageComponent {
         );
       };
       const updateMobileLayout = () => {
-        const isMobile = mobileLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 760;
+        const isMobile =
+          mobileLayoutQuery?.matches ??
+          (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <= EDITOR_MOBILE_BREAKPOINT_PX;
         this.mobileLayout.set(isMobile);
       };
       const updateSidebarsOverlayLayout = () => {
         const useOverlayLayout =
-          sidebarsOverlayLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? 1280) <= 1220;
+          sidebarsOverlayLayoutQuery?.matches ??
+          (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <=
+            EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX;
         this.sidebarsOverlayLayout.set(useOverlayLayout);
         if (!useOverlayLayout) {
           this.mobileLibraryPanelOpen.set(false);
@@ -1528,11 +1566,11 @@ export class EditorPageComponent {
   }
 
   zoomIn(): void {
-    this.setScaleFromViewportCenter(this.preferences().scale + 4);
+    this.setScaleFromViewportCenter(this.preferences().scale + EDITOR_ZOOM_STEP);
   }
 
   zoomOut(): void {
-    this.setScaleFromViewportCenter(this.preferences().scale - 4);
+    this.setScaleFromViewportCenter(this.preferences().scale - EDITOR_ZOOM_STEP);
   }
 
   resetZoom(): void {
@@ -1577,7 +1615,7 @@ export class EditorPageComponent {
 
       const width = exportDocument.width;
       const height = exportDocument.height;
-      const scale = 2;
+      const scale = EDITOR_PNG_EXPORT_SCALE;
       const canvas = this.document.createElement('canvas');
       canvas.width = width * scale;
       canvas.height = height * scale;
@@ -1790,7 +1828,7 @@ export class EditorPageComponent {
       return;
     }
 
-    const offsetStep = 0.8;
+    const offsetStep = EDITOR_PASTE_OFFSET_STEP;
     const offset = offsetStep * (clipboard.pasteCount + 1);
     const pastedShapes = remapStructuralShapeIds(
       clipboard.shapes.map((shape) => {
@@ -1926,7 +1964,7 @@ export class EditorPageComponent {
   }
 
   updateShapeOpacity(key: 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity', event: Event): void {
-    const value = Math.min(1, Math.max(0, Number((event.target as HTMLInputElement).value)));
+    const value = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, Number((event.target as HTMLInputElement).value)));
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
@@ -2053,12 +2091,12 @@ export class EditorPageComponent {
         ? ({
             ...shape,
             width: value,
-            height: Math.max(value / Math.max(aspectRatio, 0.01), MIN_SHAPE_DIMENSION)
+            height: Math.max(value / Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
           } as CanvasShape)
         : ({
             ...shape,
             height: value,
-            width: Math.max(value * Math.max(aspectRatio, 0.01), MIN_SHAPE_DIMENSION)
+            width: Math.max(value * Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
           } as CanvasShape);
     });
   }
@@ -2082,7 +2120,10 @@ export class EditorPageComponent {
             ...(dimensions
               ? {
                   aspectRatio: dimensions.width / dimensions.height,
-                  height: Math.max(shape.width / Math.max(dimensions.width / dimensions.height, 0.01), 0.2)
+                  height: Math.max(
+                    shape.width / Math.max(dimensions.width / dimensions.height, EDITOR_IMAGE_ASPECT_RATIO_EPSILON),
+                    MIN_SHAPE_DIMENSION
+                  )
                 }
               : {}),
             latexSource: shape.latexSource || file.name
@@ -2144,7 +2185,9 @@ export class EditorPageComponent {
       shape.kind === 'line'
         ? ({
             ...shape,
-            arrowScale: Number.isFinite(value) ? Math.min(4.5, Math.max(0.4, value)) : shape.arrowScale
+            arrowScale: Number.isFinite(value)
+              ? Math.min(EDITOR_LINE_ARROW_SCALE_MAX, Math.max(EDITOR_LINE_ARROW_SCALE_MIN, value))
+              : shape.arrowScale
           } as LineShape)
         : shape
     );
@@ -2288,8 +2331,8 @@ export class EditorPageComponent {
     const lastPoint = points.at(-2) ?? shape.from;
     const nextPoint = shape.to;
     const anchor = {
-      x: Number(((lastPoint.x + nextPoint.x) / 2).toFixed(3)),
-      y: Number(((lastPoint.y + nextPoint.y) / 2).toFixed(3))
+      x: Number(((lastPoint.x + nextPoint.x) / 2).toFixed(EDITOR_LINE_ANCHOR_DECIMALS)),
+      y: Number(((lastPoint.y + nextPoint.y) / 2).toFixed(EDITOR_LINE_ANCHOR_DECIMALS))
     };
 
     this.runSceneMutation(() => {
@@ -2329,8 +2372,8 @@ export class EditorPageComponent {
         : Math.max(Math.abs(bounds.bottom), Math.abs(bounds.top), 1);
 
     return {
-      min: Number((-maxAbs).toFixed(2)),
-      max: Number(maxAbs.toFixed(2))
+      min: Number((-maxAbs).toFixed(SLIDER_DECIMAL_PLACES)),
+      max: Number(maxAbs.toFixed(SLIDER_DECIMAL_PLACES))
     };
   }
 
@@ -2736,7 +2779,7 @@ export class EditorPageComponent {
       const deltaClientX = event.clientX - interactionState.startClientPoint.x;
       const deltaClientY = event.clientY - interactionState.startClientPoint.y;
       const distance = Math.hypot(deltaClientX, deltaClientY);
-      if (distance < 6) {
+      if (distance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX) {
         this.interactionState.set({
           ...interactionState,
           lastClientPoint: { x: event.clientX, y: event.clientY }
@@ -2886,7 +2929,7 @@ export class EditorPageComponent {
         event.clientY - interactionState.startClientPoint.y
       );
       const tapShapeId = interactionState.tapEligibleShapeId;
-      if (tapShapeId && tapDistance < 6) {
+      if (tapShapeId && tapDistance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX) {
         if (this.isRepeatedSelectedShapeTap(tapShapeId)) {
           const shape = this.scene().shapes.find((candidate) => candidate.id === tapShapeId);
           if (
@@ -2934,7 +2977,7 @@ export class EditorPageComponent {
 
     if (event.ctrlKey) {
       const zoomDelta = this.normalizeWheelDelta(event).y;
-      const zoomFactor = Math.exp(-zoomDelta * 0.0015);
+      const zoomFactor = Math.exp(-zoomDelta * EDITOR_WHEEL_ZOOM_SENSITIVITY);
       this.setScaleAtClientPoint(this.preferences().scale * zoomFactor, event.clientX, event.clientY, false);
       return;
     }
@@ -3704,12 +3747,12 @@ export class EditorPageComponent {
   }
 
   private suppressContextMenuBriefly(): void {
-    this.suppressContextMenuUntil.set(Date.now() + 400);
+    this.suppressContextMenuUntil.set(Date.now() + EDITOR_CONTEXT_MENU_SUPPRESSION_MS);
   }
 
   private normalizeWheelDelta(event: WheelEvent): { readonly x: number; readonly y: number } {
-    const lineHeight = 16;
-    const pageHeight = this.canvasViewport().nativeElement.clientHeight || 800;
+    const lineHeight = EDITOR_WHEEL_LINE_HEIGHT_PX;
+    const pageHeight = this.canvasViewport().nativeElement.clientHeight || EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK;
     const multiplier =
       event.deltaMode === WheelEvent.DOM_DELTA_LINE
         ? lineHeight
@@ -3838,8 +3881,10 @@ export class EditorPageComponent {
     clientY: number,
     roundToInteger: boolean = true
   ): void {
-    const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * 10) / 10;
-    const clampedScale = Math.min(120, Math.max(12, normalizedScale));
+    const normalizedScale = roundToInteger
+      ? Math.round(nextScale)
+      : Math.round(nextScale * EDITOR_SCALE_DECIMAL_FACTOR) / EDITOR_SCALE_DECIMAL_FACTOR;
+    const clampedScale = Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, normalizedScale));
     const currentScale = this.preferences().scale;
     if (clampedScale === currentScale) {
       return;
