@@ -22,7 +22,12 @@ export type TextStyleKey = 'fontWeight' | 'fontStyle' | 'textDecoration';
 export type TextStylePropertyKey = TextStyleKey | 'textAlign';
 export type LatexExportTextKey = 'figurePlacement' | 'caption' | 'label';
 export type LatexExportNumberKey = 'maxWidthPercent' | 'standaloneBorderMm';
-export type LatexExportBooleanKey = 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel';
+export type LatexExportBooleanKey =
+  | 'wrapInFigure'
+  | 'scaleToWidth'
+  | 'includeFrame'
+  | 'includeCaption'
+  | 'includeLabel';
 export type TemplateDialogTextKey = 'title' | 'description';
 export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale';
 export type PreferenceTextKey = 'defaultStroke' | 'defaultFill';
@@ -33,7 +38,17 @@ export type ImageTextKey = 'src' | 'latexSource';
 export type ImageDimensionKey = 'width' | 'height';
 export type TextTransformMode = 'uppercase' | 'lowercase' | 'titlecase';
 export type LineBooleanKey = 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound';
-export type ContextAction = 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png';
+export type ContextAction =
+  | 'copy'
+  | 'cut'
+  | 'paste'
+  | 'duplicate'
+  | 'delete'
+  | 'front'
+  | 'back'
+  | 'group'
+  | 'ungroup'
+  | 'png';
 export type LineEndpoint = 'from' | 'to';
 export type ArrowEndpoint = 'start' | 'end';
 export type ArrowScaleKind = 'length' | 'width';

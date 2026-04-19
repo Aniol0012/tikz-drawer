@@ -1272,10 +1272,7 @@ export class EditorPageComponent {
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportBoolean(
-    key: LatexExportBooleanKey,
-    event: Event
-  ): void {
+  updateLatexExportBoolean(key: LatexExportBooleanKey, event: Event): void {
     this.patchLatexExportConfig({
       [key]: (event.target as HTMLInputElement).checked
     } as Partial<LatexExportConfig>);
@@ -1897,12 +1894,7 @@ export class EditorPageComponent {
     this.runSceneMutation(() => this.store.sendSelectedToBack());
   }
 
-  updatePreferenceNumber(
-    key: PreferenceNumberKey,
-    event: Event,
-    minimumValue: number,
-    maximumValue?: number
-  ): void {
+  updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
     const rawValue = Number((event.target as HTMLInputElement).value);
     const clampedValue =
       maximumValue === undefined
@@ -2525,9 +2517,7 @@ export class EditorPageComponent {
     this.contextMenu.set(null);
   }
 
-  runContextAction(
-    action: ContextAction
-  ): void {
+  runContextAction(action: ContextAction): void {
     switch (action) {
       case 'copy':
         this.copySelected();
@@ -3252,11 +3242,7 @@ export class EditorPageComponent {
     };
   }
 
-  lineArrowControlHandles(
-    shape: LineShape,
-    endpoint: LineEndpoint,
-    adjacentPoint: Point
-  ): readonly HandleDescriptor[] {
+  lineArrowControlHandles(shape: LineShape, endpoint: LineEndpoint, adjacentPoint: Point): readonly HandleDescriptor[] {
     const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
     if (!showsArrow) {
       return [];
@@ -4348,8 +4334,7 @@ export class EditorPageComponent {
     }
 
     const frame = table.shapes.find(
-      (shape): shape is RectangleCanvasShape =>
-        shape.kind === 'rectangle' && shape.table?.role === 'frame'
+      (shape): shape is RectangleCanvasShape => shape.kind === 'rectangle' && shape.table?.role === 'frame'
     );
     if (!frame) {
       return;
@@ -4357,12 +4342,10 @@ export class EditorPageComponent {
 
     const dividerPrototype =
       table.shapes.find(
-        (shape): shape is LineCanvasShape =>
-          shape.kind === 'line' && shape.table?.role === 'row-divider'
+        (shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'row-divider'
       ) ??
       table.shapes.find(
-        (shape): shape is LineCanvasShape =>
-          shape.kind === 'line' && shape.table?.role === 'column-divider'
+        (shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'column-divider'
       );
 
     const nextShapes = buildTableShapes({
@@ -4899,11 +4882,7 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeRectangle(
-    shape: RectangleOrImageCanvasShape,
-    handle: ResizeHandle,
-    point: Point
-  ): CanvasShape {
+  private resizeRectangle(shape: RectangleOrImageCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     const resizedBounds = this.resizeBounds(
       { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
       handle,
@@ -4927,11 +4906,7 @@ export class EditorPageComponent {
       : resizedShape;
   }
 
-  private resizeCircle(
-    shape: CircleCanvasShape,
-    handle: ResizeHandle,
-    point: Point
-  ): CanvasShape {
+  private resizeCircle(shape: CircleCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r },
       handle,
@@ -4953,11 +4928,7 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeEllipse(
-    shape: EllipseCanvasShape,
-    handle: ResizeHandle,
-    point: Point
-  ): CanvasShape {
+  private resizeEllipse(shape: EllipseCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
     const resizedBounds = this.resizeBounds(
       { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
@@ -5288,11 +5259,7 @@ export class EditorPageComponent {
     return align;
   }
 
-  isTextStyleActive(
-    shape: CanvasShape,
-    key: TextStylePropertyKey,
-    value: string
-  ): boolean {
+  isTextStyleActive(shape: CanvasShape, key: TextStylePropertyKey, value: string): boolean {
     return shape.kind === 'text' && String(shape[key]) === value;
   }
 
