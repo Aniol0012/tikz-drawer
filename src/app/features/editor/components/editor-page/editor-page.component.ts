@@ -71,15 +71,23 @@ import { getIconPath, iconPaths } from '../../config/editor-icons';
 import {
   type ArrowControlHandle,
   type ArrowDirection,
+  type ArrowEndpoint,
+  type ArrowScaleKind,
   type ArrowTipOption,
   Axis,
   type ClipboardShapeSet,
+  type CircleCanvasShape,
   type CodeHighlightTheme,
+  type ContextAction,
   type ContextMenuState,
+  type CssTextAlign,
+  type EllipseCanvasShape,
   type ExportMode,
   type ExportSvgDocument,
   type HandleDescriptor,
   type HomogeneousSelectionInfo,
+  type ImageDimensionKey,
+  type ImageTextKey,
   type InlineTextEditorState,
   type InspectorTab,
   type InteractionState,
@@ -87,17 +95,40 @@ import {
   LATEX_COLOR_MODES,
   LATEX_FONT_SIZES,
   type LatexAlignment,
+  type LatexExportBooleanKey,
   type LatexExportConfig,
   type LatexFontSize,
+  type LatexExportNumberKey,
+  type LatexExportTextKey,
+  type LineBooleanKey,
+  type LineCanvasShape,
+  type LineEndpoint,
   type LibrarySection,
   type MinimapOverview,
   type MinimapRect,
   type MinimapShape,
+  type NotificationTone,
   type PinchZoomState,
+  type PreferenceBooleanKey,
+  type PreferenceNumberKey,
+  type PreferenceTextKey,
   type RecentTextTap,
+  type RectangleOrImageCanvasShape,
+  type RectangleCanvasShape,
   type ResizeHandle,
+  type ResizeCursor,
   type SavedTemplate,
   type SceneReplaceDialogState,
+  type ShapeOpacityKey,
+  type ShapeTextKey,
+  type SidebarResizeTarget,
+  type SidebarSide,
+  type SvgTextAnchor,
+  type TemplateDialogTextKey,
+  type TextCanvasShape,
+  type TextStyleKey,
+  type TextStylePropertyKey,
+  type TextTransformMode,
   type SidebarResizeState,
   type TextSymbolGroup,
   type TextSymbolPalettePosition,
@@ -299,7 +330,7 @@ export class EditorPageComponent {
   readonly pinnedToolsReady = signal(false);
   readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
-  readonly shareFeedbackTone = signal<'info' | 'warning'>('info');
+  readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
@@ -1092,7 +1123,7 @@ export class EditorPageComponent {
     }));
   }
 
-  toggleSidebarCollapsed(side: 'left' | 'right'): void {
+  toggleSidebarCollapsed(side: SidebarSide): void {
     if (side === 'left') {
       this.leftSidebarCollapsed.update((collapsed) => !collapsed);
       this.sidebarResizeState.set(null);
@@ -1103,7 +1134,7 @@ export class EditorPageComponent {
     this.sidebarResizeState.set(null);
   }
 
-  startSidebarResize(event: PointerEvent, side: 'left' | 'right'): void {
+  startSidebarResize(event: PointerEvent, side: SidebarSide): void {
     if ((side === 'left' && this.leftSidebarCollapsed()) || (side === 'right' && this.rightSidebarCollapsed())) {
       return;
     }
@@ -1119,7 +1150,7 @@ export class EditorPageComponent {
     });
   }
 
-  private sidebarResizeStartSize(side: 'left' | 'right', stackedLayout: boolean): number {
+  private sidebarResizeStartSize(side: SidebarSide, stackedLayout: boolean): number {
     if (stackedLayout) {
       return side === 'left' ? this.mobileLeftSidebarHeight() : this.mobileRightSidebarHeight();
     }
@@ -1127,7 +1158,7 @@ export class EditorPageComponent {
     return side === 'left' ? this.leftSidebarWidth() : this.rightSidebarWidth();
   }
 
-  private clampSidebarSize(side: 'mobile-left' | 'mobile-right' | 'left' | 'right', value: number): number {
+  private clampSidebarSize(side: SidebarResizeTarget, value: number): number {
     const limits = EditorPageComponent.sidebarResizeLimits;
     switch (side) {
       case 'mobile-left':
@@ -1224,13 +1255,13 @@ export class EditorPageComponent {
     }));
   }
 
-  updateLatexExportText(key: 'figurePlacement' | 'caption' | 'label', event: Event): void {
+  updateLatexExportText(key: LatexExportTextKey, event: Event): void {
     this.patchLatexExportConfig({
       [key]: (event.target as HTMLInputElement | HTMLSelectElement).value
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportNumber(key: 'maxWidthPercent' | 'standaloneBorderMm', event: Event, min: number, max: number): void {
+  updateLatexExportNumber(key: LatexExportNumberKey, event: Event, min: number, max: number): void {
     const input = event.target as HTMLInputElement;
     const value = Number.parseFloat(input.value);
     if (!Number.isFinite(value)) {
@@ -1242,7 +1273,7 @@ export class EditorPageComponent {
   }
 
   updateLatexExportBoolean(
-    key: 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel',
+    key: LatexExportBooleanKey,
     event: Event
   ): void {
     this.patchLatexExportConfig({
@@ -1404,7 +1435,7 @@ export class EditorPageComponent {
     this.templateIconInput.set('library');
   }
 
-  updateTemplateDialogText(key: 'title' | 'description', event: Event): void {
+  updateTemplateDialogText(key: TemplateDialogTextKey, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     if (key === 'title') {
       this.templateTitleInput.set(value);
@@ -1867,7 +1898,7 @@ export class EditorPageComponent {
   }
 
   updatePreferenceNumber(
-    key: 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale',
+    key: PreferenceNumberKey,
     event: Event,
     minimumValue: number,
     maximumValue?: number
@@ -1880,11 +1911,11 @@ export class EditorPageComponent {
     this.store.patchPreferences({ [key]: clampedValue } as Partial<EditorPreferences>);
   }
 
-  updatePreferenceText(key: 'defaultStroke' | 'defaultFill', event: Event): void {
+  updatePreferenceText(key: PreferenceTextKey, event: Event): void {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
   }
 
-  onBooleanPreferenceChange(key: 'snapToGrid' | 'showGrid' | 'showAxes', event: Event): void {
+  onBooleanPreferenceChange(key: PreferenceBooleanKey, event: Event): void {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
   }
 
@@ -1905,13 +1936,13 @@ export class EditorPageComponent {
     }
   }
 
-  updateShapeText(key: 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor', event: Event): void {
+  updateShapeText(key: ShapeTextKey, event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
   setTextStyle(
-    key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
+    key: TextStylePropertyKey,
     value: TextShape['fontWeight'] | TextShape['fontStyle'] | TextShape['textDecoration'] | TextShape['textAlign']
   ): void {
     this.patchInspectorSelection((shape) =>
@@ -1925,7 +1956,7 @@ export class EditorPageComponent {
     );
   }
 
-  toggleTextStyle(key: 'fontWeight' | 'fontStyle' | 'textDecoration'): void {
+  toggleTextStyle(key: TextStyleKey): void {
     this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') {
         return shape;
@@ -1963,7 +1994,7 @@ export class EditorPageComponent {
     });
   }
 
-  updateShapeOpacity(key: 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity', event: Event): void {
+  updateShapeOpacity(key: ShapeOpacityKey, event: Event): void {
     const value = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, Number((event.target as HTMLInputElement).value)));
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
@@ -2068,14 +2099,14 @@ export class EditorPageComponent {
     );
   }
 
-  updateImageText(key: 'src' | 'latexSource', event: Event): void {
+  updateImageText(key: ImageTextKey, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.patchInspectorSelection((shape) =>
       shape.kind === 'image' ? ({ ...shape, [key]: value } as CanvasShape) : shape
     );
   }
 
-  updateImageDimension(key: 'width' | 'height', event: Event): void {
+  updateImageDimension(key: ImageDimensionKey, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     if (!Number.isFinite(value) || value <= 0) {
       return;
@@ -2137,7 +2168,7 @@ export class EditorPageComponent {
     this.patchInspectorSelection((shape) => (shape.kind === 'text' ? ({ ...shape, fontSize } as CanvasShape) : shape));
   }
 
-  transformSelectedText(mode: 'uppercase' | 'lowercase' | 'titlecase'): void {
+  transformSelectedText(mode: TextTransformMode): void {
     this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') {
         return shape;
@@ -2174,7 +2205,7 @@ export class EditorPageComponent {
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
-  updateShapeBoolean(key: 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound', event: Event): void {
+  updateShapeBoolean(key: LineBooleanKey, event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
@@ -2275,7 +2306,7 @@ export class EditorPageComponent {
     this.store.patchSelectedShape(mutator);
   }
 
-  private textBoxAnchorX(shape: Extract<CanvasShape, { kind: 'text' }>, textBoxEnabled: boolean): number {
+  private textBoxAnchorX(shape: TextCanvasShape, textBoxEnabled: boolean): number {
     if (shape.textAlign === 'left') {
       return shape.x;
     }
@@ -2288,7 +2319,7 @@ export class EditorPageComponent {
     return shape.x + (shape.boxWidth / 2) * direction;
   }
 
-  updateLinePoint(target: 'from' | 'to', axis: Axis, event: Event): void {
+  updateLinePoint(target: LineEndpoint, axis: Axis, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.store.patchSelectedShape((shape) => {
       if (shape.kind !== 'line') {
@@ -2495,7 +2526,7 @@ export class EditorPageComponent {
   }
 
   runContextAction(
-    action: 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png'
+    action: ContextAction
   ): void {
     switch (action) {
       case 'copy':
@@ -3195,7 +3226,7 @@ export class EditorPageComponent {
     }));
   }
 
-  lineEndpointHandle(shape: LineShape, endpoint: 'from' | 'to', adjacentPoint: Point): HandleDescriptor {
+  lineEndpointHandle(shape: LineShape, endpoint: LineEndpoint, adjacentPoint: Point): HandleDescriptor {
     const targetPoint = endpoint === 'from' ? shape.from : shape.to;
     const targetSvg = { x: this.toSvgX(targetPoint.x), y: this.toSvgY(targetPoint.y) };
     const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
@@ -3223,7 +3254,7 @@ export class EditorPageComponent {
 
   lineArrowControlHandles(
     shape: LineShape,
-    endpoint: 'from' | 'to',
+    endpoint: LineEndpoint,
     adjacentPoint: Point
   ): readonly HandleDescriptor[] {
     const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
@@ -3263,7 +3294,7 @@ export class EditorPageComponent {
     ];
   }
 
-  resizeCursorForVector(vector: Point): 'ew-resize' | 'ns-resize' | 'nesw-resize' | 'nwse-resize' {
+  resizeCursorForVector(vector: Point): ResizeCursor {
     const angle = ((Math.atan2(vector.y, vector.x) * 180) / Math.PI + 180) % 180;
 
     if (angle < 22.5 || angle >= 157.5) {
@@ -3281,7 +3312,7 @@ export class EditorPageComponent {
     return 'nesw-resize';
   }
 
-  arrowMarkerId(shape: LineShape, side: 'start' | 'end'): string {
+  arrowMarkerId(shape: LineShape, side: ArrowEndpoint): string {
     return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${side}`;
   }
 
@@ -3297,7 +3328,7 @@ export class EditorPageComponent {
     return this.arrowMarkerGeometry(shape).viewBox;
   }
 
-  arrowMarkerRefX(shape: LineShape, side: 'start' | 'end'): number {
+  arrowMarkerRefX(shape: LineShape, side: ArrowEndpoint): number {
     void side;
     return this.arrowMarkerGeometry(shape).refX;
   }
@@ -3385,7 +3416,7 @@ export class EditorPageComponent {
 
   lineEndpointVectors(
     shape: LineShape,
-    endpoint: 'from' | 'to',
+    endpoint: LineEndpoint,
     adjacentPoint: Point
   ): {
     readonly targetSvg: Point;
@@ -3406,7 +3437,7 @@ export class EditorPageComponent {
     };
   }
 
-  lineArrowControlScale(shape: LineShape, endpoint: 'start' | 'end', point: Point, kind: 'length' | 'width'): number {
+  lineArrowControlScale(shape: LineShape, endpoint: ArrowEndpoint, point: Point, kind: ArrowScaleKind): number {
     const targetPoint = endpoint === 'start' ? shape.from : shape.to;
     const adjacentPoint = endpoint === 'start' ? (shape.anchors[0] ?? shape.to) : (shape.anchors.at(-1) ?? shape.from);
     const deltaX = targetPoint.x - adjacentPoint.x;
@@ -3713,7 +3744,7 @@ export class EditorPageComponent {
     this.minimapPanPointerId.set(null);
   }
 
-  private showNotification(message: string, tone: 'info' | 'warning' = 'info'): void {
+  private showNotification(message: string, tone: NotificationTone = 'info'): void {
     const id = crypto.randomUUID();
     this.notifications.update((notifications) => [...notifications, { id, message, tone }]);
     globalThis.setTimeout(() => {
@@ -4317,7 +4348,7 @@ export class EditorPageComponent {
     }
 
     const frame = table.shapes.find(
-      (shape): shape is Extract<CanvasShape, { kind: 'rectangle' }> =>
+      (shape): shape is RectangleCanvasShape =>
         shape.kind === 'rectangle' && shape.table?.role === 'frame'
     );
     if (!frame) {
@@ -4326,11 +4357,11 @@ export class EditorPageComponent {
 
     const dividerPrototype =
       table.shapes.find(
-        (shape): shape is Extract<CanvasShape, { kind: 'line' }> =>
+        (shape): shape is LineCanvasShape =>
           shape.kind === 'line' && shape.table?.role === 'row-divider'
       ) ??
       table.shapes.find(
-        (shape): shape is Extract<CanvasShape, { kind: 'line' }> =>
+        (shape): shape is LineCanvasShape =>
           shape.kind === 'line' && shape.table?.role === 'column-divider'
       );
 
@@ -4835,7 +4866,7 @@ export class EditorPageComponent {
     );
   }
 
-  private resizeText(shape: Extract<CanvasShape, { kind: 'text' }>, handle: ResizeHandle, point: Point): CanvasShape {
+  private resizeText(shape: TextCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     const bounds = this.shapeBounds(shape);
     if (!bounds) {
       return shape;
@@ -4869,7 +4900,7 @@ export class EditorPageComponent {
   }
 
   private resizeRectangle(
-    shape: Extract<CanvasShape, { kind: 'rectangle' | 'image' }>,
+    shape: RectangleOrImageCanvasShape,
     handle: ResizeHandle,
     point: Point
   ): CanvasShape {
@@ -4897,7 +4928,7 @@ export class EditorPageComponent {
   }
 
   private resizeCircle(
-    shape: Extract<CanvasShape, { kind: 'circle' }>,
+    shape: CircleCanvasShape,
     handle: ResizeHandle,
     point: Point
   ): CanvasShape {
@@ -4923,7 +4954,7 @@ export class EditorPageComponent {
   }
 
   private resizeEllipse(
-    shape: Extract<CanvasShape, { kind: 'ellipse' }>,
+    shape: EllipseCanvasShape,
     handle: ResizeHandle,
     point: Point
   ): CanvasShape {
@@ -4945,7 +4976,7 @@ export class EditorPageComponent {
     };
   }
 
-  private resizeLine(shape: Extract<CanvasShape, { kind: 'line' }>, handle: ResizeHandle, point: Point): CanvasShape {
+  private resizeLine(shape: LineCanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     if (handle === 'from') {
       return { ...shape, from: point };
     }
@@ -5133,7 +5164,7 @@ export class EditorPageComponent {
     );
   }
 
-  private openInlineTextEditor(shape: Extract<CanvasShape, { kind: 'text' }>): void {
+  private openInlineTextEditor(shape: TextCanvasShape): void {
     this.inlineTextEditor.set({
       shapeId: shape.id,
       value: shape.text
@@ -5142,14 +5173,14 @@ export class EditorPageComponent {
     this.focusInlineTextInput();
   }
 
-  private startTextEditing(shape: Extract<CanvasShape, { kind: 'text' }>): void {
+  private startTextEditing(shape: TextCanvasShape): void {
     this.selectShape(shape.id);
     this.openInlineTextEditor(shape);
     this.recentTextTap.set(null);
     this.recentSelectedShapeTap.set(null);
   }
 
-  private insertCenteredTextForSelectedShape(shape: CanvasShape): Extract<CanvasShape, { kind: 'text' }> | null {
+  private insertCenteredTextForSelectedShape(shape: CanvasShape): TextCanvasShape | null {
     if (shape.kind === 'text') {
       return null;
     }
@@ -5188,7 +5219,7 @@ export class EditorPageComponent {
       textAlign: 'center',
       rotation: 0,
       mergeId
-    }) as Extract<CanvasShape, { kind: 'text' }>;
+    }) as TextCanvasShape;
 
     this.runSceneMutation(() => {
       if (shape.mergeId !== mergeId) {
@@ -5239,7 +5270,7 @@ export class EditorPageComponent {
     return this.t(`textSymbolGroup.${label.toLowerCase()}`);
   }
 
-  textAnchor(align: TextAlign): 'start' | 'middle' | 'end' {
+  textAnchor(align: TextAlign): SvgTextAnchor {
     if (align === 'left') {
       return 'start';
     }
@@ -5253,13 +5284,13 @@ export class EditorPageComponent {
     return this.textRenderXAt(shape, (value) => this.toSvgX(value), this.preferences().scale);
   }
 
-  textInputAlign(align: TextAlign): 'left' | 'center' | 'right' {
+  textInputAlign(align: TextAlign): CssTextAlign {
     return align;
   }
 
   isTextStyleActive(
     shape: CanvasShape,
-    key: 'fontWeight' | 'fontStyle' | 'textDecoration' | 'textAlign',
+    key: TextStylePropertyKey,
     value: string
   ): boolean {
     return shape.kind === 'text' && String(shape[key]) === value;

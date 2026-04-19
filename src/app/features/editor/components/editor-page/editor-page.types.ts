@@ -13,8 +13,39 @@ export type InspectorTab = 'properties' | 'scene' | 'code';
 export type ExportMode = 'snippet' | 'standalone';
 export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 export type ToolId = 'select' | string;
+export type NotificationTone = 'info' | 'warning';
+export type SidebarSide = 'left' | 'right';
+export type SidebarResizeTarget = SidebarSide | 'mobile-left' | 'mobile-right';
+export type SvgTextAnchor = 'start' | 'middle' | 'end';
+export type CssTextAlign = 'left' | 'center' | 'right';
+export type TextStyleKey = 'fontWeight' | 'fontStyle' | 'textDecoration';
+export type TextStylePropertyKey = TextStyleKey | 'textAlign';
+export type LatexExportTextKey = 'figurePlacement' | 'caption' | 'label';
+export type LatexExportNumberKey = 'maxWidthPercent' | 'standaloneBorderMm';
+export type LatexExportBooleanKey = 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel';
+export type TemplateDialogTextKey = 'title' | 'description';
+export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale';
+export type PreferenceTextKey = 'defaultStroke' | 'defaultFill';
+export type PreferenceBooleanKey = 'snapToGrid' | 'showGrid' | 'showAxes';
+export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';
+export type ShapeOpacityKey = 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity';
+export type ImageTextKey = 'src' | 'latexSource';
+export type ImageDimensionKey = 'width' | 'height';
+export type TextTransformMode = 'uppercase' | 'lowercase' | 'titlecase';
+export type LineBooleanKey = 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound';
+export type ContextAction = 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png';
+export type LineEndpoint = 'from' | 'to';
+export type ArrowEndpoint = 'start' | 'end';
+export type ArrowScaleKind = 'length' | 'width';
+export type ResizeCursor = 'ew-resize' | 'ns-resize' | 'nesw-resize' | 'nwse-resize';
 export type ArrowControlHandle = 'arrow-length-start' | 'arrow-length-end' | 'arrow-width-start' | 'arrow-width-end';
 export type ArrowDirection = 'none' | 'forward' | 'backward' | 'both';
+export type TextCanvasShape = Extract<CanvasShape, { kind: 'text' }>;
+export type LineCanvasShape = Extract<CanvasShape, { kind: 'line' }>;
+export type RectangleCanvasShape = Extract<CanvasShape, { kind: 'rectangle' }>;
+export type CircleCanvasShape = Extract<CanvasShape, { kind: 'circle' }>;
+export type EllipseCanvasShape = Extract<CanvasShape, { kind: 'ellipse' }>;
+export type RectangleOrImageCanvasShape = Extract<CanvasShape, { kind: 'rectangle' | 'image' }>;
 export type ResizeHandle =
   | 'nw'
   | 'n'
@@ -24,8 +55,7 @@ export type ResizeHandle =
   | 's'
   | 'sw'
   | 'w'
-  | 'from'
-  | 'to'
+  | LineEndpoint
   | ArrowControlHandle
   | `anchor-${number}`
   | `insert-anchor-${number}`;
@@ -34,7 +64,7 @@ export type ContextTarget = 'canvas' | 'shape';
 export interface ToastNotification {
   readonly id: string;
   readonly message: string;
-  readonly tone: 'info' | 'warning';
+  readonly tone: NotificationTone;
 }
 
 export const LATEX_ALIGNMENTS = ['center', 'left', 'right'] as const;
@@ -195,7 +225,7 @@ export interface ClipboardShapeSet {
 
 export type Axis = 'x' | 'y';
 export interface SidebarResizeState {
-  readonly side: 'left' | 'right';
+  readonly side: SidebarSide;
   readonly axis: Axis;
   readonly startPointer: number;
   readonly startSize: number;
@@ -281,7 +311,7 @@ export interface MinimapTextShape extends MinimapShapeBase {
   readonly fontSize: number;
   readonly fill: string;
   readonly fillOpacity: number;
-  readonly textAnchor: 'start' | 'middle' | 'end';
+  readonly textAnchor: SvgTextAnchor;
   readonly fontWeight: TextShape['fontWeight'];
   readonly fontStyle: TextShape['fontStyle'];
   readonly textDecoration: TextShape['textDecoration'];
