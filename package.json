@@ -16,7 +16,8 @@
     "lint-fix": "pnpm run lint:eslint:fix && prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
     "format": "prettier --write \"**/*.{ts,html,css,scss,json,md}\"",
     "lint-format": "pnpm run lint-fix",
-    "lint:format": "prettier --check \"**/*.{ts,html,css,scss,json,md}\""
+    "lint:format": "prettier --check \"**/*.{ts,html,css,scss,json,md}\"",
+    "sonar:scan": "sonar-scanner"
   },
   "private": true,
   "packageManager": "pnpm@10.17.1",
@@ -41,6 +42,7 @@
     "jsdom": "^28.0.0",
     "playwright": "^1.55.0",
     "prettier": "^3.8.2",
+    "sonar-scanner": "^3.1.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.46.1",
