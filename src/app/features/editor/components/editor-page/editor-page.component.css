@@ -1026,7 +1026,9 @@ kbd {
   overscroll-behavior: contain;
   -webkit-user-select: none;
   user-select: none;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .canvas-viewport:focus {
