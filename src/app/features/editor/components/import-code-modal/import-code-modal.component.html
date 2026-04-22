@@ -1,4 +1,4 @@
-<div class="import-code-modal-backdrop" (click)="closeDialog.emit()">
+<div class="import-code-modal-backdrop">
   <section class="import-code-modal" (click)="$event.stopPropagation()">
     <header class="import-code-modal__header">
       <div class="import-code-modal__copy">
@@ -14,26 +14,27 @@
     </header>
 
     <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
-      <div class="code-panel__header code-panel__header--split">
-        <button
-          class="primary-button secondary-button--compact"
-          type="button"
-          (click)="importCode.emit()">
-          {{ actionLabel() }}
-        </button>
-      </div>
-      <div class="code-editor">
+      <div class="code-editor" [class.is-invalid]="hasSyntaxIssue()">
         <pre
           #importCodePreview
           class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
         <textarea
           #importCodeInput
           class="code-input code-input--overlay"
+          [attr.aria-invalid]="hasSyntaxIssue()"
           [value]="code()"
           wrap="off"
           spellcheck="false"
           (input)="onCodeInput($event)"
           (scroll)="syncScroll()"></textarea>
+      </div>
+      <div class="import-code-modal__actions">
+        <button
+          class="primary-button secondary-button--compact"
+          type="button"
+          (click)="importCode.emit()">
+          {{ actionLabel() }}
+        </button>
       </div>
     </div>
 

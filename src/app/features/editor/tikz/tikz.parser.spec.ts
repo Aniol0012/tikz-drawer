@@ -53,4 +53,52 @@ describe('parseTikz', () => {
     expect(rectangle.width).toBeCloseTo(19.698);
     expect(rectangle.height).toBeCloseTo(5.094);
   });
+
+  it('ignores figure and adjustbox wrappers around a tikzpicture', () => {
+    const result = parseTikz(
+      '\\begin{figure}[H]\n\\centering\n\\footnotesize\n\\begin{adjustbox}{max width=0.9\\textwidth,center}\n\\begin{tikzpicture}\n\\draw (0, 0) -- (2, 1);\n\\end{tikzpicture}\n\\end{adjustbox}\n\\caption{Example}\n\\label{fig:example}\n\\end{figure}'
+    );
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(1);
+    expect(result.scene.shapes[0].kind).toBe('line');
+  });
+
+  it('parses multiline draw commands split across several lines', () => {
+    const result = parseTikz(
+      '\\begin{tikzpicture}\n\\draw[draw=#334455,\nline width=0.4pt,\n-{Triangle[scale=1.2]}] (0, 0) -- (1.5, 0.8);\n\\end{tikzpicture}'
+    );
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(1);
+    expect(result.scene.shapes[0].kind).toBe('line');
+  });
+
+  it('converts TikZ rgb color definitions into CSS hex colors for the editor state', () => {
+    const result = parseTikz(
+      '\\begin{tikzpicture}\n\\draw[draw={rgb,255:red,54;green,48;blue,48}, fill={rgb,255:red,169;green,61;blue,61}] (-1, 1) rectangle (2, -2);\n\\end{tikzpicture}'
+    );
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(1);
+
+    const rectangle = result.scene.shapes[0];
+    expect(rectangle.kind).toBe('rectangle');
+    if (rectangle.kind !== 'rectangle') {
+      throw new Error('Expected rectangle');
+    }
+
+    expect(rectangle.stroke).toBe('#363030');
+    expect(rectangle.fill).toBe('#a93d3d');
+  });
+
+  it('imports includegraphics nodes as image shapes', () => {
+    const result = parseTikz(
+      '\\begin{tikzpicture}\n\\node[inner sep=0pt] at (13.175, 67.079) {\\includegraphics[width=37.65cm,height=8.359cm]{images/example.png}};\n\\end{tikzpicture}'
+    );
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(1);
+    expect(result.scene.shapes[0].kind).toBe('image');
+  });
 });

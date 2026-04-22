@@ -35,6 +35,73 @@ const parsePoint = (value: string): { x: number; y: number } | null => {
   };
 };
 
+const removeOuterBraces = (value: string): string => {
+  let normalized = value.trim();
+  while (normalized.startsWith('{') && normalized.endsWith('}')) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+  return normalized;
+};
+
+const clampByte = (value: number): number => Math.max(0, Math.min(255, Math.round(value)));
+
+const toHexByte = (value: number): string => clampByte(value).toString(16).padStart(2, '0');
+
+const parseTikzRgbColor = (value: string): string | null => {
+  const rgbMatch = removeOuterBraces(value).match(
+    /^rgb\s*,\s*(?<scale>-?\d+(?:\.\d+)?)\s*:\s*red\s*,\s*(?<red>-?\d+(?:\.\d+)?)\s*;\s*green\s*,\s*(?<green>-?\d+(?:\.\d+)?)\s*;\s*blue\s*,\s*(?<blue>-?\d+(?:\.\d+)?)$/i
+  );
+
+  if (!rgbMatch?.groups) {
+    return null;
+  }
+
+  const scale = Number(rgbMatch.groups['scale']);
+  const red = Number(rgbMatch.groups['red']);
+  const green = Number(rgbMatch.groups['green']);
+  const blue = Number(rgbMatch.groups['blue']);
+
+  if (
+    !Number.isFinite(scale) ||
+    scale === 0 ||
+    !Number.isFinite(red) ||
+    !Number.isFinite(green) ||
+    !Number.isFinite(blue)
+  ) {
+    return null;
+  }
+
+  const factor = 255 / scale;
+  return `#${toHexByte(red * factor)}${toHexByte(green * factor)}${toHexByte(blue * factor)}`;
+};
+
+const normalizeTikzColor = (value: string | undefined, fallback: string): string => {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = removeOuterBraces(value);
+  if (!normalized) {
+    return fallback;
+  }
+
+  if (normalized === 'none') {
+    return 'none';
+  }
+
+  const rgbColor = parseTikzRgbColor(normalized);
+  if (rgbColor) {
+    return rgbColor;
+  }
+
+  const hexMatch = normalized.match(/^#?([0-9a-fA-F]{6})$/);
+  if (hexMatch) {
+    return `#${hexMatch[1].toLowerCase()}`;
+  }
+
+  return normalized;
+};
+
 const parseStyleMap = (raw: string | undefined): Record<string, string> => {
   if (!raw) {
     return {};
@@ -105,7 +172,7 @@ const styleStrokeWidth = (styles: Record<string, string>): number => {
 };
 
 const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number } => ({
-  stroke: styles['draw'] ?? '#0f172a',
+  stroke: normalizeTikzColor(styles['draw'], '#0f172a'),
   strokeWidth: styleStrokeWidth(styles)
 });
 
@@ -143,7 +210,7 @@ const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] 
 const parseArrowColor = (styles: Record<string, string>): string => {
   const raw = styles['arrow meta'] ?? '';
   const drawMatch = raw.match(/draw=({[^}]+}|[^,\]]+)/i);
-  return drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'] ?? '#0f172a';
+  return normalizeTikzColor(drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'], '#0f172a');
 };
 
 const parseArrowOpacity = (styles: Record<string, string>): number => {
@@ -315,7 +382,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
     y: Math.min(from.y, to.y),
     width: Math.abs(to.x - from.x),
     height: Math.abs(from.y - to.y),
-    fill: styles['fill'] ?? 'none',
+    fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0
   };
@@ -348,7 +415,7 @@ const parseCircle = (line: string): CanvasShape | null => {
     cx: center.x,
     cy: center.y,
     r: Number(match.groups['radius']),
-    fill: styles['fill'] ?? 'none',
+    fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity')
   };
 
@@ -381,11 +448,61 @@ const parseEllipse = (line: string): CanvasShape | null => {
     cy: center.y,
     rx: Number(match.groups['rx']),
     ry: Number(match.groups['ry']),
-    fill: styles['fill'] ?? 'none',
+    fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity')
   };
 
   return shape;
+};
+
+const imagePlaceholder = (label: string): string =>
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'><rect width='640' height='420' fill='#eef4ff'/><rect x='36' y='36' width='568' height='348' rx='20' fill='#dbe9ff' stroke='#9db7f2' stroke-width='6'/><text x='320' y='220' text-anchor='middle' font-family='Arial, sans-serif' font-size='34' fill='#3251a8'>${label}</text></svg>`
+  );
+
+const parseImageNode = (line: string): CanvasShape | null => {
+  const match = line.match(
+    /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/
+  );
+
+  if (!match?.groups) {
+    return null;
+  }
+
+  const point = parsePoint(match.groups['point']);
+  if (!point) {
+    return null;
+  }
+
+  const imageOptions = match.groups['imageOptions'] ?? '';
+  const widthMatch = imageOptions.match(/(?:^|,)\s*width\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i);
+  const heightMatch = imageOptions.match(/(?:^|,)\s*height\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i);
+  const width = Number.parseFloat(widthMatch?.[1] ?? '');
+  const height = Number.parseFloat(heightMatch?.[1] ?? '');
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 4.8;
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : 3.2;
+  const styles = parseStyleMap(match.groups['styles']);
+  const latexSource = match.groups['source'].trim();
+  const imageLabel = latexSource.split('/').at(-1) ?? 'Image';
+  const drawColor = styles['draw'] ? normalizeTikzColor(styles['draw'], 'none') : 'none';
+  const drawWidth = drawColor === 'none' ? 0 : styleStrokeWidth(styles);
+
+  return {
+    id: createId(),
+    name: 'Imported image',
+    kind: 'image',
+    stroke: drawColor,
+    strokeOpacity: styleOpacity(styles, 'opacity'),
+    strokeWidth: drawWidth,
+    x: point.x - safeWidth / 2,
+    y: point.y - safeHeight / 2,
+    width: safeWidth,
+    height: safeHeight,
+    aspectRatio: safeWidth / safeHeight,
+    src: imagePlaceholder(imageLabel),
+    latexSource
+  };
 };
 
 const parseNode = (line: string): CanvasShape | null => {
@@ -420,7 +537,7 @@ const parseNode = (line: string): CanvasShape | null => {
       Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replace(/cm/g, '').trim()) ||
       DEFAULT_TEXT_BOX_WIDTH,
     fontSize: DEFAULT_TEXT_FONT_SIZE * scale,
-    color: styles['text'] ?? '#0f172a',
+    color: normalizeTikzColor(styles['text'], '#0f172a'),
     colorOpacity: styleOpacity(styles, 'text opacity'),
     fontWeight: match.groups['text'].includes('\\bfseries') ? 'bold' : 'normal',
     fontStyle: match.groups['text'].includes('\\itshape') ? 'italic' : 'normal',
@@ -438,21 +555,120 @@ const parseShape = (line: string): CanvasShape | null =>
   parseEllipse(line) ??
   parseSmoothLine(line) ??
   parseLine(line) ??
+  parseImageNode(line) ??
   parseNode(line);
+
+const stripLineComment = (line: string): string => {
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '%' && (index === 0 || line[index - 1] !== '\\')) {
+      return line.slice(0, index);
+    }
+  }
+  return line;
+};
+
+const tikzBeginPattern = /\\begin\{tikzpicture\}(?:\[[^\]]*\])?/;
+const tikzEndPattern = /\\end\{tikzpicture\}/;
+const multilineCommandPattern = /^\\(?:draw|node|path|fill|filldraw|clip)\b/;
+const ignorableLinePatterns = [
+  /^\\begin\{tikzpicture\}(?:\[[^\]]*\])?;?$/,
+  /^\\end\{tikzpicture\};?$/,
+  /^\\begin\{figure\*?\}(?:\[[^\]]*\])?;?$/,
+  /^\\end\{figure\*?\};?$/,
+  /^\\begin\{adjustbox\}(?:\[[^\]]*\])?\{.*\};?$/,
+  /^\\end\{adjustbox\};?$/,
+  /^\\begin\{center\};?$/,
+  /^\\end\{center\};?$/,
+  /^\\centering;?$/,
+  /^\\raggedright;?$/,
+  /^\\raggedleft;?$/,
+  /^\\(?:tiny|scriptsize|footnotesize|small|normalsize|large|Large|LARGE|huge|Huge);?$/,
+  /^\\caption(?:\[[^\]]*\])?\{.*\};?$/,
+  /^\\label\{.*\};?$/
+] as const;
+
+const isIgnorableLine = (line: string): boolean => ignorableLinePatterns.some((pattern) => pattern.test(line));
+
+const sourceLines = (source: string): readonly string[] =>
+  source
+    .split(/\r?\n/)
+    .map((rawLine) => stripLineComment(rawLine).trim())
+    .filter((line) => line.length > 0);
+
+const extractTikzBodyLines = (lines: readonly string[]): readonly string[] => {
+  const outsideLines: string[] = [];
+  const bodyLines: string[] = [];
+  let insideTikz = false;
+  let tikzDepth = 0;
+
+  for (const line of lines) {
+    if (!insideTikz) {
+      if (tikzBeginPattern.test(line)) {
+        insideTikz = true;
+        tikzDepth = 1;
+      } else {
+        outsideLines.push(line);
+      }
+      continue;
+    }
+
+    if (tikzBeginPattern.test(line)) {
+      tikzDepth += 1;
+    }
+
+    if (tikzEndPattern.test(line)) {
+      tikzDepth -= 1;
+      if (tikzDepth <= 0) {
+        insideTikz = false;
+      }
+      continue;
+    }
+
+    if (tikzDepth > 0) {
+      bodyLines.push(line);
+    }
+  }
+
+  return bodyLines.length > 0 ? bodyLines : outsideLines;
+};
+
+const collapseMultilineCommands = (lines: readonly string[]): readonly string[] => {
+  const collapsed: string[] = [];
+  let commandBuffer: string | null = null;
+
+  for (const line of lines) {
+    if (commandBuffer) {
+      commandBuffer = `${commandBuffer} ${line}`.trim();
+      if (line.includes(';')) {
+        collapsed.push(commandBuffer);
+        commandBuffer = null;
+      }
+      continue;
+    }
+
+    if (multilineCommandPattern.test(line) && !line.includes(';')) {
+      commandBuffer = line;
+      continue;
+    }
+
+    collapsed.push(line);
+  }
+
+  if (commandBuffer) {
+    collapsed.push(commandBuffer);
+  }
+
+  return collapsed;
+};
 
 export const parseTikz = (source: string): ParsedTikzResult => {
   const warnings: string[] = [];
   const shapes: CanvasShape[] = [];
+  const normalizedLines = collapseMultilineCommands(extractTikzBodyLines(sourceLines(source)));
 
-  for (const rawLine of source.split('\n')) {
-    const line = rawLine.trim();
-
-    if (
-      !line ||
-      line.startsWith('%') ||
-      line.startsWith('\\begin{tikzpicture}') ||
-      line.startsWith('\\end{tikzpicture}')
-    ) {
+  for (const line of normalizedLines) {
+    if (!line || isIgnorableLine(line)) {
       continue;
     }
 
