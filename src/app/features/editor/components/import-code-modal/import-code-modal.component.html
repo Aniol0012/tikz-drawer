@@ -14,7 +14,10 @@
     </header>
 
     <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
-      <div class="code-editor" [class.is-invalid]="hasSyntaxIssue()">
+      <div
+        class="code-editor"
+        [class.is-invalid]="hasSyntaxIssue()"
+        [class.is-focused]="codeInputFocused()">
         <pre
           #importCodePreview
           class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
@@ -26,6 +29,9 @@
           wrap="off"
           spellcheck="false"
           (input)="onCodeInput($event)"
+          (keydown)="onCodeInputKeydown($event)"
+          (focus)="onCodeInputFocus()"
+          (blur)="onCodeInputBlur()"
           (scroll)="syncScroll()"></textarea>
       </div>
       <div class="import-code-modal__actions">

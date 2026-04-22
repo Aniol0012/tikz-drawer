@@ -152,6 +152,12 @@
   position: absolute;
   inset: 0;
   min-height: 280px;
+  border: 0;
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
   resize: none;
   width: 100%;
   max-width: 100%;
@@ -162,6 +168,12 @@
   color: transparent;
   caret-color: var(--app-foreground);
   z-index: 2;
+}
+
+.code-input--overlay:focus,
+.code-input--overlay:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .code-input--overlay::selection {
@@ -184,6 +196,15 @@
 
 .code-editor.is-invalid {
   border-color: color-mix(in srgb, var(--danger) 72%, var(--tool-border));
+}
+
+.code-editor.is-invalid:hover,
+.code-editor.is-invalid:focus-within,
+.code-editor.is-invalid:focus-within:hover,
+.code-editor.is-invalid.is-focused,
+.code-editor.is-invalid.is-focused:hover {
+  border-color: color-mix(in srgb, var(--danger) 72%, var(--tool-border));
+  box-shadow: none;
 }
 
 .warning-box {
@@ -285,6 +306,14 @@
   border-color: var(--tool-border-strong);
 }
 
+.code-editor.is-focused,
+.code-editor.is-focused:hover,
+.code-editor:focus-within,
+.code-editor:focus-within:hover {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: none;
+}
+
 .primary-button:hover {
   background: color-mix(in srgb, var(--accent) 88%, black 8%);
 }
@@ -295,11 +324,10 @@
 }
 
 .import-code-modal__close:focus-visible,
-.primary-button:focus-visible,
-.code-editor:focus-within {
+.primary-button:focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: none;
 }
 
 @media (max-width: 720px) {

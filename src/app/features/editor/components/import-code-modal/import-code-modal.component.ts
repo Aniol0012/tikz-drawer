@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  output,
+  signal,
+  viewChild
+} from '@angular/core';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';
 
@@ -66,6 +75,7 @@ export class ImportCodeModalComponent {
 
   readonly highlightedCode = computed(() => highlightLatex(this.code() || ' '));
   readonly parsedInput = computed(() => parseTikz(this.code()));
+  readonly codeInputFocused = signal(false);
   readonly hasSyntaxIssue = computed(() => {
     const source = this.code().trim();
     if (!source) {
@@ -89,6 +99,23 @@ export class ImportCodeModalComponent {
     this.syncScroll();
   }
 
+  onCodeInputKeydown(event: KeyboardEvent): void {
+    if (!this.isEscapeKey(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.closeDialog.emit();
+  }
+
+  onCodeInputFocus(): void {
+    this.codeInputFocused.set(true);
+  }
+
+  onCodeInputBlur(): void {
+    this.codeInputFocused.set(false);
+  }
+
   syncScroll(): void {
     const input = this.importCodeInput()?.nativeElement;
     const preview = this.importCodePreview()?.nativeElement;
@@ -98,5 +125,9 @@ export class ImportCodeModalComponent {
 
     preview.scrollTop = input.scrollTop;
     preview.scrollLeft = input.scrollLeft;
+  }
+
+  private isEscapeKey(event: KeyboardEvent): boolean {
+    return event.key === 'Escape' || event.key === 'Esc' || event.code === 'Escape';
   }
 }
