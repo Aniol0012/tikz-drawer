@@ -297,6 +297,7 @@ export class EditorPageComponent {
   private readonly languageStorageKey = EDITOR_STORAGE_KEYS.language;
   private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
   private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
+  private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly defaultScale = DEFAULT_EDITOR_SCALE;
   private readonly defaultLatexExportConfig = {
@@ -382,8 +383,9 @@ export class EditorPageComponent {
   readonly suppressNextContextMenu = signal(false);
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
   readonly ignoreNextShapeClickId = signal<string | null>(null);
-  readonly leftSidebarWidth = signal(288);
-  readonly rightSidebarWidth = signal(340);
+  private readonly initialSidebarSizes = this.restoreSidebarSizes();
+  readonly leftSidebarWidth = signal(this.initialSidebarSizes.left);
+  readonly rightSidebarWidth = signal(this.initialSidebarSizes.right);
   readonly mobileRightSidebarHeight = signal(320);
   readonly mobileLeftSidebarHeight = signal(320);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
@@ -634,44 +636,14 @@ export class EditorPageComponent {
       sceneBounds.top <= visibleBounds.top;
     return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
   });
-  readonly effectiveLeftSidebarWidth = computed(() =>
-    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : this.leftSidebarWidth()
-  );
-  readonly effectiveRightSidebarWidth = computed(() =>
-    this.rightSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : this.rightSidebarWidth()
-  );
-  readonly effectiveMobileRightSidebarHeight = computed(() =>
-    this.rightSidebarCollapsed()
-      ? this.sidebarsOverlayLayout()
-        ? 0
-        : EditorPageComponent.collapsedSidebarSize.mobileHeight
-      : this.mobileRightSidebarHeight()
-  );
-  readonly effectiveMobileLeftSidebarHeight = computed(() =>
-    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.mobileHeight : this.mobileLeftSidebarHeight()
-  );
-  readonly leftSidebarMinWidth = computed(() =>
-    this.leftSidebarCollapsed() ? EditorPageComponent.collapsedSidebarSize.desktopWidth : EDITOR_LEFT_SIDEBAR_MIN_WIDTH
-  );
-  readonly rightSidebarMinWidth = computed(() =>
-    this.rightSidebarCollapsed()
-      ? EditorPageComponent.collapsedSidebarSize.desktopWidth
-      : EDITOR_RIGHT_SIDEBAR_MIN_WIDTH
-  );
-  readonly mobileRightSidebarMinHeight = computed(() =>
-    this.rightSidebarCollapsed()
-      ? this.sidebarsOverlayLayout()
-        ? 0
-        : EditorPageComponent.collapsedSidebarSize.mobileHeight
-      : this.mobileLayout()
-        ? EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT
-        : EDITOR_RIGHT_SIDEBAR_DESKTOP_STACKED_MIN_HEIGHT
-  );
-  readonly mobileLeftSidebarMinHeight = computed(() =>
-    this.leftSidebarCollapsed()
-      ? EditorPageComponent.collapsedSidebarSize.mobileHeight
-      : EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT
-  );
+  readonly effectiveLeftSidebarWidth = computed(() => this.desktopSidebarWidth('left'));
+  readonly effectiveRightSidebarWidth = computed(() => this.desktopSidebarWidth('right'));
+  readonly effectiveMobileRightSidebarHeight = computed(() => this.rightSidebarHeight());
+  readonly effectiveMobileLeftSidebarHeight = computed(() => this.leftSidebarHeight());
+  readonly leftSidebarMinWidth = computed(() => this.desktopSidebarMinWidth('left'));
+  readonly rightSidebarMinWidth = computed(() => this.desktopSidebarMinWidth('right'));
+  readonly mobileRightSidebarMinHeight = computed(() => this.rightSidebarMinHeightValue());
+  readonly mobileLeftSidebarMinHeight = computed(() => this.leftSidebarMinHeightValue());
   readonly inlineTextEditorLayout = computed(() => {
     const editor = this.inlineTextEditor();
     if (!editor) {
@@ -996,6 +968,13 @@ export class EditorPageComponent {
 
         if (event.key === this.latexExportConfigStorageKey) {
           this.latexExportConfig.set(this.parseStoredLatexExportConfig(event.newValue));
+          return;
+        }
+
+        if (event.key === this.sidebarSizesStorageKey) {
+          const sidebarSizes = this.parseStoredSidebarSizes(event.newValue);
+          this.leftSidebarWidth.set(sidebarSizes.left);
+          this.rightSidebarWidth.set(sidebarSizes.right);
         }
       };
 
@@ -1025,6 +1004,15 @@ export class EditorPageComponent {
       this.document.defaultView?.localStorage?.setItem(
         this.latexExportConfigStorageKey,
         JSON.stringify(this.serializableLatexExportConfig(this.latexExportConfig()))
+      );
+    });
+    effect(() => {
+      this.document.defaultView?.localStorage?.setItem(
+        this.sidebarSizesStorageKey,
+        JSON.stringify({
+          left: this.leftSidebarWidth(),
+          right: this.rightSidebarWidth()
+        })
       );
     });
     effect(() => {
@@ -1165,6 +1153,7 @@ export class EditorPageComponent {
     if ((side === 'left' && this.leftSidebarCollapsed()) || (side === 'right' && this.rightSidebarCollapsed())) {
       return;
     }
+
     event.preventDefault();
     event.stopPropagation();
     const stackedLayout = this.sidebarsOverlayLayout();
@@ -1183,6 +1172,79 @@ export class EditorPageComponent {
     }
 
     return side === 'left' ? this.leftSidebarWidth() : this.rightSidebarWidth();
+  }
+
+  private desktopSidebarWidth(side: SidebarSide): number {
+    if (side === 'left') {
+      if (this.leftSidebarCollapsed()) {
+        return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+      }
+      return this.leftSidebarWidth();
+    }
+
+    if (this.rightSidebarCollapsed()) {
+      return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+    }
+
+    return this.rightSidebarWidth();
+  }
+
+  private desktopSidebarMinWidth(side: SidebarSide): number {
+    if (side === 'left') {
+      if (this.leftSidebarCollapsed()) {
+        return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+      }
+      return EDITOR_LEFT_SIDEBAR_MIN_WIDTH;
+    }
+
+    if (this.rightSidebarCollapsed()) {
+      return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+    }
+
+    return EDITOR_RIGHT_SIDEBAR_MIN_WIDTH;
+  }
+
+  private rightSidebarHeight(): number {
+    if (!this.rightSidebarCollapsed()) {
+      return this.mobileRightSidebarHeight();
+    }
+
+    if (this.sidebarsOverlayLayout()) {
+      return 0;
+    }
+
+    return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+  }
+
+  private leftSidebarHeight(): number {
+    if (this.leftSidebarCollapsed()) {
+      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+    }
+
+    return this.mobileLeftSidebarHeight();
+  }
+
+  private rightSidebarMinHeightValue(): number {
+    if (this.rightSidebarCollapsed()) {
+      if (this.sidebarsOverlayLayout()) {
+        return 0;
+      }
+      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+    }
+
+    if (this.mobileLayout()) {
+      return EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT;
+    }
+
+    return EDITOR_RIGHT_SIDEBAR_DESKTOP_STACKED_MIN_HEIGHT;
+  }
+
+  private leftSidebarMinHeightValue(): number {
+    if (this.leftSidebarCollapsed()) {
+      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+    }
+
+    return EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT;
   }
 
   private clampSidebarSize(side: SidebarResizeTarget, value: number): number {
@@ -4558,6 +4620,35 @@ export class EditorPageComponent {
     return this.parseStoredLatexExportConfig(
       this.document.defaultView?.localStorage?.getItem(this.latexExportConfigStorageKey)
     );
+  }
+
+  private restoreSidebarSizes(): { readonly left: number; readonly right: number } {
+    return this.parseStoredSidebarSizes(this.document.defaultView?.localStorage?.getItem(this.sidebarSizesStorageKey));
+  }
+
+  private parseStoredSidebarSizes(raw: string | null | undefined): { readonly left: number; readonly right: number } {
+    const fallback: { readonly left: number; readonly right: number } = { left: 288, right: 340 };
+    if (!raw) {
+      return fallback;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as { readonly left?: unknown; readonly right?: unknown };
+      let left = fallback.left;
+      let right = fallback.right;
+
+      if (typeof parsed.left === 'number' && Number.isFinite(parsed.left)) {
+        left = this.clampSidebarSize('left', parsed.left);
+      }
+
+      if (typeof parsed.right === 'number' && Number.isFinite(parsed.right)) {
+        right = this.clampSidebarSize('right', parsed.right);
+      }
+
+      return { left, right };
+    } catch {
+      return fallback;
+    }
   }
 
   private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {

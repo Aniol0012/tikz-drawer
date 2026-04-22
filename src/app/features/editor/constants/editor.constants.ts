@@ -4,7 +4,8 @@ export const EDITOR_STORAGE_KEYS = {
   pinnedTools: 'tikz-drawer.pinned-tools',
   language: 'tikz-drawer.language',
   codeTheme: 'tikz-drawer.code-theme',
-  latexExportConfig: 'tikz-drawer.latex-export-config'
+  latexExportConfig: 'tikz-drawer.latex-export-config',
+  sidebarSizes: 'tikz-drawer.sidebar-sizes'
 } as const;
 
 export const EDITOR_HISTORY_LIMIT = 80;
