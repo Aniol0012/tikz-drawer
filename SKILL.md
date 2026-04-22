@@ -263,7 +263,7 @@ Angular’s security guide covers built-in XSS protections, `DomSanitizer`, and 
 
 ## Code style
 
-Use the code style defined in the [Angular Style Guide](https://angular.dev/styleguide) and format with [Prettier](https://prettier.io/). So, the code must be formatted properly.
+Use the code style defined in the [Angular Style Guide](https://angular.dev/style-guide#) and format with [Prettier](https://prettier.io/). So, the code must be formatted properly.
 
 ## Libraries usage
 
