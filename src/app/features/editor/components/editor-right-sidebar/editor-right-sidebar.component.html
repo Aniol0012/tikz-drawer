@@ -12,12 +12,6 @@
       (click)="editor().setInspectorTab('scene')">
       {{ editor().t('sceneTab') }}
     </button>
-    <button
-      type="button"
-      [class.is-active]="editor().inspectorTab() === 'code'"
-      (click)="editor().setInspectorTab('code')">
-      {{ editor().t('code') }}
-    </button>
   </div>
 
   <div #sidebarScroll class="sidebar-scroll">

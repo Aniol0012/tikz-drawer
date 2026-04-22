@@ -9,7 +9,7 @@ import type {
 } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
-export type InspectorTab = 'properties' | 'scene' | 'code';
+export type InspectorTab = 'properties' | 'scene';
 export type ExportMode = 'snippet' | 'standalone';
 export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 export type ToolId = 'select' | string;

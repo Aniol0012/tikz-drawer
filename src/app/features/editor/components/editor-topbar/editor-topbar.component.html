@@ -33,6 +33,16 @@
           </svg>
           <span>{{ t('copyLink') }}</span>
         </button>
+        <button
+          class="secondary-button secondary-button--toolbar"
+          type="button"
+          [title]="t('importCode')"
+          (click)="importOpen.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icon('open')"></path>
+          </svg>
+          <span>{{ t('importCode') }}</span>
+        </button>
       }
     </div>
 
@@ -62,6 +72,15 @@
                   <path [attr.d]="icon('link')"></path>
                 </svg>
                 <span>{{ t('copyLink') }}</span>
+              </button>
+              <button
+                class="dropdown-row"
+                type="button"
+                (click)="importOpen.emit(); fileMenuClose.emit()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="icon('open')"></path>
+                </svg>
+                <span>{{ t('importCode') }}</span>
               </button>
             }
 

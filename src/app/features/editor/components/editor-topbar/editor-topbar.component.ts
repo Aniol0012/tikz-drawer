@@ -51,6 +51,7 @@ export class EditorTopbarComponent {
   readonly themeToggle = output<void>();
   readonly newScene = output<void>();
   readonly copyShareLink = output<void>();
+  readonly importOpen = output<void>();
   readonly fileMenuToggle = output<void>();
   readonly fileMenuClose = output<void>();
   readonly mobileLibraryOpen = output<void>();

@@ -1,0 +1,51 @@
+<div class="import-code-modal-backdrop" (click)="closeDialog.emit()">
+  <section class="import-code-modal" (click)="$event.stopPropagation()">
+    <header class="import-code-modal__header">
+      <div class="import-code-modal__copy">
+        <h2>{{ title() }}</h2>
+      </div>
+      <button
+        class="import-code-modal__close"
+        type="button"
+        [attr.aria-label]="closeLabel()"
+        (click)="closeDialog.emit()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+    </header>
+
+    <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
+      <div class="code-panel__header code-panel__header--split">
+        <button
+          class="primary-button secondary-button--compact"
+          type="button"
+          (click)="importCode.emit()">
+          {{ actionLabel() }}
+        </button>
+      </div>
+      <div class="code-editor">
+        <pre
+          #importCodePreview
+          class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
+        <textarea
+          #importCodeInput
+          class="code-input code-input--overlay"
+          [value]="code()"
+          wrap="off"
+          spellcheck="false"
+          (input)="onCodeInput($event)"
+          (scroll)="syncScroll()"></textarea>
+      </div>
+    </div>
+
+    @if (warnings().length) {
+      <div class="warning-box">
+        <p>{{ warningsLabel() }}</p>
+        <ul>
+          @for (warning of warnings(); track warning) {
+            <li>{{ warning }}</li>
+          }
+        </ul>
+      </div>
+    }
+  </section>
+</div>

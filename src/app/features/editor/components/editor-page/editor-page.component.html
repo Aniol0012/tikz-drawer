@@ -32,6 +32,7 @@
     (fileMenuToggle)="toggleFileMenu()"
     (fileMenuClose)="closeFileMenu()"
     (mobileLibraryOpen)="openMobileLibraryPanel()"
+    (importOpen)="openImportModal()"
     (exportOpen)="openExportModal()"></app-editor-topbar>
 
   @if (notifications().length) {
@@ -2537,7 +2538,7 @@
             <div class="empty-panel">{{ t('noneSelected') }}</div>
           }
         </section>
-      } @else if (inspectorTab() === 'scene') {
+      } @else {
         <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('sceneSettings')">
           <button class="section-header" type="button" (click)="toggleSection('sceneSettings')">
             <span>{{ t('canvasSettings') }}</span
@@ -2674,114 +2675,6 @@
                 </button>
               }
             </div>
-          }
-        </section>
-      } @else {
-        <section class="sidebar-section sidebar-section--code-tools">
-          <div class="code-tools-row">
-            <button
-              class="secondary-button code-tools-row__button"
-              type="button"
-              (click)="openExportSettingsModal()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.settings"></path></svg
-              ><span>{{ t('latexSettings') }}</span>
-            </button>
-          </div>
-        </section>
-
-        <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('generatedCode')">
-          <button class="section-header" type="button" (click)="toggleSection('generatedCode')">
-            <span>{{ t('generatedCode') }}</span
-            ><svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.chevronDown"></path>
-            </svg>
-          </button>
-          @if (!isSectionCollapsed('generatedCode')) {
-            <div class="code-stack" [attr.data-code-theme]="codeHighlightTheme()">
-              <div class="code-panel">
-                <div class="code-panel__header">
-                  <h3>{{ t('latexImports') }}</h3>
-                </div>
-                <div class="code-block-shell">
-                  <button
-                    class="icon-button code-copy-button"
-                    type="button"
-                    [title]="t('copy')"
-                    (click)="copySnippetImports()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.copy"></path>
-                    </svg>
-                  </button>
-                  <pre
-                    class="code-block code-block--imports"><code [innerHTML]="highlightedGeneratedImports()"></code></pre>
-                </div>
-              </div>
-              <div class="code-panel">
-                <div class="code-panel__header">
-                  <h3>{{ t('latexCode') }}</h3>
-                </div>
-                <div class="code-block-shell">
-                  <button
-                    class="icon-button code-copy-button"
-                    type="button"
-                    [title]="t('copyTikz')"
-                    (click)="copyExportedCode()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.copy"></path>
-                    </svg>
-                  </button>
-                  <pre
-                    class="code-block"><code [innerHTML]="highlightedGeneratedCode()"></code></pre>
-                </div>
-              </div>
-            </div>
-          }
-        </section>
-
-        <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('importCode')">
-          <button class="section-header" type="button" (click)="toggleSection('importCode')">
-            <span>{{ t('importCode') }}</span
-            ><svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.chevronDown"></path>
-            </svg>
-          </button>
-          @if (!isSectionCollapsed('importCode')) {
-            <div
-              class="code-stack code-stack--import"
-              [attr.data-code-theme]="codeHighlightTheme()">
-              <div class="code-panel__header code-panel__header--split">
-                <button
-                  class="primary-button secondary-button--compact"
-                  type="button"
-                  (click)="applyImportCode()">
-                  {{ t('applyTikz') }}
-                </button>
-              </div>
-              <div class="code-editor">
-                <pre
-                  #importCodePreview
-                  class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedImportCode()"></code></pre>
-                <textarea
-                  #importCodeInput
-                  class="code-input code-input--overlay"
-                  [value]="store.importCode()"
-                  wrap="off"
-                  spellcheck="false"
-                  (input)="onImportCodeInput($event); syncImportCodeScroll()"
-                  (scroll)="syncImportCodeScroll()"></textarea>
-              </div>
-            </div>
-            @if (parserWarnings().length) {
-              <div class="warning-box">
-                <p>{{ t('codeWarnings') }}</p>
-                <ul>
-                  @for (warning of parserWarnings(); track warning) {
-                    <li>{{ warning }}</li>
-                  }
-                </ul>
-              </div>
-            }
           }
         </section>
       }
@@ -3011,6 +2904,20 @@
         </div>
       </section>
     </div>
+  }
+
+  @if (importModalOpen()) {
+    <app-import-code-modal
+      [title]="t('importCode')"
+      [actionLabel]="t('importCode')"
+      [closeLabel]="t('close')"
+      [warningsLabel]="t('codeWarnings')"
+      [code]="store.importCode()"
+      [codeTheme]="codeHighlightTheme()"
+      [warnings]="parserWarnings()"
+      (closeDialog)="closeImportModal()"
+      (codeChange)="updateImportCode($event)"
+      (importCode)="applyImportCode()"></app-import-code-modal>
   }
 
   @if (exportModalOpen()) {

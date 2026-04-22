@@ -133,6 +133,7 @@ import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component'
 import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-sidebar.component';
 import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
+import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -226,7 +227,13 @@ import {
 
 @Component({
   selector: 'app-editor-page',
-  imports: [EditorTopbarComponent, EditorLeftSidebarComponent, EditorRightSidebarComponent, TableDialogComponent],
+  imports: [
+    EditorTopbarComponent,
+    EditorLeftSidebarComponent,
+    EditorRightSidebarComponent,
+    TableDialogComponent,
+    ImportCodeModalComponent
+  ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -315,8 +322,6 @@ export class EditorPageComponent {
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
-  readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
-  readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
   readonly rightSidebar = viewChild(EditorRightSidebarComponent);
 
@@ -345,6 +350,7 @@ export class EditorPageComponent {
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
+  readonly importModalOpen = signal(false);
   readonly exportSettingsModalOpen = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
   readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
@@ -399,9 +405,7 @@ export class EditorPageComponent {
     concepts: true,
     properties: false,
     sceneSettings: false,
-    layers: false,
-    generatedCode: true,
-    importCode: false
+    layers: false
   });
   readonly spacePressed = signal(false);
   readonly shiftPressed = signal(false);
@@ -895,7 +899,6 @@ export class EditorPageComponent {
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
   readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
-  readonly highlightedImportCode = computed(() => highlightLatex(this.store.importCode() || ' '));
   readonly highlightedCodeThemePreview = computed(() =>
     highlightLatex('\\begin{tikzpicture}\n\\draw (0,0) -- (1.6,0.8);\n\\end{tikzpicture}')
   );
@@ -1255,6 +1258,15 @@ export class EditorPageComponent {
     this.exportModalOpen.set(true);
     this.shareFeedback.set('');
     this.shareFeedbackTone.set('info');
+  }
+
+  openImportModal(): void {
+    this.closeFileMenu();
+    this.importModalOpen.set(true);
+  }
+
+  closeImportModal(): void {
+    this.importModalOpen.set(false);
   }
 
   closeExportModal(): void {
@@ -1851,15 +1863,15 @@ export class EditorPageComponent {
     }
   }
 
-  onImportCodeInput(event: Event): void {
-    this.store.updateImportCode((event.target as HTMLTextAreaElement).value);
+  updateImportCode(value: string): void {
+    this.store.updateImportCode(value);
   }
 
   applyImportCode(): void {
     this.runSceneMutation(() => {
       this.store.applyImportCode();
       this.viewportCenter.set({ x: 0, y: 0 });
-      this.inspectorTab.set('code');
+      this.inspectorTab.set('scene');
     });
   }
 
@@ -2458,17 +2470,6 @@ export class EditorPageComponent {
 
   opacityPercent(value: number): number {
     return Math.round(value * 100);
-  }
-
-  syncImportCodeScroll(): void {
-    const input = this.importCodeInput()?.nativeElement;
-    const preview = this.importCodePreview()?.nativeElement;
-    if (!input || !preview) {
-      return;
-    }
-
-    preview.scrollTop = input.scrollTop;
-    preview.scrollLeft = input.scrollLeft;
   }
 
   selectionContainsShape(shapeId: string): boolean {
@@ -3746,6 +3747,7 @@ export class EditorPageComponent {
       { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
       { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
       { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
+      { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },
       { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
       { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
       { isOpen: () => this.fileMenuOpen(), close: () => this.closeFileMenu() },
