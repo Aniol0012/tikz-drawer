@@ -88,13 +88,16 @@
 .table-dialog__close {
   width: 38px;
   padding: 0;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
 .table-dialog__close svg {
   width: 18px;
   height: 18px;
+  display: block;
   fill: currentColor;
 }
 

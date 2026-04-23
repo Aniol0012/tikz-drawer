@@ -535,10 +535,12 @@
 .icon-button {
   width: 34px;
   height: 34px;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   flex: 0 0 auto;
+  line-height: 0;
 }
 
 .language-select,
@@ -2657,6 +2659,7 @@ kbd {
 .canvas-chip svg {
   width: 18px;
   height: 18px;
+  display: block;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;

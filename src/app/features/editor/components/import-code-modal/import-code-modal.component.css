@@ -19,7 +19,7 @@
   max-height: min(880px, calc(100dvh - 48px));
   display: grid;
   gap: 14px;
-  overflow: auto;
+  overflow: hidden;
   padding: 20px;
   border: 1px solid var(--tool-border-strong);
   border-radius: 16px;
@@ -67,13 +67,24 @@
   width: 34px;
   height: 34px;
   min-width: 34px;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   background: var(--tool-surface);
   color: inherit;
-  font-size: 1.25rem;
-  line-height: 1;
+  line-height: 0;
+}
+
+.import-code-modal__close svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .primary-button {
@@ -101,6 +112,7 @@
 
 .code-stack--import {
   gap: 10px;
+  min-height: 0;
 }
 
 .code-panel__header {
@@ -141,6 +153,7 @@
 
 .code-block--editor {
   min-height: 280px;
+  height: 100%;
   white-space: pre;
 }
 
@@ -152,6 +165,7 @@
   position: absolute;
   inset: 0;
   min-height: 280px;
+  height: 100%;
   border: 0;
   outline: none;
   outline-offset: 0;
@@ -183,6 +197,8 @@
 
 .code-editor {
   position: relative;
+  height: min(58dvh, 560px);
+  min-height: 280px;
   min-width: 0;
   border: 1px solid var(--tool-border);
   border-radius: 10px;
@@ -342,6 +358,11 @@
 
   .code-block--editor,
   .code-input--overlay {
+    min-height: 220px;
+  }
+
+  .code-editor {
+    height: min(52dvh, 460px);
     min-height: 220px;
   }
 }
