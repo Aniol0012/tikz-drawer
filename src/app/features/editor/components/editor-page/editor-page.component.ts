@@ -281,6 +281,8 @@ export class EditorPageComponent {
   private static readonly wheelRotationScale = 0.04;
   private static readonly wheelRotationMinStepDegrees = 3;
   private static readonly wheelRotationMaxStepDegrees = 18;
+  private static readonly lineHitStrokeExtraPx = 10;
+  private static readonly lineHitStrokeMinPx = 14;
   private static readonly sidebarResizeLimits = {
     mobileMinHeight: 160,
     mobileMaxHeight: 640,
@@ -780,7 +782,10 @@ export class EditorPageComponent {
       return [];
     }
     const selectionBounds = this.selectionBounds();
-    const rotateHandle = selectionBounds ? this.rotationHandleFromBounds(selectionBounds) : null;
+    const rotateHandle =
+      selectionBounds && this.selectionCanRotate(selectedShapes)
+        ? this.rotationHandleFromBounds(selectionBounds)
+        : null;
     if (selectedShape?.kind === 'line') {
       const points = this.linePoints(selectedShape);
       const fromAdjacentPoint = points[1] ?? selectedShape.to;
@@ -808,9 +813,6 @@ export class EditorPageComponent {
         ...this.lineArrowControlHandles(selectedShape, 'to', toAdjacentPoint),
         this.lineEndpointHandle(selectedShape, 'to', toAdjacentPoint)
       ];
-      if (rotateHandle) {
-        lineHandles.push(rotateHandle);
-      }
       return lineHandles;
     }
     if (!selectionBounds) {
@@ -2117,6 +2119,16 @@ export class EditorPageComponent {
     );
   }
 
+  setShapeRotation(value: number): void {
+    const rotation = this.normalizeRotationDegrees(value);
+    this.patchInspectorSelection((shape) => {
+      if (shape.kind === 'line') {
+        return shape;
+      }
+      return { ...shape, rotation } as CanvasShape;
+    });
+  }
+
   toggleTextStyle(key: TextStyleKey): void {
     this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') {
@@ -2363,6 +2375,10 @@ export class EditorPageComponent {
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
+    if (key === 'rotation') {
+      this.setShapeRotation(value);
+      return;
+    }
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
@@ -2899,7 +2915,7 @@ export class EditorPageComponent {
     event.stopPropagation();
 
     if (handle === 'rotate') {
-      if (!selectionBounds || selectedShapes.length === 0) {
+      if (!selectionBounds || !this.selectionCanRotate(selectedShapes)) {
         return;
       }
       const pivot = {
@@ -3303,7 +3319,8 @@ export class EditorPageComponent {
     event.preventDefault();
     const delta = this.normalizeWheelDelta(event);
 
-    if (event.altKey && this.activeTool() === 'select' && this.selectionCount() > 0) {
+    const selectedShapes = this.selectedShapes();
+    if (event.altKey && this.activeTool() === 'select' && this.selectionCanRotate(selectedShapes)) {
       const axisDelta = Math.abs(delta.y) >= Math.abs(delta.x) ? delta.y : delta.x;
       if (axisDelta !== 0) {
         const magnitude = Math.max(
@@ -3440,12 +3457,19 @@ export class EditorPageComponent {
     return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
   }
 
+  lineHitStrokeWidth(strokeWidth: number): number {
+    return Math.max(
+      this.scaledStrokeWidth(strokeWidth) + EditorPageComponent.lineHitStrokeExtraPx,
+      EditorPageComponent.lineHitStrokeMinPx
+    );
+  }
+
   selectionHandleOffset(): number {
     return this.selectionHandleSize() / 2;
   }
 
   selectionRotateIconPath(): string {
-    return 'M -3.8 2.4 A 4.6 4.6 0 1 1 2.8 -3.8 M 2.8 -3.8 H 0.6 M 2.8 -3.8 V -1.6';
+    return 'M 3.6 2.8 A 5 5 0 1 1 -1.2 -4.9 M -1.2 -4.9 L -3.8 -3.4 M -1.2 -4.9 L -0.6 -1.6';
   }
 
   shapeRotationTransform(shape: CanvasShape): string | null {
@@ -5219,12 +5243,7 @@ export class EditorPageComponent {
     }
     switch (shape.kind) {
       case 'line':
-        return {
-          ...shape,
-          from: this.rotatePointAround(shape.from, pivot, rotationDeltaDegrees),
-          to: this.rotatePointAround(shape.to, pivot, rotationDeltaDegrees),
-          anchors: shape.anchors.map((anchor) => this.rotatePointAround(anchor, pivot, rotationDeltaDegrees))
-        } as CanvasShape;
+        return shape;
       case 'rectangle': {
         const center = this.shapeCenter(shape);
         const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
@@ -5347,7 +5366,7 @@ export class EditorPageComponent {
     }
     const bounds = this.selectionBounds();
     const selectedShapes = this.selectedShapes();
-    if (!bounds || selectedShapes.length === 0) {
+    if (!bounds || !this.selectionCanRotate(selectedShapes)) {
       return;
     }
     const pivot = {
@@ -5356,6 +5375,10 @@ export class EditorPageComponent {
     };
     this.store.recordHistoryCheckpoint();
     this.store.replaceShapes(selectedShapes.map((shape) => this.rotateShapeAround(shape, pivot, rotationDeltaDegrees)));
+  }
+
+  private selectionCanRotate(shapes: readonly CanvasShape[]): boolean {
+    return shapes.length > 0 && shapes.every((shape) => shape.kind !== 'line');
   }
 
   private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {

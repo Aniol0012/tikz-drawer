@@ -1093,6 +1093,12 @@ kbd {
   vector-effect: non-scaling-stroke;
 }
 
+.shape-layer .line-hit-target {
+  stroke: transparent;
+  fill: none;
+  pointer-events: stroke;
+}
+
 .shape-layer text {
   font-family: var(--font-sans);
   dominant-baseline: middle;
@@ -1141,6 +1147,10 @@ kbd {
 .shape-layer.is-selected ellipse,
 .shape-layer.is-selected text {
   filter: drop-shadow(0 0 10px var(--selection-glow));
+}
+
+.shape-layer.is-selected .line-hit-target {
+  filter: none;
 }
 
 .selection-outline,

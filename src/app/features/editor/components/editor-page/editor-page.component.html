@@ -373,6 +373,11 @@
                     </marker>
                   </defs>
                   <path
+                    class="line-hit-target"
+                    [attr.d]="lineSvgPath(shape)"
+                    [attr.stroke-width]="lineHitStrokeWidth(shape.strokeWidth)"
+                    fill="none"></path>
+                  <path
                     [attr.d]="lineSvgPath(shape)"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
@@ -1410,6 +1415,23 @@
                         [value]="shape.cornerRadius"
                         (input)="updateShapeNumber('cornerRadius', $event)" /></div
                   ></label>
+                  <label class="field"
+                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /><input
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /></div
+                  ></label>
                 }
                 @case ('circle') {
                   <label class="field"
@@ -1457,6 +1479,23 @@
                         step="0.1"
                         [value]="shape.r"
                         (input)="updateShapeNumber('r', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /><input
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /></div
                   ></label>
                 }
                 @case ('ellipse') {
@@ -1521,6 +1560,23 @@
                         step="0.1"
                         [value]="shape.ry"
                         (input)="updateShapeNumber('ry', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /><input
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /></div
                   ></label>
                 }
                 @case ('text') {
@@ -1853,6 +1909,23 @@
                         step="0.1"
                         [value]="shape.height"
                         (input)="updateImageDimension('height', $event)" /></div
+                  ></label>
+                  <label class="field">
+                    <span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /><input
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /></div
                   ></label>
                   <label class="field field--full">
                     <span>{{ t('latexImageSource') }}</span>
@@ -2203,28 +2276,64 @@
                             [value]="shape.cornerRadius"
                             (input)="updateShapeNumber('cornerRadius', $event)" /></div
                       ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /><input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /></div
+                      ></label>
                     </div>
                   </div>
                 }
                 @case ('circle') {
                   <div class="property-group field--full">
                     <div class="property-group__title">{{ t('geometry') }}</div>
-                    <label class="field field--full"
-                      ><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span>
-                      <div class="range-field">
-                        <input
-                          type="range"
-                          min="0.1"
-                          max="12"
-                          step="0.1"
-                          [value]="shape.r"
-                          (input)="updateShapeNumber('r', $event)" /><input
-                          type="number"
-                          min="0.1"
-                          step="0.1"
-                          [value]="shape.r"
-                          (input)="updateShapeNumber('r', $event)" /></div
-                    ></label>
+                    <div class="form-grid form-grid--section">
+                      <label class="field field--full"
+                        ><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="12"
+                            step="0.1"
+                            [value]="shape.r"
+                            (input)="updateShapeNumber('r', $event)" /><input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            [value]="shape.r"
+                            (input)="updateShapeNumber('r', $event)" /></div
+                      ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /><input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /></div
+                      ></label>
+                    </div>
                   </div>
                 }
                 @case ('ellipse') {
@@ -2262,6 +2371,23 @@
                             step="0.1"
                             [value]="shape.ry"
                             (input)="updateShapeNumber('ry', $event)" /></div
+                      ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /><input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /></div
                       ></label>
                     </div>
                   </div>
@@ -2542,6 +2668,23 @@
                             step="0.1"
                             [value]="shape.height"
                             (input)="updateImageDimension('height', $event)" /></div
+                      ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /><input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /></div
                       ></label>
                       <label class="field field--full">
                         <span>{{ t('latexImageSource') }}</span>
