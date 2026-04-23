@@ -71,7 +71,8 @@ export const iconPaths = {
   back: 'M12 8h8v8h-8V8ZM4 12h8v8H4v-8Z',
   pin: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7',
   pinOff: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7M4.7 3.8 3.8 4.7 19.3 20.2 20.2 19.3 4.7 3.8z',
-  layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75'
+  layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75',
+  rotation: 'M12 2V5L16 1L12 -3V0A12 12 0 1 0 24 12H21A9 9 0 1 1 12 3Z'
 } satisfies Record<string, string>;
 
 export const getIconPath = (key: string): string => iconPaths[key as keyof typeof iconPaths] ?? iconPaths.rectangle;

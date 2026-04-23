@@ -2122,7 +2122,7 @@ export class EditorPageComponent {
   setShapeRotation(value: number): void {
     const rotation = this.normalizeRotationDegrees(value);
     this.patchInspectorSelection((shape) => {
-      if (shape.kind === 'line') {
+      if (shape.kind === 'line' || shape.kind === 'circle') {
         return shape;
       }
       return { ...shape, rotation } as CanvasShape;
@@ -3469,7 +3469,7 @@ export class EditorPageComponent {
   }
 
   selectionRotateIconPath(): string {
-    return 'M 3.6 2.8 A 5 5 0 1 1 -1.2 -4.9 M -1.2 -4.9 L -3.8 -3.4 M -1.2 -4.9 L -0.6 -1.6';
+    return 'M 3.2 2.6 A 4.8 4.8 0 1 1 -1.1 -4.5 M -1.1 -4.5 L -3.6 -3.1 M -1.1 -4.5 L -0.4 -1.4';
   }
 
   shapeRotationTransform(shape: CanvasShape): string | null {
@@ -3619,8 +3619,8 @@ export class EditorPageComponent {
   }
 
   lineSelectionPath(): string | null {
-    const selectedShape = this.selectedShape();
-    if (!selectedShape || selectedShape.kind !== 'line') {
+    const selectedShape: CanvasShape | null = this.selectedShape();
+    if (selectedShape?.kind !== 'line') {
       return null;
     }
     return this.lineSvgPath(selectedShape);
@@ -5106,7 +5106,7 @@ export class EditorPageComponent {
       case 'rectangle':
         return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
       case 'circle':
-        return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.r, shape.r, shape.rotation ?? 0);
+        return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
       case 'ellipse':
         return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.rx, shape.ry, shape.rotation ?? 0);
       case 'line':
@@ -5259,8 +5259,7 @@ export class EditorPageComponent {
         return {
           ...shape,
           cx: nextCenter.x,
-          cy: nextCenter.y,
-          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+          cy: nextCenter.y
         } as CanvasShape;
       }
       case 'ellipse': {
@@ -5332,10 +5331,11 @@ export class EditorPageComponent {
       case 'text':
         return shape.rotation;
       case 'rectangle':
-      case 'circle':
       case 'ellipse':
       case 'image':
         return shape.rotation ?? 0;
+      case 'circle':
+        return 0;
     }
   }
 
@@ -5378,7 +5378,11 @@ export class EditorPageComponent {
   }
 
   private selectionCanRotate(shapes: readonly CanvasShape[]): boolean {
-    return shapes.length > 0 && shapes.every((shape) => shape.kind !== 'line');
+    return (
+      shapes.length > 0 &&
+      shapes.every((shape) => shape.kind !== 'line') &&
+      !shapes.every((shape) => shape.kind === 'circle')
+    );
   }
 
   private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {

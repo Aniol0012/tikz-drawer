@@ -714,15 +714,16 @@
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               @if (handle.variant === 'rotate') {
                 <g
-                  class="selection-handle selection-handle--rotate"
-                  [attr.style]="'cursor:' + handle.cursor"
-                  (pointerdown)="startResize($event, handle.id)">
+                  class="selection-handle--rotate"
+                  [attr.style]="'cursor:' + handle.cursor">
                   <circle
+                    class="selection-handle-hit-area"
                     [attr.cx]="handle.x"
                     [attr.cy]="handle.y"
-                    [attr.r]="selectionHandleOffset()"></circle>
+                    [attr.r]="selectionHandleOffset() * 1.45"
+                    (pointerdown)="startResize($event, handle.id)"></circle>
                   <path
-                    class="selection-handle__icon"
+                    class="selection-handle__icon selection-handle__icon--rotate"
                     [attr.transform]="'translate(' + handle.x + ' ' + handle.y + ')'"
                     [attr.d]="selectionRotateIconPath()"></path>
                 </g>
@@ -1479,23 +1480,6 @@
                         step="0.1"
                         [value]="shape.r"
                         (input)="updateShapeNumber('r', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /><input
-                        type="number"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /></div
                   ></label>
                 }
                 @case ('ellipse') {
@@ -2315,23 +2299,6 @@
                             step="0.1"
                             [value]="shape.r"
                             (input)="updateShapeNumber('r', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
                       ></label>
                     </div>
                   </div>

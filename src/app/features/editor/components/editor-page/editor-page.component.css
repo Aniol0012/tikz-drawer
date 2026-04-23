@@ -1188,13 +1188,6 @@ kbd {
   vector-effect: non-scaling-stroke;
 }
 
-.selection-handle--rotate circle {
-  fill: color-mix(in srgb, var(--accent) 18%, var(--panel-background));
-  stroke: color-mix(in srgb, var(--accent) 88%, white 12%);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
 .selection-handle__icon {
   fill: none;
   stroke: color-mix(in srgb, var(--accent) 84%, var(--app-foreground) 16%);
@@ -1203,6 +1196,10 @@ kbd {
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
+}
+
+.selection-handle__icon--rotate {
+  stroke-width: 1.8;
 }
 
 .selection-handle-hit-area {
