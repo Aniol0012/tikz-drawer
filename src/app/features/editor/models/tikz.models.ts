@@ -59,6 +59,7 @@ export interface RectangleShape extends CanvasShapeBase {
   readonly fill: string;
   readonly fillOpacity: number;
   readonly cornerRadius: number;
+  readonly rotation?: number;
 }
 
 export interface CircleShape extends CanvasShapeBase {
@@ -68,6 +69,7 @@ export interface CircleShape extends CanvasShapeBase {
   readonly r: number;
   readonly fill: string;
   readonly fillOpacity: number;
+  readonly rotation?: number;
 }
 
 export interface EllipseShape extends CanvasShapeBase {
@@ -78,6 +80,7 @@ export interface EllipseShape extends CanvasShapeBase {
   readonly ry: number;
   readonly fill: string;
   readonly fillOpacity: number;
+  readonly rotation?: number;
 }
 
 export interface TextShape extends CanvasShapeBase {
@@ -106,6 +109,7 @@ export interface ImageShape extends CanvasShapeBase {
   readonly aspectRatio: number;
   readonly src: string;
   readonly latexSource: string;
+  readonly rotation?: number;
 }
 
 export type CanvasShape = LineShape | RectangleShape | CircleShape | EllipseShape | TextShape | ImageShape;

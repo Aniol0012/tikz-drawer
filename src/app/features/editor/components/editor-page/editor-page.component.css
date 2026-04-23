@@ -1158,6 +1158,14 @@ kbd {
   fill: none;
 }
 
+.selection-rotate-guide {
+  stroke: color-mix(in srgb, var(--accent) 72%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .selection-outline--interactive {
   pointer-events: all;
   cursor: move;
@@ -1168,6 +1176,29 @@ kbd {
   stroke: var(--accent);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+
+.selection-handle--rotate circle {
+  fill: color-mix(in srgb, var(--accent) 18%, var(--panel-background));
+  stroke: color-mix(in srgb, var(--accent) 88%, white 12%);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.selection-handle__icon {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 84%, var(--app-foreground) 16%);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.selection-handle-hit-area {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
 }
 
 .selection-handle--anchor {
@@ -1182,6 +1213,12 @@ kbd {
 .selection-handle--ghost {
   fill: color-mix(in srgb, var(--accent) 12%, transparent);
   stroke-dasharray: 3 2;
+}
+
+.selection-handle--corner-radius {
+  fill: color-mix(in srgb, var(--accent) 36%, var(--panel-background));
+  stroke: color-mix(in srgb, var(--accent) 92%, white 8%);
+  pointer-events: none;
 }
 
 .canvas-empty {

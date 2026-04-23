@@ -391,6 +391,7 @@
                     [attr.y]="toSvgY(shape.y + shape.height)"
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
+                    [attr.transform]="shapeRotationTransform(shape)"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
@@ -403,6 +404,7 @@
                     [attr.cx]="toSvgX(shape.cx)"
                     [attr.cy]="toSvgY(shape.cy)"
                     [attr.r]="shape.r * preferences().scale"
+                    [attr.transform]="shapeRotationTransform(shape)"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
@@ -415,6 +417,7 @@
                     [attr.cy]="toSvgY(shape.cy)"
                     [attr.rx]="shape.rx * preferences().scale"
                     [attr.ry]="shape.ry * preferences().scale"
+                    [attr.transform]="shapeRotationTransform(shape)"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
@@ -461,6 +464,7 @@
                     [attr.y]="toSvgY(shape.y + shape.height)"
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
+                    [attr.transform]="shapeRotationTransform(shape)"
                     [attr.opacity]="shape.strokeOpacity"
                     [attr.href]="shape.src"
                     preserveAspectRatio="xMidYMid meet"></image>
@@ -469,6 +473,7 @@
                     [attr.y]="toSvgY(shape.y + shape.height)"
                     [attr.width]="shape.width * preferences().scale"
                     [attr.height]="shape.height * preferences().scale"
+                    [attr.transform]="shapeRotationTransform(shape)"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
@@ -548,6 +553,7 @@
                       [attr.y]="toSvgY(previewShape.y + previewShape.height)"
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
@@ -560,6 +566,7 @@
                       [attr.cx]="toSvgX(previewShape.cx)"
                       [attr.cy]="toSvgY(previewShape.cy)"
                       [attr.r]="previewShape.r * preferences().scale"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
@@ -572,6 +579,7 @@
                       [attr.cy]="toSvgY(previewShape.cy)"
                       [attr.rx]="previewShape.rx * preferences().scale"
                       [attr.ry]="previewShape.ry * preferences().scale"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
@@ -616,6 +624,7 @@
                       [attr.y]="toSvgY(previewShape.y + previewShape.height)"
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.opacity]="previewShape.strokeOpacity"
                       [attr.href]="previewShape.src"
                       preserveAspectRatio="xMidYMid meet"></image>
@@ -624,6 +633,7 @@
                       [attr.y]="toSvgY(previewShape.y + previewShape.height)"
                       [attr.width]="previewShape.width * preferences().scale"
                       [attr.height]="previewShape.height * preferences().scale"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
@@ -686,19 +696,60 @@
               [attr.height]="marquee.height"></rect>
           }
 
+          @if (selectionRotateGuide(); as rotateGuide) {
+            <line
+              class="selection-rotate-guide"
+              [attr.x1]="rotateGuide.x1"
+              [attr.y1]="rotateGuide.y1"
+              [attr.x2]="rotateGuide.x2"
+              [attr.y2]="rotateGuide.y2"></line>
+          }
+
           @if (selectionCount() > 0) {
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
-              <rect
-                class="selection-handle"
-                [class.selection-handle--anchor]="handle.variant === 'anchor'"
-                [class.selection-handle--arrow-control]="handle.variant === 'arrow-control'"
-                [class.selection-handle--ghost]="handle.variant === 'ghost-anchor'"
-                [attr.x]="handle.x - selectionHandleOffset()"
-                [attr.y]="handle.y - selectionHandleOffset()"
-                [attr.width]="selectionHandleSize()"
-                [attr.height]="selectionHandleSize()"
-                [attr.style]="'cursor:' + handle.cursor"
-                (pointerdown)="startResize($event, handle.id)"></rect>
+              @if (handle.variant === 'rotate') {
+                <g
+                  class="selection-handle selection-handle--rotate"
+                  [attr.style]="'cursor:' + handle.cursor"
+                  (pointerdown)="startResize($event, handle.id)">
+                  <circle
+                    [attr.cx]="handle.x"
+                    [attr.cy]="handle.y"
+                    [attr.r]="selectionHandleOffset()"></circle>
+                  <path
+                    class="selection-handle__icon"
+                    [attr.transform]="'translate(' + handle.x + ' ' + handle.y + ')'"
+                    [attr.d]="selectionRotateIconPath()"></path>
+                </g>
+              } @else if (handle.variant === 'corner-radius') {
+                <g
+                  class="selection-handle selection-handle--corner-radius-group"
+                  [attr.style]="'cursor:' + handle.cursor">
+                  <circle
+                    class="selection-handle-hit-area"
+                    [attr.cx]="handle.x"
+                    [attr.cy]="handle.y"
+                    [attr.r]="selectionHandleOffset() * 1.35"
+                    (pointerdown)="startResize($event, handle.id)"></circle>
+                  <circle
+                    class="selection-handle selection-handle--corner-radius"
+                    [attr.cx]="handle.x"
+                    [attr.cy]="handle.y"
+                    [attr.r]="selectionHandleOffset() * 0.8"></circle>
+                </g>
+              } @else {
+                <rect
+                  class="selection-handle"
+                  [class.selection-handle--anchor]="handle.variant === 'anchor'"
+                  [class.selection-handle--arrow-control]="handle.variant === 'arrow-control'"
+                  [class.selection-handle--ghost]="handle.variant === 'ghost-anchor'"
+                  [attr.x]="handle.x - selectionHandleOffset()"
+                  [attr.y]="handle.y - selectionHandleOffset()"
+                  [attr.width]="selectionHandleSize()"
+                  [attr.height]="selectionHandleSize()"
+                  [attr.style]="'cursor:' + handle.cursor"
+                  (pointerdown)="startResize($event, handle.id)"></rect>
+              }
             }
           }
         </svg>
@@ -1135,7 +1186,10 @@
                           <button
                             class="arrow-tip-button"
                             type="button"
-                            [class.is-active]="shape.arrowType === arrowType.id"
+                            [class.is-active]="
+                              (shape.arrowStart || shape.arrowEnd) &&
+                              shape.arrowType === arrowType.id
+                            "
                             [title]="arrowTipLabel(arrowType.id)"
                             [attr.aria-label]="arrowTipLabel(arrowType.id)"
                             (click)="setLineArrowType(arrowType.id)">
@@ -2010,7 +2064,10 @@
                           <button
                             class="arrow-tip-button"
                             type="button"
-                            [class.is-active]="shape.arrowType === arrowType.id"
+                            [class.is-active]="
+                              (shape.arrowStart || shape.arrowEnd) &&
+                              shape.arrowType === arrowType.id
+                            "
                             [title]="arrowTipLabel(arrowType.id)"
                             [attr.aria-label]="arrowTipLabel(arrowType.id)"
                             (click)="setLineArrowType(arrowType.id)">

@@ -43,7 +43,8 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
       return {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
-        fillOpacity: shape.fillOpacity ?? 1
+        fillOpacity: shape.fillOpacity ?? 1,
+        rotation: shape.rotation ?? 0
       } as CanvasShape;
     case 'text':
       return {
@@ -61,7 +62,8 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
     case 'image':
       return {
         ...shape,
-        strokeOpacity: shape.strokeOpacity ?? 1
+        strokeOpacity: shape.strokeOpacity ?? 1,
+        rotation: shape.rotation ?? 0
       } as CanvasShape;
   }
 };
@@ -73,26 +75,97 @@ const normalizeScene = (scene: TikzScene): TikzScene => ({
 
 const cloneScene = (scene: TikzScene): TikzScene => structuredClone(normalizeScene(scene));
 
+const rotatePointAround = (point: { x: number; y: number }, pivot: { x: number; y: number }, rotation: number) => {
+  if (!rotation) {
+    return point;
+  }
+  const radians = (rotation * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  const deltaX = point.x - pivot.x;
+  const deltaY = point.y - pivot.y;
+  return {
+    x: pivot.x + deltaX * cosine - deltaY * sine,
+    y: pivot.y + deltaX * sine + deltaY * cosine
+  };
+};
+
+const boundsFromPoints = (
+  points: readonly { x: number; y: number }[]
+): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } =>
+  points.reduce(
+    (bounds, point) => ({
+      left: Math.min(bounds.left, point.x),
+      right: Math.max(bounds.right, point.x),
+      bottom: Math.min(bounds.bottom, point.y),
+      top: Math.max(bounds.top, point.y)
+    }),
+    {
+      left: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      bottom: Number.POSITIVE_INFINITY,
+      top: Number.NEGATIVE_INFINITY
+    }
+  );
+
+const rectangleBounds = (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  rotation: number
+): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
+  const corners = [
+    { x, y },
+    { x: x + width, y },
+    { x: x + width, y: y + height },
+    { x, y: y + height }
+  ] as const;
+  if (!rotation) {
+    return boundsFromPoints(corners);
+  }
+  const pivot = { x: x + width / 2, y: y + height / 2 };
+  return boundsFromPoints(corners.map((corner) => rotatePointAround(corner, pivot, rotation)));
+};
+
+const ellipseBounds = (
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  rotation: number
+): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
+  if (!rotation) {
+    return {
+      left: cx - rx,
+      right: cx + rx,
+      bottom: cy - ry,
+      top: cy + ry
+    };
+  }
+  const radians = (rotation * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  const halfWidth = Math.sqrt(rx * rx * cosine * cosine + ry * ry * sine * sine);
+  const halfHeight = Math.sqrt(rx * rx * sine * sine + ry * ry * cosine * cosine);
+  return {
+    left: cx - halfWidth,
+    right: cx + halfWidth,
+    bottom: cy - halfHeight,
+    top: cy + halfHeight
+  };
+};
+
 const shapeBounds = (
   shape: CanvasShape
 ): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
   switch (shape.kind) {
     case 'rectangle':
-      return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+      return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
     case 'circle':
-      return {
-        left: shape.cx - shape.r,
-        right: shape.cx + shape.r,
-        bottom: shape.cy - shape.r,
-        top: shape.cy + shape.r
-      };
+      return ellipseBounds(shape.cx, shape.cy, shape.r, shape.r, shape.rotation ?? 0);
     case 'ellipse':
-      return {
-        left: shape.cx - shape.rx,
-        right: shape.cx + shape.rx,
-        bottom: shape.cy - shape.ry,
-        top: shape.cy + shape.ry
-      };
+      return ellipseBounds(shape.cx, shape.cy, shape.rx, shape.ry, shape.rotation ?? 0);
     case 'line':
       return [shape.from, ...shape.anchors, shape.to].reduce(
         (bounds, point) => ({
@@ -113,15 +186,20 @@ const shapeBounds = (
       const width = estimateTextWidth(shape, 1, 1, lines);
       const height = estimateTextHeight(shape, lines.length);
       const left = textLeftForWidth(shape, shape.x, width);
-      return {
-        left,
-        right: left + width,
-        bottom: shape.y - height / 2,
-        top: shape.y + height / 2
-      };
+      const corners = [
+        { x: left, y: shape.y - height / 2 },
+        { x: left + width, y: shape.y - height / 2 },
+        { x: left + width, y: shape.y + height / 2 },
+        { x: left, y: shape.y + height / 2 }
+      ] as const;
+      return boundsFromPoints(
+        shape.rotation
+          ? corners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
+          : corners
+      );
     }
     case 'image':
-      return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+      return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
   }
 };
 
@@ -241,7 +319,8 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         fill: shape.fill,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
-        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+        rotation: shape.rotation ?? 0
       };
     case 'text':
       return {
@@ -259,7 +338,8 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         ...shape,
         stroke: shape.stroke,
         strokeOpacity: shape.strokeOpacity ?? 1,
-        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth
+        strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+        rotation: shape.rotation ?? 0
       };
   }
 };

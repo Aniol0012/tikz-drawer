@@ -384,7 +384,8 @@ const parseRectangle = (line: string): CanvasShape | null => {
     height: Math.abs(from.y - to.y),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
-    cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0
+    cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 
   return shape;
@@ -416,7 +417,8 @@ const parseCircle = (line: string): CanvasShape | null => {
     cy: center.y,
     r: Number(match.groups['radius']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
-    fillOpacity: styleOpacity(styles, 'fill opacity')
+    fillOpacity: styleOpacity(styles, 'fill opacity'),
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 
   return shape;
@@ -449,7 +451,8 @@ const parseEllipse = (line: string): CanvasShape | null => {
     rx: Number(match.groups['rx']),
     ry: Number(match.groups['ry']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
-    fillOpacity: styleOpacity(styles, 'fill opacity')
+    fillOpacity: styleOpacity(styles, 'fill opacity'),
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 
   return shape;
@@ -501,7 +504,8 @@ const parseImageNode = (line: string): CanvasShape | null => {
     height: safeHeight,
     aspectRatio: safeWidth / safeHeight,
     src: imagePlaceholder(imageLabel),
-    latexSource
+    latexSource,
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 };
 

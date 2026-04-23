@@ -70,6 +70,11 @@ export type ResizeHandle =
   | 's'
   | 'sw'
   | 'w'
+  | 'rotate'
+  | 'corner-radius-nw'
+  | 'corner-radius-ne'
+  | 'corner-radius-se'
+  | 'corner-radius-sw'
   | LineEndpoint
   | ArrowControlHandle
   | `anchor-${number}`
@@ -135,7 +140,7 @@ export interface HandleDescriptor {
   readonly x: number;
   readonly y: number;
   readonly cursor: string;
-  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control';
+  readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control' | 'rotate' | 'corner-radius';
 }
 
 export interface HomogeneousSelectionInfo {
@@ -176,6 +181,14 @@ export interface ResizeInteractionState {
   readonly initialBounds: SelectionBounds | null;
 }
 
+export interface RotateInteractionState {
+  readonly kind: 'rotate';
+  readonly pointerId: number;
+  readonly initialShapes: readonly CanvasShape[];
+  readonly pivot: Point;
+  readonly startAngleRadians: number;
+}
+
 export interface MarqueeInteractionState {
   readonly kind: 'marquee';
   readonly pointerId: number;
@@ -203,6 +216,7 @@ export type InteractionState =
   | PanInteractionState
   | PendingPanInteractionState
   | ResizeInteractionState
+  | RotateInteractionState
   | MarqueeInteractionState
   | InsertInteractionState
   | FreehandInteractionState;

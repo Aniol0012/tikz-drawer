@@ -264,15 +264,28 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
   if (shape.cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
   }
+  if ((shape.rotation ?? 0) !== 0) {
+    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  }
 
   return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
 };
 
-const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string =>
-  `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
+const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string => {
+  const entries = buildStyleEntries(shape, context);
+  if ((shape.rotation ?? 0) !== 0) {
+    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  }
+  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
+};
 
-const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string =>
-  `\\draw[${buildStyleEntries(shape, context).join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
+const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string => {
+  const entries = buildStyleEntries(shape, context);
+  if ((shape.rotation ?? 0) !== 0) {
+    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  }
+  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
+};
 
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string => {
   const nodeOptions = [
@@ -307,6 +320,9 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
   const centerX = shape.x + shape.width / 2;
   const centerY = shape.y + shape.height / 2;
   const nodeOptions = ['inner sep=0pt'];
+  if ((shape.rotation ?? 0) !== 0) {
+    nodeOptions.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  }
   if (shape.strokeOpacity < 1) {
     nodeOptions.push(`opacity=${formatNumber(shape.strokeOpacity)}`);
   }
@@ -315,8 +331,18 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
   ];
 
   if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
+    const drawOptions = [
+      `draw=${context.registerColor(shape.stroke)}`,
+      `draw opacity=${formatNumber(shape.strokeOpacity)}`,
+      `line width=${formatNumber(shape.strokeWidth)}pt`
+    ];
+    if ((shape.rotation ?? 0) !== 0) {
+      drawOptions.push(
+        `rotate around={${formatNumber(shape.rotation ?? 0)}:(${formatNumber(centerX)}, ${formatNumber(centerY)})}`
+      );
+    }
     lines.push(
-      `\\draw[draw=${context.registerColor(shape.stroke)}, draw opacity=${formatNumber(shape.strokeOpacity)}, line width=${formatNumber(shape.strokeWidth)}pt] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
+      `\\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
     );
   }
 

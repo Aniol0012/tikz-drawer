@@ -117,12 +117,24 @@ export const buildCanvasExportDocument = ({
             helpers.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
           )}" fill="none" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
         }
-        case 'rectangle':
-          return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
-        case 'circle':
-          return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
-        case 'ellipse':
-          return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" />`;
+        case 'rectangle': {
+          const rotate = shape.rotation
+            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
+            : '';
+          return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
+        }
+        case 'circle': {
+          const rotate = shape.rotation
+            ? ` transform="rotate(${shape.rotation} ${projectX(shape.cx)} ${projectY(shape.cy)})"`
+            : '';
+          return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
+        }
+        case 'ellipse': {
+          const rotate = shape.rotation
+            ? ` transform="rotate(${shape.rotation} ${projectX(shape.cx)} ${projectY(shape.cy)})"`
+            : '';
+          return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
+        }
         case 'text': {
           const renderX = helpers.textRenderXAt(shape, projectX, scale);
           const anchor = helpers.textAnchor(shape.textAlign);
@@ -138,8 +150,12 @@ export const buildCanvasExportDocument = ({
             .join('');
           return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="${EXPORT_TEXT_FONT_FAMILY}" xml:space="preserve"${rotate}>${lines}</text>`;
         }
-        case 'image':
-          return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet" />`;
+        case 'image': {
+          const rotate = shape.rotation
+            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
+            : '';
+          return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
+        }
       }
     })
     .join('');

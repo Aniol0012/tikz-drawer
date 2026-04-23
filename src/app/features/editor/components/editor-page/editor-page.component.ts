@@ -275,6 +275,12 @@ export class EditorPageComponent {
     coarse: 18,
     fine: 10
   } as const;
+  private static readonly selectionRotateHandleDistanceFactor = 3.2;
+  private static readonly selectionRotateHandleMinDistance = 0.65;
+  private static readonly rotationSnapStepDegrees = 15;
+  private static readonly wheelRotationScale = 0.04;
+  private static readonly wheelRotationMinStepDegrees = 3;
+  private static readonly wheelRotationMaxStepDegrees = 18;
   private static readonly sidebarResizeLimits = {
     mobileMinHeight: 160,
     mobileMaxHeight: 640,
@@ -773,11 +779,13 @@ export class EditorPageComponent {
     if (!selectedShapes.length) {
       return [];
     }
+    const selectionBounds = this.selectionBounds();
+    const rotateHandle = selectionBounds ? this.rotationHandleFromBounds(selectionBounds) : null;
     if (selectedShape?.kind === 'line') {
       const points = this.linePoints(selectedShape);
       const fromAdjacentPoint = points[1] ?? selectedShape.to;
       const toAdjacentPoint = points.at(-2) ?? selectedShape.from;
-      return [
+      const lineHandles: HandleDescriptor[] = [
         this.lineEndpointHandle(selectedShape, 'from', fromAdjacentPoint),
         ...this.lineArrowControlHandles(selectedShape, 'from', fromAdjacentPoint),
         ...selectedShape.anchors.map((anchor, index) => ({
@@ -800,14 +808,17 @@ export class EditorPageComponent {
         ...this.lineArrowControlHandles(selectedShape, 'to', toAdjacentPoint),
         this.lineEndpointHandle(selectedShape, 'to', toAdjacentPoint)
       ];
+      if (rotateHandle) {
+        lineHandles.push(rotateHandle);
+      }
+      return lineHandles;
     }
-    const selectionBounds = this.selectionBounds();
     if (!selectionBounds) {
       return [];
     }
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
     const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
-    return [
+    const handles: HandleDescriptor[] = [
       { id: 'nw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.top), cursor: 'nwse-resize' },
       { id: 'n', x: this.toSvgX(centerX), y: this.toSvgY(selectionBounds.top), cursor: 'ns-resize' },
       { id: 'ne', x: this.toSvgX(selectionBounds.right), y: this.toSvgY(selectionBounds.top), cursor: 'nesw-resize' },
@@ -822,6 +833,34 @@ export class EditorPageComponent {
       { id: 'sw', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(selectionBounds.bottom), cursor: 'nesw-resize' },
       { id: 'w', x: this.toSvgX(selectionBounds.left), y: this.toSvgY(centerY), cursor: 'ew-resize' }
     ];
+    if (rotateHandle) {
+      handles.push(rotateHandle);
+    }
+    if (selectedShape?.kind === 'rectangle' && selectedShapes.length === 1) {
+      handles.push(...this.rectangleCornerRadiusHandles(selectedShape));
+    }
+    return handles;
+  });
+  readonly selectionRotateGuide = computed<{
+    readonly x1: number;
+    readonly y1: number;
+    readonly x2: number;
+    readonly y2: number;
+  } | null>(() => {
+    const bounds = this.selectionBounds();
+    if (!bounds || this.selectionCount() === 0) {
+      return null;
+    }
+    const rotateHandle = this.selectionHandles().find((handle) => handle.variant === 'rotate');
+    if (!rotateHandle) {
+      return null;
+    }
+    return {
+      x1: this.toSvgX((bounds.left + bounds.right) / 2),
+      y1: this.toSvgY(bounds.top),
+      x2: rotateHandle.x,
+      y2: rotateHandle.y
+    };
   });
   readonly marqueeBounds = computed(() => {
     const interactionState = this.interactionState();
@@ -2859,6 +2898,27 @@ export class EditorPageComponent {
     event.preventDefault();
     event.stopPropagation();
 
+    if (handle === 'rotate') {
+      if (!selectionBounds || selectedShapes.length === 0) {
+        return;
+      }
+      const pivot = {
+        x: (selectionBounds.left + selectionBounds.right) / 2,
+        y: (selectionBounds.bottom + selectionBounds.top) / 2
+      };
+      const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
+      this.store.recordHistoryCheckpoint();
+      this.interactionState.set({
+        kind: 'rotate',
+        pointerId: event.pointerId,
+        initialShapes: structuredClone(selectedShapes),
+        pivot,
+        startAngleRadians: Math.atan2(pointerPoint.y - pivot.y, pointerPoint.x - pivot.x)
+      });
+      this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
+      return;
+    }
+
     if (selectedShape?.kind === 'line' && handle.startsWith('insert-anchor-')) {
       const segmentIndex = Number(handle.slice('insert-anchor-'.length));
       const points = this.linePoints(selectedShape);
@@ -2934,6 +2994,9 @@ export class EditorPageComponent {
         return;
       case 'resize':
         this.handleResizePointerMove(event, interactionState);
+        return;
+      case 'rotate':
+        this.handleRotatePointerMove(event, interactionState);
         return;
     }
   }
@@ -3034,7 +3097,20 @@ export class EditorPageComponent {
     event: PointerEvent,
     interactionState: Extract<InteractionState, { kind: 'resize' }>
   ): void {
-    const nextPoint = this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY));
+    const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
+    if (interactionState.initialShape?.kind === 'rectangle' && interactionState.handle.startsWith('corner-radius-')) {
+      const nextCornerRadius = this.cornerRadiusFromPointer(
+        interactionState.initialShape,
+        interactionState.handle,
+        pointerPoint
+      );
+      this.store.patchSelectedShape((shape) =>
+        shape.kind === 'rectangle' ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape) : shape
+      );
+      return;
+    }
+
+    const nextPoint = this.snapScenePoint(pointerPoint);
     if (interactionState.initialShape) {
       const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
       this.store.patchSelectedShape(() => resizedShape);
@@ -3051,6 +3127,28 @@ export class EditorPageComponent {
         interactionState.initialBounds,
         interactionState.handle,
         nextPoint
+      )
+    );
+  }
+
+  private handleRotatePointerMove(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'rotate' }>
+  ): void {
+    const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
+    const angleRadians = Math.atan2(
+      pointerPoint.y - interactionState.pivot.y,
+      pointerPoint.x - interactionState.pivot.x
+    );
+    let rotationDeltaDegrees = ((interactionState.startAngleRadians - angleRadians) * 180) / Math.PI;
+    if (this.shiftPressed()) {
+      rotationDeltaDegrees =
+        Math.round(rotationDeltaDegrees / EditorPageComponent.rotationSnapStepDegrees) *
+        EditorPageComponent.rotationSnapStepDegrees;
+    }
+    this.store.replaceShapes(
+      interactionState.initialShapes.map((shape) =>
+        this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
       )
     );
   }
@@ -3085,6 +3183,8 @@ export class EditorPageComponent {
         this.interactionState.set(null);
         return;
       case 'resize':
+        break;
+      case 'rotate':
         break;
     }
 
@@ -3201,15 +3301,31 @@ export class EditorPageComponent {
 
   onCanvasWheel(event: WheelEvent): void {
     event.preventDefault();
+    const delta = this.normalizeWheelDelta(event);
+
+    if (event.altKey && this.activeTool() === 'select' && this.selectionCount() > 0) {
+      const axisDelta = Math.abs(delta.y) >= Math.abs(delta.x) ? delta.y : delta.x;
+      if (axisDelta !== 0) {
+        const magnitude = Math.max(
+          EditorPageComponent.wheelRotationMinStepDegrees,
+          Math.min(
+            EditorPageComponent.wheelRotationMaxStepDegrees,
+            Math.abs(axisDelta) * EditorPageComponent.wheelRotationScale
+          )
+        );
+        const rotationDelta = axisDelta > 0 ? -magnitude : magnitude;
+        this.rotateCurrentSelectionBy(rotationDelta);
+      }
+      return;
+    }
 
     if (event.ctrlKey) {
-      const zoomDelta = this.normalizeWheelDelta(event).y;
+      const zoomDelta = delta.y;
       const zoomFactor = Math.exp(-zoomDelta * EDITOR_WHEEL_ZOOM_SENSITIVITY);
       this.setScaleAtClientPoint(this.preferences().scale * zoomFactor, event.clientX, event.clientY, false);
       return;
     }
 
-    const delta = this.normalizeWheelDelta(event);
     if (event.shiftKey) {
       const horizontalDelta = Math.abs(delta.x) > Math.abs(delta.y) ? delta.x : delta.y;
       this.panViewportByClientDelta(horizontalDelta, 0);
@@ -3328,6 +3444,22 @@ export class EditorPageComponent {
     return this.selectionHandleSize() / 2;
   }
 
+  selectionRotateIconPath(): string {
+    return 'M -3.8 2.4 A 4.6 4.6 0 1 1 2.8 -3.8 M 2.8 -3.8 H 0.6 M 2.8 -3.8 V -1.6';
+  }
+
+  shapeRotationTransform(shape: CanvasShape): string | null {
+    const rotation = this.shapeRotation(shape);
+    if (!rotation) {
+      return null;
+    }
+    const center = this.shapeCenter(shape);
+    if (!center) {
+      return null;
+    }
+    return `rotate(${rotation} ${this.toSvgX(center.x)} ${this.toSvgY(center.y)})`;
+  }
+
   presetIconPath(icon: string): string {
     return getIconPath(icon);
   }
@@ -3406,6 +3538,60 @@ export class EditorPageComponent {
       width: (selectionBounds.right - selectionBounds.left) * this.preferences().scale,
       height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale
     };
+  }
+
+  private rotationHandleFromBounds(bounds: SelectionBounds): HandleDescriptor {
+    const distance = Math.max(
+      EditorPageComponent.selectionRotateHandleMinDistance,
+      (this.selectionHandleSize() * EditorPageComponent.selectionRotateHandleDistanceFactor) / this.preferences().scale
+    );
+    return {
+      id: 'rotate',
+      x: this.toSvgX((bounds.left + bounds.right) / 2),
+      y: this.toSvgY(bounds.top + distance),
+      cursor: 'grab',
+      variant: 'rotate'
+    };
+  }
+
+  private rectangleCornerRadiusHandles(shape: RectangleCanvasShape): readonly HandleDescriptor[] {
+    const maxRadius = Math.min(shape.width, shape.height) / 2;
+    if (maxRadius <= 0) {
+      return [];
+    }
+    const minimumVisibleInset = this.selectionHandleSize() / this.preferences().scale;
+    const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
+    const corners: ReadonlyArray<{ readonly id: ResizeHandle; readonly point: Point; readonly cursor: ResizeCursor }> =
+      [
+        {
+          id: 'corner-radius-nw',
+          point: { x: shape.x + inset, y: shape.y + shape.height - inset },
+          cursor: 'nwse-resize'
+        },
+        {
+          id: 'corner-radius-ne',
+          point: { x: shape.x + shape.width - inset, y: shape.y + shape.height - inset },
+          cursor: 'nesw-resize'
+        },
+        {
+          id: 'corner-radius-se',
+          point: { x: shape.x + shape.width - inset, y: shape.y + inset },
+          cursor: 'nwse-resize'
+        },
+        { id: 'corner-radius-sw', point: { x: shape.x + inset, y: shape.y + inset }, cursor: 'nesw-resize' }
+      ];
+    const center = this.shapeCenter(shape);
+    const angle = this.shapeRotation(shape);
+    return corners.map(({ id, point, cursor }) => {
+      const rotatedPoint = this.rotatePointAround(point, center, angle);
+      return {
+        id,
+        x: this.toSvgX(rotatedPoint.x),
+        y: this.toSvgY(rotatedPoint.y),
+        cursor,
+        variant: 'corner-radius'
+      };
+    });
   }
 
   lineSelectionPath(): string | null {
@@ -4894,21 +5080,11 @@ export class EditorPageComponent {
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {
     switch (shape.kind) {
       case 'rectangle':
-        return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
       case 'circle':
-        return {
-          left: shape.cx - shape.r,
-          right: shape.cx + shape.r,
-          bottom: shape.cy - shape.r,
-          top: shape.cy + shape.r
-        };
+        return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.r, shape.r, shape.rotation ?? 0);
       case 'ellipse':
-        return {
-          left: shape.cx - shape.rx,
-          right: shape.cx + shape.rx,
-          bottom: shape.cy - shape.ry,
-          top: shape.cy + shape.ry
-        };
+        return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.rx, shape.ry, shape.rotation ?? 0);
       case 'line':
         return this.linePoints(shape).reduce<SelectionBounds>(
           (bounds, point) => ({
@@ -4929,16 +5105,257 @@ export class EditorPageComponent {
         const width = this.estimateTextWidth(shape, 1);
         const height = estimateTextHeight(shape, lines.length, 1, TEXT_RENDER_LINE_HEIGHT_FACTOR);
         const left = textLeftForWidth(shape, shape.x, width);
-        return {
-          left,
-          right: left + width,
-          bottom: shape.y - height / 2,
-          top: shape.y + height / 2
-        };
+        const baseCorners: readonly Point[] = [
+          { x: left, y: shape.y - height / 2 },
+          { x: left + width, y: shape.y - height / 2 },
+          { x: left + width, y: shape.y + height / 2 },
+          { x: left, y: shape.y + height / 2 }
+        ];
+        const rotatedCorners = shape.rotation
+          ? baseCorners.map((corner) => this.rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
+          : baseCorners;
+        return this.boundsFromPoints(rotatedCorners);
       }
       case 'image':
-        return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
     }
+  }
+
+  private rotatedRectangleBounds(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    rotationDegrees: number
+  ): SelectionBounds {
+    const corners: readonly Point[] = [
+      { x, y },
+      { x: x + width, y },
+      { x: x + width, y: y + height },
+      { x, y: y + height }
+    ];
+    if (!rotationDegrees) {
+      return this.boundsFromPoints(corners) as SelectionBounds;
+    }
+    const pivot = { x: x + width / 2, y: y + height / 2 };
+    return this.boundsFromPoints(
+      corners.map((corner) => this.rotatePointAround(corner, pivot, rotationDegrees))
+    ) as SelectionBounds;
+  }
+
+  private rotatedEllipseBounds(
+    cx: number,
+    cy: number,
+    rx: number,
+    ry: number,
+    rotationDegrees: number
+  ): SelectionBounds {
+    if (!rotationDegrees) {
+      return { left: cx - rx, right: cx + rx, bottom: cy - ry, top: cy + ry };
+    }
+    const radians = (rotationDegrees * Math.PI) / 180;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+    const halfWidth = Math.sqrt(rx * rx * cosine * cosine + ry * ry * sine * sine);
+    const halfHeight = Math.sqrt(rx * rx * sine * sine + ry * ry * cosine * cosine);
+    return { left: cx - halfWidth, right: cx + halfWidth, bottom: cy - halfHeight, top: cy + halfHeight };
+  }
+
+  private boundsFromPoints(points: readonly Point[]): SelectionBounds | null {
+    if (points.length === 0) {
+      return null;
+    }
+    return points.reduce<SelectionBounds>(
+      (bounds, point) => ({
+        left: Math.min(bounds.left, point.x),
+        right: Math.max(bounds.right, point.x),
+        bottom: Math.min(bounds.bottom, point.y),
+        top: Math.max(bounds.top, point.y)
+      }),
+      {
+        left: Number.POSITIVE_INFINITY,
+        right: Number.NEGATIVE_INFINITY,
+        bottom: Number.POSITIVE_INFINITY,
+        top: Number.NEGATIVE_INFINITY
+      }
+    );
+  }
+
+  private cornerRadiusFromPointer(shape: RectangleCanvasShape, handle: ResizeHandle, pointer: Point): number {
+    const maxRadius = Math.min(shape.width, shape.height) / 2;
+    if (maxRadius <= 0) {
+      return 0;
+    }
+    const center = this.shapeCenter(shape);
+    const localPointer = this.rotatePointAround(pointer, center, -this.shapeRotation(shape));
+    let horizontalInset = shape.cornerRadius;
+    let verticalInset = shape.cornerRadius;
+    switch (handle) {
+      case 'corner-radius-nw':
+        horizontalInset = localPointer.x - shape.x;
+        verticalInset = shape.y + shape.height - localPointer.y;
+        break;
+      case 'corner-radius-ne':
+        horizontalInset = shape.x + shape.width - localPointer.x;
+        verticalInset = shape.y + shape.height - localPointer.y;
+        break;
+      case 'corner-radius-se':
+        horizontalInset = shape.x + shape.width - localPointer.x;
+        verticalInset = localPointer.y - shape.y;
+        break;
+      case 'corner-radius-sw':
+        horizontalInset = localPointer.x - shape.x;
+        verticalInset = localPointer.y - shape.y;
+        break;
+      default:
+        return shape.cornerRadius;
+    }
+    return Math.max(0, Math.min(maxRadius, horizontalInset, verticalInset));
+  }
+
+  private rotateShapeAround(shape: CanvasShape, pivot: Point, rotationDeltaDegrees: number): CanvasShape {
+    if (Math.abs(rotationDeltaDegrees) < 0.0001) {
+      return shape;
+    }
+    switch (shape.kind) {
+      case 'line':
+        return {
+          ...shape,
+          from: this.rotatePointAround(shape.from, pivot, rotationDeltaDegrees),
+          to: this.rotatePointAround(shape.to, pivot, rotationDeltaDegrees),
+          anchors: shape.anchors.map((anchor) => this.rotatePointAround(anchor, pivot, rotationDeltaDegrees))
+        } as CanvasShape;
+      case 'rectangle': {
+        const center = this.shapeCenter(shape);
+        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          x: nextCenter.x - shape.width / 2,
+          y: nextCenter.y - shape.height / 2,
+          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
+      case 'circle': {
+        const nextCenter = this.rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          cx: nextCenter.x,
+          cy: nextCenter.y,
+          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
+      case 'ellipse': {
+        const nextCenter = this.rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          cx: nextCenter.x,
+          cy: nextCenter.y,
+          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
+      case 'text': {
+        const nextCenter = this.rotatePointAround({ x: shape.x, y: shape.y }, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          x: nextCenter.x,
+          y: nextCenter.y,
+          rotation: this.normalizeRotationDegrees(shape.rotation + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
+      case 'image': {
+        const center = this.shapeCenter(shape);
+        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          x: nextCenter.x - shape.width / 2,
+          y: nextCenter.y - shape.height / 2,
+          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
+    }
+  }
+
+  private shapeCenter(shape: CanvasShape): Point {
+    switch (shape.kind) {
+      case 'line': {
+        const points = this.linePoints(shape);
+        const bounds = points.reduce(
+          (accumulator, point) => ({
+            left: Math.min(accumulator.left, point.x),
+            right: Math.max(accumulator.right, point.x),
+            bottom: Math.min(accumulator.bottom, point.y),
+            top: Math.max(accumulator.top, point.y)
+          }),
+          {
+            left: Number.POSITIVE_INFINITY,
+            right: Number.NEGATIVE_INFINITY,
+            bottom: Number.POSITIVE_INFINITY,
+            top: Number.NEGATIVE_INFINITY
+          }
+        );
+        return { x: (bounds.left + bounds.right) / 2, y: (bounds.bottom + bounds.top) / 2 };
+      }
+      case 'rectangle':
+      case 'image':
+        return { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
+      case 'circle':
+      case 'ellipse':
+        return { x: shape.cx, y: shape.cy };
+      case 'text':
+        return { x: shape.x, y: shape.y };
+    }
+  }
+
+  private shapeRotation(shape: CanvasShape): number {
+    switch (shape.kind) {
+      case 'line':
+        return 0;
+      case 'text':
+        return shape.rotation;
+      case 'rectangle':
+      case 'circle':
+      case 'ellipse':
+      case 'image':
+        return shape.rotation ?? 0;
+    }
+  }
+
+  private rotatePointAround(point: Point, pivot: Point, rotationDegrees: number): Point {
+    if (Math.abs(rotationDegrees) < 0.0001) {
+      return { ...point };
+    }
+    const radians = (rotationDegrees * Math.PI) / 180;
+    const cosine = Math.cos(radians);
+    const sine = Math.sin(radians);
+    const deltaX = point.x - pivot.x;
+    const deltaY = point.y - pivot.y;
+    return {
+      x: pivot.x + deltaX * cosine - deltaY * sine,
+      y: pivot.y + deltaX * sine + deltaY * cosine
+    };
+  }
+
+  private normalizeRotationDegrees(rotationDegrees: number): number {
+    const normalized = ((((rotationDegrees + 180) % 360) + 360) % 360) - 180;
+    const rounded = Number.parseFloat(normalized.toFixed(3));
+    return Math.abs(rounded) < 0.001 ? 0 : rounded;
+  }
+
+  private rotateCurrentSelectionBy(rotationDeltaDegrees: number): void {
+    if (Math.abs(rotationDeltaDegrees) < 0.0001) {
+      return;
+    }
+    const bounds = this.selectionBounds();
+    const selectedShapes = this.selectedShapes();
+    if (!bounds || selectedShapes.length === 0) {
+      return;
+    }
+    const pivot = {
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2
+    };
+    this.store.recordHistoryCheckpoint();
+    this.store.replaceShapes(selectedShapes.map((shape) => this.rotateShapeAround(shape, pivot, rotationDeltaDegrees)));
   }
 
   private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
