@@ -713,9 +713,7 @@
           @if (selectionCount() > 0) {
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               @if (handle.variant === 'rotate') {
-                <g
-                  class="selection-handle--rotate"
-                  [attr.style]="'cursor:' + handle.cursor">
+                <g class="selection-handle--rotate" [attr.style]="'cursor:' + handle.cursor">
                   <circle
                     class="selection-handle-hit-area"
                     [attr.cx]="handle.x"

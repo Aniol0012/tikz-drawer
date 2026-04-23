@@ -5106,7 +5106,12 @@ export class EditorPageComponent {
       case 'rectangle':
         return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
       case 'circle':
-        return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+        return {
+          left: shape.cx - shape.r,
+          right: shape.cx + shape.r,
+          bottom: shape.cy - shape.r,
+          top: shape.cy + shape.r
+        };
       case 'ellipse':
         return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.rx, shape.ry, shape.rotation ?? 0);
       case 'line':
