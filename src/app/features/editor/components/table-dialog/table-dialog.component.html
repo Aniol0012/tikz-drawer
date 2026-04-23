@@ -12,8 +12,7 @@
         (click)="cancelDialog.emit()"
         [attr.aria-label]="cancelLabel()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M6.7 6.7a1 1 0 0 1 1.4 0L12 10.58l3.9-3.88a1 1 0 0 1 1.4 1.42L13.42 12l3.88 3.9a1 1 0 0 1-1.42 1.4L12 13.42l-3.9 3.88a1 1 0 1 1-1.4-1.42L10.58 12 6.7 8.1a1 1 0 0 1 0-1.4Z"></path>
+          <path [attr.d]="closeIconPath"></path>
         </svg>
       </button>
     </header>

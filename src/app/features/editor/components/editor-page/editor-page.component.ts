@@ -3469,7 +3469,7 @@ export class EditorPageComponent {
   }
 
   selectionRotateIconPath(): string {
-    return 'M -3.8 -0.8 H -1.1 V -3.5 M -3.8 -0.8 A 5 5 0 1 0 3.8 1.4';
+    return getIconPath('rotationHandle');
   }
 
   shapeRotationTransform(shape: CanvasShape): string | null {
@@ -3507,21 +3507,21 @@ export class EditorPageComponent {
   arrowTipIconPath(arrowType: ArrowTipKind): string {
     switch (arrowType) {
       case 'latex':
-        return 'M4 10h12m0 0-4-4m4 4-4 4';
+        return getIconPath('arrowTipLatex');
       case 'triangle':
-        return 'M5 7 17 10 5 13Z';
+        return getIconPath('arrowTipTriangle');
       case 'stealth':
-        return 'M5 10 15 6 12 10 15 14Z';
+        return getIconPath('arrowTipStealth');
       case 'diamond':
-        return 'M5 10 11 6 17 10 11 14Z';
+        return getIconPath('arrowTipDiamond');
       case 'circle':
-        return 'M11 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0';
+        return getIconPath('arrowTipCircle');
       case 'bar':
-        return 'M5 10h8m4-4v8';
+        return getIconPath('arrowTipBar');
       case 'hooks':
-        return 'M5 10h8m3-4c-2 0-2 2-2 4s0 4 2 4';
+        return getIconPath('arrowTipHooks');
       case 'bracket':
-        return 'M5 10h8m3-4h-2v8h2';
+        return getIconPath('arrowTipBracket');
     }
   }
 

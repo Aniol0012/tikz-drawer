@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
+import { getIconPath } from '../../config/editor-icons';
 import type { TableDimensions } from '../../models/table.models';
 import { normalizeTableDimensions, tableSizeLabel } from '../../utils/table.utils';
 import type { TableDialogCell } from './table-dialog.types';
@@ -10,6 +11,7 @@ import type { TableDialogCell } from './table-dialog.types';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TableDialogComponent implements OnInit {
+  readonly closeIconPath = getIconPath('closeBold');
   readonly title = input.required<string>();
   readonly description = input.required<string>();
   readonly confirmLabel = input.required<string>();

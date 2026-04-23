@@ -8,6 +8,7 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import { getIconPath } from '../../config/editor-icons';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';
 
@@ -58,6 +59,7 @@ const hasMismatchedEnvironment = (source: string, environment: string): boolean 
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImportCodeModalComponent {
+  readonly closeIconPath = getIconPath('close');
   readonly title = input.required<string>();
   readonly actionLabel = input.required<string>();
   readonly closeLabel = input.required<string>();
