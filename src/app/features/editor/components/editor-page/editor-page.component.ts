@@ -659,7 +659,7 @@ export class EditorPageComponent {
     }
 
     const shape = this.scene().shapes.find((entry) => entry.id === editor.shapeId);
-    if (!shape || shape.kind !== 'text') {
+    if (shape?.kind !== 'text') {
       return null;
     }
 
@@ -2184,7 +2184,7 @@ export class EditorPageComponent {
     }
 
     const shape = this.scene().shapes.find((entry) => entry.id === editor.shapeId);
-    if (!shape || shape.kind !== 'text') {
+    if (shape?.kind !== 'text') {
       this.inlineTextEditor.set(null);
       return;
     }
