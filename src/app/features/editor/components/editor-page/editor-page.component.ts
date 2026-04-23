@@ -3469,7 +3469,7 @@ export class EditorPageComponent {
   }
 
   selectionRotateIconPath(): string {
-    return 'M 3.2 2.6 A 4.8 4.8 0 1 1 -1.1 -4.5 M -1.1 -4.5 L -3.6 -3.1 M -1.1 -4.5 L -0.4 -1.4';
+    return 'M -3.8 -0.8 H -1.1 V -3.5 M -3.8 -0.8 A 5 5 0 1 0 3.8 1.4';
   }
 
   shapeRotationTransform(shape: CanvasShape): string | null {
@@ -3569,10 +3569,11 @@ export class EditorPageComponent {
       EditorPageComponent.selectionRotateHandleMinDistance,
       (this.selectionHandleSize() * EditorPageComponent.selectionRotateHandleDistanceFactor) / this.preferences().scale
     );
+    const handleY = this.toSvgY(bounds.top + distance);
     return {
       id: 'rotate',
       x: this.toSvgX((bounds.left + bounds.right) / 2),
-      y: this.toSvgY(bounds.top + distance),
+      y: Math.max(this.selectionHandleSize(), handleY),
       cursor: 'grab',
       variant: 'rotate'
     };
