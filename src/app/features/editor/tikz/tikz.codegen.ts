@@ -6,6 +6,7 @@ import type {
   ImageShape,
   LineShape,
   RectangleShape,
+  TriangleShape,
   TextShape,
   TikzScene
 } from '../models/tikz.models';
@@ -271,6 +272,22 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
   return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
 };
 
+const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
+  const entries = buildStyleEntries(shape, context);
+  if ((shape.rotation ?? 0) !== 0) {
+    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  }
+
+  const apexX = shape.x + shape.width * shape.apexOffset;
+  const apexY = shape.y + shape.height;
+  const leftX = shape.x;
+  const leftY = shape.y;
+  const rightX = shape.x + shape.width;
+  const rightY = shape.y;
+
+  return `\\draw[${entries.join(', ')}] (${formatNumber(apexX)}, ${formatNumber(apexY)}) -- (${formatNumber(leftX)}, ${formatNumber(leftY)}) -- (${formatNumber(rightX)}, ${formatNumber(rightY)}) -- cycle;`;
+};
+
 const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
   if ((shape.rotation ?? 0) !== 0) {
@@ -355,6 +372,8 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
       return lineToTikz(shape, context);
     case 'rectangle':
       return rectangleToTikz(shape, context);
+    case 'triangle':
+      return triangleToTikz(shape, context);
     case 'circle':
       return circleToTikz(shape, context);
     case 'ellipse':

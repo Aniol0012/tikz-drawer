@@ -1,6 +1,6 @@
 import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
 import { parseTikz } from './tikz.parser';
-import type { ImageShape, LineShape, RectangleShape, TextShape, TikzScene } from '../models/tikz.models';
+import type { ImageShape, LineShape, RectangleShape, TextShape, TikzScene, TriangleShape } from '../models/tikz.models';
 
 const baseLine: LineShape = {
   id: 'line-1',
@@ -78,6 +78,23 @@ const translucentImage: ImageShape = {
   stroke: '#1f1f1f',
   strokeOpacity: 0.4,
   strokeWidth: 0.05
+};
+
+const balancedTriangle: TriangleShape = {
+  id: 'triangle-1',
+  name: 'Triangle',
+  kind: 'triangle',
+  stroke: '#1f1f1f',
+  strokeOpacity: 1,
+  strokeWidth: 0.08,
+  x: -2.6,
+  y: -1.6,
+  width: 5.2,
+  height: 3.8,
+  fill: '#f1f1f1',
+  fillOpacity: 1,
+  apexOffset: 0.5,
+  rotation: 0
 };
 
 describe('sceneToTikzBundle', () => {
@@ -184,5 +201,30 @@ describe('sceneToTikzBundle', () => {
 
     expect(bundle.code).toContain('\\node[inner sep=0pt, opacity=0.4]');
     expect(bundle.code).toContain('\\includegraphics[width=3cm,height=1.5cm]{images/example.png}');
+  });
+
+  it('exports and re-imports triangle shapes as independent figures', () => {
+    const scene: TikzScene = {
+      name: 'Triangle scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [balancedTriangle]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+    const parsed = parseTikz(bundle.code);
+    const triangle = parsed.scene.shapes.find((shape) => shape.kind === 'triangle');
+
+    expect(bundle.code).toContain('-- cycle;');
+    expect(triangle?.kind).toBe('triangle');
+
+    if (triangle?.kind !== 'triangle') {
+      throw new Error('Expected a triangle shape after roundtrip');
+    }
+
+    expect(triangle.x).toBeCloseTo(balancedTriangle.x);
+    expect(triangle.y).toBeCloseTo(balancedTriangle.y);
+    expect(triangle.width).toBeCloseTo(balancedTriangle.width);
+    expect(triangle.height).toBeCloseTo(balancedTriangle.height);
+    expect(triangle.apexOffset).toBeCloseTo(balancedTriangle.apexOffset);
   });
 });

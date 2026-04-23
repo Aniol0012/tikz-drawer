@@ -119,6 +119,7 @@ import {
   type SvgTextAnchor,
   type TemplateDialogTextKey,
   type TextCanvasShape,
+  type TriangleCanvasShape,
   type TextStyleKey,
   type TextStylePropertyKey,
   type TextTransformMode,
@@ -2382,6 +2383,17 @@ export class EditorPageComponent {
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
+  updateTriangleApex(event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    const apexOffset = Math.max(0, Math.min(1, value));
+    this.patchInspectorSelection((shape) =>
+      shape.kind === 'triangle' ? ({ ...shape, apexOffset } as CanvasShape) : shape
+    );
+  }
+
   updateShapeBoolean(key: LineBooleanKey, event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
@@ -3634,6 +3646,13 @@ export class EditorPageComponent {
     }));
   }
 
+  triangleSvgPath(shape: TriangleCanvasShape): string {
+    return this.buildTrianglePath(shape, (point) => ({
+      x: this.toSvgX(point.x),
+      y: this.toSvgY(point.y)
+    }));
+  }
+
   lineEndpointHandle(shape: LineShape, endpoint: LineEndpoint, adjacentPoint: Point): HandleDescriptor {
     const targetPoint = endpoint === 'from' ? shape.from : shape.to;
     const targetSvg = { x: this.toSvgX(targetPoint.x), y: this.toSvgY(targetPoint.y) };
@@ -4445,6 +4464,7 @@ export class EditorPageComponent {
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'rectangle':
+      case 'triangle':
       case 'circle':
       case 'ellipse':
         return {
@@ -4453,6 +4473,7 @@ export class EditorPageComponent {
           fill: preferences.defaultFill,
           strokeOpacity: 1,
           fillOpacity: 1,
+          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
@@ -4979,6 +5000,24 @@ export class EditorPageComponent {
     return [shape.from, ...shape.anchors, shape.to];
   }
 
+  private trianglePoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
+    const apex = {
+      x: shape.x + shape.width * shape.apexOffset,
+      y: shape.y + shape.height
+    };
+    const left = { x: shape.x, y: shape.y };
+    const right = { x: shape.x + shape.width, y: shape.y };
+    return [apex, left, right];
+  }
+
+  private buildTrianglePath(
+    shape: TriangleCanvasShape,
+    projectPoint: (point: Point) => { readonly x: number; readonly y: number }
+  ): string {
+    const [apex, left, right] = this.trianglePoints(shape).map(projectPoint);
+    return `M ${apex.x} ${apex.y} L ${left.x} ${left.y} L ${right.x} ${right.y} Z`;
+  }
+
   private buildLinePath(
     shape: LineShape,
     projectPoint: (point: Point) => { readonly x: number; readonly y: number }
@@ -5047,6 +5086,17 @@ export class EditorPageComponent {
           height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
           rx: Math.max(shape.cornerRadius * scale, 0.6)
         };
+      case 'triangle':
+        return {
+          kind: 'triangle',
+          stroke: shape.stroke,
+          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          fill: shape.fill,
+          path: this.buildTrianglePath(shape, (point) => ({
+            x: toMapX(point.x),
+            y: toMapY(point.y)
+          }))
+        };
       case 'circle':
         return {
           kind: 'circle',
@@ -5105,6 +5155,8 @@ export class EditorPageComponent {
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {
     switch (shape.kind) {
       case 'rectangle':
+        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
+      case 'triangle':
         return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
       case 'circle':
         return {
@@ -5260,6 +5312,16 @@ export class EditorPageComponent {
           rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
         } as CanvasShape;
       }
+      case 'triangle': {
+        const center = this.shapeCenter(shape);
+        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
+        return {
+          ...shape,
+          x: nextCenter.x - shape.width / 2,
+          y: nextCenter.y - shape.height / 2,
+          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+        } as CanvasShape;
+      }
       case 'circle': {
         const nextCenter = this.rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
         return {
@@ -5320,6 +5382,7 @@ export class EditorPageComponent {
         return { x: (bounds.left + bounds.right) / 2, y: (bounds.bottom + bounds.top) / 2 };
       }
       case 'rectangle':
+      case 'triangle':
       case 'image':
         return { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
       case 'circle':
@@ -5337,6 +5400,7 @@ export class EditorPageComponent {
       case 'text':
         return shape.rotation;
       case 'rectangle':
+      case 'triangle':
       case 'ellipse':
       case 'image':
         return shape.rotation ?? 0;

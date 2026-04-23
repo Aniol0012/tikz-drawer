@@ -32,9 +32,33 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
 };
 
 export const localizedShapeKinds: Record<LanguageCode, Record<CanvasShape['kind'], string>> = {
-  en: { line: 'Line', rectangle: 'Rectangle', circle: 'Circle', ellipse: 'Ellipse', text: 'Text', image: 'Image' },
-  ca: { line: 'Línia', rectangle: 'Rectangle', circle: 'Cercle', ellipse: 'El·lipse', text: 'Text', image: 'Imatge' },
-  es: { line: 'Línea', rectangle: 'Rectángulo', circle: 'Círculo', ellipse: 'Elipse', text: 'Texto', image: 'Imagen' }
+  en: {
+    line: 'Line',
+    rectangle: 'Rectangle',
+    triangle: 'Triangle',
+    circle: 'Circle',
+    ellipse: 'Ellipse',
+    text: 'Text',
+    image: 'Image'
+  },
+  ca: {
+    line: 'Línia',
+    rectangle: 'Rectangle',
+    triangle: 'Triangle',
+    circle: 'Cercle',
+    ellipse: 'El·lipse',
+    text: 'Text',
+    image: 'Imatge'
+  },
+  es: {
+    line: 'Línea',
+    rectangle: 'Rectángulo',
+    triangle: 'Triángulo',
+    circle: 'Círculo',
+    ellipse: 'Elipse',
+    text: 'Texto',
+    image: 'Imagen'
+  }
 };
 
 export const categoryOrder: readonly PresetCategory[] = [

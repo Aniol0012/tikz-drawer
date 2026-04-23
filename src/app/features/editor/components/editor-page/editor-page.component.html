@@ -404,6 +404,16 @@
                     [attr.fill-opacity]="shape.fillOpacity"
                     [attr.rx]="shape.cornerRadius * preferences().scale"></rect>
                 }
+                @case ('triangle') {
+                  <path
+                    [attr.d]="triangleSvgPath(shape)"
+                    [attr.transform]="shapeRotationTransform(shape)"
+                    [attr.stroke]="shape.stroke"
+                    [attr.stroke-opacity]="shape.strokeOpacity"
+                    [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.fill]="shape.fill"
+                    [attr.fill-opacity]="shape.fillOpacity"></path>
+                }
                 @case ('circle') {
                   <circle
                     [attr.cx]="toSvgX(shape.cx)"
@@ -565,6 +575,16 @@
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"
                       [attr.rx]="previewShape.cornerRadius * preferences().scale"></rect>
+                  }
+                  @case ('triangle') {
+                    <path
+                      [attr.d]="triangleSvgPath(previewShape)"
+                      [attr.transform]="shapeRotationTransform(previewShape)"
+                      [attr.stroke]="previewShape.stroke"
+                      [attr.stroke-opacity]="previewShape.strokeOpacity"
+                      [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.fill]="previewShape.fill"
+                      [attr.fill-opacity]="previewShape.fillOpacity"></path>
                   }
                   @case ('circle') {
                     <circle
@@ -868,6 +888,14 @@
                       [attr.stroke]="shape.stroke"
                       [attr.stroke-width]="shape.strokeWidth"></rect>
                   }
+                  @case ('triangle') {
+                    <path
+                      class="minimap__shape"
+                      [attr.d]="shape.path"
+                      [attr.fill]="shape.fill"
+                      [attr.stroke]="shape.stroke"
+                      [attr.stroke-width]="shape.strokeWidth"></path>
+                  }
                   @case ('circle') {
                     <circle
                       class="minimap__shape"
@@ -1047,6 +1075,7 @@
                   </label>
                   @if (
                     shape.kind === 'rectangle' ||
+                    shape.kind === 'triangle' ||
                     shape.kind === 'circle' ||
                     shape.kind === 'ellipse'
                   ) {
@@ -1413,6 +1442,104 @@
                         step="0.02"
                         [value]="shape.cornerRadius"
                         (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /><input
+                        type="number"
+                        min="-180"
+                        max="180"
+                        step="1"
+                        [value]="shape.rotation ?? 0"
+                        (input)="updateShapeNumber('rotation', $event)" /></div
+                  ></label>
+                }
+                @case ('triangle') {
+                  <label class="field"
+                    ><span>{{ t('x') }}</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        [min]="xSliderRange().min"
+                        [max]="xSliderRange().max"
+                        step="0.1"
+                        [value]="shape.x"
+                        (input)="updateShapeNumber('x', $event)" /><input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.x"
+                        (input)="updateShapeNumber('x', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('y') }}</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        [min]="ySliderRange().min"
+                        [max]="ySliderRange().max"
+                        step="0.1"
+                        [value]="shape.y"
+                        (input)="updateShapeNumber('y', $event)" /><input
+                        type="number"
+                        step="0.1"
+                        [value]="shape.y"
+                        (input)="updateShapeNumber('y', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="12"
+                        step="0.1"
+                        [value]="shape.width"
+                        (input)="updateShapeNumber('width', $event)" /><input
+                        type="number"
+                        min="0.2"
+                        step="0.1"
+                        [value]="shape.width"
+                        (input)="updateShapeNumber('width', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="12"
+                        step="0.1"
+                        [value]="shape.height"
+                        (input)="updateShapeNumber('height', $event)" /><input
+                        type="number"
+                        min="0.2"
+                        step="0.1"
+                        [value]="shape.height"
+                        (input)="updateShapeNumber('height', $event)" /></div
+                  ></label>
+                  <label class="field"
+                    ><span>{{ t('triangleApex') }} · {{ formatValue(shape.apexOffset) }}</span>
+                    <div class="range-field">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        [value]="shape.apexOffset"
+                        (input)="updateTriangleApex($event)" /><input
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        [value]="shape.apexOffset"
+                        (input)="updateTriangleApex($event)" /></div
                   ></label>
                   <label class="field"
                     ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
@@ -2042,6 +2169,7 @@
                     </label>
                     @if (
                       shape.kind === 'rectangle' ||
+                      shape.kind === 'triangle' ||
                       shape.kind === 'circle' ||
                       shape.kind === 'ellipse'
                     ) {
@@ -2257,6 +2385,79 @@
                             step="0.1"
                             [value]="shape.cornerRadius"
                             (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                      ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /><input
+                            type="number"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            [value]="shape.rotation ?? 0"
+                            (input)="updateShapeNumber('rotation', $event)" /></div
+                      ></label>
+                    </div>
+                  </div>
+                }
+                @case ('triangle') {
+                  <div class="property-group field--full">
+                    <div class="property-group__title">{{ t('geometry') }}</div>
+                    <div class="form-grid form-grid--section">
+                      <label class="field"
+                        ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.2"
+                            max="20"
+                            step="0.1"
+                            [value]="shape.width"
+                            (input)="updateShapeNumber('width', $event)" /><input
+                            type="number"
+                            min="0.2"
+                            step="0.1"
+                            [value]="shape.width"
+                            (input)="updateShapeNumber('width', $event)" /></div
+                      ></label>
+                      <label class="field"
+                        ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0.2"
+                            max="20"
+                            step="0.1"
+                            [value]="shape.height"
+                            (input)="updateShapeNumber('height', $event)" /><input
+                            type="number"
+                            min="0.2"
+                            step="0.1"
+                            [value]="shape.height"
+                            (input)="updateShapeNumber('height', $event)" /></div
+                      ></label>
+                      <label class="field field--full"
+                        ><span>{{ t('triangleApex') }} · {{ formatValue(shape.apexOffset) }}</span>
+                        <div class="range-field">
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.apexOffset"
+                            (input)="updateTriangleApex($event)" /><input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="shape.apexOffset"
+                            (input)="updateTriangleApex($event)" /></div
                       ></label>
                       <label class="field field--full"
                         ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>

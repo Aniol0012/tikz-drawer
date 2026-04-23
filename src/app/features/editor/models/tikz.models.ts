@@ -1,5 +1,5 @@
 export type ThemeMode = 'light' | 'dark';
-export type ShapeKind = 'line' | 'rectangle' | 'circle' | 'ellipse' | 'text' | 'image';
+export type ShapeKind = 'line' | 'rectangle' | 'triangle' | 'circle' | 'ellipse' | 'text' | 'image';
 export type TextWeight = 'normal' | 'bold';
 export type TextStyle = 'normal' | 'italic';
 export type TextAlign = 'left' | 'center' | 'right';
@@ -62,6 +62,18 @@ export interface RectangleShape extends CanvasShapeBase {
   readonly rotation?: number;
 }
 
+export interface TriangleShape extends CanvasShapeBase {
+  readonly kind: 'triangle';
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: string;
+  readonly fillOpacity: number;
+  readonly apexOffset: number;
+  readonly rotation?: number;
+}
+
 export interface CircleShape extends CanvasShapeBase {
   readonly kind: 'circle';
   readonly cx: number;
@@ -112,7 +124,14 @@ export interface ImageShape extends CanvasShapeBase {
   readonly rotation?: number;
 }
 
-export type CanvasShape = LineShape | RectangleShape | CircleShape | EllipseShape | TextShape | ImageShape;
+export type CanvasShape =
+  | LineShape
+  | RectangleShape
+  | TriangleShape
+  | CircleShape
+  | EllipseShape
+  | TextShape
+  | ImageShape;
 
 export interface SceneBounds {
   readonly width: number;

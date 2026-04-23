@@ -58,9 +58,10 @@ export type ArrowDirection = 'none' | 'forward' | 'backward' | 'both';
 export type TextCanvasShape = Extract<CanvasShape, { kind: 'text' }>;
 export type LineCanvasShape = Extract<CanvasShape, { kind: 'line' }>;
 export type RectangleCanvasShape = Extract<CanvasShape, { kind: 'rectangle' }>;
+export type TriangleCanvasShape = Extract<CanvasShape, { kind: 'triangle' }>;
 export type CircleCanvasShape = Extract<CanvasShape, { kind: 'circle' }>;
 export type EllipseCanvasShape = Extract<CanvasShape, { kind: 'ellipse' }>;
-export type RectangleOrImageCanvasShape = Extract<CanvasShape, { kind: 'rectangle' | 'image' }>;
+export type RectangleOrImageCanvasShape = Extract<CanvasShape, { kind: 'rectangle' | 'triangle' | 'image' }>;
 export type ResizeHandle =
   | 'nw'
   | 'n'
@@ -315,6 +316,12 @@ export interface MinimapRectangleShape extends MinimapShapeBase {
   readonly rx: number;
 }
 
+export interface MinimapTriangleShape extends MinimapShapeBase {
+  readonly kind: 'triangle';
+  readonly path: string;
+  readonly fill: string;
+}
+
 export interface MinimapCircleShape extends MinimapShapeBase {
   readonly kind: 'circle';
   readonly cx: number;
@@ -360,6 +367,7 @@ export interface MinimapImageShape extends MinimapShapeBase {
 export type MinimapShape =
   | MinimapLineShape
   | MinimapRectangleShape
+  | MinimapTriangleShape
   | MinimapCircleShape
   | MinimapEllipseShape
   | MinimapTextShape

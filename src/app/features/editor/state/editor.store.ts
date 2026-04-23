@@ -38,12 +38,14 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         arrowBendMode: shape.arrowBendMode ?? 'none'
       } as CanvasShape;
     case 'rectangle':
+    case 'triangle':
     case 'circle':
     case 'ellipse':
       return {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
         rotation: shape.rotation ?? 0
       } as CanvasShape;
     case 'text':
@@ -162,6 +164,8 @@ const shapeBounds = (
   switch (shape.kind) {
     case 'rectangle':
       return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
+    case 'triangle':
+      return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
     case 'circle':
       return ellipseBounds(shape.cx, shape.cy, shape.r, shape.r, shape.rotation ?? 0);
     case 'ellipse':
@@ -265,6 +269,12 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
         x: shape.x + deltaX,
         y: shape.y + deltaY
       };
+    case 'triangle':
+      return {
+        ...shape,
+        x: shape.x + deltaX,
+        y: shape.y + deltaY
+      };
     case 'circle':
       return {
         ...shape,
@@ -311,6 +321,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         arrowBendMode: shape.arrowBendMode ?? 'none'
       };
     case 'rectangle':
+    case 'triangle':
     case 'circle':
     case 'ellipse':
       return {
@@ -319,6 +330,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         fill: shape.fill,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
         rotation: shape.rotation ?? 0
       };

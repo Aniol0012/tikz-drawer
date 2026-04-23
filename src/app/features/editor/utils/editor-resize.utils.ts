@@ -273,6 +273,7 @@ export const resizeShape = (
 ): CanvasShape => {
   switch (shape.kind) {
     case 'rectangle':
+    case 'triangle':
       return resizeRectangleShape(shape, handle, point, options);
     case 'circle':
       return resizeCircleShape(shape, handle, point);

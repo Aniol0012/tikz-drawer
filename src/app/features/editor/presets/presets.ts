@@ -8,6 +8,7 @@ import type {
   ObjectPreset,
   PresetCategory,
   RectangleShape,
+  TriangleShape,
   ScenePreset,
   ImageShape,
   TextShape,
@@ -73,6 +74,22 @@ const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShap
   fill: overrides.fill ?? DEFAULT_FILL_COLOR,
   fillOpacity: overrides.fillOpacity ?? 1,
   cornerRadius: overrides.cornerRadius ?? DEFAULT_RECTANGLE_CORNER_RADIUS
+});
+
+const createTriangle = (overrides: Partial<TriangleShape> = {}): TriangleShape => ({
+  id: overrides.id ?? crypto.randomUUID(),
+  name: overrides.name ?? 'Triangle',
+  kind: 'triangle',
+  stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
+  strokeOpacity: overrides.strokeOpacity ?? 1,
+  strokeWidth: overrides.strokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
+  x: overrides.x ?? -2.6,
+  y: overrides.y ?? -1.6,
+  width: overrides.width ?? 5.2,
+  height: overrides.height ?? 3.8,
+  fill: overrides.fill ?? DEFAULT_FILL_COLOR,
+  fillOpacity: overrides.fillOpacity ?? 1,
+  apexOffset: overrides.apexOffset ?? 0.5
 });
 
 const createCircle = (overrides: Partial<CircleShape> = {}): CircleShape => ({
@@ -543,11 +560,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'triangle',
     'Triangle',
     'Three-edge geometry starter.',
-    [
-      createLine({ name: 'Triangle A-B', from: { x: -2.4, y: -1.6 }, to: { x: 0, y: 2.2 } }),
-      createLine({ name: 'Triangle B-C', from: { x: 0, y: 2.2 }, to: { x: 2.6, y: -1.2 } }),
-      createLine({ name: 'Triangle C-A', from: { x: 2.6, y: -1.2 }, to: { x: -2.4, y: -1.6 } })
-    ],
+    [createTriangle({ name: 'Triangle', fill: '#f3f3f3', apexOffset: 0.5 })],
     { searchTerms: ['triangle', 'geometry', 'polygon'] }
   ),
   createPreset(

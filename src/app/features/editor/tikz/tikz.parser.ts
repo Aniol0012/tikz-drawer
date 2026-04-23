@@ -6,6 +6,7 @@ import type {
   ParsedTikzResult,
   RectangleShape,
   TextShape,
+  TriangleShape,
   TikzScene
 } from '../models/tikz.models';
 import {
@@ -391,6 +392,52 @@ const parseRectangle = (line: string): CanvasShape | null => {
   return shape;
 };
 
+const parseTriangle = (line: string): CanvasShape | null => {
+  const match = line.match(
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/
+  );
+
+  if (!match?.groups) {
+    return null;
+  }
+
+  const apex = parsePoint(match.groups['apex']);
+  const left = parsePoint(match.groups['left']);
+  const right = parsePoint(match.groups['right']);
+
+  if (!apex || !left || !right) {
+    return null;
+  }
+
+  const points = [apex, left, right];
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  const width = Math.max(maxX - minX, 0.2);
+  const styles = parseStyleMap(match.groups['styles']);
+  const unclampedApexOffset = width > 0 ? (apex.x - minX) / width : 0.5;
+  const apexOffset = Math.max(0, Math.min(1, unclampedApexOffset));
+
+  const shape: TriangleShape = {
+    id: createId(),
+    name: 'Imported triangle',
+    kind: 'triangle',
+    ...sharedStroke(styles),
+    strokeOpacity: styleOpacity(styles, 'draw opacity'),
+    x: minX,
+    y: minY,
+    width,
+    height: Math.max(maxY - minY, 0.2),
+    fill: normalizeTikzColor(styles['fill'], 'none'),
+    fillOpacity: styleOpacity(styles, 'fill opacity'),
+    apexOffset,
+    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+  };
+
+  return shape;
+};
+
 const parseCircle = (line: string): CanvasShape | null => {
   const match = line.match(
     /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
@@ -555,6 +602,7 @@ const parseNode = (line: string): CanvasShape | null => {
 
 const parseShape = (line: string): CanvasShape | null =>
   parseRectangle(line) ??
+  parseTriangle(line) ??
   parseCircle(line) ??
   parseEllipse(line) ??
   parseSmoothLine(line) ??

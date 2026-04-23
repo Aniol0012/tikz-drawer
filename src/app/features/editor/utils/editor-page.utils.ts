@@ -55,6 +55,15 @@ export const transformCanvasShape = (
         height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
         cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
       };
+    case 'triangle':
+      return {
+        ...shape,
+        id,
+        x: (shape.x - originX) * scaleX + originX + deltaX,
+        y: (shape.y - originY) * scaleY + originY + deltaY,
+        width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
+        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION)
+      };
     case 'circle':
       return {
         ...shape,
@@ -183,6 +192,8 @@ export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: num
         anchors: shape.anchors.map((anchor) => ({ x: anchor.x + deltaX, y: anchor.y + deltaY }))
       };
     case 'rectangle':
+      return { ...shape, x: shape.x + deltaX, y: shape.y + deltaY };
+    case 'triangle':
       return { ...shape, x: shape.x + deltaX, y: shape.y + deltaY };
     case 'circle':
       return { ...shape, cx: shape.cx + deltaX, cy: shape.cy + deltaY };

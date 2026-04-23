@@ -196,6 +196,22 @@ describe('presets', () => {
     expect(getIconPath('funnel')).not.toBe(getIconPath('triangle'));
   });
 
+  it('builds triangle as a single shape with triangle-specific controls', () => {
+    const trianglePreset = objectPresets.find((preset) => preset.id === 'triangle');
+
+    expect(trianglePreset?.shapes).toHaveLength(1);
+    expect(trianglePreset?.shapes[0]?.kind).toBe('triangle');
+
+    const triangle = trianglePreset?.shapes[0];
+    if (triangle?.kind !== 'triangle') {
+      throw new Error('Expected triangle preset to include a triangle shape');
+    }
+
+    expect(triangle.width).toBeGreaterThan(0);
+    expect(triangle.height).toBeGreaterThan(0);
+    expect(triangle.apexOffset).toBe(0.5);
+  });
+
   it('builds tables as structured selections with consistent metadata', () => {
     const shapes = buildTablePresetShapes({ rows: 2, columns: 4 });
     const selection = getTableSelectionInfo(shapes);

@@ -148,6 +148,7 @@
   "radius": "Radio",
   "width": "Ancho",
   "height": "Alto",
+  "triangleApex": "Posición del vértice",
   "x": "X",
   "y": "Y",
   "cx": "CX",
