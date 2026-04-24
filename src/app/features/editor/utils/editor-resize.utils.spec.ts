@@ -118,7 +118,7 @@ describe('editor-resize utils', () => {
       x: rotatedRectangle.x + rotatedRectangle.width / 2,
       y: rotatedRectangle.y + rotatedRectangle.height / 2
     };
-    const pointer = rotatePointAround({ x: 3, y: center.y }, center, rotatedRectangle.rotation ?? 0);
+    const pointer = rotatePointAround({ x: 3, y: center.y }, center, -(rotatedRectangle.rotation ?? 0));
     const resized = resizeShape(rotatedRectangle, 'e', pointer, resizeOptions());
     expect(resized.kind).toBe('rectangle');
     if (resized.kind !== 'rectangle') {
@@ -151,7 +151,7 @@ describe('editor-resize utils', () => {
       x: rotatedTriangle.x + rotatedTriangle.width / 2,
       y: rotatedTriangle.y + rotatedTriangle.height / 2
     };
-    const pointer = rotatePointAround({ x: 3, y: center.y }, center, rotatedTriangle.rotation ?? 0);
+    const pointer = rotatePointAround({ x: 3, y: center.y }, center, -(rotatedTriangle.rotation ?? 0));
     const resized = resizeShape(rotatedTriangle, 'e', pointer, resizeOptions());
     expect(resized.kind).toBe('triangle');
     if (resized.kind !== 'triangle') {

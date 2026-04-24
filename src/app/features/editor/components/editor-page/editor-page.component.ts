@@ -146,7 +146,6 @@ import {
 import {
   decodeSharePayload,
   encodeSharePayload,
-  formatValue,
   highlightLatex,
   type SelectionBounds,
   transformCanvasShape,
@@ -946,6 +945,26 @@ export class EditorPageComponent {
       ? EditorPageComponent.selectionHandleSizeByPointer.coarse
       : EditorPageComponent.selectionHandleSizeByPointer.fine
   );
+  readonly interactionCursor = computed<string | null>(() => {
+    const interactionState = this.interactionState();
+    if (!interactionState) {
+      return null;
+    }
+
+    switch (interactionState.kind) {
+      case 'resize':
+        return interactionState.cursor;
+      case 'rotate':
+      case 'move':
+      case 'pan':
+      case 'pending-pan':
+        return 'grabbing';
+      case 'insert':
+        return 'crosshair';
+      default:
+        return null;
+    }
+  });
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
@@ -2950,6 +2969,7 @@ export class EditorPageComponent {
 
     event.preventDefault();
     event.stopPropagation();
+    const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
 
     if (handle === 'rotate') {
       if (!selectionBounds || !this.selectionCanRotate(selectedShapes)) {
@@ -2959,7 +2979,6 @@ export class EditorPageComponent {
         x: (selectionBounds.left + selectionBounds.right) / 2,
         y: (selectionBounds.bottom + selectionBounds.top) / 2
       };
-      const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
       this.store.recordHistoryCheckpoint();
       this.interactionState.set({
         kind: 'rotate',
@@ -2997,6 +3016,8 @@ export class EditorPageComponent {
         kind: 'resize',
         pointerId: event.pointerId,
         handle: `anchor-${segmentIndex}` as ResizeHandle,
+        cursor: 'grab',
+        pointerOffset: { x: 0, y: 0 },
         initialShape: structuredClone(this.selectedShape() ?? selectedShape),
         initialShapes: structuredClone(this.selectedShapes()),
         initialBounds: structuredClone(this.selectionBounds())
@@ -3010,6 +3031,8 @@ export class EditorPageComponent {
       kind: 'resize',
       pointerId: event.pointerId,
       handle,
+      cursor: this.resizeHandleCursor(handle),
+      pointerOffset: this.resizePointerOffset(handle, pointerPoint),
       initialShape: selectedShape ? structuredClone(selectedShape) : null,
       initialShapes: structuredClone(selectedShapes),
       initialBounds: structuredClone(selectionBounds)
@@ -3151,6 +3174,10 @@ export class EditorPageComponent {
     interactionState: Extract<InteractionState, { kind: 'resize' }>
   ): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
+    const adjustedPointerPoint = {
+      x: pointerPoint.x + interactionState.pointerOffset.x,
+      y: pointerPoint.y + interactionState.pointerOffset.y
+    };
     if (
       (interactionState.initialShape?.kind === 'rectangle' || interactionState.initialShape?.kind === 'triangle') &&
       interactionState.handle.startsWith('corner-radius-')
@@ -3158,7 +3185,7 @@ export class EditorPageComponent {
       const nextCornerRadius = this.cornerRadiusFromPointer(
         interactionState.initialShape,
         interactionState.handle,
-        pointerPoint
+        adjustedPointerPoint
       );
       this.store.patchSelectedShape((shape) =>
         shape.kind === 'rectangle' || shape.kind === 'triangle'
@@ -3168,7 +3195,7 @@ export class EditorPageComponent {
       return;
     }
 
-    const nextPoint = this.snapScenePoint(pointerPoint);
+    const nextPoint = this.snapScenePoint(adjustedPointerPoint);
     if (interactionState.initialShape) {
       const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
       this.store.patchSelectedShape(() => resizedShape);
@@ -3500,6 +3527,14 @@ export class EditorPageComponent {
     return this.canvasHeight() / 2 - (y - this.viewportCenter().y) * this.preferences().scale;
   }
 
+  fromSvgX(svgX: number): number {
+    return this.viewportCenter().x + (svgX - this.canvasWidth() / 2) / this.preferences().scale;
+  }
+
+  fromSvgY(svgY: number): number {
+    return this.viewportCenter().y + (this.canvasHeight() / 2 - svgY) / this.preferences().scale;
+  }
+
   scaledStrokeWidth(strokeWidth: number): number {
     return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
   }
@@ -3517,6 +3552,30 @@ export class EditorPageComponent {
 
   selectionRotateIconPath(): string {
     return getIconPath('rotationHandle');
+  }
+
+  private resizeHandleCursor(handle: ResizeHandle): string {
+    if (handle === 'rotate') {
+      return 'grab';
+    }
+
+    return this.selectionHandles().find((entry) => entry.id === handle)?.cursor ?? 'default';
+  }
+
+  private resizePointerOffset(handle: ResizeHandle, pointerPoint: Point): Point {
+    const descriptor = this.selectionHandles().find((entry) => entry.id === handle);
+    if (!descriptor) {
+      return { x: 0, y: 0 };
+    }
+
+    const handlePoint = {
+      x: this.fromSvgX(descriptor.x),
+      y: this.fromSvgY(descriptor.y)
+    };
+    return {
+      x: handlePoint.x - pointerPoint.x,
+      y: handlePoint.y - pointerPoint.y
+    };
   }
 
   shapeRotationTransform(shape: CanvasShape): string | null {
@@ -4162,10 +4221,6 @@ export class EditorPageComponent {
 
   handleTrackBy(_: number, handle: HandleDescriptor): string {
     return handle.id;
-  }
-
-  formatValue(value: number): string {
-    return formatValue(value);
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {

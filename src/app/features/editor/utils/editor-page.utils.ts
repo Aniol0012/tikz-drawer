@@ -208,8 +208,7 @@ export const translateShapeBy = (shape: CanvasShape, deltaX: number, deltaY: num
 };
 
 export const formatValue = (value: number): string => {
-  const rounded = Number.parseFloat(value.toFixed(2));
-  return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
+  return Number.parseFloat(value.toFixed(2)).toString();
 };
 
 const escapeHtml = (value: string): string =>

@@ -413,7 +413,7 @@ export const cornerRadiusFromPointer = (
     }
 
     const center = shapeCenter(shape);
-    const localPointer = rotatePointAround(pointer, center, -shapeRotation(shape));
+    const localPointer = rotatePointAround(pointer, center, shapeRotation(shape));
     const corners = trianglePoints(shape);
     const corner = corners[cornerIndex];
     const previous = corners[(cornerIndex - 1 + corners.length) % corners.length];
@@ -436,7 +436,7 @@ export const cornerRadiusFromPointer = (
     return 0;
   }
   const center = shapeCenter(shape);
-  const localPointer = rotatePointAround(pointer, center, -shapeRotation(shape));
+  const localPointer = rotatePointAround(pointer, center, shapeRotation(shape));
   let horizontalInset = shape.cornerRadius;
   let verticalInset = shape.cornerRadius;
   switch (handle) {

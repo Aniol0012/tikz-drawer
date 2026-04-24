@@ -73,6 +73,18 @@ const triangleShape: Extract<CanvasShape, { kind: 'triangle' }> = {
   rotation: 0
 };
 
+const rotatePointAround = (point: { x: number; y: number }, pivot: { x: number; y: number }, angleDegrees: number) => {
+  const radians = (angleDegrees * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  const deltaX = point.x - pivot.x;
+  const deltaY = point.y - pivot.y;
+  return {
+    x: pivot.x + deltaX * cosine - deltaY * sine,
+    y: pivot.y + deltaX * sine + deltaY * cosine
+  };
+};
+
 describe('editor-geometry utils', () => {
   it('builds curved and straight line paths', () => {
     const curvedPath = buildLinePath(lineShape, (point) => point);
@@ -160,6 +172,22 @@ describe('editor-geometry utils', () => {
 
     expect(radius).toBeCloseTo(2);
     expect(clampedRadius).toBe(3);
+  });
+
+  it('keeps rotated rectangle corner radius pointer mapping stable', () => {
+    const rotatedRectangle = {
+      ...rectangleShape,
+      rotation: 32
+    } satisfies RectangleCanvasShape;
+    const center = {
+      x: rotatedRectangle.x + rotatedRectangle.width / 2,
+      y: rotatedRectangle.y + rotatedRectangle.height / 2
+    };
+    const localPointer = { x: rotatedRectangle.x + 2, y: rotatedRectangle.y + rotatedRectangle.height - 2 };
+    const pointer = rotatePointAround(localPointer, center, -(rotatedRectangle.rotation ?? 0));
+    const radius = cornerRadiusFromPointer(rotatedRectangle, 'corner-radius-nw', pointer);
+
+    expect(radius).toBeCloseTo(2, 3);
   });
 
   it('updates triangle corner radius from dedicated corner handles', () => {

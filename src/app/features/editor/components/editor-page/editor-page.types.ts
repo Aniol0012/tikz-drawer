@@ -180,6 +180,8 @@ export interface ResizeInteractionState {
   readonly kind: 'resize';
   readonly pointerId: number;
   readonly handle: ResizeHandle;
+  readonly cursor: string;
+  readonly pointerOffset: Point;
   readonly initialShape: CanvasShape | null;
   readonly initialShapes: readonly CanvasShape[];
   readonly initialBounds: SelectionBounds | null;

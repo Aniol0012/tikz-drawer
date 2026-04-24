@@ -156,7 +156,7 @@ const resizeRectangleShape = (
 ): CanvasShape => {
   const rotation = shape.rotation ?? 0;
   const center = { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
-  const localPointer = rotatePointAround(point, center, -rotation);
+  const localPointer = rotatePointAround(point, center, rotation);
   const resizedBounds = resizeBounds(
     { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
     handle,
@@ -216,7 +216,7 @@ const resizeEllipseShape = (
   point: Point,
   options: ResizeShapeOptions
 ): CanvasShape => {
-  const localPointer = rotatePointAround(point, { x: shape.cx, y: shape.cy }, -(shape.rotation ?? 0));
+  const localPointer = rotatePointAround(point, { x: shape.cx, y: shape.cy }, shape.rotation ?? 0);
   const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
   const resizedBounds = resizeBounds(
     { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
