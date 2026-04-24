@@ -162,6 +162,77 @@ describe('editor-resize utils', () => {
     expect(resized.height).toBeCloseTo(rotatedTriangle.height, 3);
   });
 
+  it('keeps the opposite edge anchored for inverted rotated rectangles', () => {
+    const rotatedRectangle = {
+      ...rectangleShape,
+      rotation: 150
+    } satisfies Extract<CanvasShape, { kind: 'rectangle' }>;
+    const center = {
+      x: rotatedRectangle.x + rotatedRectangle.width / 2,
+      y: rotatedRectangle.y + rotatedRectangle.height / 2
+    };
+    const westLocal = { x: rotatedRectangle.x, y: center.y };
+    const westWorldBefore = rotatePointAround(westLocal, center, -(rotatedRectangle.rotation ?? 0));
+    const pointer = rotatePointAround({ x: 3, y: center.y }, center, -(rotatedRectangle.rotation ?? 0));
+
+    const resized = resizeShape(rotatedRectangle, 'e', pointer, resizeOptions());
+    expect(resized.kind).toBe('rectangle');
+    if (resized.kind !== 'rectangle') {
+      throw new Error('Expected rectangle');
+    }
+
+    const resizedCenter = {
+      x: resized.x + resized.width / 2,
+      y: resized.y + resized.height / 2
+    };
+    const westLocalAfter = { x: resized.x, y: resized.y + resized.height / 2 };
+    const westWorldAfter = rotatePointAround(westLocalAfter, resizedCenter, -(resized.rotation ?? 0));
+
+    expect(westWorldAfter.x).toBeCloseTo(westWorldBefore.x, 3);
+    expect(westWorldAfter.y).toBeCloseTo(westWorldBefore.y, 3);
+    expect(resized.width).toBeGreaterThan(rotatedRectangle.width);
+  });
+
+  it('keeps the opposite edge anchored for rotated ellipses', () => {
+    const rotatedEllipse = {
+      id: 'ellipse-1',
+      name: 'Ellipse',
+      kind: 'ellipse',
+      cx: 1,
+      cy: 1,
+      rx: 1.2,
+      ry: 0.7,
+      rotation: 135,
+      stroke: '#111111',
+      strokeOpacity: 1,
+      strokeWidth: 0.1,
+      fill: '#ffffff',
+      fillOpacity: 1
+    } satisfies Extract<CanvasShape, { kind: 'ellipse' }>;
+    const center = { x: rotatedEllipse.cx, y: rotatedEllipse.cy };
+    const westLocal = { x: rotatedEllipse.cx - rotatedEllipse.rx, y: rotatedEllipse.cy };
+    const westWorldBefore = rotatePointAround(westLocal, center, -(rotatedEllipse.rotation ?? 0));
+    const pointer = rotatePointAround(
+      { x: rotatedEllipse.cx + rotatedEllipse.rx + 0.8, y: rotatedEllipse.cy },
+      center,
+      -(rotatedEllipse.rotation ?? 0)
+    );
+
+    const resized = resizeShape(rotatedEllipse, 'e', pointer, resizeOptions());
+    expect(resized.kind).toBe('ellipse');
+    if (resized.kind !== 'ellipse') {
+      throw new Error('Expected ellipse');
+    }
+
+    const resizedCenter = { x: resized.cx, y: resized.cy };
+    const westLocalAfter = { x: resized.cx - resized.rx, y: resized.cy };
+    const westWorldAfter = rotatePointAround(westLocalAfter, resizedCenter, -(resized.rotation ?? 0));
+
+    expect(westWorldAfter.x).toBeCloseTo(westWorldBefore.x, 3);
+    expect(westWorldAfter.y).toBeCloseTo(westWorldBefore.y, 3);
+    expect(resized.rx).toBeGreaterThan(rotatedEllipse.rx);
+  });
+
   it('resizes textbox text using provided bounds', () => {
     const resized = resizeShape(textShape, 'e', { x: 4, y: 1 }, resizeOptions());
     expect(resized.kind).toBe('text');

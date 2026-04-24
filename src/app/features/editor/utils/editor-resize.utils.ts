@@ -105,6 +105,62 @@ const resizeBounds = (
   return { left, right, top, bottom };
 };
 
+const boundsCenter = (bounds: SelectionBounds): Point => ({
+  x: (bounds.left + bounds.right) / 2,
+  y: (bounds.bottom + bounds.top) / 2
+});
+
+const oppositeHandlePoint = (bounds: SelectionBounds, handle: SelectionResizeHandle): Point => {
+  const centerX = (bounds.left + bounds.right) / 2;
+  const centerY = (bounds.bottom + bounds.top) / 2;
+
+  switch (handle) {
+    case 'nw':
+      return { x: bounds.right, y: bounds.bottom };
+    case 'n':
+      return { x: centerX, y: bounds.bottom };
+    case 'ne':
+      return { x: bounds.left, y: bounds.bottom };
+    case 'e':
+      return { x: bounds.left, y: centerY };
+    case 'se':
+      return { x: bounds.left, y: bounds.top };
+    case 's':
+      return { x: centerX, y: bounds.top };
+    case 'sw':
+      return { x: bounds.right, y: bounds.top };
+    case 'w':
+      return { x: bounds.right, y: centerY };
+  }
+};
+
+const keepOppositeHandleAnchored = (
+  initialBounds: SelectionBounds,
+  resizedBounds: SelectionBounds,
+  handle: ResizeHandle,
+  rotationDegrees: number
+): SelectionBounds => {
+  if (Math.abs(rotationDegrees) < 0.0001 || !isSelectionResizeHandle(handle)) {
+    return resizedBounds;
+  }
+
+  const stationaryInitial = oppositeHandlePoint(initialBounds, handle);
+  const stationaryResized = oppositeHandlePoint(resizedBounds, handle);
+  const initialCenter = boundsCenter(initialBounds);
+  const resizedCenter = boundsCenter(resizedBounds);
+  const stationaryWorldInitial = rotatePointAround(stationaryInitial, initialCenter, -rotationDegrees);
+  const stationaryWorldResized = rotatePointAround(stationaryResized, resizedCenter, -rotationDegrees);
+  const translateX = stationaryWorldInitial.x - stationaryWorldResized.x;
+  const translateY = stationaryWorldInitial.y - stationaryWorldResized.y;
+
+  return {
+    left: resizedBounds.left + translateX,
+    right: resizedBounds.right + translateX,
+    bottom: resizedBounds.bottom + translateY,
+    top: resizedBounds.top + translateY
+  };
+};
+
 const resizeTextShape = (
   shape: TextCanvasShape,
   handle: ResizeHandle,
@@ -157,24 +213,21 @@ const resizeRectangleShape = (
   const rotation = shape.rotation ?? 0;
   const center = { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
   const localPointer = rotatePointAround(point, center, rotation);
-  const resizedBounds = resizeBounds(
-    { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
-    handle,
-    localPointer,
-    {
-      minimumWidth: options.minShapeDimension,
-      minimumHeight: options.minShapeDimension,
-      lockAspectRatio: options.shiftPressed,
-      selectedShapeKind: options.selectedShapeKind,
-      aspectRatio: shape.kind === 'image' ? shape.aspectRatio : shape.width / shape.height
-    }
-  );
+  const initialBounds = { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
+  const resizedBounds = resizeBounds(initialBounds, handle, localPointer, {
+    minimumWidth: options.minShapeDimension,
+    minimumHeight: options.minShapeDimension,
+    lockAspectRatio: options.shiftPressed,
+    selectedShapeKind: options.selectedShapeKind,
+    aspectRatio: shape.kind === 'image' ? shape.aspectRatio : shape.width / shape.height
+  });
+  const translatedBounds = keepOppositeHandleAnchored(initialBounds, resizedBounds, handle, rotation);
   const resizedShape = {
     ...shape,
-    x: resizedBounds.left,
-    y: resizedBounds.bottom,
-    width: resizedBounds.right - resizedBounds.left,
-    height: resizedBounds.top - resizedBounds.bottom
+    x: translatedBounds.left,
+    y: translatedBounds.bottom,
+    width: translatedBounds.right - translatedBounds.left,
+    height: translatedBounds.top - translatedBounds.bottom
   };
   return shape.kind === 'image'
     ? ({
@@ -218,24 +271,26 @@ const resizeEllipseShape = (
 ): CanvasShape => {
   const localPointer = rotatePointAround(point, { x: shape.cx, y: shape.cy }, shape.rotation ?? 0);
   const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
-  const resizedBounds = resizeBounds(
-    { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
-    handle,
-    localPointer,
-    {
-      minimumWidth: 0.2,
-      minimumHeight: 0.2,
-      lockAspectRatio: options.shiftPressed,
-      selectedShapeKind: options.selectedShapeKind,
-      aspectRatio
-    }
-  );
+  const initialBounds = {
+    left: shape.cx - shape.rx,
+    right: shape.cx + shape.rx,
+    bottom: shape.cy - shape.ry,
+    top: shape.cy + shape.ry
+  };
+  const resizedBounds = resizeBounds(initialBounds, handle, localPointer, {
+    minimumWidth: 0.2,
+    minimumHeight: 0.2,
+    lockAspectRatio: options.shiftPressed,
+    selectedShapeKind: options.selectedShapeKind,
+    aspectRatio
+  });
+  const translatedBounds = keepOppositeHandleAnchored(initialBounds, resizedBounds, handle, shape.rotation ?? 0);
   return {
     ...shape,
-    cx: (resizedBounds.left + resizedBounds.right) / 2,
-    cy: (resizedBounds.top + resizedBounds.bottom) / 2,
-    rx: Math.max((resizedBounds.right - resizedBounds.left) / 2, 0.1),
-    ry: Math.max((resizedBounds.top - resizedBounds.bottom) / 2, 0.1)
+    cx: (translatedBounds.left + translatedBounds.right) / 2,
+    cy: (translatedBounds.top + translatedBounds.bottom) / 2,
+    rx: Math.max((translatedBounds.right - translatedBounds.left) / 2, 0.1),
+    ry: Math.max((translatedBounds.top - translatedBounds.bottom) / 2, 0.1)
   };
 };
 

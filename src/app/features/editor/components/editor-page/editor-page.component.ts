@@ -3258,7 +3258,9 @@ export class EditorPageComponent {
       return;
     }
 
-    const nextPoint = this.snapScenePoint(adjustedPointerPoint);
+    const nextPoint = interactionState.initialShape
+      ? this.snapResizePointer(interactionState.initialShape, adjustedPointerPoint)
+      : this.snapScenePoint(adjustedPointerPoint);
     if (interactionState.initialShape) {
       const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
       this.store.patchSelectedShape(() => resizedShape);
@@ -4753,6 +4755,35 @@ export class EditorPageComponent {
     return { x: this.snap(point.x), y: this.snap(point.y) };
   }
 
+  private snapResizePointer(shape: CanvasShape, point: Point): Point {
+    const rotation = this.shapeRotation(shape);
+    if (!this.shouldSnapInShapeLocalSpace(shape, rotation)) {
+      return this.snapScenePoint(point);
+    }
+
+    const center = this.shapeCenter(shape);
+    const localPoint = this.rotatePointAround(point, center, rotation);
+    const snappedLocal = this.snapScenePoint(localPoint);
+    return this.rotatePointAround(snappedLocal, center, -rotation);
+  }
+
+  private shouldSnapInShapeLocalSpace(shape: CanvasShape, rotation: number): boolean {
+    if (Math.abs(rotation) < 0.0001) {
+      return false;
+    }
+
+    switch (shape.kind) {
+      case 'rectangle':
+      case 'triangle':
+      case 'ellipse':
+      case 'image':
+      case 'text':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   suggestedCaption(): string {
     const name = this.scene().name.trim();
     return name || 'TikZ figure';
@@ -5870,10 +5901,6 @@ export class EditorPageComponent {
       return left + width / 2;
     }
     return left;
-  }
-
-  private estimateTextWidth(shape: TextShape, scale: number): number {
-    return estimateTextWidth(shape, scale, undefined, this.displayTextLinesForShape(shape));
   }
 
   private buildCanvasExportDocument(): ExportSvgDocument {
