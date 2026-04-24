@@ -288,6 +288,7 @@ export class EditorPageComponent {
     coarse: 18,
     fine: 10
   } as const;
+  private static readonly cornerRadiusHandleInsetFactor = 1.65;
   private static readonly selectionRotateHandleDistanceFactor = 3.2;
   private static readonly selectionRotateHandleMinDistance = 0.65;
   private static readonly rotationSnapStepDegrees = 15;
@@ -3730,23 +3731,26 @@ export class EditorPageComponent {
     const centerX = (frame.left + frame.right) / 2;
     const centerY = (frame.top + frame.bottom) / 2;
     const baseHandles = [
-      { id: 'nw' as const, cursor: 'nwse-resize' as const, point: { x: frame.left, y: frame.top } },
-      { id: 'n' as const, cursor: 'ns-resize' as const, point: { x: centerX, y: frame.top } },
-      { id: 'ne' as const, cursor: 'nesw-resize' as const, point: { x: frame.right, y: frame.top } },
-      { id: 'e' as const, cursor: 'ew-resize' as const, point: { x: frame.right, y: centerY } },
-      { id: 'se' as const, cursor: 'nwse-resize' as const, point: { x: frame.right, y: frame.bottom } },
-      { id: 's' as const, cursor: 'ns-resize' as const, point: { x: centerX, y: frame.bottom } },
-      { id: 'sw' as const, cursor: 'nesw-resize' as const, point: { x: frame.left, y: frame.bottom } },
-      { id: 'w' as const, cursor: 'ew-resize' as const, point: { x: frame.left, y: centerY } }
+      { id: 'nw' as const, point: { x: frame.left, y: frame.top } },
+      { id: 'n' as const, point: { x: centerX, y: frame.top } },
+      { id: 'ne' as const, point: { x: frame.right, y: frame.top } },
+      { id: 'e' as const, point: { x: frame.right, y: centerY } },
+      { id: 'se' as const, point: { x: frame.right, y: frame.bottom } },
+      { id: 's' as const, point: { x: centerX, y: frame.bottom } },
+      { id: 'sw' as const, point: { x: frame.left, y: frame.bottom } },
+      { id: 'w' as const, point: { x: frame.left, y: centerY } }
     ];
+    const centerSvg = { x: this.toSvgX(center.x), y: this.toSvgY(center.y) };
 
-    return baseHandles.map(({ id, cursor, point }) => {
+    return baseHandles.map(({ id, point }) => {
       const rotatedPoint = this.rotatePointAround(point, center, -rotation);
+      const x = this.toSvgX(rotatedPoint.x);
+      const y = this.toSvgY(rotatedPoint.y);
       return {
         id,
-        x: this.toSvgX(rotatedPoint.x),
-        y: this.toSvgY(rotatedPoint.y),
-        cursor
+        x,
+        y,
+        cursor: this.resizeCursorForVector({ x: x - centerSvg.x, y: y - centerSvg.y })
       };
     });
   }
@@ -3762,36 +3766,43 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset = this.selectionHandleSize() / this.preferences().scale;
+    const minimumVisibleInset =
+      (this.selectionHandleSize() * EditorPageComponent.cornerRadiusHandleInsetFactor) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
-    const corners: ReadonlyArray<{ readonly id: ResizeHandle; readonly point: Point; readonly cursor: ResizeCursor }> =
-      [
-        {
-          id: 'corner-radius-nw',
-          point: { x: shape.x + inset, y: shape.y + shape.height - inset },
-          cursor: 'nwse-resize'
-        },
-        {
-          id: 'corner-radius-ne',
-          point: { x: shape.x + shape.width - inset, y: shape.y + shape.height - inset },
-          cursor: 'nesw-resize'
-        },
-        {
-          id: 'corner-radius-se',
-          point: { x: shape.x + shape.width - inset, y: shape.y + inset },
-          cursor: 'nwse-resize'
-        },
-        { id: 'corner-radius-sw', point: { x: shape.x + inset, y: shape.y + inset }, cursor: 'nesw-resize' }
-      ];
+    const corners: ReadonlyArray<{ readonly id: ResizeHandle; readonly corner: Point; readonly point: Point }> = [
+      {
+        id: 'corner-radius-nw',
+        corner: { x: shape.x, y: shape.y + shape.height },
+        point: { x: shape.x + inset, y: shape.y + shape.height - inset }
+      },
+      {
+        id: 'corner-radius-ne',
+        corner: { x: shape.x + shape.width, y: shape.y + shape.height },
+        point: { x: shape.x + shape.width - inset, y: shape.y + shape.height - inset }
+      },
+      {
+        id: 'corner-radius-se',
+        corner: { x: shape.x + shape.width, y: shape.y },
+        point: { x: shape.x + shape.width - inset, y: shape.y + inset }
+      },
+      {
+        id: 'corner-radius-sw',
+        corner: { x: shape.x, y: shape.y },
+        point: { x: shape.x + inset, y: shape.y + inset }
+      }
+    ];
     const center = this.shapeCenter(shape);
     const angle = this.shapeRotation(shape);
-    return corners.map(({ id, point, cursor }) => {
+    return corners.map(({ id, corner, point }) => {
+      const rotatedCorner = this.rotatePointAround(corner, center, -angle);
       const rotatedPoint = this.rotatePointAround(point, center, -angle);
+      const cornerSvg = { x: this.toSvgX(rotatedCorner.x), y: this.toSvgY(rotatedCorner.y) };
+      const pointSvg = { x: this.toSvgX(rotatedPoint.x), y: this.toSvgY(rotatedPoint.y) };
       return {
         id,
-        x: this.toSvgX(rotatedPoint.x),
-        y: this.toSvgY(rotatedPoint.y),
-        cursor,
+        x: pointSvg.x,
+        y: pointSvg.y,
+        cursor: this.resizeCursorForVector({ x: pointSvg.x - cornerSvg.x, y: pointSvg.y - cornerSvg.y }),
         variant: 'corner-radius'
       };
     });
@@ -3802,7 +3813,8 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset = this.selectionHandleSize() / this.preferences().scale;
+    const minimumVisibleInset =
+      (this.selectionHandleSize() * EditorPageComponent.cornerRadiusHandleInsetFactor) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
     const corners = this.trianglePoints(shape);
     const center = this.shapeCenter(shape);
@@ -3832,16 +3844,19 @@ export class EditorPageComponent {
       };
       const id: ResizeHandle =
         index === 0 ? 'corner-radius-apex' : index === 1 ? 'corner-radius-left' : 'corner-radius-right';
-      return { id, point };
+      return { id, corner, point };
     });
 
-    return handleConfig.map(({ id, point }) => {
+    return handleConfig.map(({ id, corner, point }) => {
+      const rotatedCorner = this.rotatePointAround(corner, center, -angle);
       const rotatedPoint = this.rotatePointAround(point, center, -angle);
+      const cornerSvg = { x: this.toSvgX(rotatedCorner.x), y: this.toSvgY(rotatedCorner.y) };
+      const pointSvg = { x: this.toSvgX(rotatedPoint.x), y: this.toSvgY(rotatedPoint.y) };
       return {
         id,
-        x: this.toSvgX(rotatedPoint.x),
-        y: this.toSvgY(rotatedPoint.y),
-        cursor: 'grab',
+        x: pointSvg.x,
+        y: pointSvg.y,
+        cursor: this.resizeCursorForVector({ x: pointSvg.x - cornerSvg.x, y: pointSvg.y - cornerSvg.y }),
         variant: 'corner-radius'
       };
     });

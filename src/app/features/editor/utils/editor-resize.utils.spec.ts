@@ -65,6 +65,18 @@ const lineShape: LineCanvasShape = {
   arrowBendMode: 'none'
 };
 
+const rotatePointAround = (point: { x: number; y: number }, pivot: { x: number; y: number }, angleDegrees: number) => {
+  const radians = (angleDegrees * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  const deltaX = point.x - pivot.x;
+  const deltaY = point.y - pivot.y;
+  return {
+    x: pivot.x + deltaX * cosine - deltaY * sine,
+    y: pivot.y + deltaX * sine + deltaY * cosine
+  };
+};
+
 const shapeBounds = (shape: CanvasShape): SelectionBounds | null => {
   if (shape.kind !== 'text') {
     return null;
@@ -95,6 +107,59 @@ describe('editor-resize utils', () => {
 
     expect(resized.width).toBeCloseTo(4);
     expect(resized.height).toBeCloseTo(2);
+  });
+
+  it('resizes rotated rectangle shapes in local axes', () => {
+    const rotatedRectangle = {
+      ...rectangleShape,
+      rotation: 45
+    } satisfies Extract<CanvasShape, { kind: 'rectangle' }>;
+    const center = {
+      x: rotatedRectangle.x + rotatedRectangle.width / 2,
+      y: rotatedRectangle.y + rotatedRectangle.height / 2
+    };
+    const pointer = rotatePointAround({ x: 3, y: center.y }, center, rotatedRectangle.rotation ?? 0);
+    const resized = resizeShape(rotatedRectangle, 'e', pointer, resizeOptions());
+    expect(resized.kind).toBe('rectangle');
+    if (resized.kind !== 'rectangle') {
+      throw new Error('Expected rectangle');
+    }
+
+    expect(resized.width).toBeCloseTo(3, 3);
+    expect(resized.height).toBeCloseTo(rotatedRectangle.height, 3);
+  });
+
+  it('resizes rotated triangle shapes in local axes', () => {
+    const rotatedTriangle = {
+      id: 'tri-1',
+      name: 'Triangle',
+      kind: 'triangle',
+      x: 0,
+      y: 0,
+      width: 2,
+      height: 1,
+      apexOffset: 0.5,
+      cornerRadius: 0,
+      rotation: 30,
+      stroke: '#111111',
+      strokeOpacity: 1,
+      strokeWidth: 0.1,
+      fill: '#ffffff',
+      fillOpacity: 1
+    } satisfies Extract<CanvasShape, { kind: 'triangle' }>;
+    const center = {
+      x: rotatedTriangle.x + rotatedTriangle.width / 2,
+      y: rotatedTriangle.y + rotatedTriangle.height / 2
+    };
+    const pointer = rotatePointAround({ x: 3, y: center.y }, center, rotatedTriangle.rotation ?? 0);
+    const resized = resizeShape(rotatedTriangle, 'e', pointer, resizeOptions());
+    expect(resized.kind).toBe('triangle');
+    if (resized.kind !== 'triangle') {
+      throw new Error('Expected triangle');
+    }
+
+    expect(resized.width).toBeCloseTo(3, 3);
+    expect(resized.height).toBeCloseTo(rotatedTriangle.height, 3);
   });
 
   it('resizes textbox text using provided bounds', () => {

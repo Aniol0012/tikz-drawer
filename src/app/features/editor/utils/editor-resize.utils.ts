@@ -24,6 +24,21 @@ interface ResizeBoundsOptions {
   readonly aspectRatio?: number;
 }
 
+const rotatePointAround = (point: Point, pivot: Point, rotationDegrees: number): Point => {
+  if (Math.abs(rotationDegrees) < 0.0001) {
+    return { ...point };
+  }
+  const radians = (rotationDegrees * Math.PI) / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  const deltaX = point.x - pivot.x;
+  const deltaY = point.y - pivot.y;
+  return {
+    x: pivot.x + deltaX * cosine - deltaY * sine,
+    y: pivot.y + deltaX * sine + deltaY * cosine
+  };
+};
+
 export interface ResizeShapeOptions {
   readonly shapeBounds: (shape: CanvasShape) => SelectionBounds | null;
   readonly lineArrowControlScale: (
@@ -139,10 +154,13 @@ const resizeRectangleShape = (
   point: Point,
   options: ResizeShapeOptions
 ): CanvasShape => {
+  const rotation = shape.rotation ?? 0;
+  const center = { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
+  const localPointer = rotatePointAround(point, center, -rotation);
   const resizedBounds = resizeBounds(
     { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height },
     handle,
-    point,
+    localPointer,
     {
       minimumWidth: options.minShapeDimension,
       minimumHeight: options.minShapeDimension,
@@ -198,11 +216,12 @@ const resizeEllipseShape = (
   point: Point,
   options: ResizeShapeOptions
 ): CanvasShape => {
+  const localPointer = rotatePointAround(point, { x: shape.cx, y: shape.cy }, -(shape.rotation ?? 0));
   const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
   const resizedBounds = resizeBounds(
     { left: shape.cx - shape.rx, right: shape.cx + shape.rx, bottom: shape.cy - shape.ry, top: shape.cy + shape.ry },
     handle,
-    point,
+    localPointer,
     {
       minimumWidth: 0.2,
       minimumHeight: 0.2,
