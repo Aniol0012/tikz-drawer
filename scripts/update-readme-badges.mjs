@@ -13,7 +13,13 @@ const readmeContent = readFileSync(readmePath, 'utf8');
 
 function normalizeVersion(raw) {
   if (!raw) return '';
-  return String(raw).trim().replace(/^[^\d]*/, '').split('||')[0].trim();
+  return String(raw)
+    .trim()
+    .replace(/^[^\d]*/, '')
+    .split('||')[0]
+    .trim()
+    .split('+')[0]
+    .trim();
 }
 
 function extractPnpmVersion(packageManager) {
@@ -25,7 +31,21 @@ function extractPnpmVersion(packageManager) {
 }
 
 function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(value)
+    .replaceAll('\\', String.raw`\\`)
+    .replaceAll('.', String.raw`\.`)
+    .replaceAll('+', String.raw`\+`)
+    .replaceAll('*', String.raw`\*`)
+    .replaceAll('?', String.raw`\?`)
+    .replaceAll('^', String.raw`\^`)
+    .replaceAll('$', String.raw`\$`)
+    .replaceAll('{', String.raw`\{`)
+    .replaceAll('}', String.raw`\}`)
+    .replaceAll('(', String.raw`\(`)
+    .replaceAll(')', String.raw`\)`)
+    .replaceAll('|', String.raw`\|`)
+    .replaceAll('[', String.raw`\[`)
+    .replaceAll(']', String.raw`\]`);
 }
 
 const badgeVersions = [
@@ -65,9 +85,7 @@ for (const badge of badgeVersions) {
     throw new Error(`Could not resolve version for ${badge.label}.`);
   }
 
-  const badgePattern = new RegExp(
-    `(\\[!\\[${escapeRegExp(badge.label)}\\]\\(https:\\/\\/img\\.shields\\.io\\/badge\\/${escapeRegExp(badge.slug)}-)([^-\\)\\?]+)(-)`,
-  );
+  const badgePattern = new RegExp(String.raw`(\[!\[${escapeRegExp(badge.label)}\]\(https:\/\/img\.shields\.io\/badge\/${escapeRegExp(badge.slug)}-)([^-)\?]+)(-)`);
 
   if (!badgePattern.test(nextReadmeContent)) {
     throw new Error(`Could not find ${badge.label} badge in README.md.`);
@@ -76,10 +94,9 @@ for (const badge of badgeVersions) {
   nextReadmeContent = nextReadmeContent.replace(badgePattern, `$1${badge.version}$3`);
 }
 
-if (nextReadmeContent !== readmeContent) {
+if (nextReadmeContent === readmeContent) {
+  console.log('README badge versions are already up to date.');
+} else {
   writeFileSync(readmePath, nextReadmeContent, 'utf8');
   console.log('Updated README badge versions from package.json.');
-} else {
-  console.log('README badge versions are already up to date.');
 }
-
