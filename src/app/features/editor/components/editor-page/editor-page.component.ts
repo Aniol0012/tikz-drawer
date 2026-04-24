@@ -63,8 +63,7 @@ import {
   SHAPE_STROKE_SCALE_FACTOR,
   SLIDER_DECIMAL_PLACES,
   TEXT_DOUBLE_TAP_WINDOW_MS,
-  TEXT_MIN_HEIGHT_FACTOR,
-  TEXT_RENDER_LINE_HEIGHT_FACTOR
+  TEXT_MIN_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
 import {
@@ -220,11 +219,23 @@ import type {
   TikzScene
 } from '../../models/tikz.models';
 import {
-  displayTextLinesForShape,
-  estimateTextHeight,
-  estimateTextWidth,
-  textLeftForWidth
-} from '../../utils/text.utils';
+  boundsFromPoints as boundsFromPointsUtil,
+  buildLinePath as buildLinePathUtil,
+  buildTrianglePath as buildTrianglePathUtil,
+  computeBounds as computeBoundsUtil,
+  cornerRadiusFromPointer as cornerRadiusFromPointerUtil,
+  linePoints as linePointsUtil,
+  normalizeRotationDegrees as normalizeRotationDegreesUtil,
+  rotatePointAround as rotatePointAroundUtil,
+  rotateShapeAround as rotateShapeAroundUtil,
+  rotatedEllipseBounds as rotatedEllipseBoundsUtil,
+  rotatedRectangleBounds as rotatedRectangleBoundsUtil,
+  shapeBounds as shapeBoundsUtil,
+  shapeCenter as shapeCenterUtil,
+  shapeRotation as shapeRotationUtil,
+  trianglePoints as trianglePointsUtil
+} from '../../utils/editor-geometry.utils';
+import { displayTextLinesForShape, estimateTextWidth, textLeftForWidth } from '../../utils/text.utils';
 
 @Component({
   selector: 'app-editor-page',
@@ -4975,84 +4986,29 @@ export class EditorPageComponent {
   }
 
   private computeBounds(shapes: readonly CanvasShape[]): SelectionBounds | null {
-    if (!shapes.length) {
-      return null;
-    }
-
-    return shapes.reduce<SelectionBounds | null>((currentBounds, shape) => {
-      const nextBounds = this.shapeBounds(shape);
-      if (!nextBounds) {
-        return currentBounds;
-      }
-      if (!currentBounds) {
-        return nextBounds;
-      }
-      return {
-        left: Math.min(currentBounds.left, nextBounds.left),
-        right: Math.max(currentBounds.right, nextBounds.right),
-        top: Math.max(currentBounds.top, nextBounds.top),
-        bottom: Math.min(currentBounds.bottom, nextBounds.bottom)
-      };
-    }, null);
+    return computeBoundsUtil(shapes);
   }
 
   private linePoints(shape: LineShape): readonly Point[] {
-    return [shape.from, ...shape.anchors, shape.to];
+    return linePointsUtil(shape);
   }
 
   private trianglePoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
-    const apex = {
-      x: shape.x + shape.width * shape.apexOffset,
-      y: shape.y + shape.height
-    };
-    const left = { x: shape.x, y: shape.y };
-    const right = { x: shape.x + shape.width, y: shape.y };
-    return [apex, left, right];
+    return trianglePointsUtil(shape);
   }
 
   private buildTrianglePath(
     shape: TriangleCanvasShape,
     projectPoint: (point: Point) => { readonly x: number; readonly y: number }
   ): string {
-    const [apex, left, right] = this.trianglePoints(shape).map(projectPoint);
-    return `M ${apex.x} ${apex.y} L ${left.x} ${left.y} L ${right.x} ${right.y} Z`;
+    return buildTrianglePathUtil(shape, projectPoint);
   }
 
   private buildLinePath(
     shape: LineShape,
     projectPoint: (point: Point) => { readonly x: number; readonly y: number }
   ): string {
-    const points = this.linePoints(shape).map(projectPoint);
-    if (points.length < 2) {
-      return '';
-    }
-
-    if (points.length === 2) {
-      return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-    }
-
-    if (shape.lineMode === 'straight') {
-      return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-    }
-
-    let path = `M ${points[0].x} ${points[0].y}`;
-    for (let index = 0; index < points.length - 1; index += 1) {
-      const previous = points[index - 1] ?? points[index];
-      const current = points[index];
-      const next = points[index + 1];
-      const afterNext = points[index + 2] ?? next;
-      const control1 = {
-        x: current.x + (next.x - previous.x) / 6,
-        y: current.y + (next.y - previous.y) / 6
-      };
-      const control2 = {
-        x: next.x - (afterNext.x - current.x) / 6,
-        y: next.y - (afterNext.y - current.y) / 6
-      };
-      path += ` C ${control1.x} ${control1.y}, ${control2.x} ${control2.y}, ${next.x} ${next.y}`;
-    }
-
-    return path;
+    return buildLinePathUtil(shape, projectPoint);
   }
 
   private toMinimapShape(
@@ -5153,54 +5109,7 @@ export class EditorPageComponent {
   }
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {
-    switch (shape.kind) {
-      case 'rectangle':
-        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
-      case 'triangle':
-        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
-      case 'circle':
-        return {
-          left: shape.cx - shape.r,
-          right: shape.cx + shape.r,
-          bottom: shape.cy - shape.r,
-          top: shape.cy + shape.r
-        };
-      case 'ellipse':
-        return this.rotatedEllipseBounds(shape.cx, shape.cy, shape.rx, shape.ry, shape.rotation ?? 0);
-      case 'line':
-        return this.linePoints(shape).reduce<SelectionBounds>(
-          (bounds, point) => ({
-            left: Math.min(bounds.left, point.x),
-            right: Math.max(bounds.right, point.x),
-            bottom: Math.min(bounds.bottom, point.y),
-            top: Math.max(bounds.top, point.y)
-          }),
-          {
-            left: Number.POSITIVE_INFINITY,
-            right: Number.NEGATIVE_INFINITY,
-            bottom: Number.POSITIVE_INFINITY,
-            top: Number.NEGATIVE_INFINITY
-          }
-        );
-      case 'text': {
-        const lines = this.displayTextLinesForShape(shape);
-        const width = this.estimateTextWidth(shape, 1);
-        const height = estimateTextHeight(shape, lines.length, 1, TEXT_RENDER_LINE_HEIGHT_FACTOR);
-        const left = textLeftForWidth(shape, shape.x, width);
-        const baseCorners: readonly Point[] = [
-          { x: left, y: shape.y - height / 2 },
-          { x: left + width, y: shape.y - height / 2 },
-          { x: left + width, y: shape.y + height / 2 },
-          { x: left, y: shape.y + height / 2 }
-        ];
-        const rotatedCorners = shape.rotation
-          ? baseCorners.map((corner) => this.rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
-          : baseCorners;
-        return this.boundsFromPoints(rotatedCorners);
-      }
-      case 'image':
-        return this.rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
-    }
+    return shapeBoundsUtil(shape);
   }
 
   private rotatedRectangleBounds(
@@ -5210,19 +5119,7 @@ export class EditorPageComponent {
     height: number,
     rotationDegrees: number
   ): SelectionBounds {
-    const corners: readonly Point[] = [
-      { x, y },
-      { x: x + width, y },
-      { x: x + width, y: y + height },
-      { x, y: y + height }
-    ];
-    if (!rotationDegrees) {
-      return this.boundsFromPoints(corners) as SelectionBounds;
-    }
-    const pivot = { x: x + width / 2, y: y + height / 2 };
-    return this.boundsFromPoints(
-      corners.map((corner) => this.rotatePointAround(corner, pivot, rotationDegrees))
-    ) as SelectionBounds;
+    return rotatedRectangleBoundsUtil(x, y, width, height, rotationDegrees);
   }
 
   private rotatedEllipseBounds(
@@ -5232,202 +5129,35 @@ export class EditorPageComponent {
     ry: number,
     rotationDegrees: number
   ): SelectionBounds {
-    if (!rotationDegrees) {
-      return { left: cx - rx, right: cx + rx, bottom: cy - ry, top: cy + ry };
-    }
-    const radians = (rotationDegrees * Math.PI) / 180;
-    const cosine = Math.cos(radians);
-    const sine = Math.sin(radians);
-    const halfWidth = Math.sqrt(rx * rx * cosine * cosine + ry * ry * sine * sine);
-    const halfHeight = Math.sqrt(rx * rx * sine * sine + ry * ry * cosine * cosine);
-    return { left: cx - halfWidth, right: cx + halfWidth, bottom: cy - halfHeight, top: cy + halfHeight };
+    return rotatedEllipseBoundsUtil(cx, cy, rx, ry, rotationDegrees);
   }
 
   private boundsFromPoints(points: readonly Point[]): SelectionBounds | null {
-    if (points.length === 0) {
-      return null;
-    }
-    return points.reduce<SelectionBounds>(
-      (bounds, point) => ({
-        left: Math.min(bounds.left, point.x),
-        right: Math.max(bounds.right, point.x),
-        bottom: Math.min(bounds.bottom, point.y),
-        top: Math.max(bounds.top, point.y)
-      }),
-      {
-        left: Number.POSITIVE_INFINITY,
-        right: Number.NEGATIVE_INFINITY,
-        bottom: Number.POSITIVE_INFINITY,
-        top: Number.NEGATIVE_INFINITY
-      }
-    );
+    return boundsFromPointsUtil(points);
   }
 
   private cornerRadiusFromPointer(shape: RectangleCanvasShape, handle: ResizeHandle, pointer: Point): number {
-    const maxRadius = Math.min(shape.width, shape.height) / 2;
-    if (maxRadius <= 0) {
-      return 0;
-    }
-    const center = this.shapeCenter(shape);
-    const localPointer = this.rotatePointAround(pointer, center, -this.shapeRotation(shape));
-    let horizontalInset = shape.cornerRadius;
-    let verticalInset = shape.cornerRadius;
-    switch (handle) {
-      case 'corner-radius-nw':
-        horizontalInset = localPointer.x - shape.x;
-        verticalInset = shape.y + shape.height - localPointer.y;
-        break;
-      case 'corner-radius-ne':
-        horizontalInset = shape.x + shape.width - localPointer.x;
-        verticalInset = shape.y + shape.height - localPointer.y;
-        break;
-      case 'corner-radius-se':
-        horizontalInset = shape.x + shape.width - localPointer.x;
-        verticalInset = localPointer.y - shape.y;
-        break;
-      case 'corner-radius-sw':
-        horizontalInset = localPointer.x - shape.x;
-        verticalInset = localPointer.y - shape.y;
-        break;
-      default:
-        return shape.cornerRadius;
-    }
-    return Math.max(0, Math.min(maxRadius, horizontalInset, verticalInset));
+    return cornerRadiusFromPointerUtil(shape, handle, pointer);
   }
 
   private rotateShapeAround(shape: CanvasShape, pivot: Point, rotationDeltaDegrees: number): CanvasShape {
-    if (Math.abs(rotationDeltaDegrees) < 0.0001) {
-      return shape;
-    }
-    switch (shape.kind) {
-      case 'line':
-        return shape;
-      case 'rectangle': {
-        const center = this.shapeCenter(shape);
-        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          x: nextCenter.x - shape.width / 2,
-          y: nextCenter.y - shape.height / 2,
-          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-        } as CanvasShape;
-      }
-      case 'triangle': {
-        const center = this.shapeCenter(shape);
-        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          x: nextCenter.x - shape.width / 2,
-          y: nextCenter.y - shape.height / 2,
-          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-        } as CanvasShape;
-      }
-      case 'circle': {
-        const nextCenter = this.rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          cx: nextCenter.x,
-          cy: nextCenter.y
-        } as CanvasShape;
-      }
-      case 'ellipse': {
-        const nextCenter = this.rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          cx: nextCenter.x,
-          cy: nextCenter.y,
-          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-        } as CanvasShape;
-      }
-      case 'text': {
-        const nextCenter = this.rotatePointAround({ x: shape.x, y: shape.y }, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          x: nextCenter.x,
-          y: nextCenter.y,
-          rotation: this.normalizeRotationDegrees(shape.rotation + rotationDeltaDegrees)
-        } as CanvasShape;
-      }
-      case 'image': {
-        const center = this.shapeCenter(shape);
-        const nextCenter = this.rotatePointAround(center, pivot, rotationDeltaDegrees);
-        return {
-          ...shape,
-          x: nextCenter.x - shape.width / 2,
-          y: nextCenter.y - shape.height / 2,
-          rotation: this.normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-        } as CanvasShape;
-      }
-    }
+    return rotateShapeAroundUtil(shape, pivot, rotationDeltaDegrees);
   }
 
   private shapeCenter(shape: CanvasShape): Point {
-    switch (shape.kind) {
-      case 'line': {
-        const points = this.linePoints(shape);
-        const bounds = points.reduce(
-          (accumulator, point) => ({
-            left: Math.min(accumulator.left, point.x),
-            right: Math.max(accumulator.right, point.x),
-            bottom: Math.min(accumulator.bottom, point.y),
-            top: Math.max(accumulator.top, point.y)
-          }),
-          {
-            left: Number.POSITIVE_INFINITY,
-            right: Number.NEGATIVE_INFINITY,
-            bottom: Number.POSITIVE_INFINITY,
-            top: Number.NEGATIVE_INFINITY
-          }
-        );
-        return { x: (bounds.left + bounds.right) / 2, y: (bounds.bottom + bounds.top) / 2 };
-      }
-      case 'rectangle':
-      case 'triangle':
-      case 'image':
-        return { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
-      case 'circle':
-      case 'ellipse':
-        return { x: shape.cx, y: shape.cy };
-      case 'text':
-        return { x: shape.x, y: shape.y };
-    }
+    return shapeCenterUtil(shape);
   }
 
   private shapeRotation(shape: CanvasShape): number {
-    switch (shape.kind) {
-      case 'line':
-        return 0;
-      case 'text':
-        return shape.rotation;
-      case 'rectangle':
-      case 'triangle':
-      case 'ellipse':
-      case 'image':
-        return shape.rotation ?? 0;
-      case 'circle':
-        return 0;
-    }
+    return shapeRotationUtil(shape);
   }
 
   private rotatePointAround(point: Point, pivot: Point, rotationDegrees: number): Point {
-    if (Math.abs(rotationDegrees) < 0.0001) {
-      return { ...point };
-    }
-    const radians = (rotationDegrees * Math.PI) / 180;
-    const cosine = Math.cos(radians);
-    const sine = Math.sin(radians);
-    const deltaX = point.x - pivot.x;
-    const deltaY = point.y - pivot.y;
-    return {
-      x: pivot.x + deltaX * cosine - deltaY * sine,
-      y: pivot.y + deltaX * sine + deltaY * cosine
-    };
+    return rotatePointAroundUtil(point, pivot, rotationDegrees);
   }
 
   private normalizeRotationDegrees(rotationDegrees: number): number {
-    const normalized = ((((rotationDegrees + 180) % 360) + 360) % 360) - 180;
-    const rounded = Number.parseFloat(normalized.toFixed(3));
-    return Math.abs(rounded) < 0.001 ? 0 : rounded;
+    return normalizeRotationDegreesUtil(rotationDegrees);
   }
 
   private rotateCurrentSelectionBy(rotationDeltaDegrees: number): void {
