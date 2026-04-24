@@ -6,6 +6,7 @@ import {
 import type { ArrowEndpoint, SvgTextAnchor, ExportSvgDocument } from '../components/editor-page/editor-page.types';
 import type { CanvasShape, LineShape, Point, TextShape, ThemeMode } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
+import { buildTrianglePath as buildTrianglePathUtil } from './editor-geometry.utils';
 
 const XML_NAMESPACE = 'http://www.w3.org/2000/svg';
 const XML_LINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
@@ -124,9 +125,11 @@ export const buildCanvasExportDocument = ({
           return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
         }
         case 'triangle': {
-          const apexX = shape.x + shape.width * shape.apexOffset;
-          const apexY = shape.y + shape.height;
-          const path = `M ${projectX(apexX)} ${projectY(apexY)} L ${projectX(shape.x)} ${projectY(shape.y)} L ${projectX(shape.x + shape.width)} ${projectY(shape.y)} Z`;
+          const path = buildTrianglePathUtil(
+            shape,
+            (point) => ({ x: projectX(point.x), y: projectY(point.y) }),
+            shape.cornerRadius * scale
+          );
           const rotate = shape.rotation
             ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
             : '';

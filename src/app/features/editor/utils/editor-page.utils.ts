@@ -62,7 +62,8 @@ export const transformCanvasShape = (
         x: (shape.x - originX) * scaleX + originX + deltaX,
         y: (shape.y - originY) * scaleY + originY + deltaY,
         width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
-        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION)
+        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
+        cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
       };
     case 'circle':
       return {

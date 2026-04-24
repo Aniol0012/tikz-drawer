@@ -89,6 +89,7 @@ const createTriangle = (overrides: Partial<TriangleShape> = {}): TriangleShape =
   height: overrides.height ?? 3.8,
   fill: overrides.fill ?? DEFAULT_FILL_COLOR,
   fillOpacity: overrides.fillOpacity ?? 1,
+  cornerRadius: overrides.cornerRadius ?? 0,
   apexOffset: overrides.apexOffset ?? 0.5
 });
 

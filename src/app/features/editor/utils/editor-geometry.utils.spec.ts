@@ -2,8 +2,10 @@ import type { RectangleCanvasShape } from '../components/editor-page/editor-page
 import type { CanvasShape, LineShape } from '../models/tikz.models';
 import {
   buildLinePath,
+  buildTrianglePath,
   computeBounds,
   cornerRadiusFromPointer,
+  maxTriangleCornerRadius,
   normalizeRotationDegrees,
   rotateShapeAround,
   shapeBounds
@@ -53,6 +55,24 @@ const rectangleShape: RectangleCanvasShape = {
   rotation: 0
 };
 
+const triangleShape: Extract<CanvasShape, { kind: 'triangle' }> = {
+  id: 'triangle-1',
+  name: 'Triangle',
+  kind: 'triangle',
+  stroke: '#111111',
+  strokeOpacity: 1,
+  strokeWidth: 0.28,
+  x: -3,
+  y: -1.5,
+  width: 6,
+  height: 4,
+  fill: '#ffffff',
+  fillOpacity: 1,
+  cornerRadius: 0.5,
+  apexOffset: 0.5,
+  rotation: 0
+};
+
 describe('editor-geometry utils', () => {
   it('builds curved and straight line paths', () => {
     const curvedPath = buildLinePath(lineShape, (point) => point);
@@ -61,6 +81,15 @@ describe('editor-geometry utils', () => {
     expect(curvedPath.startsWith('M 0 0 C')).toBe(true);
     expect(curvedPath.includes('C')).toBe(true);
     expect(straightPath).toBe('M 0 0 L 2 3 L 4 -2 L 6 0');
+  });
+
+  it('builds rounded triangle paths when corner radius is provided', () => {
+    const roundedPath = buildTrianglePath(triangleShape, (point) => point, triangleShape.cornerRadius);
+    const sharpPath = buildTrianglePath(triangleShape, (point) => point, 0);
+
+    expect(roundedPath.includes('Q')).toBe(true);
+    expect(sharpPath.includes('Q')).toBe(false);
+    expect(maxTriangleCornerRadius(triangleShape)).toBeGreaterThan(0);
   });
 
   it('normalizes rotation values into the editor range', () => {
@@ -105,11 +134,39 @@ describe('editor-geometry utils', () => {
     expect(rotated.rotation).toBe(90);
   });
 
+  it('rotates line points around a pivot', () => {
+    const simpleLine: LineShape = {
+      ...lineShape,
+      anchors: [],
+      from: { x: 0, y: 0 },
+      to: { x: 2, y: 0 }
+    };
+
+    const rotated = rotateShapeAround(simpleLine, { x: 1, y: 0 }, 90);
+    expect(rotated.kind).toBe('line');
+    if (rotated.kind !== 'line') {
+      throw new Error('Expected a line shape');
+    }
+
+    expect(rotated.from.x).toBeCloseTo(1);
+    expect(rotated.from.y).toBeCloseTo(-1);
+    expect(rotated.to.x).toBeCloseTo(1);
+    expect(rotated.to.y).toBeCloseTo(1);
+  });
+
   it('clamps corner radius from pointer movement', () => {
     const radius = cornerRadiusFromPointer(rectangleShape, 'corner-radius-nw', { x: 3, y: 4 });
     const clampedRadius = cornerRadiusFromPointer(rectangleShape, 'corner-radius-nw', { x: 99, y: -99 });
 
     expect(radius).toBeCloseTo(2);
     expect(clampedRadius).toBe(3);
+  });
+
+  it('updates triangle corner radius from dedicated corner handles', () => {
+    const radius = cornerRadiusFromPointer(triangleShape, 'corner-radius-apex', { x: 0, y: 1.8 });
+    const clamped = cornerRadiusFromPointer(triangleShape, 'corner-radius-apex', { x: 0, y: -100 });
+
+    expect(radius).toBeGreaterThan(0);
+    expect(clamped).toBeCloseTo(maxTriangleCornerRadius(triangleShape));
   });
 });

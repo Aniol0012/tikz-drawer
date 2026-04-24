@@ -70,6 +70,7 @@ export interface TriangleShape extends CanvasShapeBase {
   readonly height: number;
   readonly fill: string;
   readonly fillOpacity: number;
+  readonly cornerRadius: number;
   readonly apexOffset: number;
   readonly rotation?: number;
 }

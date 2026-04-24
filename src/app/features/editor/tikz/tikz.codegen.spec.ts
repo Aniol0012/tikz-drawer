@@ -93,6 +93,7 @@ const balancedTriangle: TriangleShape = {
   height: 3.8,
   fill: '#f1f1f1',
   fillOpacity: 1,
+  cornerRadius: 0.32,
   apexOffset: 0.5,
   rotation: 0
 };
@@ -214,6 +215,7 @@ describe('sceneToTikzBundle', () => {
     const parsed = parseTikz(bundle.code);
     const triangle = parsed.scene.shapes.find((shape) => shape.kind === 'triangle');
 
+    expect(bundle.code).toContain('rounded corners=0.32cm');
     expect(bundle.code).toContain('-- cycle;');
     expect(triangle?.kind).toBe('triangle');
 
@@ -225,6 +227,7 @@ describe('sceneToTikzBundle', () => {
     expect(triangle.y).toBeCloseTo(balancedTriangle.y);
     expect(triangle.width).toBeCloseTo(balancedTriangle.width);
     expect(triangle.height).toBeCloseTo(balancedTriangle.height);
+    expect(triangle.cornerRadius).toBeCloseTo(balancedTriangle.cornerRadius);
     expect(triangle.apexOffset).toBeCloseTo(balancedTriangle.apexOffset);
   });
 });

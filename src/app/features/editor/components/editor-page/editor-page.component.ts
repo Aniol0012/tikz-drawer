@@ -225,6 +225,7 @@ import {
   computeBounds as computeBoundsUtil,
   cornerRadiusFromPointer as cornerRadiusFromPointerUtil,
   linePoints as linePointsUtil,
+  maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
   rotatePointAround as rotatePointAroundUtil,
   rotateShapeAround as rotateShapeAroundUtil,
@@ -788,8 +789,8 @@ export class EditorPageComponent {
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
-    const selectedShape = this.selectedShape();
     const selectedShapes = this.selectedShapes();
+    const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
     if (!selectedShapes.length) {
       return [];
     }
@@ -798,14 +799,14 @@ export class EditorPageComponent {
       selectionBounds && this.selectionCanRotate(selectedShapes)
         ? this.rotationHandleFromBounds(selectionBounds)
         : null;
-    if (selectedShape?.kind === 'line') {
-      const points = this.linePoints(selectedShape);
-      const fromAdjacentPoint = points[1] ?? selectedShape.to;
-      const toAdjacentPoint = points.at(-2) ?? selectedShape.from;
+    if (singleSelectedShape?.kind === 'line') {
+      const points = this.linePoints(singleSelectedShape);
+      const fromAdjacentPoint = points[1] ?? singleSelectedShape.to;
+      const toAdjacentPoint = points.at(-2) ?? singleSelectedShape.from;
       const lineHandles: HandleDescriptor[] = [
-        this.lineEndpointHandle(selectedShape, 'from', fromAdjacentPoint),
-        ...this.lineArrowControlHandles(selectedShape, 'from', fromAdjacentPoint),
-        ...selectedShape.anchors.map((anchor, index) => ({
+        this.lineEndpointHandle(singleSelectedShape, 'from', fromAdjacentPoint),
+        ...this.lineArrowControlHandles(singleSelectedShape, 'from', fromAdjacentPoint),
+        ...singleSelectedShape.anchors.map((anchor, index) => ({
           id: `anchor-${index}` as const,
           x: this.toSvgX(anchor.x),
           y: this.toSvgY(anchor.y),
@@ -822,13 +823,24 @@ export class EditorPageComponent {
             variant: 'ghost-anchor' as const
           };
         }),
-        ...this.lineArrowControlHandles(selectedShape, 'to', toAdjacentPoint),
-        this.lineEndpointHandle(selectedShape, 'to', toAdjacentPoint)
+        ...this.lineArrowControlHandles(singleSelectedShape, 'to', toAdjacentPoint),
+        this.lineEndpointHandle(singleSelectedShape, 'to', toAdjacentPoint)
       ];
       return lineHandles;
     }
     if (!selectionBounds) {
       return [];
+    }
+    const rotatedSingleShapeHandles = singleSelectedShape ? this.rotatedSingleShapeHandles(singleSelectedShape) : null;
+    if (rotatedSingleShapeHandles) {
+      const handles: HandleDescriptor[] = [...rotatedSingleShapeHandles];
+      if (this.selectionCanRotate(selectedShapes)) {
+        handles.push(this.rotationHandleFromHandles(rotatedSingleShapeHandles, singleSelectedShape as CanvasShape));
+      }
+      if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+        handles.push(...this.cornerRadiusHandles(singleSelectedShape));
+      }
+      return handles;
     }
     const centerX = (selectionBounds.left + selectionBounds.right) / 2;
     const centerY = (selectionBounds.top + selectionBounds.bottom) / 2;
@@ -850,8 +862,8 @@ export class EditorPageComponent {
     if (rotateHandle) {
       handles.push(rotateHandle);
     }
-    if (selectedShape?.kind === 'rectangle' && selectedShapes.length === 1) {
-      handles.push(...this.rectangleCornerRadiusHandles(selectedShape));
+    if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+      handles.push(...this.cornerRadiusHandles(singleSelectedShape));
     }
     return handles;
   });
@@ -861,17 +873,18 @@ export class EditorPageComponent {
     readonly x2: number;
     readonly y2: number;
   } | null>(() => {
-    const bounds = this.selectionBounds();
-    if (!bounds || this.selectionCount() === 0) {
+    if (this.selectionCount() === 0) {
       return null;
     }
-    const rotateHandle = this.selectionHandles().find((handle) => handle.variant === 'rotate');
-    if (!rotateHandle) {
+    const handles = this.selectionHandles();
+    const rotateHandle = handles.find((handle) => handle.variant === 'rotate');
+    const northHandle = handles.find((handle) => handle.id === 'n');
+    if (!rotateHandle || !northHandle) {
       return null;
     }
     return {
-      x1: this.toSvgX((bounds.left + bounds.right) / 2),
-      y1: this.toSvgY(bounds.top),
+      x1: northHandle.x,
+      y1: northHandle.y,
       x2: rotateHandle.x,
       y2: rotateHandle.y
     };
@@ -3137,14 +3150,19 @@ export class EditorPageComponent {
     interactionState: Extract<InteractionState, { kind: 'resize' }>
   ): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
-    if (interactionState.initialShape?.kind === 'rectangle' && interactionState.handle.startsWith('corner-radius-')) {
+    if (
+      (interactionState.initialShape?.kind === 'rectangle' || interactionState.initialShape?.kind === 'triangle') &&
+      interactionState.handle.startsWith('corner-radius-')
+    ) {
       const nextCornerRadius = this.cornerRadiusFromPointer(
         interactionState.initialShape,
         interactionState.handle,
         pointerPoint
       );
       this.store.patchSelectedShape((shape) =>
-        shape.kind === 'rectangle' ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape) : shape
+        shape.kind === 'rectangle' || shape.kind === 'triangle'
+          ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape)
+          : shape
       );
       return;
     }
@@ -3185,9 +3203,14 @@ export class EditorPageComponent {
         Math.round(rotationDeltaDegrees / EditorPageComponent.rotationSnapStepDegrees) *
         EditorPageComponent.rotationSnapStepDegrees;
     }
+    const usePerShapePivot = interactionState.initialShapes.length > 1;
     this.store.replaceShapes(
       interactionState.initialShapes.map((shape) =>
-        this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
+        this.rotateShapeAround(
+          shape,
+          usePerShapePivot ? this.shapeCenter(shape) : interactionState.pivot,
+          rotationDeltaDegrees
+        )
       )
     );
   }
@@ -3574,16 +3597,32 @@ export class EditorPageComponent {
     readonly y: number;
     readonly width: number;
     readonly height: number;
+    readonly transform: string | null;
   } | null {
     const selectionBounds = this.selectionBounds();
     if (!selectionBounds) {
       return null;
     }
+
+    const selectedShapes = this.selectedShapes();
+    const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
+    const rotatedFrame = singleSelectedShape ? this.singleShapeSelectionFrame(singleSelectedShape) : null;
+    if (rotatedFrame && Math.abs(rotatedFrame.rotation) >= 0.0001) {
+      return {
+        x: this.toSvgX(rotatedFrame.left),
+        y: this.toSvgY(rotatedFrame.top),
+        width: (rotatedFrame.right - rotatedFrame.left) * this.preferences().scale,
+        height: (rotatedFrame.top - rotatedFrame.bottom) * this.preferences().scale,
+        transform: `rotate(${rotatedFrame.rotation} ${this.toSvgX(rotatedFrame.center.x)} ${this.toSvgY(rotatedFrame.center.y)})`
+      };
+    }
+
     return {
       x: this.toSvgX(selectionBounds.left),
       y: this.toSvgY(selectionBounds.top),
       width: (selectionBounds.right - selectionBounds.left) * this.preferences().scale,
-      height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale
+      height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale,
+      transform: null
     };
   }
 
@@ -3600,6 +3639,122 @@ export class EditorPageComponent {
       cursor: 'grab',
       variant: 'rotate'
     };
+  }
+
+  private singleShapeSelectionFrame(shape: CanvasShape): {
+    readonly left: number;
+    readonly right: number;
+    readonly bottom: number;
+    readonly top: number;
+    readonly center: Point;
+    readonly rotation: number;
+  } | null {
+    switch (shape.kind) {
+      case 'rectangle':
+      case 'triangle':
+      case 'image':
+        return {
+          left: shape.x,
+          right: shape.x + shape.width,
+          bottom: shape.y,
+          top: shape.y + shape.height,
+          center: { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 },
+          rotation: shape.rotation ?? 0
+        };
+      case 'ellipse':
+        return {
+          left: shape.cx - shape.rx,
+          right: shape.cx + shape.rx,
+          bottom: shape.cy - shape.ry,
+          top: shape.cy + shape.ry,
+          center: { x: shape.cx, y: shape.cy },
+          rotation: shape.rotation ?? 0
+        };
+      default:
+        return null;
+    }
+  }
+
+  private rotationHandleFromHandles(handles: readonly HandleDescriptor[], shape: CanvasShape): HandleDescriptor {
+    const northHandle = handles.find((handle) => handle.id === 'n');
+    if (!northHandle) {
+      const bounds = this.shapeBounds(shape);
+      if (bounds) {
+        return this.rotationHandleFromBounds(bounds);
+      }
+      return {
+        id: 'rotate',
+        x: this.toSvgX(this.shapeCenter(shape).x),
+        y: this.toSvgY(this.shapeCenter(shape).y) - this.selectionHandleSize() * 2,
+        cursor: 'grab',
+        variant: 'rotate'
+      };
+    }
+
+    const center = this.shapeCenter(shape);
+    const centerSvg = { x: this.toSvgX(center.x), y: this.toSvgY(center.y) };
+    const deltaX = northHandle.x - centerSvg.x;
+    const deltaY = northHandle.y - centerSvg.y;
+    const length = Math.hypot(deltaX, deltaY) || 1;
+    const unit = { x: deltaX / length, y: deltaY / length };
+    const distancePx = Math.max(
+      EditorPageComponent.selectionRotateHandleMinDistance * this.preferences().scale,
+      this.selectionHandleSize() * EditorPageComponent.selectionRotateHandleDistanceFactor
+    );
+
+    return {
+      id: 'rotate',
+      x: northHandle.x + unit.x * distancePx,
+      y: northHandle.y + unit.y * distancePx,
+      cursor: 'grab',
+      variant: 'rotate'
+    };
+  }
+
+  private rotatedSingleShapeHandles(shape: CanvasShape): readonly HandleDescriptor[] | null {
+    if (shape.kind === 'line' || shape.kind === 'circle' || shape.kind === 'text') {
+      return null;
+    }
+
+    const frame = this.singleShapeSelectionFrame(shape);
+    if (!frame) {
+      return null;
+    }
+
+    const rotation = frame.rotation;
+    if (Math.abs(rotation) < 0.0001) {
+      return null;
+    }
+
+    const center = frame.center;
+    const centerX = (frame.left + frame.right) / 2;
+    const centerY = (frame.top + frame.bottom) / 2;
+    const baseHandles = [
+      { id: 'nw' as const, cursor: 'nwse-resize' as const, point: { x: frame.left, y: frame.top } },
+      { id: 'n' as const, cursor: 'ns-resize' as const, point: { x: centerX, y: frame.top } },
+      { id: 'ne' as const, cursor: 'nesw-resize' as const, point: { x: frame.right, y: frame.top } },
+      { id: 'e' as const, cursor: 'ew-resize' as const, point: { x: frame.right, y: centerY } },
+      { id: 'se' as const, cursor: 'nwse-resize' as const, point: { x: frame.right, y: frame.bottom } },
+      { id: 's' as const, cursor: 'ns-resize' as const, point: { x: centerX, y: frame.bottom } },
+      { id: 'sw' as const, cursor: 'nesw-resize' as const, point: { x: frame.left, y: frame.bottom } },
+      { id: 'w' as const, cursor: 'ew-resize' as const, point: { x: frame.left, y: centerY } }
+    ];
+
+    return baseHandles.map(({ id, cursor, point }) => {
+      const rotatedPoint = this.rotatePointAround(point, center, -rotation);
+      return {
+        id,
+        x: this.toSvgX(rotatedPoint.x),
+        y: this.toSvgY(rotatedPoint.y),
+        cursor
+      };
+    });
+  }
+
+  private cornerRadiusHandles(shape: RectangleCanvasShape | TriangleCanvasShape): readonly HandleDescriptor[] {
+    return shape.kind === 'rectangle'
+      ? this.rectangleCornerRadiusHandles(shape)
+      : this.triangleCornerRadiusHandles(shape);
   }
 
   private rectangleCornerRadiusHandles(shape: RectangleCanvasShape): readonly HandleDescriptor[] {
@@ -3631,12 +3786,62 @@ export class EditorPageComponent {
     const center = this.shapeCenter(shape);
     const angle = this.shapeRotation(shape);
     return corners.map(({ id, point, cursor }) => {
-      const rotatedPoint = this.rotatePointAround(point, center, angle);
+      const rotatedPoint = this.rotatePointAround(point, center, -angle);
       return {
         id,
         x: this.toSvgX(rotatedPoint.x),
         y: this.toSvgY(rotatedPoint.y),
         cursor,
+        variant: 'corner-radius'
+      };
+    });
+  }
+
+  private triangleCornerRadiusHandles(shape: TriangleCanvasShape): readonly HandleDescriptor[] {
+    const maxRadius = maxTriangleCornerRadiusUtil(shape);
+    if (maxRadius <= 0) {
+      return [];
+    }
+    const minimumVisibleInset = this.selectionHandleSize() / this.preferences().scale;
+    const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
+    const corners = this.trianglePoints(shape);
+    const center = this.shapeCenter(shape);
+    const angle = this.shapeRotation(shape);
+
+    const handleConfig = corners.map((corner, index) => {
+      const previous = corners[(index - 1 + corners.length) % corners.length];
+      const next = corners[(index + 1) % corners.length];
+      const toPreviousLength = Math.hypot(previous.x - corner.x, previous.y - corner.y) || 1;
+      const toNextLength = Math.hypot(next.x - corner.x, next.y - corner.y) || 1;
+      const toPrevious = {
+        x: (previous.x - corner.x) / toPreviousLength,
+        y: (previous.y - corner.y) / toPreviousLength
+      };
+      const toNext = {
+        x: (next.x - corner.x) / toNextLength,
+        y: (next.y - corner.y) / toNextLength
+      };
+      const bisectorLength = Math.hypot(toPrevious.x + toNext.x, toPrevious.y + toNext.y) || 1;
+      const bisector = {
+        x: (toPrevious.x + toNext.x) / bisectorLength,
+        y: (toPrevious.y + toNext.y) / bisectorLength
+      };
+      const point = {
+        x: corner.x + bisector.x * inset,
+        y: corner.y + bisector.y * inset
+      };
+      const id: ResizeHandle =
+        index === 0 ? 'corner-radius-apex' : index === 1 ? 'corner-radius-left' : 'corner-radius-right';
+      return { id, point };
+    });
+
+    return handleConfig.map(({ id, point }) => {
+      const rotatedPoint = this.rotatePointAround(point, center, -angle);
+      return {
+        id,
+        x: this.toSvgX(rotatedPoint.x),
+        y: this.toSvgY(rotatedPoint.y),
+        cursor: 'grab',
         variant: 'corner-radius'
       };
     });
@@ -3658,10 +3863,14 @@ export class EditorPageComponent {
   }
 
   triangleSvgPath(shape: TriangleCanvasShape): string {
-    return this.buildTrianglePath(shape, (point) => ({
-      x: this.toSvgX(point.x),
-      y: this.toSvgY(point.y)
-    }));
+    return this.buildTrianglePath(
+      shape,
+      (point) => ({
+        x: this.toSvgX(point.x),
+        y: this.toSvgY(point.y)
+      }),
+      shape.cornerRadius * this.preferences().scale
+    );
   }
 
   lineEndpointHandle(shape: LineShape, endpoint: LineEndpoint, adjacentPoint: Point): HandleDescriptor {
@@ -4484,7 +4693,9 @@ export class EditorPageComponent {
           fill: preferences.defaultFill,
           strokeOpacity: 1,
           fillOpacity: 1,
-          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
+          ...(shape.kind === 'triangle'
+            ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 }
+            : {}),
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
@@ -4999,9 +5210,10 @@ export class EditorPageComponent {
 
   private buildTrianglePath(
     shape: TriangleCanvasShape,
-    projectPoint: (point: Point) => { readonly x: number; readonly y: number }
+    projectPoint: (point: Point) => { readonly x: number; readonly y: number },
+    cornerRadius = 0
   ): string {
-    return buildTrianglePathUtil(shape, projectPoint);
+    return buildTrianglePathUtil(shape, projectPoint, cornerRadius);
   }
 
   private buildLinePath(
@@ -5048,10 +5260,14 @@ export class EditorPageComponent {
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           fill: shape.fill,
-          path: this.buildTrianglePath(shape, (point) => ({
-            x: toMapX(point.x),
-            y: toMapY(point.y)
-          }))
+          path: this.buildTrianglePath(
+            shape,
+            (point) => ({
+              x: toMapX(point.x),
+              y: toMapY(point.y)
+            }),
+            shape.cornerRadius * scale
+          )
         };
       case 'circle':
         return {
@@ -5136,7 +5352,11 @@ export class EditorPageComponent {
     return boundsFromPointsUtil(points);
   }
 
-  private cornerRadiusFromPointer(shape: RectangleCanvasShape, handle: ResizeHandle, pointer: Point): number {
+  private cornerRadiusFromPointer(
+    shape: RectangleCanvasShape | TriangleCanvasShape,
+    handle: ResizeHandle,
+    pointer: Point
+  ): number {
     return cornerRadiusFromPointerUtil(shape, handle, pointer);
   }
 
@@ -5169,19 +5389,23 @@ export class EditorPageComponent {
     if (!bounds || !this.selectionCanRotate(selectedShapes)) {
       return;
     }
-    const pivot = {
+    const selectionPivot = {
       x: (bounds.left + bounds.right) / 2,
       y: (bounds.bottom + bounds.top) / 2
     };
+    const usePerShapePivot = selectedShapes.length > 1;
     this.store.recordHistoryCheckpoint();
-    this.store.replaceShapes(selectedShapes.map((shape) => this.rotateShapeAround(shape, pivot, rotationDeltaDegrees)));
+    this.store.replaceShapes(
+      selectedShapes.map((shape) =>
+        this.rotateShapeAround(shape, usePerShapePivot ? this.shapeCenter(shape) : selectionPivot, rotationDeltaDegrees)
+      )
+    );
   }
 
   private selectionCanRotate(shapes: readonly CanvasShape[]): boolean {
+    const firstShape = shapes[0] ?? null;
     return (
-      shapes.length > 0 &&
-      shapes.every((shape) => shape.kind !== 'line') &&
-      !shapes.every((shape) => shape.kind === 'circle')
+      shapes.length > 0 && !(shapes.length === 1 && (firstShape?.kind === 'line' || firstShape?.kind === 'circle'))
     );
   }
 

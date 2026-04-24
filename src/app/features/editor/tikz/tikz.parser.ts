@@ -431,6 +431,7 @@ const parseTriangle = (line: string): CanvasShape | null => {
     height: Math.max(maxY - minY, 0.2),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
+    cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
     apexOffset,
     rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };

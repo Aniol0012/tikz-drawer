@@ -274,6 +274,9 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
 
 const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
+  if (shape.cornerRadius > 0) {
+    entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
+  }
   if ((shape.rotation ?? 0) !== 0) {
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
   }

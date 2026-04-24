@@ -76,6 +76,9 @@ export type ResizeHandle =
   | 'corner-radius-ne'
   | 'corner-radius-se'
   | 'corner-radius-sw'
+  | 'corner-radius-apex'
+  | 'corner-radius-left'
+  | 'corner-radius-right'
   | LineEndpoint
   | ArrowControlHandle
   | `anchor-${number}`

@@ -8,6 +8,136 @@ import type { CanvasShape, LineShape, Point } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
 import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from './text.utils';
 
+const GEOMETRY_EPSILON = 1e-6;
+
+type RoundedCornerCanvasShape = RectangleCanvasShape | TriangleCanvasShape;
+
+const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+
+const normalizeVector = (x: number, y: number): Point => {
+  const length = Math.hypot(x, y);
+  if (length <= GEOMETRY_EPSILON) {
+    return { x: 0, y: 0 };
+  }
+  return { x: x / length, y: y / length };
+};
+
+const roundedCornerGeometry = (
+  corner: Point,
+  previous: Point,
+  next: Point,
+  radius: number
+): {
+  readonly start: Point;
+  readonly end: Point;
+  readonly maxRadius: number;
+} => {
+  const toPrevious = { x: previous.x - corner.x, y: previous.y - corner.y };
+  const toNext = { x: next.x - corner.x, y: next.y - corner.y };
+  const previousLength = Math.hypot(toPrevious.x, toPrevious.y);
+  const nextLength = Math.hypot(toNext.x, toNext.y);
+
+  if (previousLength <= GEOMETRY_EPSILON || nextLength <= GEOMETRY_EPSILON) {
+    return {
+      start: corner,
+      end: corner,
+      maxRadius: 0
+    };
+  }
+
+  const previousUnit = { x: toPrevious.x / previousLength, y: toPrevious.y / previousLength };
+  const nextUnit = { x: toNext.x / nextLength, y: toNext.y / nextLength };
+  const cosine = clamp(previousUnit.x * nextUnit.x + previousUnit.y * nextUnit.y, -0.999999, 0.999999);
+  const angle = Math.acos(cosine);
+  const tanHalf = Math.tan(angle / 2);
+
+  if (!Number.isFinite(tanHalf) || tanHalf <= GEOMETRY_EPSILON) {
+    return {
+      start: corner,
+      end: corner,
+      maxRadius: 0
+    };
+  }
+
+  const maxOffset = Math.min(previousLength, nextLength) / 2;
+  const maxRadius = maxOffset * tanHalf;
+  const clampedRadius = Math.max(radius, 0);
+  const offset = Math.min(clampedRadius / tanHalf, maxOffset);
+
+  return {
+    start: {
+      x: corner.x + previousUnit.x * offset,
+      y: corner.y + previousUnit.y * offset
+    },
+    end: {
+      x: corner.x + nextUnit.x * offset,
+      y: corner.y + nextUnit.y * offset
+    },
+    maxRadius
+  };
+};
+
+const polygonMaxCornerRadius = (points: readonly Point[]): number => {
+  if (points.length < 3) {
+    return 0;
+  }
+
+  return points.reduce((currentMin, corner, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const geometry = roundedCornerGeometry(corner, previous, next, Number.POSITIVE_INFINITY);
+    return Math.min(currentMin, geometry.maxRadius);
+  }, Number.POSITIVE_INFINITY);
+};
+
+const buildRoundedPolygonPath = (points: readonly Point[], radius: number): string => {
+  if (points.length < 3) {
+    return '';
+  }
+
+  const maxRadius = polygonMaxCornerRadius(points);
+  const clampedRadius = Math.min(Math.max(radius, 0), maxRadius);
+  if (!Number.isFinite(clampedRadius) || clampedRadius <= GEOMETRY_EPSILON) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
+  }
+
+  const corners = points.map((corner, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    return {
+      corner,
+      ...roundedCornerGeometry(corner, previous, next, clampedRadius)
+    };
+  });
+
+  const firstCorner = corners[0];
+  let path = `M ${firstCorner.end.x} ${firstCorner.end.y}`;
+
+  for (let index = 1; index < corners.length; index += 1) {
+    const entry = corners[index];
+    path += ` L ${entry.start.x} ${entry.start.y}`;
+    path += ` Q ${entry.corner.x} ${entry.corner.y} ${entry.end.x} ${entry.end.y}`;
+  }
+
+  path += ` L ${firstCorner.start.x} ${firstCorner.start.y}`;
+  path += ` Q ${firstCorner.corner.x} ${firstCorner.corner.y} ${firstCorner.end.x} ${firstCorner.end.y} Z`;
+
+  return path;
+};
+
+const triangleCornerIndexFromHandle = (handle: ResizeHandle): number | null => {
+  switch (handle) {
+    case 'corner-radius-apex':
+      return 0;
+    case 'corner-radius-left':
+      return 1;
+    case 'corner-radius-right':
+      return 2;
+    default:
+      return null;
+  }
+};
+
 export const linePoints = (shape: LineShape): readonly Point[] => [shape.from, ...shape.anchors, shape.to];
 
 export const trianglePoints = (shape: TriangleCanvasShape): readonly [Point, Point, Point] => {
@@ -22,11 +152,15 @@ export const trianglePoints = (shape: TriangleCanvasShape): readonly [Point, Poi
 
 export const buildTrianglePath = (
   shape: TriangleCanvasShape,
-  projectPoint: (point: Point) => { readonly x: number; readonly y: number }
+  projectPoint: (point: Point) => { readonly x: number; readonly y: number },
+  cornerRadius = 0
 ): string => {
-  const [apex, left, right] = trianglePoints(shape).map(projectPoint);
-  return `M ${apex.x} ${apex.y} L ${left.x} ${left.y} L ${right.x} ${right.y} Z`;
+  const points = trianglePoints(shape).map(projectPoint);
+  return buildRoundedPolygonPath(points, cornerRadius);
 };
+
+export const maxTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
+  Math.max(polygonMaxCornerRadius(trianglePoints(shape)), 0);
 
 export const buildLinePath = (
   shape: LineShape,
@@ -267,7 +401,36 @@ export const computeBounds = (shapes: readonly CanvasShape[]): SelectionBounds |
   }, null);
 };
 
-export const cornerRadiusFromPointer = (shape: RectangleCanvasShape, handle: ResizeHandle, pointer: Point): number => {
+export const cornerRadiusFromPointer = (
+  shape: RoundedCornerCanvasShape,
+  handle: ResizeHandle,
+  pointer: Point
+): number => {
+  if (shape.kind === 'triangle') {
+    const cornerIndex = triangleCornerIndexFromHandle(handle);
+    if (cornerIndex === null) {
+      return shape.cornerRadius;
+    }
+
+    const center = shapeCenter(shape);
+    const localPointer = rotatePointAround(pointer, center, -shapeRotation(shape));
+    const corners = trianglePoints(shape);
+    const corner = corners[cornerIndex];
+    const previous = corners[(cornerIndex - 1 + corners.length) % corners.length];
+    const next = corners[(cornerIndex + 1) % corners.length];
+    const toPrevious = normalizeVector(previous.x - corner.x, previous.y - corner.y);
+    const toNext = normalizeVector(next.x - corner.x, next.y - corner.y);
+    const bisector = normalizeVector(toPrevious.x + toNext.x, toPrevious.y + toNext.y);
+    if (Math.hypot(bisector.x, bisector.y) <= GEOMETRY_EPSILON) {
+      return shape.cornerRadius;
+    }
+
+    const pointerDeltaX = localPointer.x - corner.x;
+    const pointerDeltaY = localPointer.y - corner.y;
+    const projectedDistance = pointerDeltaX * bisector.x + pointerDeltaY * bisector.y;
+    return clamp(projectedDistance, 0, maxTriangleCornerRadius(shape));
+  }
+
   const maxRadius = Math.min(shape.width, shape.height) / 2;
   if (maxRadius <= 0) {
     return 0;
@@ -306,7 +469,12 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
 
   switch (shape.kind) {
     case 'line':
-      return shape;
+      return {
+        ...shape,
+        from: rotatePointAround(shape.from, pivot, rotationDeltaDegrees),
+        to: rotatePointAround(shape.to, pivot, rotationDeltaDegrees),
+        anchors: shape.anchors.map((anchor) => rotatePointAround(anchor, pivot, rotationDeltaDegrees))
+      } as CanvasShape;
     case 'rectangle': {
       const center = shapeCenter(shape);
       const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
