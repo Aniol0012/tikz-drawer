@@ -3,7 +3,7 @@
 <div align="center">
   <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
 
-[![Version](https://img.shields.io/badge/version-1.0.33-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
+[![Version](https://img.shields.io/badge/version-1.0.34-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
 [![Tests Status](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
