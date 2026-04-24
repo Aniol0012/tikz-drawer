@@ -862,7 +862,8 @@
           <div
             class="minimap"
             [style.width.px]="minimapFrame().width"
-            [style.height.px]="minimapFrame().height">
+            [style.height.px]="minimapFrame().height"
+            (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
             <svg
               class="minimap__svg"
               [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
