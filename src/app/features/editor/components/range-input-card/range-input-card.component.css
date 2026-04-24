@@ -1,0 +1,84 @@
+:host {
+  min-width: 0;
+}
+
+.editor-range-input-card__label {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.editor-range-input-card__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, 72px);
+  gap: 6px;
+  align-items: center;
+}
+
+.editor-range-input-card__range {
+  width: 100%;
+  appearance: none;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-foreground) 14%, var(--input-background));
+  outline: none;
+}
+
+.editor-range-input-card__range::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+.editor-range-input-card__range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.editor-range-input-card__number {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.editor-range-input-card__number:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.editor-range-input-card__number:focus {
+  outline: none;
+}
+
+.editor-range-input-card__number:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@media (max-width: 980px) {
+  .editor-range-input-card__controls {
+    grid-template-columns: minmax(0, 1fr) minmax(76px, 92px);
+    gap: 8px;
+  }
+
+  .editor-range-input-card__range {
+    min-height: 16px;
+  }
+}

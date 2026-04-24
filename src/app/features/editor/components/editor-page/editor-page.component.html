@@ -1367,217 +1367,126 @@
                   </div>
                 }
                 @case ('rectangle') {
-                  <label class="field"
-                    ><span>{{ t('x') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        [min]="xSliderRange().min"
-                        [max]="xSliderRange().max"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" /><input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('y') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        [min]="ySliderRange().min"
-                        [max]="ySliderRange().max"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" /><input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('width') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0.2"
-                        max="12"
-                        step="0.1"
-                        [value]="shape.width"
-                        (input)="updateShapeNumber('width', $event)" /><input
-                        type="number"
-                        min="0.2"
-                        step="0.1"
-                        [value]="shape.width"
-                        (input)="updateShapeNumber('width', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('height') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0.2"
-                        max="12"
-                        step="0.1"
-                        [value]="shape.height"
-                        (input)="updateShapeNumber('height', $event)" /><input
-                        type="number"
-                        min="0.2"
-                        step="0.1"
-                        [value]="shape.height"
-                        (input)="updateShapeNumber('height', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('cornerRadius') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0"
-                        max="5"
-                        step="0.02"
-                        [value]="shape.cornerRadius"
-                        (input)="updateShapeNumber('cornerRadius', $event)" /><input
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.02"
-                        [value]="shape.cornerRadius"
-                        (input)="updateShapeNumber('cornerRadius', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('rotation') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /><input
-                        type="number"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /></div
-                  ></label>
+                  <app-range-input-card
+                    [label]="t('x')"
+                    [value]="shape.x"
+                    [rangeMin]="xSliderRange().min"
+                    [rangeMax]="xSliderRange().max"
+                    [rangeStep]="0.1"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('x', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('y')"
+                    [value]="shape.y"
+                    [rangeMin]="ySliderRange().min"
+                    [rangeMax]="ySliderRange().max"
+                    [rangeStep]="0.1"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('y', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('width')"
+                    [value]="shape.width"
+                    [rangeMin]="0.2"
+                    [rangeMax]="12"
+                    [rangeStep]="0.1"
+                    [numberMin]="0.2"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('width', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('height')"
+                    [value]="shape.height"
+                    [rangeMin]="0.2"
+                    [rangeMax]="12"
+                    [rangeStep]="0.1"
+                    [numberMin]="0.2"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('height', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('cornerRadius')"
+                    [value]="shape.cornerRadius"
+                    [rangeMin]="0"
+                    [rangeMax]="5"
+                    [rangeStep]="0.02"
+                    [numberMin]="0"
+                    [numberMax]="5"
+                    [numberStep]="0.02"
+                    (valueInput)="updateShapeNumber('cornerRadius', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('rotation')"
+                    [value]="shape.rotation ?? 0"
+                    [rangeMin]="-180"
+                    [rangeMax]="180"
+                    [rangeStep]="1"
+                    [numberMin]="-180"
+                    [numberMax]="180"
+                    [numberStep]="1"
+                    (valueInput)="updateShapeNumber('rotation', $event)"></app-range-input-card>
                 }
                 @case ('triangle') {
-                  <label class="field"
-                    ><span>{{ t('x') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        [min]="xSliderRange().min"
-                        [max]="xSliderRange().max"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" /><input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.x"
-                        (input)="updateShapeNumber('x', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('y') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        [min]="ySliderRange().min"
-                        [max]="ySliderRange().max"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" /><input
-                        type="number"
-                        step="0.1"
-                        [value]="shape.y"
-                        (input)="updateShapeNumber('y', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('width') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0.2"
-                        max="12"
-                        step="0.1"
-                        [value]="shape.width"
-                        (input)="updateShapeNumber('width', $event)" /><input
-                        type="number"
-                        min="0.2"
-                        step="0.1"
-                        [value]="shape.width"
-                        (input)="updateShapeNumber('width', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('height') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0.2"
-                        max="12"
-                        step="0.1"
-                        [value]="shape.height"
-                        (input)="updateShapeNumber('height', $event)" /><input
-                        type="number"
-                        min="0.2"
-                        step="0.1"
-                        [value]="shape.height"
-                        (input)="updateShapeNumber('height', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('cornerRadius') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0"
-                        max="5"
-                        step="0.02"
-                        [value]="shape.cornerRadius"
-                        (input)="updateShapeNumber('cornerRadius', $event)" /><input
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.02"
-                        [value]="shape.cornerRadius"
-                        (input)="updateShapeNumber('cornerRadius', $event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('triangleApex') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        [value]="shape.apexOffset"
-                        (input)="updateTriangleApex($event)" /><input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        [value]="shape.apexOffset"
-                        (input)="updateTriangleApex($event)" /></div
-                  ></label>
-                  <label class="field"
-                    ><span>{{ t('rotation') }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /><input
-                        type="number"
-                        min="-180"
-                        max="180"
-                        step="1"
-                        [value]="shape.rotation ?? 0"
-                        (input)="updateShapeNumber('rotation', $event)" /></div
-                  ></label>
+                  <app-range-input-card
+                    [label]="t('x')"
+                    [value]="shape.x"
+                    [rangeMin]="xSliderRange().min"
+                    [rangeMax]="xSliderRange().max"
+                    [rangeStep]="0.1"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('x', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('y')"
+                    [value]="shape.y"
+                    [rangeMin]="ySliderRange().min"
+                    [rangeMax]="ySliderRange().max"
+                    [rangeStep]="0.1"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('y', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('width')"
+                    [value]="shape.width"
+                    [rangeMin]="0.2"
+                    [rangeMax]="12"
+                    [rangeStep]="0.1"
+                    [numberMin]="0.2"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('width', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('height')"
+                    [value]="shape.height"
+                    [rangeMin]="0.2"
+                    [rangeMax]="12"
+                    [rangeStep]="0.1"
+                    [numberMin]="0.2"
+                    [numberStep]="0.1"
+                    (valueInput)="updateShapeNumber('height', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('cornerRadius')"
+                    [value]="shape.cornerRadius"
+                    [rangeMin]="0"
+                    [rangeMax]="5"
+                    [rangeStep]="0.02"
+                    [numberMin]="0"
+                    [numberMax]="5"
+                    [numberStep]="0.02"
+                    (valueInput)="updateShapeNumber('cornerRadius', $event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('triangleApex')"
+                    [value]="shape.apexOffset"
+                    [rangeMin]="0"
+                    [rangeMax]="1"
+                    [rangeStep]="0.01"
+                    [numberMin]="0"
+                    [numberMax]="1"
+                    [numberStep]="0.01"
+                    (valueInput)="updateTriangleApex($event)"></app-range-input-card>
+                  <app-range-input-card
+                    [label]="t('rotation')"
+                    [value]="shape.rotation ?? 0"
+                    [rangeMin]="-180"
+                    [rangeMax]="180"
+                    [rangeStep]="1"
+                    [numberMin]="-180"
+                    [numberMax]="180"
+                    [numberStep]="1"
+                    (valueInput)="updateShapeNumber('rotation', $event)"></app-range-input-card>
                 }
                 @case ('circle') {
                   <label class="field"

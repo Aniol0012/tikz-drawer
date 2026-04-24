@@ -1545,6 +1545,10 @@ kbd {
   background: color-mix(in srgb, var(--tool-surface) 86%, transparent);
 }
 
+.sidebar-section > .form-grid > .editor-range-input-card {
+  padding: 10px;
+}
+
 .field--full {
   grid-column: 1 / -1;
 }

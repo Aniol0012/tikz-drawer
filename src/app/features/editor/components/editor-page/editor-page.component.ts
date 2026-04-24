@@ -134,6 +134,7 @@ import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-s
 import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
+import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -244,7 +245,8 @@ import { displayTextLinesForShape, estimateTextWidth, textLeftForWidth } from '.
     EditorLeftSidebarComponent,
     EditorRightSidebarComponent,
     TableDialogComponent,
-    ImportCodeModalComponent
+    ImportCodeModalComponent,
+    RangeInputCardComponent
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',

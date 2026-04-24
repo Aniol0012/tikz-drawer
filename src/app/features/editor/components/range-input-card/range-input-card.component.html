@@ -1,0 +1,21 @@
+<span class="editor-range-input-card__label">{{ label() }}</span>
+<div class="editor-range-input-card__controls">
+  <input
+    class="editor-range-input-card__range"
+    type="range"
+    [attr.min]="rangeMin()"
+    [attr.max]="rangeMax()"
+    [attr.step]="rangeStep()"
+    [value]="value()"
+    [disabled]="disabled()"
+    (input)="onInput($event)" />
+  <input
+    class="editor-range-input-card__number"
+    type="number"
+    [attr.min]="resolvedNumberMin()"
+    [attr.max]="resolvedNumberMax()"
+    [attr.step]="resolvedNumberStep()"
+    [value]="value()"
+    [disabled]="disabled()"
+    (input)="onInput($event)" />
+</div>
