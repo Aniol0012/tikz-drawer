@@ -2031,6 +2031,9 @@ kbd {
   display: grid;
   gap: 4px;
   min-width: 196px;
+  max-width: calc(100dvw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
   padding: 6px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 88%, transparent);
   border-radius: 12px;

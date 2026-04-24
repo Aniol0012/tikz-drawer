@@ -3086,9 +3086,10 @@
 
   @if (contextMenu(); as menu) {
     <div
+      #contextMenuPanel
       class="context-menu"
-      [style.left.px]="menu.clientX"
-      [style.top.px]="menu.clientY"
+      [style.left.px]="contextMenuPosition()?.left ?? menu.clientX"
+      [style.top.px]="contextMenuPosition()?.top ?? menu.clientY"
       role="menu"
       (click)="$event.stopPropagation()">
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('copy')">

@@ -288,6 +288,7 @@ export class EditorPageComponent {
     fine: 10
   } as const;
   private static readonly cornerRadiusHandleInsetFactor = 1.65;
+  private static readonly contextMenuViewportPadding = 8;
   private static readonly selectionRotateHandleDistanceFactor = 3.2;
   private static readonly selectionRotateHandleMinDistance = 0.65;
   private static readonly rotationSnapStepDegrees = 15;
@@ -342,6 +343,7 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
+  readonly contextMenuPanel = viewChild<ElementRef<HTMLDivElement>>('contextMenuPanel');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
@@ -370,6 +372,7 @@ export class EditorPageComponent {
   readonly canvasViewportWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
+  readonly contextMenuPosition = signal<{ readonly left: number; readonly top: number } | null>(null);
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
   readonly importModalOpen = signal(false);
@@ -970,12 +973,26 @@ export class EditorPageComponent {
   private shareUrlRequestId = 0;
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
+  private contextMenuPositionRafHandle: number | null = null;
 
   constructor() {
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
         clearTimeout(this.themeToggleCooldownHandle);
       }
+      if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
+        this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
+      }
+    });
+
+    effect(() => {
+      const menu = this.contextMenu();
+      if (!menu) {
+        this.contextMenuPosition.set(null);
+        return;
+      }
+      this.contextMenuPosition.set({ left: menu.clientX, top: menu.clientY });
+      this.scheduleContextMenuReposition();
     });
 
     afterNextRender(() => {
@@ -2714,6 +2731,50 @@ export class EditorPageComponent {
 
   closeContextMenu(): void {
     this.contextMenu.set(null);
+    this.contextMenuPosition.set(null);
+    if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
+      this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
+      this.contextMenuPositionRafHandle = null;
+    }
+  }
+
+  private scheduleContextMenuReposition(): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      return;
+    }
+    if (this.contextMenuPositionRafHandle !== null) {
+      view.cancelAnimationFrame(this.contextMenuPositionRafHandle);
+    }
+    this.contextMenuPositionRafHandle = view.requestAnimationFrame(() => {
+      this.contextMenuPositionRafHandle = null;
+      this.repositionContextMenu();
+    });
+  }
+
+  private repositionContextMenu(): void {
+    const menu = this.contextMenu();
+    if (!menu) {
+      return;
+    }
+    const panel = this.contextMenuPanel()?.nativeElement;
+    if (!panel) {
+      return;
+    }
+    const view = this.document.defaultView;
+    if (!view) {
+      return;
+    }
+    const padding = EditorPageComponent.contextMenuViewportPadding;
+    const viewportWidth = view.innerWidth;
+    const viewportHeight = view.innerHeight;
+    const bounds = panel.getBoundingClientRect();
+    const maxLeft = viewportWidth - bounds.width - padding;
+    const maxTop = viewportHeight - bounds.height - padding;
+
+    const left = Math.min(Math.max(menu.clientX, padding), Math.max(padding, maxLeft));
+    const top = Math.min(Math.max(menu.clientY, padding), Math.max(padding, maxTop));
+    this.contextMenuPosition.set({ left, top });
   }
 
   runContextAction(action: ContextAction): void {
