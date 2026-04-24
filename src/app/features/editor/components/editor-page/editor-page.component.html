@@ -246,6 +246,7 @@
           interactionState()?.kind === 'pan' || interactionState()?.kind === 'pending-pan'
         "
         [class.is-insert]="activeTool() !== 'select'"
+        [style.cursor]="interactionCursor()"
         (pointerdown)="onCanvasViewportPointerDown($event)"
         (touchstart)="onCanvasTouchStart($event)"
         (touchmove)="onCanvasTouchMove($event)"
@@ -1100,7 +1101,7 @@
                   }
                 </div>
                 <label class="field field--full field--stroke-width">
-                  <span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
+                  <span>{{ t('strokeWidth') }}</span>
                   <div class="range-field">
                     <input
                       type="range"
@@ -1274,7 +1275,7 @@
                     </div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('arrowScale') }} · {{ formatValue(shape.arrowScale) }}</span>
+                        ><span>{{ t('arrowScale') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -1396,7 +1397,7 @@
                         (input)="updateShapeNumber('y', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                    ><span>{{ t('width') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1412,7 +1413,7 @@
                         (input)="updateShapeNumber('width', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                    ><span>{{ t('height') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1428,7 +1429,7 @@
                         (input)="updateShapeNumber('height', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span>
+                    ><span>{{ t('cornerRadius') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1445,7 +1446,7 @@
                         (input)="updateShapeNumber('cornerRadius', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    ><span>{{ t('rotation') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1494,7 +1495,7 @@
                         (input)="updateShapeNumber('y', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                    ><span>{{ t('width') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1510,7 +1511,7 @@
                         (input)="updateShapeNumber('width', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                    ><span>{{ t('height') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1526,7 +1527,7 @@
                         (input)="updateShapeNumber('height', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span>
+                    ><span>{{ t('cornerRadius') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1543,7 +1544,7 @@
                         (input)="updateShapeNumber('cornerRadius', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('triangleApex') }} · {{ formatValue(shape.apexOffset) }}</span>
+                    ><span>{{ t('triangleApex') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1560,7 +1561,7 @@
                         (input)="updateTriangleApex($event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    ><span>{{ t('rotation') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1609,7 +1610,7 @@
                         (input)="updateShapeNumber('cy', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span>
+                    ><span>{{ t('radius') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1657,7 +1658,7 @@
                         (input)="updateShapeNumber('cy', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('rx') }} · {{ formatValue(shape.rx) }}</span>
+                    ><span>{{ t('rx') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1673,7 +1674,7 @@
                         (input)="updateShapeNumber('rx', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('ry') }} · {{ formatValue(shape.ry) }}</span>
+                    ><span>{{ t('ry') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1689,7 +1690,7 @@
                         (input)="updateShapeNumber('ry', $event)" /></div
                   ></label>
                   <label class="field"
-                    ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    ><span>{{ t('rotation') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -1882,7 +1883,7 @@
                             (input)="updateShapeNumber('y', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('fontSize') }} · {{ formatValue(shape.fontSize) }}</span>
+                        ><span>{{ t('fontSize') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -1898,7 +1899,7 @@
                             (input)="updateShapeNumber('fontSize', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2006,7 +2007,7 @@
                         (input)="updateShapeNumber('y', $event)" /></div
                   ></label>
                   <label class="field">
-                    <span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                    <span>{{ t('width') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -2022,7 +2023,7 @@
                         (input)="updateImageDimension('width', $event)" /></div
                   ></label>
                   <label class="field">
-                    <span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                    <span>{{ t('height') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -2038,7 +2039,7 @@
                         (input)="updateImageDimension('height', $event)" /></div
                   ></label>
                   <label class="field">
-                    <span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                    <span>{{ t('rotation') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -2211,7 +2212,7 @@
                     }
                   </div>
                   <label class="field field--full field--stroke-width">
-                    <span>{{ t('strokeWidth') }} · {{ formatValue(shape.strokeWidth) }}</span>
+                    <span>{{ t('strokeWidth') }}</span>
                     <div class="range-field">
                       <input
                         type="range"
@@ -2319,7 +2320,7 @@
                     </div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('arrowScale') }} · {{ formatValue(shape.arrowScale) }}</span>
+                        ><span>{{ t('arrowScale') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2355,7 +2356,7 @@
                     <div class="property-group__title">{{ t('geometry') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                        ><span>{{ t('width') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2371,7 +2372,7 @@
                             (input)="updateShapeNumber('width', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                        ><span>{{ t('height') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2387,9 +2388,7 @@
                             (input)="updateShapeNumber('height', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span
-                          >{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span
-                        >
+                        ><span>{{ t('cornerRadius') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2405,7 +2404,7 @@
                             (input)="updateShapeNumber('cornerRadius', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2429,7 +2428,7 @@
                     <div class="property-group__title">{{ t('geometry') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                        ><span>{{ t('width') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2445,7 +2444,7 @@
                             (input)="updateShapeNumber('width', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                        ><span>{{ t('height') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2461,9 +2460,7 @@
                             (input)="updateShapeNumber('height', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span
-                          >{{ t('cornerRadius') }} · {{ formatValue(shape.cornerRadius) }}</span
-                        >
+                        ><span>{{ t('cornerRadius') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2480,7 +2477,7 @@
                             (input)="updateShapeNumber('cornerRadius', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span>{{ t('triangleApex') }} · {{ formatValue(shape.apexOffset) }}</span>
+                        ><span>{{ t('triangleApex') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2497,7 +2494,7 @@
                             (input)="updateTriangleApex($event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2521,7 +2518,7 @@
                     <div class="property-group__title">{{ t('geometry') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field field--full"
-                        ><span>{{ t('radius') }} · {{ formatValue(shape.r) }}</span>
+                        ><span>{{ t('radius') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2544,7 +2541,7 @@
                     <div class="property-group__title">{{ t('geometry') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('rx') }} · {{ formatValue(shape.rx) }}</span>
+                        ><span>{{ t('rx') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2560,7 +2557,7 @@
                             (input)="updateShapeNumber('rx', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('ry') }} · {{ formatValue(shape.ry) }}</span>
+                        ><span>{{ t('ry') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2576,7 +2573,7 @@
                             (input)="updateShapeNumber('ry', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2615,7 +2612,7 @@
                       </label>
                       @if (shape.textBox) {
                         <label class="field field--full"
-                          ><span>{{ t('width') }} · {{ formatValue(shape.boxWidth) }}</span>
+                          ><span>{{ t('width') }}</span>
                           <div class="range-field">
                             <input
                               type="range"
@@ -2744,7 +2741,7 @@
                     <div class="property-group__title">{{ t('transform') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('fontSize') }} · {{ formatValue(shape.fontSize) }}</span>
+                        ><span>{{ t('fontSize') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2760,7 +2757,7 @@
                             (input)="updateShapeNumber('fontSize', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2841,7 +2838,7 @@
                     <div class="property-group__title">{{ t('geometry') }}</div>
                     <div class="form-grid form-grid--section">
                       <label class="field"
-                        ><span>{{ t('width') }} · {{ formatValue(shape.width) }}</span>
+                        ><span>{{ t('width') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2857,7 +2854,7 @@
                             (input)="updateImageDimension('width', $event)" /></div
                       ></label>
                       <label class="field"
-                        ><span>{{ t('height') }} · {{ formatValue(shape.height) }}</span>
+                        ><span>{{ t('height') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2873,7 +2870,7 @@
                             (input)="updateImageDimension('height', $event)" /></div
                       ></label>
                       <label class="field field--full"
-                        ><span>{{ t('rotation') }} · {{ formatValue(shape.rotation ?? 0) }}°</span>
+                        ><span>{{ t('rotation') }}</span>
                         <div class="range-field">
                           <input
                             type="range"
@@ -2952,7 +2949,7 @@
           @if (!isSectionCollapsed('sceneSettings')) {
             <div class="form-grid">
               <label class="field"
-                ><span>{{ t('snapTolerance') }} · {{ formatValue(preferences().snapStep) }}</span>
+                ><span>{{ t('snapTolerance') }}</span>
                 <div class="range-field">
                   <input
                     type="range"
@@ -2983,10 +2980,7 @@
                   (input)="updatePreferenceText('defaultFill', $event)"
               /></label>
               <label class="field field--full"
-                ><span
-                  >{{ t('defaultLineWidth') }} ·
-                  {{ formatValue(preferences().defaultStrokeWidth) }}</span
-                >
+                ><span>{{ t('defaultLineWidth') }}</span>
                 <div class="range-field">
                   <input
                     type="range"
@@ -3003,9 +2997,7 @@
                     (input)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)" /></div
               ></label>
               <label class="field field--full"
-                ><span
-                  >{{ t('arrowScale') }} · {{ formatValue(preferences().defaultArrowScale) }}</span
-                >
+                ><span>{{ t('arrowScale') }}</span>
                 <div class="range-field">
                   <input
                     type="range"
