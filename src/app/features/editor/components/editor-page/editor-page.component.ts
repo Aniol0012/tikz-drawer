@@ -236,7 +236,7 @@ import {
   shapeRotation as shapeRotationUtil,
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
-import { displayTextLinesForShape, estimateTextWidth, textLeftForWidth } from '../../utils/text.utils';
+import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
 
 @Component({
   selector: 'app-editor-page',
