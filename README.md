@@ -13,7 +13,7 @@
 [![RxJS](https://img.shields.io/badge/RxJS-7.8.0-B7178C?style=flat-square&logo=reactivex&logoColor=white)](https://rxjs.dev/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1.4-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.3-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
-[![pnpm](https://img.shields.io/badge/pnpm-10.33.1+sha512.05ba3c1d5d1c18f68df06470d74055e62d41fc110a0c660db1b2dfb2785327f04cf0f68345d4609bc52089e7fa0343c31593b2f9594e2c5d5da426230acc9820-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.33.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
 </div>
 
