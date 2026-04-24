@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.36-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
-[![Tests Status](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
+[![Tests Status](https://img.shields.io/github/actions/workflow/status/Aniol0012/tikz-drawer/tests.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
 
 [![Angular](https://img.shields.io/badge/Angular-21.2.8-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
