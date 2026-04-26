@@ -112,17 +112,13 @@ jobs:
         run: |
           mkdir -p .artifacts/release
           cat > .artifacts/release/release-body.md <<EOF
-          ## Tikz Drawer ${{ steps.meta.outputs.tag }}
-
           **Version:** [${{ steps.meta.outputs.tag }}](${{ steps.meta.outputs.release_url }})
-
-          **Open app with version:** ${{ steps.meta.outputs.app_url }}
 
           EOF
 
           if [ -f screenshots/editor-light.png ]; then
             cat >> .artifacts/release/release-body.md <<EOF
-          ### Snapshot (Desktop Light)
+          ### Snapshot
 
           ![Editor light](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-light.png)
           EOF
