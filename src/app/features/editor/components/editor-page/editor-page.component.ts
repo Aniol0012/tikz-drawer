@@ -1957,26 +1957,35 @@ export class EditorPageComponent {
 
     const scale = EDITOR_PNG_EXPORT_SCALE;
     context.scale(scale, scale);
-    const vectorImage = await this.loadSvgExportImage(vectorDocument.markup);
-    context.drawImage(vectorImage, 0, 0, exportDocument.width, exportDocument.height);
+    await this.drawExportVectorLayer(context, vectorDocument);
     await this.drawExportImages(context, exportDocument, exportShapes);
 
-    return this.canvasToPngBlob(canvas);
+    const pngBlob = await this.canvasToPngBlob(canvas);
+    if (pngBlob) {
+      return pngBlob;
+    }
+
+    try {
+      return await this.renderSvgExportToPngBlob(vectorDocument);
+    } catch {
+      return null;
+    }
   }
 
   private async renderSvgExportToPngBlob(exportDocument: ExportSvgDocument): Promise<Blob | null> {
-    const image = await this.loadSvgExportImage(exportDocument.markup);
-    const canvas = this.createExportCanvas(exportDocument);
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return null;
-    }
+    return this.withSvgExportImage(exportDocument.markup, (image) => {
+      const canvas = this.createExportCanvas(exportDocument);
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return null;
+      }
 
-    const scale = EDITOR_PNG_EXPORT_SCALE;
-    context.scale(scale, scale);
-    context.drawImage(image, 0, 0, exportDocument.width, exportDocument.height);
+      const scale = EDITOR_PNG_EXPORT_SCALE;
+      context.scale(scale, scale);
+      context.drawImage(image, 0, 0, exportDocument.width, exportDocument.height);
 
-    return this.canvasToPngBlob(canvas);
+      return this.canvasToPngBlob(canvas);
+    });
   }
 
   private createExportCanvas(exportDocument: ExportSvgDocument): HTMLCanvasElement {
@@ -1986,17 +1995,16 @@ export class EditorPageComponent {
     return canvas;
   }
 
-  private async loadSvgExportImage(svgMarkup: string): Promise<HTMLImageElement> {
+  private async withSvgExportImage<T>(
+    svgMarkup: string,
+    useImage: (image: HTMLImageElement) => T | Promise<T>
+  ): Promise<T> {
     const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
 
     try {
-      return await new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('Unable to render canvas export.'));
-        img.src = svgUrl;
-      });
+      const image = await this.loadImageFromSource(svgUrl, 'Unable to render canvas export.');
+      return await useImage(image);
     } finally {
       URL.revokeObjectURL(svgUrl);
     }
@@ -2010,6 +2018,26 @@ export class EditorPageComponent {
         resolve(null);
       }
     });
+  }
+
+  private async drawExportVectorLayer(
+    context: CanvasRenderingContext2D,
+    exportDocument: ExportSvgDocument
+  ): Promise<void> {
+    try {
+      await this.withSvgExportImage(exportDocument.markup, (vectorImage) => {
+        context.drawImage(vectorImage, 0, 0, exportDocument.width, exportDocument.height);
+      });
+    } catch {
+      this.fillExportBackground(context, exportDocument);
+    }
+  }
+
+  private fillExportBackground(context: CanvasRenderingContext2D, exportDocument: ExportSvgDocument): void {
+    context.save();
+    context.fillStyle = this.preferences().theme === 'dark' ? '#161616' : '#ffffff';
+    context.fillRect(0, 0, exportDocument.width, exportDocument.height);
+    context.restore();
   }
 
   private async drawExportImages(
@@ -2037,10 +2065,14 @@ export class EditorPageComponent {
   }
 
   private async loadRasterImage(src: string): Promise<HTMLImageElement> {
+    return this.loadImageFromSource(src, 'Unable to load embedded image.');
+  }
+
+  private async loadImageFromSource(src: string, errorMessage: string): Promise<HTMLImageElement> {
     return await new Promise<HTMLImageElement>((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('Unable to load embedded image.'));
+      image.onerror = () => reject(new Error(errorMessage));
       image.src = src;
     });
   }
