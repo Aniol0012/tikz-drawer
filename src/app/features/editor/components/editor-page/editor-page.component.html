@@ -1215,96 +1215,95 @@
                         </select></label
                       >
                     </div>
-                    <div class="field field--full">
-                      <span>{{ t('arrowType') }}</span>
-                      <div class="arrow-tip-grid">
-                        @for (arrowType of arrowTipOptions; track arrowType.id) {
-                          <button
-                            class="arrow-tip-button"
-                            type="button"
-                            [class.is-active]="
-                              (shape.arrowStart || shape.arrowEnd) &&
-                              shape.arrowType === arrowType.id
-                            "
-                            [title]="arrowTipLabel(arrowType.id)"
-                            [attr.aria-label]="arrowTipLabel(arrowType.id)"
-                            (click)="setLineArrowType(arrowType.id)">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
-                            </svg>
-                          </button>
-                        }
+                    @if (shape.arrowStart || shape.arrowEnd) {
+                      <div class="field field--full">
+                        <span>{{ t('arrowType') }}</span>
+                        <div class="arrow-tip-grid">
+                          @for (arrowType of arrowTipOptions; track arrowType.id) {
+                            <button
+                              class="arrow-tip-button"
+                              type="button"
+                              [class.is-active]="shape.arrowType === arrowType.id"
+                              [title]="arrowTipLabel(arrowType.id)"
+                              [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              (click)="setLineArrowType(arrowType.id)">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
+                              </svg>
+                            </button>
+                          }
+                        </div>
                       </div>
-                    </div>
-                    <div class="field field--full">
-                      <span>{{ t('arrowAppearance') }}</span>
-                      <div class="arrow-style-grid">
-                        <label class="color-chip-field">
-                          <small>{{ t('arrowColor') }}</small>
-                          <input
-                            class="color-swatch"
-                            type="color"
-                            [value]="shape.arrowColor"
-                            (input)="updateShapeText('arrowColor', $event)" />
-                          <input
-                            class="color-opacity-input"
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            [value]="shape.arrowOpacity"
-                            (input)="updateShapeOpacity('arrowOpacity', $event)" />
-                          <small
-                            >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
-                          >
-                        </label>
-                        <label class="toggle-field toggle-field--checkbox">
-                          <input
-                            type="checkbox"
-                            [checked]="shape.arrowOpen"
-                            (change)="updateShapeBoolean('arrowOpen', $event)" />
-                          <span>{{ t('arrowOpen') }}</span>
-                        </label>
-                        <label class="toggle-field toggle-field--checkbox">
-                          <input
-                            type="checkbox"
-                            [checked]="shape.arrowRound"
-                            (change)="updateShapeBoolean('arrowRound', $event)" />
-                          <span>{{ t('arrowRound') }}</span>
-                        </label>
+                      <div class="field field--full">
+                        <span>{{ t('arrowAppearance') }}</span>
+                        <div class="arrow-style-grid">
+                          <label class="color-chip-field">
+                            <small>{{ t('arrowColor') }}</small>
+                            <input
+                              class="color-swatch"
+                              type="color"
+                              [value]="shape.arrowColor"
+                              (input)="updateShapeText('arrowColor', $event)" />
+                            <input
+                              class="color-opacity-input"
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              [value]="shape.arrowOpacity"
+                              (input)="updateShapeOpacity('arrowOpacity', $event)" />
+                            <small
+                              >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
+                            >
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowOpen"
+                              (change)="updateShapeBoolean('arrowOpen', $event)" />
+                            <span>{{ t('arrowOpen') }}</span>
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowRound"
+                              (change)="updateShapeBoolean('arrowRound', $event)" />
+                            <span>{{ t('arrowRound') }}</span>
+                          </label>
+                        </div>
                       </div>
-                    </div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ t('arrowScale') }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.4"
-                            max="4.5"
-                            step="0.1"
-                            [value]="shape.arrowScale"
-                            (input)="updateLineArrowScale($event)" />
-                          <input
-                            type="number"
-                            min="0.4"
-                            max="4.5"
-                            step="0.1"
-                            [value]="shape.arrowScale"
-                            (input)="updateLineArrowScale($event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ t('arrowBendMode') }}</span
-                        ><select
-                          [value]="shape.arrowBendMode"
-                          (change)="setLineArrowBendMode($any($event.target).value)">
-                          <option value="none">{{ t('arrowBendNone') }}</option>
-                          <option value="flex">{{ t('arrowBendFlex') }}</option>
-                          <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                          <option value="bend">{{ t('arrowBendBend') }}</option>
-                        </select></label
-                      >
-                    </div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('arrowScale') }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" />
+                            <input
+                              type="number"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('arrowBendMode') }}</span
+                          ><select
+                            [value]="shape.arrowBendMode"
+                            (change)="setLineArrowBendMode($any($event.target).value)">
+                            <option value="none">{{ t('arrowBendNone') }}</option>
+                            <option value="flex">{{ t('arrowBendFlex') }}</option>
+                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
+                            <option value="bend">{{ t('arrowBendBend') }}</option>
+                          </select></label
+                        >
+                      </div>
+                    }
                   </div>
                   <div class="property-group field--full">
                     <div class="property-group__title">{{ t('anchors') }}</div>
@@ -2169,96 +2168,95 @@
                         </select></label
                       >
                     </div>
-                    <div class="field field--full">
-                      <span>{{ t('arrowType') }}</span>
-                      <div class="arrow-tip-grid">
-                        @for (arrowType of arrowTipOptions; track arrowType.id) {
-                          <button
-                            class="arrow-tip-button"
-                            type="button"
-                            [class.is-active]="
-                              (shape.arrowStart || shape.arrowEnd) &&
-                              shape.arrowType === arrowType.id
-                            "
-                            [title]="arrowTipLabel(arrowType.id)"
-                            [attr.aria-label]="arrowTipLabel(arrowType.id)"
-                            (click)="setLineArrowType(arrowType.id)">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
-                            </svg>
-                          </button>
-                        }
+                    @if (shape.arrowStart || shape.arrowEnd) {
+                      <div class="field field--full">
+                        <span>{{ t('arrowType') }}</span>
+                        <div class="arrow-tip-grid">
+                          @for (arrowType of arrowTipOptions; track arrowType.id) {
+                            <button
+                              class="arrow-tip-button"
+                              type="button"
+                              [class.is-active]="shape.arrowType === arrowType.id"
+                              [title]="arrowTipLabel(arrowType.id)"
+                              [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              (click)="setLineArrowType(arrowType.id)">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
+                              </svg>
+                            </button>
+                          }
+                        </div>
                       </div>
-                    </div>
-                    <div class="field field--full">
-                      <span>{{ t('arrowAppearance') }}</span>
-                      <div class="arrow-style-grid">
-                        <label class="color-chip-field">
-                          <small>{{ t('arrowColor') }}</small>
-                          <input
-                            class="color-swatch"
-                            type="color"
-                            [value]="shape.arrowColor"
-                            (input)="updateShapeText('arrowColor', $event)" />
-                          <input
-                            class="color-opacity-input"
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            [value]="shape.arrowOpacity"
-                            (input)="updateShapeOpacity('arrowOpacity', $event)" />
-                          <small
-                            >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
-                          >
-                        </label>
-                        <label class="toggle-field toggle-field--checkbox">
-                          <input
-                            type="checkbox"
-                            [checked]="shape.arrowOpen"
-                            (change)="updateShapeBoolean('arrowOpen', $event)" />
-                          <span>{{ t('arrowOpen') }}</span>
-                        </label>
-                        <label class="toggle-field toggle-field--checkbox">
-                          <input
-                            type="checkbox"
-                            [checked]="shape.arrowRound"
-                            (change)="updateShapeBoolean('arrowRound', $event)" />
-                          <span>{{ t('arrowRound') }}</span>
-                        </label>
+                      <div class="field field--full">
+                        <span>{{ t('arrowAppearance') }}</span>
+                        <div class="arrow-style-grid">
+                          <label class="color-chip-field">
+                            <small>{{ t('arrowColor') }}</small>
+                            <input
+                              class="color-swatch"
+                              type="color"
+                              [value]="shape.arrowColor"
+                              (input)="updateShapeText('arrowColor', $event)" />
+                            <input
+                              class="color-opacity-input"
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.01"
+                              [value]="shape.arrowOpacity"
+                              (input)="updateShapeOpacity('arrowOpacity', $event)" />
+                            <small
+                              >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
+                            >
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowOpen"
+                              (change)="updateShapeBoolean('arrowOpen', $event)" />
+                            <span>{{ t('arrowOpen') }}</span>
+                          </label>
+                          <label class="toggle-field toggle-field--checkbox">
+                            <input
+                              type="checkbox"
+                              [checked]="shape.arrowRound"
+                              (change)="updateShapeBoolean('arrowRound', $event)" />
+                            <span>{{ t('arrowRound') }}</span>
+                          </label>
+                        </div>
                       </div>
-                    </div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ t('arrowScale') }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.4"
-                            max="4.5"
-                            step="0.1"
-                            [value]="shape.arrowScale"
-                            (input)="updateLineArrowScale($event)" />
-                          <input
-                            type="number"
-                            min="0.4"
-                            max="4.5"
-                            step="0.1"
-                            [value]="shape.arrowScale"
-                            (input)="updateLineArrowScale($event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ t('arrowBendMode') }}</span
-                        ><select
-                          [value]="shape.arrowBendMode"
-                          (change)="setLineArrowBendMode($any($event.target).value)">
-                          <option value="none">{{ t('arrowBendNone') }}</option>
-                          <option value="flex">{{ t('arrowBendFlex') }}</option>
-                          <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                          <option value="bend">{{ t('arrowBendBend') }}</option>
-                        </select></label
-                      >
-                    </div>
+                      <div class="form-grid form-grid--section">
+                        <label class="field"
+                          ><span>{{ t('arrowScale') }}</span>
+                          <div class="range-field">
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" />
+                            <input
+                              type="number"
+                              min="0.4"
+                              max="4.5"
+                              step="0.1"
+                              [value]="shape.arrowScale"
+                              (input)="updateLineArrowScale($event)" /></div
+                        ></label>
+                        <label class="field"
+                          ><span>{{ t('arrowBendMode') }}</span
+                          ><select
+                            [value]="shape.arrowBendMode"
+                            (change)="setLineArrowBendMode($any($event.target).value)">
+                            <option value="none">{{ t('arrowBendNone') }}</option>
+                            <option value="flex">{{ t('arrowBendFlex') }}</option>
+                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
+                            <option value="bend">{{ t('arrowBendBend') }}</option>
+                          </select></label
+                        >
+                      </div>
+                    }
                   </div>
                 }
                 @case ('rectangle') {
