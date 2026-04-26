@@ -51,6 +51,25 @@ export class RegularPolygonDialogComponent implements OnInit {
     this.selectSides(Number((event.target as HTMLInputElement).value));
   }
 
+  onBackdropKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+
+    event.preventDefault();
+    this.cancelDialog.emit();
+  }
+
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelDialog.emit();
+      return;
+    }
+
+    event.stopPropagation();
+  }
+
   submit(): void {
     this.confirm.emit({ sides: this.selectedSides() });
   }

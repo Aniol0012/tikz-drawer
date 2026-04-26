@@ -1,4 +1,8 @@
-<div class="figure-search-backdrop" (click)="closeSearch.emit()">
+<div
+  class="figure-search-backdrop"
+  tabindex="-1"
+  (click)="closeSearch.emit()"
+  (keydown)="onBackdropKeydown($event)">
   <section
     class="figure-search-panel"
     (click)="$event.stopPropagation()"

@@ -104,6 +104,15 @@ export class FigureSearchOverlayComponent {
     }
   }
 
+  onBackdropKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+
+    event.preventDefault();
+    this.closeSearch.emit();
+  }
+
   choosePreset(preset: ObjectPreset): void {
     this.selectPreset.emit(preset.id);
   }
