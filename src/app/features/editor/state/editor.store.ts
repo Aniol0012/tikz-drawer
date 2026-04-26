@@ -1,4 +1,4 @@
-import { computed, effect, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { DEFAULT_TEXT_BOX_WIDTH, EDITOR_HISTORY_LIMIT, EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '../presets/presets';
 import { sceneToTikz } from '../tikz/tikz.codegen';
@@ -12,6 +12,7 @@ import type {
 } from '../models/tikz.models';
 import { remapStructuralShapeIds } from '../utils/table.utils';
 import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
+import { EditorLocalStorageService } from './editor-local-storage.service';
 
 const cloneShape = (shape: CanvasShape): CanvasShape => ({
   ...structuredClone(shape),
@@ -362,7 +363,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
 
 @Injectable()
 export class EditorStore {
-  private readonly storage = typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;
+  private readonly editorStorage = inject(EditorLocalStorageService);
   private readonly undoSnapshots = signal<readonly EditorSnapshot[]>([]);
   private readonly redoSnapshots = signal<readonly EditorSnapshot[]>([]);
 
@@ -404,7 +405,7 @@ export class EditorStore {
         importCode: this.importCode()
       };
 
-      this.storage?.setItem(EDITOR_STORAGE_KEYS.state, JSON.stringify(state));
+      this.editorStorage.setJson(EDITOR_STORAGE_KEYS.state, state);
     });
   }
 
@@ -773,15 +774,13 @@ export class EditorStore {
   }
 
   private restoreState(): void {
-    const raw = this.storage?.getItem(EDITOR_STORAGE_KEYS.state);
+    const parsed = this.editorStorage.getJson<Partial<PersistedEditorState>>(EDITOR_STORAGE_KEYS.state);
 
-    if (!raw) {
+    if (!parsed) {
       return;
     }
 
     try {
-      const parsed = JSON.parse(raw) as Partial<PersistedEditorState>;
-
       if (parsed.preferences) {
         this.preferences.set({
           ...defaultPreferences,

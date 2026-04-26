@@ -196,6 +196,7 @@ import {
 } from '../../presets/presets';
 import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
+import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import {
   DEFAULT_TABLE_DIMENSIONS,
   type TableDialogState,
@@ -363,6 +364,7 @@ export class EditorPageComponent {
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly editorStorage = inject(EditorLocalStorageService);
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
@@ -1117,14 +1119,10 @@ export class EditorPageComponent {
             return;
           }
 
-          try {
-            const parsed = JSON.parse(event.newValue) as Partial<PersistedEditorState>;
-            const nextTheme = parsed.preferences?.theme;
-            if (nextTheme === 'light' || nextTheme === 'dark') {
-              this.store.setTheme(nextTheme);
-            }
-          } catch {
-            return;
+          const parsed = this.editorStorage.parseJson<Partial<PersistedEditorState>>(event.newValue);
+          const nextTheme = parsed?.preferences?.theme;
+          if (nextTheme === 'light' || nextTheme === 'dark') {
+            this.store.setTheme(nextTheme);
           }
         }
 
@@ -1183,31 +1181,25 @@ export class EditorPageComponent {
     });
 
     effect(() => {
-      this.document.defaultView?.localStorage?.setItem(this.codeThemeStorageKey, this.codeHighlightTheme());
+      this.editorStorage.setString(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
     effect(() => {
-      this.document.defaultView?.localStorage?.setItem(
+      this.editorStorage.setJson(
         this.latexExportConfigStorageKey,
-        JSON.stringify(this.serializableLatexExportConfig(this.latexExportConfig()))
+        this.serializableLatexExportConfig(this.latexExportConfig())
       );
     });
     effect(() => {
-      this.document.defaultView?.localStorage?.setItem(
-        this.sidebarSizesStorageKey,
-        JSON.stringify({
-          left: this.leftSidebarWidth(),
-          right: this.rightSidebarWidth()
-        })
-      );
+      this.editorStorage.setJson(this.sidebarSizesStorageKey, {
+        left: this.leftSidebarWidth(),
+        right: this.rightSidebarWidth()
+      });
     });
     effect(() => {
       if (!this.pinnedToolsReady()) {
         return;
       }
-      this.document.defaultView?.localStorage?.setItem(
-        this.pinnedToolsStorageKey,
-        JSON.stringify(this.pinnedToolIds())
-      );
+      this.editorStorage.setJson(this.pinnedToolsStorageKey, this.pinnedToolIds());
     });
   }
 
@@ -1336,7 +1328,7 @@ export class EditorPageComponent {
 
   setLanguage(language: LanguageCode): void {
     this.language.set(language);
-    this.document.defaultView?.localStorage?.setItem(this.languageStorageKey, language);
+    this.editorStorage.setString(this.languageStorageKey, language);
   }
 
   isSectionCollapsed(sectionId: string): boolean {
@@ -4674,7 +4666,6 @@ export class EditorPageComponent {
       return;
     }
 
-    const view = this.document.defaultView;
     const broadcast = () => {
       this.syncBroadcastRafHandle = null;
       const pendingDocument = this.pendingSyncDocument;
@@ -4693,10 +4684,11 @@ export class EditorPageComponent {
 
       this.syncChannel?.postMessage(message);
       if (!this.syncChannel) {
-        view?.localStorage?.setItem(this.editorSyncStorageKey, JSON.stringify(message));
+        this.editorStorage.setJson(this.editorSyncStorageKey, message);
       }
     };
 
+    const view = this.document.defaultView;
     if (!view) {
       broadcast();
       return;
@@ -4705,26 +4697,23 @@ export class EditorPageComponent {
   }
 
   private applyRemoteEditorStateFromRaw(raw: string): void {
-    try {
-      const state = JSON.parse(raw) as PersistedEditorState;
-      if (state.scene) {
-        this.applyingRemoteSync = true;
-        this.store.restoreSyncedDocument(state.scene, state.importCode);
-      }
-    } catch {
+    const state = this.editorStorage.parseJson<PersistedEditorState>(raw);
+    if (!state?.scene) {
       return;
     }
+
+    this.applyingRemoteSync = true;
+    this.store.restoreSyncedDocument(state.scene, state.importCode);
   }
 
   private applyRemoteEditorSyncMessageFromRaw(raw: string): void {
-    try {
-      const message = this.parseEditorSyncMessage(JSON.parse(raw));
-      if (message) {
-        this.applyRemoteEditorSyncMessage(message);
-      }
-    } catch {
+    const parsed = this.editorStorage.parseJson<unknown>(raw);
+    const message = this.parseEditorSyncMessage(parsed);
+    if (!message) {
       return;
     }
+
+    this.applyRemoteEditorSyncMessage(message);
   }
 
   private parseEditorSyncMessage(value: unknown): EditorSyncMessage | null {
@@ -5471,40 +5460,35 @@ export class EditorPageComponent {
   }
 
   private restoreSavedTemplates(): void {
-    const raw = this.document.defaultView?.localStorage?.getItem(this.savedTemplatesStorageKey);
+    const raw = this.editorStorage.getString(this.savedTemplatesStorageKey);
     this.savedTemplates.set(parseSavedTemplatesFromStorage(raw));
   }
 
   private restorePinnedTools(): void {
-    const raw = this.document.defaultView?.localStorage?.getItem(this.pinnedToolsStorageKey);
+    const raw = this.editorStorage.getString(this.pinnedToolsStorageKey);
     this.pinnedToolIds.set(parsePinnedToolIdsFromStorage(raw, this.savedTemplates()));
   }
 
   private persistSavedTemplates(): void {
-    this.document.defaultView?.localStorage?.setItem(
-      this.savedTemplatesStorageKey,
-      JSON.stringify(this.savedTemplates())
-    );
+    this.editorStorage.setJson(this.savedTemplatesStorageKey, this.savedTemplates());
   }
 
   private restoreLanguage(): LanguageCode {
-    const saved = this.document.defaultView?.localStorage?.getItem(this.languageStorageKey);
+    const saved = this.editorStorage.getString(this.languageStorageKey);
     return restoreLanguageFromStorage(saved, detectLanguage);
   }
 
   private restoreCodeHighlightTheme(): CodeHighlightTheme {
-    const saved = this.document.defaultView?.localStorage?.getItem(this.codeThemeStorageKey);
+    const saved = this.editorStorage.getString(this.codeThemeStorageKey);
     return restoreCodeHighlightThemeFromStorage(saved, 'aurora');
   }
 
   private restoreLatexExportConfig(): LatexExportConfig {
-    return this.parseStoredLatexExportConfig(
-      this.document.defaultView?.localStorage?.getItem(this.latexExportConfigStorageKey)
-    );
+    return this.parseStoredLatexExportConfig(this.editorStorage.getString(this.latexExportConfigStorageKey));
   }
 
   private restoreSidebarSizes(): { readonly left: number; readonly right: number } {
-    return this.parseStoredSidebarSizes(this.document.defaultView?.localStorage?.getItem(this.sidebarSizesStorageKey));
+    return this.parseStoredSidebarSizes(this.editorStorage.getString(this.sidebarSizesStorageKey));
   }
 
   private parseStoredSidebarSizes(raw: string | null | undefined): { readonly left: number; readonly right: number } {
@@ -5513,23 +5497,23 @@ export class EditorPageComponent {
       return fallback;
     }
 
-    try {
-      const parsed = JSON.parse(raw) as { readonly left?: unknown; readonly right?: unknown };
-      let left = fallback.left;
-      let right = fallback.right;
-
-      if (typeof parsed.left === 'number' && Number.isFinite(parsed.left)) {
-        left = this.clampSidebarSize('left', parsed.left);
-      }
-
-      if (typeof parsed.right === 'number' && Number.isFinite(parsed.right)) {
-        right = this.clampSidebarSize('right', parsed.right);
-      }
-
-      return { left, right };
-    } catch {
+    const parsed = this.editorStorage.parseJson<{ readonly left?: unknown; readonly right?: unknown }>(raw);
+    if (!parsed) {
       return fallback;
     }
+
+    let left = fallback.left;
+    let right = fallback.right;
+
+    if (typeof parsed.left === 'number' && Number.isFinite(parsed.left)) {
+      left = this.clampSidebarSize('left', parsed.left);
+    }
+
+    if (typeof parsed.right === 'number' && Number.isFinite(parsed.right)) {
+      right = this.clampSidebarSize('right', parsed.right);
+    }
+
+    return { left, right };
   }
 
   private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
