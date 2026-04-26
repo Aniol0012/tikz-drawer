@@ -5047,6 +5047,23 @@ export class EditorPageComponent {
     if (sharedState.latexExportConfig) {
       this.latexExportConfig.set(this.normalizeLatexExportConfig(sharedState.latexExportConfig));
     }
+    this.clearSharedSceneFromUrl();
+  }
+
+  private clearSharedSceneFromUrl(): void {
+    const location = globalThis.location;
+    const history = globalThis.history;
+    if (!location || !history?.replaceState) {
+      return;
+    }
+
+    const url = new URL(location.href);
+    if (!url.searchParams.has('share')) {
+      return;
+    }
+
+    url.searchParams.delete('share');
+    history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
   private requestSceneReplacement(presetId: string): void {
