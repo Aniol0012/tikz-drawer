@@ -3,7 +3,7 @@
 <div align="center">
   <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
 
-[![Version](https://img.shields.io/badge/version-1.1.3-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
+[![Version](https://img.shields.io/badge/version-1.1.4-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
 [![Tests Status](https://img.shields.io/github/actions/workflow/status/Aniol0012/tikz-drawer/tests.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
@@ -26,8 +26,8 @@
 
 ## Preview
 
-> <img width="1600" height="900" alt="image" src="https://github.com/Aniol0012/tikz-drawer/releases/download/v1.1.3/editor-light.png" />
-> v1.1.3
+> <img width="1600" height="900" alt="image" src="https://github.com/Aniol0012/tikz-drawer/releases/download/v1.1.4/editor-light.png" />
+> v1.1.4
 
 > [!TIP]
 > You can use the app [here](https://aniol0012.github.io/tikz-drawer/).
