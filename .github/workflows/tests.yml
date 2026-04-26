@@ -45,6 +45,7 @@ jobs:
 
           (
             set -euo pipefail
+            pnpm validate:i18n
             pnpm test
             pnpm build
           ) > .artifacts/ci-logs/app-validation.log 2>&1 &
