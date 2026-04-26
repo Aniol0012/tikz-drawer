@@ -23,6 +23,9 @@ import {
   EDITOR_CANVAS_MIN_WIDTH,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
   EDITOR_IMAGE_ASPECT_RATIO_EPSILON,
+  EDITOR_IMAGE_INSERT_MAX_RENDERED_LONG_EDGE_PX,
+  EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX,
+  EDITOR_IMAGE_INSERT_VIEWPORT_RATIO,
   EDITOR_LEFT_SIDEBAR_MIN_WIDTH,
   EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT,
   EDITOR_LINE_ANCHOR_DECIMALS,
@@ -5920,8 +5923,7 @@ export class EditorPageComponent {
     const dataUrl = await this.readFileAsDataUrl(file);
     const dimensions = await this.loadImageDimensions(dataUrl);
     const aspectRatio = dimensions && dimensions.height > 0 ? Math.max(dimensions.width / dimensions.height, 0.01) : 1;
-    const width = 8;
-    const height = Math.max(width / aspectRatio, MIN_IMAGE_DIMENSION);
+    const { width, height } = this.imageInsertionSize(aspectRatio);
     const imageShape = this.applyInsertionDefaults({
       id: crypto.randomUUID(),
       name: file.name.replace(/\.[^/.]+$/, '') || 'Image',
@@ -5945,6 +5947,49 @@ export class EditorPageComponent {
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
+  }
+
+  private imageInsertionSize(aspectRatio: number): { readonly width: number; readonly height: number } {
+    const viewport = this.canvasViewport().nativeElement;
+    const viewportWidth = viewport.clientWidth || this.canvasWidth();
+    const viewportHeight = viewport.clientHeight || this.canvasHeight();
+    const maxRenderedLongEdge = Math.min(
+      Math.max(viewportWidth, viewportHeight) * EDITOR_IMAGE_INSERT_VIEWPORT_RATIO,
+      EDITOR_IMAGE_INSERT_MAX_RENDERED_LONG_EDGE_PX
+    );
+    const maxRenderedWidth = Math.min(
+      Math.max(viewportWidth * EDITOR_IMAGE_INSERT_VIEWPORT_RATIO, EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX),
+      maxRenderedLongEdge
+    );
+    const maxRenderedHeight = Math.min(
+      Math.max(viewportHeight * EDITOR_IMAGE_INSERT_VIEWPORT_RATIO, EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX),
+      maxRenderedLongEdge
+    );
+
+    let renderedWidth = maxRenderedWidth;
+    let renderedHeight = renderedWidth / aspectRatio;
+    if (renderedHeight > maxRenderedHeight) {
+      renderedHeight = maxRenderedHeight;
+      renderedWidth = renderedHeight * aspectRatio;
+    }
+
+    const renderedLongEdge = Math.max(renderedWidth, renderedHeight);
+    const minimumLongEdge = Math.min(EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX, maxRenderedLongEdge);
+    if (renderedLongEdge < minimumLongEdge) {
+      const scale = minimumLongEdge / renderedLongEdge;
+      renderedWidth *= scale;
+      renderedHeight *= scale;
+    }
+
+    const currentScale = Math.max(this.preferences().scale, 1);
+    const width = renderedWidth / currentScale;
+    const height = renderedHeight / currentScale;
+    const minimumWorldScale = Math.max(MIN_IMAGE_DIMENSION / width, MIN_IMAGE_DIMENSION / height, 1);
+
+    return {
+      width: width * minimumWorldScale,
+      height: height * minimumWorldScale
+    };
   }
 
   private isEditableTarget(target: EventTarget | null): boolean {
