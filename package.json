@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "generate:latex-validation": "tsx scripts/generate-tikz-validation-output.mts",
     "validate:i18n": "tsx scripts/validate-i18n.mts",
+    "validate:i18n:all": "tsx scripts/validate-i18n.mts --all",
     "capture:release": "tsx scripts/release-screenshots.mts",
     "test": "vitest run",
     "test:watch": "vitest",

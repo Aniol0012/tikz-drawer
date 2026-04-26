@@ -6,6 +6,7 @@
  * - Always validates locale JSON files have the same keys as the base locale.
  * - Validates values are non-empty strings.
  * - Diff-checks new/modified literal translation usages in TS/HTML files when a diff is available.
+ * - Use --all or --mode all to scan every TS/HTML file instead of only diff lines.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -20,6 +21,7 @@ const CODE_EXTENSIONS = new Set(['.html', '.ts']);
 
 type LocaleCode = string;
 type FlatDictionary = Map<string, unknown>;
+type ValidationMode = 'diff' | 'all';
 
 interface LocaleLoadSuccess {
   readonly dictionary: unknown;
@@ -45,6 +47,10 @@ interface MissingUsageKey {
   readonly locales: readonly LocaleCode[];
 }
 
+interface CliOptions {
+  readonly mode: ValidationMode;
+}
+
 interface GitHubEventPayload {
   readonly before?: string;
   readonly after?: string;
@@ -60,6 +66,49 @@ interface GitHubEventPayload {
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const localesPath = path.join(rootDir, LOCALES_DIR);
+
+function parseCliOptions(argv: readonly string[]): CliOptions {
+  let mode: ValidationMode = 'diff';
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    if (argument === '--all') {
+      mode = 'all';
+      continue;
+    }
+
+    if (argument === '--mode') {
+      const value = argv[index + 1];
+      if (value !== 'all' && value !== 'diff') {
+        console.error('[ERROR] --mode must be either "diff" or "all"');
+        process.exit(1);
+      }
+      mode = value;
+      index += 1;
+      continue;
+    }
+
+    if (argument.startsWith('--mode=')) {
+      const value = argument.slice('--mode='.length);
+      if (value !== 'all' && value !== 'diff') {
+        console.error('[ERROR] --mode must be either "diff" or "all"');
+        process.exit(1);
+      }
+      mode = value;
+      continue;
+    }
+
+    if (argument === '--help' || argument === '-h') {
+      console.log('Usage: pnpm validate:i18n [--all|--mode all|--mode diff]');
+      process.exit(0);
+    }
+
+    console.error(`[ERROR] Unknown option: ${argument}`);
+    process.exit(1);
+  }
+
+  return { mode };
+}
 
 function runGit(args: readonly string[]): string | null {
   try {
@@ -216,6 +265,10 @@ function isTranslatableValue(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function isStaticTranslationKey(key: string): boolean {
+  return !key.includes('${');
+}
+
 function collectAddedCodeLines(diff: string): readonly string[] {
   const addedCodeLines: string[] = [];
   let currentFile: string | null = null;
@@ -239,7 +292,34 @@ function collectAddedCodeLines(diff: string): readonly string[] {
   return addedCodeLines;
 }
 
-function collectAddedTranslationKeys(lines: readonly string[]): ReadonlySet<string> {
+function listCodeFiles(directory: string): readonly string[] {
+  const files: string[] = [];
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listCodeFiles(entryPath));
+      continue;
+    }
+
+    if (entry.isFile() && CODE_EXTENSIONS.has(path.extname(entry.name))) {
+      files.push(entryPath);
+    }
+  }
+
+  return files;
+}
+
+function collectAllCodeLines(): readonly string[] {
+  const sourcePath = path.join(rootDir, 'src');
+  if (!fs.existsSync(sourcePath)) {
+    return [];
+  }
+
+  return listCodeFiles(sourcePath).flatMap((file) => fs.readFileSync(file, 'utf8').split('\n'));
+}
+
+function collectTranslationKeys(lines: readonly string[]): ReadonlySet<string> {
   const usagePatterns = [
     /\bt\s*\(\s*['"`]([^'"`]+)['"`]\s*[,)]/g,
     /\btOrFallback\s*\(\s*['"`]([^'"`]+)['"`]\s*,/g,
@@ -251,7 +331,7 @@ function collectAddedTranslationKeys(lines: readonly string[]): ReadonlySet<stri
     for (const pattern of usagePatterns) {
       for (const match of line.matchAll(pattern)) {
         const key = match[1].trim();
-        if (key) {
+        if (key && isStaticTranslationKey(key)) {
           codeKeys.add(key);
         }
       }
@@ -282,6 +362,7 @@ function buildReport(localeFailures: readonly LocaleFailure[], missingUsageKeys:
 }
 
 const localeCodes = listLocales();
+const options = parseCliOptions(process.argv.slice(2));
 const localeMaps = new Map<LocaleCode, FlatDictionary>();
 const localeLoadErrors: string[] = [];
 
@@ -326,8 +407,8 @@ for (const locale of localeCodes) {
   }
 }
 
-const addedCodeLines = collectAddedCodeLines(getDiff());
-const codeKeys = collectAddedTranslationKeys(addedCodeLines);
+const codeLines = options.mode === 'all' ? collectAllCodeLines() : collectAddedCodeLines(getDiff());
+const codeKeys = collectTranslationKeys(codeLines);
 const missingUsageKeys: MissingUsageKey[] = [...codeKeys]
   .sort()
   .map((key) => ({
@@ -338,8 +419,13 @@ const missingUsageKeys: MissingUsageKey[] = [...codeKeys]
 
 console.log(`[INFO] Loaded locales: ${localeCodes.join(', ')}`);
 console.log(`[INFO] Base locale keys: ${baseKeys.length}`);
-console.log(`[INFO] Analyzing ${addedCodeLines.length} added TS/HTML line(s)`);
-console.log(`[INFO] Found ${codeKeys.size} literal i18n key usage(s) in added code`);
+console.log(`[INFO] Validation mode: ${options.mode}`);
+console.log(
+  `[INFO] Analyzing ${codeLines.length} ${options.mode === 'all' ? 'TS/HTML line(s)' : 'added TS/HTML line(s)'}`
+);
+console.log(
+  `[INFO] Found ${codeKeys.size} literal i18n key usage(s) in ${options.mode === 'all' ? 'all code' : 'added code'}`
+);
 
 if (!localeFailures.length && !missingUsageKeys.length) {
   console.log('[SUCCESS] i18n validation passed');
