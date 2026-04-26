@@ -3637,4 +3637,20 @@
       (cancelDialog)="closeTableDialog()"
       (confirm)="confirmTableDialog($event)"></app-table-dialog>
   }
+
+  @if (regularPolygonDialogState(); as polygonDialog) {
+    <app-regular-polygon-dialog
+      [title]="t('regularPolygonDialogTitle')"
+      [description]="t('regularPolygonDialogDescription')"
+      [confirmLabel]="t('continue')"
+      [cancelLabel]="t('cancel')"
+      [sidesLabel]="t('regularPolygonSides')"
+      [quickPickerLabel]="t('regularPolygonQuickPicker')"
+      [figureName]="regularPolygonFigureName"
+      [initialSides]="polygonDialog.sides"
+      [minSides]="regularPolygonMinSides"
+      [maxSides]="regularPolygonMaxSides"
+      (cancelDialog)="closeRegularPolygonDialog()"
+      (confirm)="confirmRegularPolygonDialog($event)"></app-regular-polygon-dialog>
+  }
 </div>

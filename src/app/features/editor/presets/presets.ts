@@ -31,7 +31,9 @@ import {
   DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_FONT_SIZE
 } from '../constants/editor.constants';
+import { REGULAR_POLYGON_PRESET_ID } from '../models/regular-polygon.models';
 import { DEFAULT_TABLE_GEOMETRY } from '../models/table.models';
+import { buildRegularPolygonShapes } from '../utils/regular-polygon.utils';
 import { buildTableShapes } from '../utils/table.utils';
 
 type PresetTextLocalizer = (key: string, fallback: string) => string;
@@ -563,6 +565,15 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Three-edge geometry starter.',
     [createTriangle({ name: 'Triangle', fill: '#f3f3f3', apexOffset: 0.5 })],
     { searchTerms: ['triangle', 'geometry', 'polygon'] }
+  ),
+  createPreset(
+    REGULAR_POLYGON_PRESET_ID,
+    'geometry',
+    'hexagon',
+    'Regular polygon',
+    'Custom regular polygon with a chosen number of sides.',
+    buildRegularPolygonShapes(),
+    { searchTerms: ['polygon', 'regular', 'pentagon', 'hexagon', 'sides', 'geometry'] }
   ),
   createPreset(
     'venn',

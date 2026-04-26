@@ -1,0 +1,259 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.regular-polygon-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 16, 16, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.regular-polygon-dialog {
+  width: min(540px, calc(100vw - 40px));
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 18px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.regular-polygon-dialog__header,
+.regular-polygon-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.regular-polygon-dialog__header {
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tool-border) 88%, transparent);
+}
+
+.regular-polygon-dialog__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.regular-polygon-dialog__copy p,
+.regular-polygon-dialog__copy span,
+.regular-polygon-dialog__field span,
+.regular-polygon-dialog__name span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.regular-polygon-dialog__copy p,
+.regular-polygon-dialog__field span {
+  font-weight: 700;
+}
+
+.regular-polygon-dialog__copy h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.regular-polygon-dialog__close,
+.regular-polygon-dialog__button,
+.regular-polygon-dialog__chip,
+.regular-polygon-dialog__field input {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease;
+}
+
+.regular-polygon-dialog__close,
+.regular-polygon-dialog__button,
+.regular-polygon-dialog__chip,
+.regular-polygon-dialog__field input[type='number'] {
+  min-height: 38px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  color: inherit;
+}
+
+.regular-polygon-dialog__close {
+  width: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.regular-polygon-dialog__close svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.regular-polygon-dialog__body {
+  display: grid;
+  gap: 16px;
+}
+
+.regular-polygon-dialog__preview-shell {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.regular-polygon-dialog__preview {
+  width: 148px;
+  aspect-ratio: 1;
+  padding: 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--panel-background) 94%, white 6%),
+      var(--panel-background)
+    ),
+    var(--panel-background);
+}
+
+.regular-polygon-dialog__preview path {
+  fill: color-mix(in srgb, var(--accent) 10%, transparent);
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.regular-polygon-dialog__name {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.regular-polygon-dialog__name strong {
+  font-size: 1.45rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.regular-polygon-dialog__quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.regular-polygon-dialog__chip {
+  min-width: 42px;
+  padding: 0 12px;
+  font-weight: 700;
+}
+
+.regular-polygon-dialog__chip.is-active {
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.regular-polygon-dialog__field {
+  display: grid;
+  gap: 6px;
+}
+
+.regular-polygon-dialog__field input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.regular-polygon-dialog__field input[type='number'] {
+  width: 100%;
+  padding: 0 12px;
+  background: var(--input-background);
+}
+
+.regular-polygon-dialog__footer {
+  padding-top: 2px;
+}
+
+.regular-polygon-dialog__button {
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.regular-polygon-dialog__button--secondary {
+  min-width: 112px;
+}
+
+.regular-polygon-dialog__button--primary {
+  min-width: 144px;
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.regular-polygon-dialog__close:hover,
+.regular-polygon-dialog__button--secondary:hover,
+.regular-polygon-dialog__chip:hover,
+.regular-polygon-dialog__field input[type='number']:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.regular-polygon-dialog__button--primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, black 8%);
+}
+
+.regular-polygon-dialog__close:active,
+.regular-polygon-dialog__button:active,
+.regular-polygon-dialog__chip:active {
+  transform: scale(0.97);
+}
+
+.regular-polygon-dialog__close:focus-visible,
+.regular-polygon-dialog__button:focus-visible,
+.regular-polygon-dialog__chip:focus-visible,
+.regular-polygon-dialog__field input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@media (max-width: 640px) {
+  .regular-polygon-dialog-backdrop {
+    padding: 16px;
+  }
+
+  .regular-polygon-dialog {
+    padding: 18px;
+  }
+
+  .regular-polygon-dialog__preview-shell {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .regular-polygon-dialog__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .regular-polygon-dialog__button {
+    width: 100%;
+  }
+}

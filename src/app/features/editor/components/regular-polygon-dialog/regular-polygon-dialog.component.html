@@ -1,0 +1,78 @@
+<div class="regular-polygon-dialog-backdrop" (click)="cancelDialog.emit()">
+  <section class="regular-polygon-dialog" (click)="$event.stopPropagation()">
+    <header class="regular-polygon-dialog__header">
+      <div class="regular-polygon-dialog__copy">
+        <p>{{ quickPickerLabel() }}</p>
+        <h2>{{ title() }}</h2>
+        <span>{{ description() }}</span>
+      </div>
+      <button
+        class="regular-polygon-dialog__close"
+        type="button"
+        (click)="cancelDialog.emit()"
+        [attr.aria-label]="cancelLabel()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="closeIconPath"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="regular-polygon-dialog__body">
+      <div class="regular-polygon-dialog__preview-shell">
+        <svg class="regular-polygon-dialog__preview" viewBox="0 0 128 128" aria-hidden="true">
+          <path [attr.d]="previewPath()"></path>
+        </svg>
+        <div class="regular-polygon-dialog__name">
+          <strong>{{ currentName() }}</strong>
+          <span>{{ selectedSides() }}</span>
+        </div>
+      </div>
+
+      <div class="regular-polygon-dialog__quick-picks">
+        @for (sides of quickPickSides(); track trackByValue($index, sides)) {
+          <button
+            class="regular-polygon-dialog__chip"
+            type="button"
+            [class.is-active]="selectedSides() === sides"
+            (click)="selectSides(sides)">
+            {{ sides }}
+          </button>
+        }
+      </div>
+
+      <label class="regular-polygon-dialog__field">
+        <span>{{ sidesLabel() }}</span>
+        <input
+          type="range"
+          [min]="minSides()"
+          [max]="maxSides()"
+          [value]="selectedSides()"
+          (input)="updateSides($event)" />
+      </label>
+      <label class="regular-polygon-dialog__field">
+        <span>{{ sidesLabel() }}</span>
+        <input
+          type="number"
+          [min]="minSides()"
+          [max]="maxSides()"
+          [value]="selectedSides()"
+          (input)="updateSides($event)" />
+      </label>
+    </div>
+
+    <footer class="regular-polygon-dialog__footer">
+      <button
+        class="regular-polygon-dialog__button regular-polygon-dialog__button--secondary"
+        type="button"
+        (click)="cancelDialog.emit()">
+        {{ cancelLabel() }}
+      </button>
+      <button
+        class="regular-polygon-dialog__button regular-polygon-dialog__button--primary"
+        type="button"
+        (click)="submit()">
+        {{ confirmLabel() }}
+      </button>
+    </footer>
+  </section>
+</div>

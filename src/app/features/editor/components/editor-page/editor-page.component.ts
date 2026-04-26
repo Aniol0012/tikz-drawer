@@ -135,6 +135,7 @@ import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-righ
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
+import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -197,6 +198,15 @@ import {
   type TableSelectionInfo
 } from '../../models/table.models';
 import {
+  DEFAULT_REGULAR_POLYGON_DIMENSIONS,
+  REGULAR_POLYGON_MAX_SIDES,
+  REGULAR_POLYGON_MIN_SIDES,
+  REGULAR_POLYGON_PRESET_ID,
+  type RegularPolygonDialogState,
+  type RegularPolygonDimensions
+} from '../../models/regular-polygon.models';
+import { buildRegularPolygonShapes, normalizeRegularPolygonDimensions } from '../../utils/regular-polygon.utils';
+import {
   buildTableShapes,
   getTableSelectionInfo,
   normalizeTableDimensions,
@@ -246,7 +256,8 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     EditorRightSidebarComponent,
     TableDialogComponent,
     ImportCodeModalComponent,
-    RangeInputCardComponent
+    RangeInputCardComponent,
+    RegularPolygonDialogComponent
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
@@ -395,6 +406,11 @@ export class EditorPageComponent {
   readonly editingTemplateId = signal<string | null>(null);
   readonly tableDialogState = signal<TableDialogState | null>(null);
   readonly tablePresetDimensions = signal<TableDimensions>(DEFAULT_TABLE_DIMENSIONS);
+  readonly regularPolygonDialogState = signal<RegularPolygonDialogState | null>(null);
+  readonly regularPolygonDimensions = signal<RegularPolygonDimensions>(DEFAULT_REGULAR_POLYGON_DIMENSIONS);
+  readonly regularPolygonMinSides = REGULAR_POLYGON_MIN_SIDES;
+  readonly regularPolygonMaxSides = REGULAR_POLYGON_MAX_SIDES;
+  readonly regularPolygonFigureName = (sides: number): string => this.regularPolygonName(sides);
   readonly templateTitleInput = signal('');
   readonly templateDescriptionInput = signal('');
   readonly templateIconInput = signal('library');
@@ -1143,6 +1159,16 @@ export class EditorPageComponent {
     return localizedShapeKinds[this.language()][kind];
   }
 
+  regularPolygonName(sides: number): string {
+    const dimensions = normalizeRegularPolygonDimensions({ sides });
+    const specificName = this.tOrFallback(`regularPolygonName.${dimensions.sides}`, '');
+    if (specificName) {
+      return specificName;
+    }
+
+    return this.tOrFallback('regularPolygonName.generic', '{sides}-gon').replace('{sides}', String(dimensions.sides));
+  }
+
   presetTitle(preset: ObjectPreset): string {
     return this.tOrFallback(`preset.${preset.id}.title`, preset.title);
   }
@@ -1543,6 +1569,17 @@ export class EditorPageComponent {
       return;
     }
 
+    if (toolId === REGULAR_POLYGON_PRESET_ID) {
+      this.openRegularPolygonDialog({
+        submitMode: this.activeTool() === REGULAR_POLYGON_PRESET_ID ? 'center-insert' : 'arm-insert',
+        ...this.regularPolygonDimensions()
+      });
+      this.closeContextMenu();
+      this.closeFileMenu();
+      this.closeMobileLibraryPanelIfNeeded();
+      return;
+    }
+
     if (toolId !== 'select' && toolId !== 'pencil' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
         this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
@@ -1602,6 +1639,33 @@ export class EditorPageComponent {
     }
 
     this.activeTool.set('table');
+    this.inspectorTab.set('properties');
+  }
+
+  closeRegularPolygonDialog(): void {
+    this.regularPolygonDialogState.set(null);
+  }
+
+  confirmRegularPolygonDialog(dimensions: RegularPolygonDimensions): void {
+    const dialogState = this.regularPolygonDialogState();
+    if (!dialogState) {
+      return;
+    }
+
+    const nextDimensions = normalizeRegularPolygonDimensions(dimensions);
+    this.regularPolygonDimensions.set(nextDimensions);
+    this.regularPolygonDialogState.set(null);
+
+    if (dialogState.submitMode === 'center-insert') {
+      this.runSceneMutation(() => {
+        this.insertPresetAt(REGULAR_POLYGON_PRESET_ID, this.snapScenePoint(this.viewportCenter()));
+        this.activeTool.set('select');
+        this.inspectorTab.set('properties');
+      });
+      return;
+    }
+
+    this.activeTool.set(REGULAR_POLYGON_PRESET_ID);
     this.inspectorTab.set('properties');
   }
 
@@ -5087,6 +5151,17 @@ export class EditorPageComponent {
       return buildTablePresetShapes(this.tablePresetDimensions());
     }
 
+    if (toolId === REGULAR_POLYGON_PRESET_ID) {
+      const dimensions = this.regularPolygonDimensions();
+      return buildRegularPolygonShapes({
+        ...dimensions,
+        cx: 0,
+        cy: 0,
+        radius: 2.2,
+        name: this.regularPolygonName(dimensions.sides)
+      });
+    }
+
     return structuredClone(preset.shapes);
   }
 
@@ -5097,7 +5172,7 @@ export class EditorPageComponent {
   ): readonly CanvasShape[] {
     const localizedShapes = keepOwnStyle ? shapes : this.localizePresetCanvasShapes(shapes);
 
-    if (keepOwnStyle || localizedShapes.length !== 1) {
+    if (keepOwnStyle || preset.id === REGULAR_POLYGON_PRESET_ID || localizedShapes.length !== 1) {
       return localizedShapes;
     }
 
@@ -5133,6 +5208,13 @@ export class EditorPageComponent {
     this.tableDialogState.set({
       ...normalizeTableDimensions(state),
       mode: state.mode,
+      submitMode: state.submitMode
+    });
+  }
+
+  private openRegularPolygonDialog(state: RegularPolygonDialogState): void {
+    this.regularPolygonDialogState.set({
+      ...normalizeRegularPolygonDimensions(state),
       submitMode: state.submitMode
     });
   }
