@@ -67,6 +67,10 @@ interface GitHubEventPayload {
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const localesPath = path.join(rootDir, LOCALES_DIR);
 
+function compareAlphabetically(left: string, right: string): number {
+  return left.localeCompare(right);
+}
+
 function parseCliOptions(argv: readonly string[]): CliOptions {
   let mode: ValidationMode = 'diff';
 
@@ -216,7 +220,7 @@ function duplicateKeys(raw: string): readonly string[] {
     keys.add(key);
   }
 
-  return [...duplicates].sort();
+  return [...duplicates].sort(compareAlphabetically);
 }
 
 function loadLocale(locale: LocaleCode): LocaleLoadResult {
@@ -387,7 +391,7 @@ if (!baseMap) {
   process.exit(1);
 }
 
-const baseKeys = [...baseMap.keys()].sort();
+const baseKeys = [...baseMap.keys()].sort(compareAlphabetically);
 const localeFailures: LocaleFailure[] = [];
 
 for (const locale of localeCodes) {
@@ -397,7 +401,7 @@ for (const locale of localeCodes) {
     continue;
   }
 
-  const keys = [...map.keys()].sort();
+  const keys = [...map.keys()].sort(compareAlphabetically);
   const missing = baseKeys.filter((key) => !map.has(key));
   const extra = locale === BASE_LOCALE ? [] : keys.filter((key) => !baseMap.has(key));
   const empty = keys.filter((key) => !isTranslatableValue(map.get(key)));
@@ -410,7 +414,7 @@ for (const locale of localeCodes) {
 const codeLines = options.mode === 'all' ? collectAllCodeLines() : collectAddedCodeLines(getDiff());
 const codeKeys = collectTranslationKeys(codeLines);
 const missingUsageKeys: MissingUsageKey[] = [...codeKeys]
-  .sort()
+  .sort(compareAlphabetically)
   .map((key) => ({
     key,
     locales: localeCodes.filter((locale) => !localeMaps.get(locale)?.has(key))
