@@ -15,6 +15,10 @@ import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
+  DEFAULT_EDITOR_SCALE,
+  DEFAULT_TEXT_BOX_WIDTH,
+  DEFAULT_TEXT_COLOR,
+  DEFAULT_TEXT_FONT_SIZE,
   EDITOR_CANVAS_MIN_HEIGHT,
   EDITOR_CANVAS_MIN_WIDTH,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
@@ -35,17 +39,13 @@ import {
   EDITOR_SCALE_MAX,
   EDITOR_SCALE_MIN,
   EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX,
+  EDITOR_STORAGE_KEYS,
+  EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   EDITOR_VIEWPORT_FALLBACK_WIDTH,
   EDITOR_WHEEL_LINE_HEIGHT_PX,
   EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK,
   EDITOR_WHEEL_ZOOM_SENSITIVITY,
   EDITOR_ZOOM_STEP,
-  DEFAULT_EDITOR_SCALE,
-  DEFAULT_TEXT_BOX_WIDTH,
-  DEFAULT_TEXT_COLOR,
-  DEFAULT_TEXT_FONT_SIZE,
-  EDITOR_STORAGE_KEYS,
-  EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   FREEHAND_POINT_MIN_DISTANCE,
   MIN_IMAGE_DIMENSION,
   MIN_POINTER_DRAG_DELTA,
@@ -90,13 +90,13 @@ import {
   type LatexAlignment,
   type LatexExportBooleanKey,
   type LatexExportConfig,
-  type LatexFontSize,
   type LatexExportNumberKey,
   type LatexExportTextKey,
+  type LatexFontSize,
+  type LibrarySection,
   type LineBooleanKey,
   type LineCanvasShape,
   type LineEndpoint,
-  type LibrarySection,
   type MinimapOverview,
   type MinimapRect,
   type MinimapShape,
@@ -107,27 +107,27 @@ import {
   type PreferenceTextKey,
   type RecentTextTap,
   type RectangleCanvasShape,
-  type ResizeHandle,
   type ResizeCursor,
+  type ResizeHandle,
   type SavedTemplate,
   type SceneReplaceDialogState,
   type ShapeOpacityKey,
   type ShapeTextKey,
+  type SidebarResizeState,
   type SidebarResizeTarget,
   type SidebarSide,
   type SvgTextAnchor,
   type TemplateDialogTextKey,
   type TextCanvasShape,
-  type TriangleCanvasShape,
   type TextStyleKey,
   type TextStylePropertyKey,
-  type TextTransformMode,
-  type SidebarResizeState,
   type TextSymbolGroup,
   type TextSymbolPalettePosition,
+  type TextTransformMode,
   type ToastNotification,
   type ToolDescriptor,
-  type ToolId
+  type ToolId,
+  type TriangleCanvasShape
 } from './editor-page.types';
 import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
 import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-sidebar.component';
@@ -171,7 +171,6 @@ import {
   toggledShapeSetSelection
 } from '../../utils/editor-selection.utils';
 import {
-  type ModifierKey,
   isCopyShortcut,
   isCutShortcut,
   isDeleteShortcutKey,
@@ -179,11 +178,12 @@ import {
   isFigureSearchShortcut,
   isPasteShortcut,
   isRedoShortcut,
-  isSelectionModifierPressed,
   isSelectAllShortcut,
+  isSelectionModifierPressed,
   isUndoShortcut,
   isZoomInShortcutKey,
   isZoomOutShortcutKey,
+  type ModifierKey,
   pressedModifierFromKey,
   toolIdFromShortcutKey
 } from '../../utils/editor-keyboard.utils';
@@ -216,9 +216,11 @@ import {
   tableSizeLabel
 } from '../../utils/table.utils';
 import type {
+  ArrowMarkerGeometry,
   ArrowTipKind,
   CanvasShape,
   EditorPreferences,
+  EditorSyncMessage,
   LineShape,
   ObjectPreset,
   PersistedEditorState,
@@ -239,10 +241,10 @@ import {
   linePoints as linePointsUtil,
   maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
-  rotatePointAround as rotatePointAroundUtil,
-  rotateShapeAround as rotateShapeAroundUtil,
   rotatedEllipseBounds as rotatedEllipseBoundsUtil,
   rotatedRectangleBounds as rotatedRectangleBoundsUtil,
+  rotatePointAround as rotatePointAroundUtil,
+  rotateShapeAround as rotateShapeAroundUtil,
   shapeBounds as shapeBoundsUtil,
   shapeCenter as shapeCenterUtil,
   shapeRotation as shapeRotationUtil,
@@ -337,6 +339,8 @@ export class EditorPageComponent {
   private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
+  private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
+  private readonly syncClientId = crypto.randomUUID();
   private readonly defaultScale = DEFAULT_EDITOR_SCALE;
   private readonly defaultLatexExportConfig = {
     colorMode: 'direct-rgb',
@@ -616,6 +620,20 @@ export class EditorPageComponent {
       top: viewportCenter.y + halfHeight,
       bottom: viewportCenter.y - halfHeight
     };
+  });
+  readonly gridColumns = computed(() => {
+    const visibleWorldBounds = this.visibleWorldBounds();
+    const gridStep = 1;
+    const start = Math.floor(visibleWorldBounds.left / gridStep) - 1;
+    const end = Math.ceil(visibleWorldBounds.right / gridStep) + 1;
+    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
+  });
+  readonly gridRows = computed(() => {
+    const visibleWorldBounds = this.visibleWorldBounds();
+    const gridStep = 1;
+    const start = Math.floor(visibleWorldBounds.bottom / gridStep) - 1;
+    const end = Math.ceil(visibleWorldBounds.top / gridStep) + 1;
+    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
   });
   readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
   readonly xSliderRange = computed(() => this.sliderRange('x'));
@@ -999,6 +1017,14 @@ export class EditorPageComponent {
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
   private contextMenuPositionRafHandle: number | null = null;
+  private syncChannel: BroadcastChannel | null = null;
+  private syncBroadcastRafHandle: number | null = null;
+  private syncRevision = 0;
+  private applyingRemoteSync = false;
+  private editorSyncInitialized = false;
+  private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
+  private readonly lastRemoteRevisionByClient = new Map<string, number>();
+  private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -1008,6 +1034,10 @@ export class EditorPageComponent {
       if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
       }
+      if (this.syncBroadcastRafHandle !== null && this.document.defaultView) {
+        this.document.defaultView.cancelAnimationFrame(this.syncBroadcastRafHandle);
+      }
+      this.syncChannel?.close();
     });
 
     effect(() => {
@@ -1069,6 +1099,7 @@ export class EditorPageComponent {
       this.restorePinnedTools();
       this.pinnedToolsReady.set(true);
       this.runAsync(this.restoreSharedSceneFromUrl());
+      this.openEditorSyncChannel();
       const handleStorage = (event: StorageEvent) => {
         if (event.key === this.languageStorageKey && event.newValue) {
           if (event.newValue === 'ca' || event.newValue === 'es' || event.newValue === 'en') {
@@ -1078,6 +1109,11 @@ export class EditorPageComponent {
         }
 
         if (event.key === this.editorStateStorageKey && event.newValue) {
+          if (!this.syncChannel) {
+            this.applyRemoteEditorStateFromRaw(event.newValue);
+            return;
+          }
+
           try {
             const parsed = JSON.parse(event.newValue) as Partial<PersistedEditorState>;
             const nextTheme = parsed.preferences?.theme;
@@ -1096,6 +1132,11 @@ export class EditorPageComponent {
 
         if (event.key === this.latexExportConfigStorageKey) {
           this.latexExportConfig.set(this.parseStoredLatexExportConfig(event.newValue));
+          return;
+        }
+
+        if (event.key === this.editorSyncStorageKey && event.newValue && !this.syncChannel) {
+          this.applyRemoteEditorSyncMessageFromRaw(event.newValue);
           return;
         }
 
@@ -1123,6 +1164,19 @@ export class EditorPageComponent {
       this.store.importCode();
       this.latexExportConfig();
       this.runAsync(this.refreshShareUrl());
+    });
+
+    effect(() => {
+      const document = this.currentSyncedEditorDocument();
+      if (!this.editorSyncInitialized) {
+        this.editorSyncInitialized = true;
+        return;
+      }
+      if (this.applyingRemoteSync) {
+        this.applyingRemoteSync = false;
+        return;
+      }
+      this.scheduleEditorSyncBroadcast(document);
     });
 
     effect(() => {
@@ -4230,14 +4284,12 @@ export class EditorPageComponent {
     return (this.arrowTipWidth(shape) / 2) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
   }
 
-  arrowMarkerGeometry(shape: LineShape): {
-    readonly markerWidth: number;
-    readonly markerHeight: number;
-    readonly viewBox: string;
-    readonly refX: number;
-    readonly refY: number;
-    readonly path: string;
-  } {
+  arrowMarkerGeometry(shape: LineShape): ArrowMarkerGeometry {
+    const cachedGeometry = this.arrowMarkerGeometryCache.get(shape);
+    if (cachedGeometry) {
+      return cachedGeometry;
+    }
+
     const length = this.arrowTipLength(shape);
     const width = this.arrowTipWidth(shape);
     const halfWidth = width / 2;
@@ -4277,7 +4329,7 @@ export class EditorPageComponent {
         break;
     }
 
-    return {
+    const geometry = {
       markerWidth: (length + padding * 2) * shape.arrowScale,
       markerHeight: (width + padding * 2) * shape.arrowScale,
       viewBox: `${-padding} ${-padding} ${length + padding * 2} ${width + padding * 2}`,
@@ -4285,6 +4337,8 @@ export class EditorPageComponent {
       refY: halfWidth,
       path
     };
+    this.arrowMarkerGeometryCache.set(shape, geometry);
+    return geometry;
   }
 
   lineEndpointVectors(
@@ -4346,26 +4400,6 @@ export class EditorPageComponent {
 
   arrowMarkerStrokeLineCap(shape: LineShape): 'round' | 'butt' {
     return shape.arrowRound ? 'round' : 'butt';
-  }
-
-  gridColumns(): number[] {
-    const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
-    const start = Math.floor(visibleWorldBounds.left / gridStep) - 1;
-    const end = Math.ceil(visibleWorldBounds.right / gridStep) + 1;
-    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
-  }
-
-  gridRows(): number[] {
-    const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
-    const start = Math.floor(visibleWorldBounds.bottom / gridStep) - 1;
-    const end = Math.ceil(visibleWorldBounds.top / gridStep) + 1;
-    return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
-  }
-
-  shapeTrackBy(_: number, shape: CanvasShape): string {
-    return shape.id;
   }
 
   presetTrackBy(_: number, preset: ObjectPreset | ScenePreset): string {
@@ -4608,6 +4642,118 @@ export class EditorPageComponent {
 
   private runAsync(task: Promise<unknown>): void {
     task.catch(() => undefined);
+  }
+
+  private currentSyncedEditorDocument(): { readonly scene: TikzScene; readonly importCode: string } {
+    return {
+      scene: this.scene(),
+      importCode: this.store.importCode()
+    };
+  }
+
+  private openEditorSyncChannel(): void {
+    if (typeof BroadcastChannel === 'undefined') {
+      return;
+    }
+
+    this.syncChannel = new BroadcastChannel('tikz-drawer.editor-sync');
+    this.syncChannel.onmessage = (event: MessageEvent<unknown>) => {
+      const message = this.parseEditorSyncMessage(event.data);
+      if (message) {
+        this.applyRemoteEditorSyncMessage(message);
+      }
+    };
+  }
+
+  private scheduleEditorSyncBroadcast(document: { readonly scene: TikzScene; readonly importCode: string }): void {
+    this.pendingSyncDocument = document;
+    if (this.syncBroadcastRafHandle !== null) {
+      return;
+    }
+
+    const view = this.document.defaultView;
+    const broadcast = () => {
+      this.syncBroadcastRafHandle = null;
+      const pendingDocument = this.pendingSyncDocument;
+      this.pendingSyncDocument = null;
+      if (!pendingDocument) {
+        return;
+      }
+
+      const message: EditorSyncMessage = {
+        type: 'document',
+        senderId: this.syncClientId,
+        revision: ++this.syncRevision,
+        scene: pendingDocument.scene,
+        importCode: pendingDocument.importCode
+      };
+
+      this.syncChannel?.postMessage(message);
+      if (!this.syncChannel) {
+        view?.localStorage?.setItem(this.editorSyncStorageKey, JSON.stringify(message));
+      }
+    };
+
+    if (!view) {
+      broadcast();
+      return;
+    }
+    this.syncBroadcastRafHandle = view.requestAnimationFrame(broadcast);
+  }
+
+  private applyRemoteEditorStateFromRaw(raw: string): void {
+    try {
+      const state = JSON.parse(raw) as PersistedEditorState;
+      if (state.scene) {
+        this.applyingRemoteSync = true;
+        this.store.restoreSyncedDocument(state.scene, state.importCode);
+      }
+    } catch {
+      return;
+    }
+  }
+
+  private applyRemoteEditorSyncMessageFromRaw(raw: string): void {
+    try {
+      const message = this.parseEditorSyncMessage(JSON.parse(raw));
+      if (message) {
+        this.applyRemoteEditorSyncMessage(message);
+      }
+    } catch {
+      return;
+    }
+  }
+
+  private parseEditorSyncMessage(value: unknown): EditorSyncMessage | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+    const message = value as Partial<EditorSyncMessage>;
+    if (
+      message.type !== 'document' ||
+      typeof message.senderId !== 'string' ||
+      typeof message.revision !== 'number' ||
+      !message.scene ||
+      typeof message.importCode !== 'string'
+    ) {
+      return null;
+    }
+    return message as EditorSyncMessage;
+  }
+
+  private applyRemoteEditorSyncMessage(message: EditorSyncMessage): void {
+    if (message.senderId === this.syncClientId) {
+      return;
+    }
+
+    const lastRevision = this.lastRemoteRevisionByClient.get(message.senderId) ?? 0;
+    if (message.revision <= lastRevision) {
+      return;
+    }
+
+    this.lastRemoteRevisionByClient.set(message.senderId, message.revision);
+    this.applyingRemoteSync = true;
+    this.store.restoreSyncedDocument(message.scene, message.importCode);
   }
 
   private copyTextToClipboard(text: string): void {

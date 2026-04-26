@@ -190,3 +190,20 @@ export interface ParsedTikzResult {
   readonly scene: TikzScene;
   readonly warnings: readonly string[];
 }
+
+export interface EditorSyncMessage {
+  readonly type: 'document';
+  readonly senderId: string;
+  readonly revision: number;
+  readonly scene: TikzScene;
+  readonly importCode: string;
+}
+
+export interface ArrowMarkerGeometry {
+  readonly markerWidth: number;
+  readonly markerHeight: number;
+  readonly viewBox: string;
+  readonly refX: number;
+  readonly refY: number;
+  readonly path: string;
+}

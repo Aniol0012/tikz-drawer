@@ -331,7 +331,7 @@
             </g>
           }
 
-          @for (shape of scene().shapes; track shapeTrackBy($index, shape)) {
+          @for (shape of scene().shapes; track shape.id) {
             <g
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"

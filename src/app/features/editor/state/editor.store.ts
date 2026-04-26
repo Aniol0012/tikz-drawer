@@ -763,6 +763,15 @@ export class EditorStore {
     this.redoSnapshots.set([]);
   }
 
+  restoreSyncedDocument(scene: TikzScene, importCode: string | undefined): void {
+    const nextScene = cloneScene(scene);
+    const nextShapeIds = new Set(nextScene.shapes.map((shape) => shape.id));
+    this.scene.set(nextScene);
+    this.importCode.set(typeof importCode === 'string' ? importCode : sceneToTikz(nextScene));
+    this.parserWarnings.set([]);
+    this.selectedShapeIds.update((shapeIds) => shapeIds.filter((shapeId) => nextShapeIds.has(shapeId)));
+  }
+
   private restoreState(): void {
     const raw = this.storage?.getItem(EDITOR_STORAGE_KEYS.state);
 
