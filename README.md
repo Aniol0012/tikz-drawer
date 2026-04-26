@@ -26,8 +26,8 @@
 
 ## Preview
 
-> <img width="2526" height="1251" alt="image" src="https://github.com/user-attachments/assets/1eccde29-2a32-406f-88ef-55e10ca44dc3" />
-> v0.2.1
+> <img width="2526" height="1251" alt="image" src="https://github.com/Aniol0012/tikz-drawer/releases/download/v1.1.0/editor-light.png" />
+> v1.1.0
 
 > [!TIP]
 > You can use the app [here](https://aniol0012.github.io/tikz-drawer/).
