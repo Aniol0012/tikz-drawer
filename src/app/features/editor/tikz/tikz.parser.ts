@@ -649,38 +649,48 @@ const sourceLines = (source: string): readonly string[] =>
     .map((rawLine) => stripLineComment(rawLine).trim())
     .filter((line) => line.length > 0);
 
+interface TikzBodyExtractionState {
+  readonly insideTikz: boolean;
+  readonly tikzDepth: number;
+}
+
+const startTikzBodyIfNeeded = (
+  line: string,
+  state: TikzBodyExtractionState,
+  outsideLines: string[]
+): TikzBodyExtractionState => {
+  if (tikzBeginPattern.test(line)) {
+    return { insideTikz: true, tikzDepth: 1 };
+  }
+
+  outsideLines.push(line);
+  return state;
+};
+
+const collectTikzBodyLine = (
+  line: string,
+  state: TikzBodyExtractionState,
+  bodyLines: string[]
+): TikzBodyExtractionState => {
+  let tikzDepth = state.tikzDepth + (tikzBeginPattern.test(line) ? 1 : 0);
+  if (tikzEndPattern.test(line)) {
+    tikzDepth -= 1;
+    return { insideTikz: tikzDepth > 0, tikzDepth };
+  }
+
+  bodyLines.push(line);
+  return { insideTikz: true, tikzDepth };
+};
+
 const extractTikzBodyLines = (lines: readonly string[]): readonly string[] => {
   const outsideLines: string[] = [];
   const bodyLines: string[] = [];
-  let insideTikz = false;
-  let tikzDepth = 0;
+  let state: TikzBodyExtractionState = { insideTikz: false, tikzDepth: 0 };
 
   for (const line of lines) {
-    if (!insideTikz) {
-      if (tikzBeginPattern.test(line)) {
-        insideTikz = true;
-        tikzDepth = 1;
-      } else {
-        outsideLines.push(line);
-      }
-      continue;
-    }
-
-    if (tikzBeginPattern.test(line)) {
-      tikzDepth += 1;
-    }
-
-    if (tikzEndPattern.test(line)) {
-      tikzDepth -= 1;
-      if (tikzDepth <= 0) {
-        insideTikz = false;
-      }
-      continue;
-    }
-
-    if (tikzDepth > 0) {
-      bodyLines.push(line);
-    }
+    state = state.insideTikz
+      ? collectTikzBodyLine(line, state, bodyLines)
+      : startTikzBodyIfNeeded(line, state, outsideLines);
   }
 
   return bodyLines.length > 0 ? bodyLines : outsideLines;

@@ -67,6 +67,88 @@ const buildEmptyCanvasExportDocument = (background: string): ExportSvgDocument =
   ].join('')
 });
 
+interface SvgProjection {
+  readonly scale: number;
+  readonly projectX: (value: number) => number;
+  readonly projectY: (value: number) => number;
+}
+
+const rotationTransform = (rotation: number | undefined, centerX: number, centerY: number): string =>
+  rotation ? ` transform="rotate(${rotation} ${centerX} ${centerY})"` : '';
+
+const scaledStrokeWidth = (strokeWidth: number, scale: number): number =>
+  Math.max(strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+
+const renderLineShape = (shape: LineShape, projection: SvgProjection, helpers: SvgExportHelpers): string => {
+  const { scale, projectX, projectY } = projection;
+  const markerStart = shape.arrowStart
+    ? ` marker-start="url(#${escapeXml(helpers.arrowMarkerId(shape, 'start'))})"`
+    : '';
+  const markerEnd = shape.arrowEnd ? ` marker-end="url(#${escapeXml(helpers.arrowMarkerId(shape, 'end'))})"` : '';
+  return `<path d="${escapeXml(
+    helpers.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
+  )}" fill="none" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
+};
+
+const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helpers: SvgExportHelpers): string => {
+  const { scale, projectX, projectY } = projection;
+
+  switch (shape.kind) {
+    case 'line':
+      return renderLineShape(shape, projection, helpers);
+    case 'rectangle': {
+      const rotate = rotationTransform(
+        shape.rotation,
+        projectX(shape.x + shape.width / 2),
+        projectY(shape.y + shape.height / 2)
+      );
+      return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
+    }
+    case 'triangle': {
+      const path = buildTrianglePathUtil(
+        shape,
+        (point) => ({ x: projectX(point.x), y: projectY(point.y) }),
+        shape.cornerRadius * scale
+      );
+      const rotate = rotationTransform(
+        shape.rotation,
+        projectX(shape.x + shape.width / 2),
+        projectY(shape.y + shape.height / 2)
+      );
+      return `<path d="${escapeXml(path)}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
+    }
+    case 'circle': {
+      const rotate = rotationTransform(shape.rotation, projectX(shape.cx), projectY(shape.cy));
+      return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
+    }
+    case 'ellipse': {
+      const rotate = rotationTransform(shape.rotation, projectX(shape.cx), projectY(shape.cy));
+      return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
+    }
+    case 'text': {
+      const renderX = helpers.textRenderXAt(shape, projectX, scale);
+      const anchor = helpers.textAnchor(shape.textAlign);
+      const rotate = rotationTransform(shape.rotation, projectX(shape.x), projectY(shape.y));
+      const lines = helpers
+        .displayTextLinesForShape(shape)
+        .map(
+          (line, index) =>
+            `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${escapeXml(line)}</tspan>`
+        )
+        .join('');
+      return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="${EXPORT_TEXT_FONT_FAMILY}" xml:space="preserve"${rotate}>${lines}</text>`;
+    }
+    case 'image': {
+      const rotate = rotationTransform(
+        shape.rotation,
+        projectX(shape.x + shape.width / 2),
+        projectY(shape.y + shape.height / 2)
+      );
+      return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
+    }
+  }
+};
+
 export const buildCanvasExportDocument = ({
   selectedShapes,
   sceneShapes,
@@ -104,73 +186,7 @@ export const buildCanvasExportDocument = ({
     )
     .join('');
 
-  const body = shapes
-    .map((shape) => {
-      switch (shape.kind) {
-        case 'line': {
-          const markerStart = shape.arrowStart
-            ? ` marker-start="url(#${escapeXml(helpers.arrowMarkerId(shape, 'start'))})"`
-            : '';
-          const markerEnd = shape.arrowEnd
-            ? ` marker-end="url(#${escapeXml(helpers.arrowMarkerId(shape, 'end'))})"`
-            : '';
-          return `<path d="${escapeXml(
-            helpers.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
-          )}" fill="none" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
-        }
-        case 'rectangle': {
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
-            : '';
-          return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
-        }
-        case 'triangle': {
-          const path = buildTrianglePathUtil(
-            shape,
-            (point) => ({ x: projectX(point.x), y: projectY(point.y) }),
-            shape.cornerRadius * scale
-          );
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
-            : '';
-          return `<path d="${escapeXml(path)}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
-        }
-        case 'circle': {
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.cx)} ${projectY(shape.cy)})"`
-            : '';
-          return `<circle cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" r="${shape.r * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
-        }
-        case 'ellipse': {
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.cx)} ${projectY(shape.cy)})"`
-            : '';
-          return `<ellipse cx="${projectX(shape.cx)}" cy="${projectY(shape.cy)}" rx="${shape.rx * scale}" ry="${shape.ry * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${Math.max(shape.strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH)}"${rotate} />`;
-        }
-        case 'text': {
-          const renderX = helpers.textRenderXAt(shape, projectX, scale);
-          const anchor = helpers.textAnchor(shape.textAlign);
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x)} ${projectY(shape.y)})"`
-            : '';
-          const lines = helpers
-            .displayTextLinesForShape(shape)
-            .map(
-              (line, index) =>
-                `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${escapeXml(line)}</tspan>`
-            )
-            .join('');
-          return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="${EXPORT_TEXT_FONT_FAMILY}" xml:space="preserve"${rotate}>${lines}</text>`;
-        }
-        case 'image': {
-          const rotate = shape.rotation
-            ? ` transform="rotate(${shape.rotation} ${projectX(shape.x + shape.width / 2)} ${projectY(shape.y + shape.height / 2)})"`
-            : '';
-          return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
-        }
-      }
-    })
-    .join('');
+  const body = shapes.map((shape) => renderExportShape(shape, { scale, projectX, projectY }, helpers)).join('');
 
   const defsMarkup = defs ? `<defs>${defs}</defs>` : '';
   return {

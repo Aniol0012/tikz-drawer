@@ -71,6 +71,20 @@ function compareAlphabetically(left: string, right: string): number {
   return left.localeCompare(right);
 }
 
+function parseModeValue(value: string | undefined): ValidationMode {
+  if (value === 'all' || value === 'diff') {
+    return value;
+  }
+
+  console.error('[ERROR] --mode must be either "diff" or "all"');
+  process.exit(1);
+}
+
+function printHelpAndExit(): never {
+  console.log('Usage: pnpm validate:i18n [--all|--mode all|--mode diff]');
+  process.exit(0);
+}
+
 function parseCliOptions(argv: readonly string[]): CliOptions {
   let mode: ValidationMode = 'diff';
 
@@ -82,29 +96,18 @@ function parseCliOptions(argv: readonly string[]): CliOptions {
     }
 
     if (argument === '--mode') {
-      const value = argv[index + 1];
-      if (value !== 'all' && value !== 'diff') {
-        console.error('[ERROR] --mode must be either "diff" or "all"');
-        process.exit(1);
-      }
-      mode = value;
+      mode = parseModeValue(argv[index + 1]);
       index += 1;
       continue;
     }
 
     if (argument.startsWith('--mode=')) {
-      const value = argument.slice('--mode='.length);
-      if (value !== 'all' && value !== 'diff') {
-        console.error('[ERROR] --mode must be either "diff" or "all"');
-        process.exit(1);
-      }
-      mode = value;
+      mode = parseModeValue(argument.slice('--mode='.length));
       continue;
     }
 
     if (argument === '--help' || argument === '-h') {
-      console.log('Usage: pnpm validate:i18n [--all|--mode all|--mode diff]');
-      process.exit(0);
+      printHelpAndExit();
     }
 
     console.error(`[ERROR] Unknown option: ${argument}`);

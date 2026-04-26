@@ -1105,48 +1105,7 @@ export class EditorPageComponent {
       this.pinnedToolsReady.set(true);
       this.runAsync(this.restoreSharedSceneFromUrl());
       this.openEditorSyncChannel();
-      const handleStorage = (event: StorageEvent) => {
-        if (event.key === this.languageStorageKey && event.newValue) {
-          if (event.newValue === 'ca' || event.newValue === 'es' || event.newValue === 'en') {
-            this.language.set(event.newValue);
-          }
-          return;
-        }
-
-        if (event.key === this.editorStateStorageKey && event.newValue) {
-          if (!this.syncChannel) {
-            this.applyRemoteEditorStateFromRaw(event.newValue);
-            return;
-          }
-
-          const parsed = this.editorStorage.parseJson<Partial<PersistedEditorState>>(event.newValue);
-          const nextTheme = parsed?.preferences?.theme;
-          if (nextTheme === 'light' || nextTheme === 'dark') {
-            this.store.setTheme(nextTheme);
-          }
-        }
-
-        if (event.key === this.codeThemeStorageKey && event.newValue) {
-          this.setCodeHighlightTheme(event.newValue);
-          return;
-        }
-
-        if (event.key === this.latexExportConfigStorageKey) {
-          this.latexExportConfig.set(this.parseStoredLatexExportConfig(event.newValue));
-          return;
-        }
-
-        if (event.key === this.editorSyncStorageKey && event.newValue && !this.syncChannel) {
-          this.applyRemoteEditorSyncMessageFromRaw(event.newValue);
-          return;
-        }
-
-        if (event.key === this.sidebarSizesStorageKey) {
-          const sidebarSizes = this.parseStoredSidebarSizes(event.newValue);
-          this.leftSidebarWidth.set(sidebarSizes.left);
-          this.rightSidebarWidth.set(sidebarSizes.right);
-        }
-      };
+      const handleStorage = (event: StorageEvent) => this.handleStorageEvent(event);
 
       this.document.defaultView?.addEventListener('storage', handleStorage);
       this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
@@ -4637,6 +4596,63 @@ export class EditorPageComponent {
 
   private runAsync(task: Promise<unknown>): void {
     task.catch(() => undefined);
+  }
+
+  private handleStorageEvent(event: StorageEvent): void {
+    const { key, newValue } = event;
+    if (key === this.languageStorageKey && newValue) {
+      this.applyStoredLanguage(newValue);
+      return;
+    }
+
+    if (key === this.editorStateStorageKey && newValue) {
+      this.applyStoredEditorState(newValue);
+      return;
+    }
+
+    if (key === this.codeThemeStorageKey && newValue) {
+      this.setCodeHighlightTheme(newValue);
+      return;
+    }
+
+    if (key === this.latexExportConfigStorageKey) {
+      this.latexExportConfig.set(this.parseStoredLatexExportConfig(newValue));
+      return;
+    }
+
+    if (key === this.editorSyncStorageKey && newValue && !this.syncChannel) {
+      this.applyRemoteEditorSyncMessageFromRaw(newValue);
+      return;
+    }
+
+    if (key === this.sidebarSizesStorageKey) {
+      this.applyStoredSidebarSizes(newValue);
+    }
+  }
+
+  private applyStoredLanguage(value: string): void {
+    if (value === 'ca' || value === 'es' || value === 'en') {
+      this.language.set(value);
+    }
+  }
+
+  private applyStoredEditorState(value: string): void {
+    if (!this.syncChannel) {
+      this.applyRemoteEditorStateFromRaw(value);
+      return;
+    }
+
+    const parsed = this.editorStorage.parseJson<Partial<PersistedEditorState>>(value);
+    const nextTheme = parsed?.preferences?.theme;
+    if (nextTheme === 'light' || nextTheme === 'dark') {
+      this.store.setTheme(nextTheme);
+    }
+  }
+
+  private applyStoredSidebarSizes(value: string | null): void {
+    const sidebarSizes = this.parseStoredSidebarSizes(value);
+    this.leftSidebarWidth.set(sidebarSizes.left);
+    this.rightSidebarWidth.set(sidebarSizes.right);
   }
 
   private currentSyncedEditorDocument(): { readonly scene: TikzScene; readonly importCode: string } {
