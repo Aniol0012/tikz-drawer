@@ -1398,24 +1398,37 @@ kbd {
 
 .color-pair-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
 .color-chip-field {
   display: grid;
-  gap: 8px;
-  justify-items: start;
-  align-content: start;
+  grid-template-columns: 48px minmax(120px, 1fr);
+  grid-template-areas:
+    'label value'
+    'swatch range';
+  gap: 7px 12px;
+  align-items: start;
+  align-content: center;
+  min-width: 0;
 }
 
 .color-inline-field {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 48px minmax(120px, 1fr);
+  grid-template-areas:
+    'swatch value'
+    'swatch range';
+  gap: 7px 12px;
+  align-items: center;
+  min-width: 0;
 }
 
-.color-chip-field small {
+.color-chip-field small,
+.color-inline-field small {
+  grid-area: label;
   color: var(--muted-foreground);
   font-size: 0.76rem;
   font-weight: 700;
@@ -1434,6 +1447,11 @@ kbd {
   border: 1px solid var(--tool-border) !important;
   background: transparent;
   justify-self: start;
+}
+
+.color-chip-field .color-swatch,
+.color-inline-field .color-swatch {
+  grid-area: swatch;
 }
 
 .color-swatch::-webkit-color-swatch-wrapper {
@@ -1467,7 +1485,50 @@ kbd {
 }
 
 .color-opacity-input {
+  grid-area: range;
   width: 100%;
+  align-self: center;
+  appearance: none;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-foreground) 14%, var(--input-background));
+  outline: none;
+  accent-color: var(--accent);
+}
+
+.color-opacity-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+.color-opacity-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.color-opacity-input + small {
+  grid-area: value;
+  align-self: start;
+}
+
+@media (max-width: 520px) {
+  .color-chip-field,
+  .color-inline-field {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'label'
+      'swatch'
+      'value'
+      'range';
+  }
 }
 
 .selected-shape-list {
@@ -1624,7 +1685,8 @@ kbd {
 }
 
 .color-pair-controls--line .color-chip-field {
-  gap: 10px;
+  grid-template-columns: 52px minmax(120px, 1fr);
+  gap: 8px 12px;
   padding: 0;
   border: 0;
   border-radius: 0;
