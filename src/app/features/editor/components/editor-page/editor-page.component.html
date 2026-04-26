@@ -801,7 +801,9 @@
           <button
             class="canvas-chip canvas-chip--objects"
             type="button"
-            [title]="t('objects')"
+            [title]="t('layers')"
+            [attr.aria-label]="t('layers')"
+            (pointerdown)="$event.stopPropagation()"
             (click)="openSceneLayers(); $event.stopPropagation()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="iconMap.layers"></path>

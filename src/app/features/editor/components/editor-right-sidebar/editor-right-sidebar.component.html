@@ -9,7 +9,7 @@
     <button
       type="button"
       [class.is-active]="editor().inspectorTab() === 'scene'"
-      (click)="editor().setInspectorTab('scene')">
+      (click)="editor().openSceneLayers()">
       {{ editor().t('sceneTab') }}
     </button>
   </div>
