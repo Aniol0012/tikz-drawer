@@ -136,6 +136,7 @@ import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
+import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -175,6 +176,7 @@ import {
   isCutShortcut,
   isDeleteShortcutKey,
   isEscapeShortcutKey,
+  isFigureSearchShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectionModifierPressed,
@@ -257,7 +259,8 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     TableDialogComponent,
     ImportCodeModalComponent,
     RangeInputCardComponent,
-    RegularPolygonDialogComponent
+    RegularPolygonDialogComponent,
+    FigureSearchOverlayComponent
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
@@ -400,6 +403,8 @@ export class EditorPageComponent {
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
+  readonly figureSearchOpen = signal(false);
+  readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl+Shift+K', '⌘⇧K');
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
@@ -459,6 +464,8 @@ export class EditorPageComponent {
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
   readonly topbarTranslate = (key: string): string => this.t(key);
+  readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
+  readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
     {
       label: 'Greek',
@@ -1157,6 +1164,23 @@ export class EditorPageComponent {
 
   localizedShapeKind(kind: CanvasShape['kind']): string {
     return localizedShapeKinds[this.language()][kind];
+  }
+
+  openFigureSearch(): void {
+    this.figureSearchOpen.set(true);
+    this.closeContextMenu();
+    this.closeFileMenu();
+    this.closeTextSymbolPalette();
+    this.closeMobileLibraryPanelIfNeeded();
+  }
+
+  closeFigureSearch(): void {
+    this.figureSearchOpen.set(false);
+  }
+
+  selectFigureSearchPreset(toolId: ToolId): void {
+    this.closeFigureSearch();
+    this.setActiveTool(toolId);
   }
 
   regularPolygonName(sides: number): string {
@@ -4355,6 +4379,13 @@ export class EditorPageComponent {
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
 
+    if (isFigureSearchShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openFigureSearch();
+      return;
+    }
+
     if (this.isEditableTarget(event.target)) {
       return;
     }
@@ -4455,6 +4486,7 @@ export class EditorPageComponent {
   private handleEscapeShortcut(): void {
     const closeHandlers: ReadonlyArray<{ readonly isOpen: () => boolean; readonly close: () => void }> = [
       { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
+      { isOpen: () => this.figureSearchOpen(), close: () => this.closeFigureSearch() },
       { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
       { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
       { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
@@ -5784,6 +5816,11 @@ export class EditorPageComponent {
 
   private isCanvasViewportFocused(): boolean {
     return this.document.activeElement === this.canvasViewport().nativeElement;
+  }
+
+  private platformShortcutLabel(windowsLabel: string, macLabel: string): string {
+    const platform = this.document.defaultView?.navigator.platform.toLowerCase() ?? '';
+    return platform.includes('mac') ? macLabel : windowsLabel;
   }
 
   private selectAllSceneShapes(): void {

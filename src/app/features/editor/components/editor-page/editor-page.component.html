@@ -55,14 +55,24 @@
           <span>{{ t('library') }}</span>
           <div class="stat-pill">{{ allInsertablePresets().length }}</div>
         </div>
-        <label class="search-field">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap.search"></path></svg>
+        <div class="search-field">
+          <button
+            class="search-field__button"
+            type="button"
+            [title]="t('figureSearchPlaceholder')"
+            [attr.aria-label]="t('figureSearchPlaceholder')"
+            (click)="openFigureSearch()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.search"></path>
+            </svg>
+          </button>
           <input
             type="search"
+            [attr.aria-label]="t('searchLibrary')"
             [value]="libraryQuery()"
             [placeholder]="t('searchLibrary')"
             (input)="setLibraryQuery($any($event.target).value)" />
-        </label>
+        </div>
       </section>
 
       <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('savedTemplates')">
@@ -3613,6 +3623,20 @@
         </div>
       </section>
     </div>
+  }
+
+  @if (figureSearchOpen()) {
+    <app-figure-search-overlay
+      [presets]="allInsertablePresets()"
+      [iconMap]="iconMap"
+      [titleForPreset]="figureSearchPresetTitle"
+      [descriptionForPreset]="figureSearchPresetDescription"
+      [placeholder]="t('figureSearchPlaceholder')"
+      [noResultsLabel]="t('figureSearchNoResults')"
+      [shortcutLabel]="figureSearchShortcutLabel"
+      [selectLabel]="t('figureSearchSelect')"
+      (closeSearch)="closeFigureSearch()"
+      (selectPreset)="selectFigureSearchPreset($event)"></app-figure-search-overlay>
   }
 
   @if (tableDialogState(); as tableDialog) {

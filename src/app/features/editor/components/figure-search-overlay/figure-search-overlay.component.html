@@ -1,0 +1,45 @@
+<div class="figure-search-backdrop" (click)="closeSearch.emit()">
+  <section
+    class="figure-search-panel"
+    (click)="$event.stopPropagation()"
+    (keydown)="onKeydown($event)">
+    <label class="figure-search-field">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="iconPath('search')"></path>
+      </svg>
+      <input
+        #searchInput
+        type="search"
+        [value]="query()"
+        [placeholder]="placeholder()"
+        (input)="updateQuery($any($event.target).value)" />
+      <kbd>{{ shortcutLabel() }}</kbd>
+    </label>
+
+    <div class="figure-search-results">
+      @if (filteredPresets().length) {
+        @for (preset of filteredPresets(); track trackByPresetId($index, preset)) {
+          <button
+            class="figure-search-result"
+            type="button"
+            [class.is-active]="$index === activeIndex()"
+            (mouseenter)="activeIndex.set($index)"
+            (click)="choosePreset(preset)">
+            <span class="figure-search-result__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconPath(preset.icon)"></path>
+              </svg>
+            </span>
+            <span class="figure-search-result__copy">
+              <strong>{{ titleForPreset()(preset) }}</strong>
+              <small>{{ descriptionForPreset()(preset) }}</small>
+            </span>
+            <span class="figure-search-result__hint">{{ selectLabel() }}</span>
+          </button>
+        }
+      } @else {
+        <div class="figure-search-empty">{{ noResultsLabel() }}</div>
+      }
+    </div>
+  </section>
+</div>
