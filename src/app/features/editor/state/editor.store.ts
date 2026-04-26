@@ -248,6 +248,16 @@ interface EditorSnapshot {
   readonly selectedShapeIds: readonly string[];
 }
 
+const translatePositionedShape = (
+  shape: Extract<CanvasShape, { x: number; y: number }>,
+  deltaX: number,
+  deltaY: number
+): CanvasShape => ({
+  ...shape,
+  x: shape.x + deltaX,
+  y: shape.y + deltaY
+});
+
 const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
   switch (shape.kind) {
     case 'line':
@@ -267,17 +277,8 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
         }))
       };
     case 'rectangle':
-      return {
-        ...shape,
-        x: shape.x + deltaX,
-        y: shape.y + deltaY
-      };
     case 'triangle':
-      return {
-        ...shape,
-        x: shape.x + deltaX,
-        y: shape.y + deltaY
-      };
+      return translatePositionedShape(shape, deltaX, deltaY);
     case 'circle':
       return {
         ...shape,
@@ -291,17 +292,8 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
         cy: shape.cy + deltaY
       };
     case 'text':
-      return {
-        ...shape,
-        x: shape.x + deltaX,
-        y: shape.y + deltaY
-      };
     case 'image':
-      return {
-        ...shape,
-        x: shape.x + deltaX,
-        y: shape.y + deltaY
-      };
+      return translatePositionedShape(shape, deltaX, deltaY);
   }
 };
 

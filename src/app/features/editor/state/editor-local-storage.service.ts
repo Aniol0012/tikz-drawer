@@ -5,7 +5,7 @@ export type EditorStorageKey = (typeof EDITOR_STORAGE_KEYS)[keyof typeof EDITOR_
 
 @Injectable({ providedIn: 'root' })
 export class EditorLocalStorageService {
-  private readonly storage = typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage;
+  private readonly storage = globalThis.localStorage === undefined ? null : globalThis.localStorage;
 
   getString(key: EditorStorageKey): string | null {
     try {

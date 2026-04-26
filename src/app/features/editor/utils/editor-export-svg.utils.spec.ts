@@ -112,6 +112,45 @@ describe('editor-export-svg utils', () => {
 
     expect(document.markup).toContain('<image');
     expect(document.markup).toContain('opacity="0.35"');
+    expect(document.markup).toContain('xlink:href="data:image/png;base64,abc"');
+    expect(document.projection?.scale).toBeGreaterThan(0);
+  });
+
+  it('can omit image nodes while preserving export projection', () => {
+    const imageShape: Extract<CanvasShape, { kind: 'image' }> = {
+      id: 'img-1',
+      name: 'Image',
+      kind: 'image',
+      x: 0.5,
+      y: 0.25,
+      width: 2,
+      height: 1,
+      aspectRatio: 2,
+      src: 'data:image/png;base64,abc',
+      latexSource: 'images/example.png',
+      stroke: '#111111',
+      strokeOpacity: 1,
+      strokeWidth: 0.06
+    };
+
+    const fullDocument = buildCanvasExportDocument({
+      selectedShapes: [],
+      sceneShapes: [imageShape],
+      theme: 'light',
+      helpers
+    });
+    const vectorDocument = buildCanvasExportDocument({
+      selectedShapes: [],
+      sceneShapes: [imageShape],
+      theme: 'light',
+      omitImages: true,
+      helpers
+    });
+
+    expect(vectorDocument.markup).not.toContain('<image');
+    expect(vectorDocument.width).toBe(fullDocument.width);
+    expect(vectorDocument.height).toBe(fullDocument.height);
+    expect(vectorDocument.projection).toEqual(fullDocument.projection);
   });
 
   it('escapes XML values safely', () => {

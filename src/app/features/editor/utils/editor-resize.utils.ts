@@ -11,10 +11,10 @@ import type {
 import type { CanvasShape, Point } from '../models/tikz.models';
 import { resizeGroupedShapes, type SelectionBounds, type SelectionResizeHandle } from './editor-page.utils';
 
-const selectionResizeHandles: readonly SelectionResizeHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+const selectionResizeHandles = new Set<SelectionResizeHandle>(['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']);
 
 const isSelectionResizeHandle = (handle: ResizeHandle): handle is SelectionResizeHandle =>
-  selectionResizeHandles.includes(handle as SelectionResizeHandle);
+  selectionResizeHandles.has(handle as SelectionResizeHandle);
 
 interface ResizeBoundsOptions {
   readonly minimumWidth: number;
@@ -232,7 +232,7 @@ const resizeRectangleShape = (
   return shape.kind === 'image'
     ? ({
         ...resizedShape,
-        aspectRatio: shape.aspectRatio || (resizedShape.height !== 0 ? resizedShape.width / resizedShape.height : 1)
+        aspectRatio: shape.aspectRatio || (resizedShape.height === 0 ? 1 : resizedShape.width / resizedShape.height)
       } as CanvasShape)
     : resizedShape;
 };

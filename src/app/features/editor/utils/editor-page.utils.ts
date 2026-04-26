@@ -21,6 +21,25 @@ export interface SelectionBounds {
 
 export type SelectionResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
+const transformRoundedBoxShape = (
+  shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
+  deltaX: number,
+  deltaY: number,
+  scaleX: number,
+  scaleY: number,
+  originX: number,
+  originY: number,
+  id: string
+): CanvasShape => ({
+  ...shape,
+  id,
+  x: (shape.x - originX) * scaleX + originX + deltaX,
+  y: (shape.y - originY) * scaleY + originY + deltaY,
+  width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
+  height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
+  cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
+});
+
 export const transformCanvasShape = (
   shape: CanvasShape,
   deltaX: number,
@@ -46,25 +65,8 @@ export const transformCanvasShape = (
         anchors: shape.anchors.map((anchor) => scalePoint(anchor))
       };
     case 'rectangle':
-      return {
-        ...shape,
-        id,
-        x: (shape.x - originX) * scaleX + originX + deltaX,
-        y: (shape.y - originY) * scaleY + originY + deltaY,
-        width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
-        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
-        cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
-      };
     case 'triangle':
-      return {
-        ...shape,
-        id,
-        x: (shape.x - originX) * scaleX + originX + deltaX,
-        y: (shape.y - originY) * scaleY + originY + deltaY,
-        width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
-        height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
-        cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
-      };
+      return transformRoundedBoxShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
     case 'circle':
       return {
         ...shape,

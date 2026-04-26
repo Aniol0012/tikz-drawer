@@ -35,7 +35,7 @@ const textWithInlineMath: TextShape = {
   strokeWidth: 0,
   x: 1,
   y: 2,
-  text: 'Hola\\times i \\int\\gamma\\delta\\exists',
+  text: String.raw`Hola\times i \int\gamma\delta\exists`,
   textBox: false,
   boxWidth: 4,
   fontSize: 1,
@@ -108,8 +108,8 @@ describe('sceneToTikzBundle', () => {
 
     const bundle = sceneToTikzBundle(scene);
 
-    expect(bundle.imports).toContain('\\usetikzlibrary{arrows.meta}');
-    expect(bundle.imports).toContain('\\usetikzlibrary{bending}');
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{arrows.meta}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{bending}`);
     expect(bundle.code).toContain('-{Triangle[');
     expect(bundle.code).toContain('color={rgb,255:red,17;green,34;blue,51}');
     expect(bundle.code).toContain('scale=1.5');
@@ -127,10 +127,15 @@ describe('sceneToTikzBundle', () => {
     };
 
     const document = sceneToStandaloneDocument(scene, { colorMode: 'define-colors' });
+    const colorDefinitionPattern = /\\definecolor\{tikzdrawercolor1\}\{HTML\}\{112233\}/g;
+    let colorDefinitionCount = 0;
+    while (colorDefinitionPattern.exec(document)) {
+      colorDefinitionCount += 1;
+    }
 
-    expect(document).toContain('\\definecolor{tikzdrawercolor1}{HTML}{112233}');
+    expect(document).toContain(String.raw`\definecolor{tikzdrawercolor1}{HTML}{112233}`);
     expect(document).toContain('draw=tikzdrawercolor1');
-    expect(document.match(/\\definecolor\{tikzdrawercolor1\}\{HTML\}\{112233\}/g)).toHaveLength(1);
+    expect(colorDefinitionCount).toBe(1);
   });
 
   it('wraps inline math commands inside text nodes so exported LaTeX stays valid', () => {
@@ -142,9 +147,9 @@ describe('sceneToTikzBundle', () => {
 
     const bundle = sceneToTikzBundle(scene);
 
-    expect(bundle.code).toContain('Hola\\ensuremath{\\times}');
+    expect(bundle.code).toContain(String.raw`Hola\ensuremath{\times}`);
     expect(bundle.code).toContain(
-      '\\ensuremath{\\int}\\ensuremath{\\gamma}\\ensuremath{\\delta}\\ensuremath{\\exists}'
+      String.raw`\ensuremath{\int}\ensuremath{\gamma}\ensuremath{\delta}\ensuremath{\exists}`
     );
   });
 
@@ -158,7 +163,7 @@ describe('sceneToTikzBundle', () => {
     const bundle = sceneToTikzBundle(scene);
 
     expect(bundle.code).toContain('(-14.857, 9.101) rectangle (4.841, 4.007);');
-    expect(bundle.code).toContain('\\node[');
+    expect(bundle.code).toContain(String.raw`\node[`);
     expect(bundle.code).toContain('at (1, 2)');
   });
 
@@ -200,8 +205,8 @@ describe('sceneToTikzBundle', () => {
 
     const bundle = sceneToTikzBundle(scene);
 
-    expect(bundle.code).toContain('\\node[inner sep=0pt, opacity=0.4]');
-    expect(bundle.code).toContain('\\includegraphics[width=3cm,height=1.5cm]{images/example.png}');
+    expect(bundle.code).toContain(String.raw`\node[inner sep=0pt, opacity=0.4]`);
+    expect(bundle.code).toContain(String.raw`\includegraphics[width=3cm,height=1.5cm]{images/example.png}`);
   });
 
   it('exports and re-imports triangle shapes as independent figures', () => {

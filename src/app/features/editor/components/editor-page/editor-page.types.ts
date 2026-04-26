@@ -291,6 +291,11 @@ export interface ExportSvgDocument {
   readonly markup: string;
   readonly width: number;
   readonly height: number;
+  readonly projection?: {
+    readonly bounds: SelectionBounds;
+    readonly padding: number;
+    readonly scale: number;
+  };
 }
 
 export interface MinimapRect {

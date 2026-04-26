@@ -47,8 +47,15 @@ const hasUnbalancedDelimiters = (source: string): boolean => {
 };
 
 const hasMismatchedEnvironment = (source: string, environment: string): boolean => {
-  const begin = source.match(new RegExp(String.raw`\\begin\{${environment}\}`, 'g'))?.length ?? 0;
-  const end = source.match(new RegExp(String.raw`\\end\{${environment}\}`, 'g'))?.length ?? 0;
+  const countMatches = (pattern: RegExp): number => {
+    let count = 0;
+    while (pattern.exec(source)) {
+      count += 1;
+    }
+    return count;
+  };
+  const begin = countMatches(new RegExp(String.raw`\\begin\{${environment}\}`, 'g'));
+  const end = countMatches(new RegExp(String.raw`\\end\{${environment}\}`, 'g'));
   return begin !== end;
 };
 

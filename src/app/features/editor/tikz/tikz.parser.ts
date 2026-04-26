@@ -4,6 +4,7 @@ import type {
   EllipseShape,
   LineShape,
   ParsedTikzResult,
+  Point,
   RectangleShape,
   TextShape,
   TriangleShape,
@@ -21,10 +22,28 @@ const defaultSceneBounds = {
   height: 640
 };
 
+const TIKZ_NUMBER_PATTERN = String.raw`-?\d+(?:\.\d+)?`;
+const POINT_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`);
+const HEX_COLOR_PATTERN = /^#?([0-9a-fA-F]{6})$/;
+const ARROW_DRAW_PATTERN = /draw=({[^}]+}|[^,\]]+)/i;
+const ARROW_OPACITY_PATTERN = /opacity=([^,\]]+)/i;
+const ARROW_SCALE_PATTERN = /scale=([^,\]}]+)/i;
+const TRIANGLE_PATTERN =
+  /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/;
+const SMOOTH_LINE_PATTERN =
+  /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/;
+const RECTANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/;
+const IMAGE_NODE_PATTERN =
+  /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/;
+const TEXT_NODE_PATTERN = /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/;
+const IMAGE_WIDTH_PATTERN = /(?:^|,)\s*width\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
+const IMAGE_HEIGHT_PATTERN = /(?:^|,)\s*height\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
+const POINTS_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`, 'g');
+
 const createId = (): string => crypto.randomUUID();
 
 const parsePoint = (value: string): { x: number; y: number } | null => {
-  const match = value.match(/\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/);
+  const match = POINT_PATTERN.exec(value);
 
   if (!match) {
     return null;
@@ -49,32 +68,38 @@ const clampByte = (value: number): number => Math.max(0, Math.min(255, Math.roun
 const toHexByte = (value: number): string => clampByte(value).toString(16).padStart(2, '0');
 
 const parseTikzRgbColor = (value: string): string | null => {
-  const rgbMatch = removeOuterBraces(value).match(
-    /^rgb\s*,\s*(?<scale>-?\d+(?:\.\d+)?)\s*:\s*red\s*,\s*(?<red>-?\d+(?:\.\d+)?)\s*;\s*green\s*,\s*(?<green>-?\d+(?:\.\d+)?)\s*;\s*blue\s*,\s*(?<blue>-?\d+(?:\.\d+)?)$/i
-  );
+  const [model, ...channels] = removeOuterBraces(value).split(/\s*[:;]\s*/);
 
-  if (!rgbMatch?.groups) {
+  if (!model || channels.length !== 3 || !/^rgb\s*,/i.test(model)) {
     return null;
   }
 
-  const scale = Number(rgbMatch.groups['scale']);
-  const red = Number(rgbMatch.groups['red']);
-  const green = Number(rgbMatch.groups['green']);
-  const blue = Number(rgbMatch.groups['blue']);
+  const scale = Number(model.slice(model.lastIndexOf(',') + 1).trim());
+  const red = tikzColorChannel(channels[0], 'red');
+  const green = tikzColorChannel(channels[1], 'green');
+  const blue = tikzColorChannel(channels[2], 'blue');
 
-  if (
-    !Number.isFinite(scale) ||
-    scale === 0 ||
-    !Number.isFinite(red) ||
-    !Number.isFinite(green) ||
-    !Number.isFinite(blue)
-  ) {
+  if (!Number.isFinite(scale) || scale === 0 || red === null || green === null || blue === null) {
     return null;
   }
 
   const factor = 255 / scale;
   return `#${toHexByte(red * factor)}${toHexByte(green * factor)}${toHexByte(blue * factor)}`;
 };
+
+function tikzColorChannel(value: string | undefined, channel: 'red' | 'green' | 'blue'): number | null {
+  if (!value) {
+    return null;
+  }
+
+  const [name, raw] = value.split(/\s*,\s*/);
+  if (name?.toLowerCase() !== channel) {
+    return null;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 const normalizeTikzColor = (value: string | undefined, fallback: string): string => {
   if (!value) {
@@ -95,7 +120,7 @@ const normalizeTikzColor = (value: string | undefined, fallback: string): string
     return rgbColor;
   }
 
-  const hexMatch = normalized.match(/^#?([0-9a-fA-F]{6})$/);
+  const hexMatch = HEX_COLOR_PATTERN.exec(normalized);
   if (hexMatch) {
     return `#${hexMatch[1].toLowerCase()}`;
   }
@@ -210,13 +235,13 @@ const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] 
 
 const parseArrowColor = (styles: Record<string, string>): string => {
   const raw = styles['arrow meta'] ?? '';
-  const drawMatch = raw.match(/draw=({[^}]+}|[^,\]]+)/i);
+  const drawMatch = ARROW_DRAW_PATTERN.exec(raw);
   return normalizeTikzColor(drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'], '#0f172a');
 };
 
 const parseArrowOpacity = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
-  const opacityMatch = raw.match(/opacity=([^,\]]+)/i);
+  const opacityMatch = ARROW_OPACITY_PATTERN.exec(raw);
   if (opacityMatch) {
     const parsed = Number.parseFloat(opacityMatch[1]);
     if (Number.isFinite(parsed)) {
@@ -234,7 +259,7 @@ const parseArrowRound = (styles: Record<string, string>): boolean =>
 
 const parseArrowScale = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
-  const match = raw.match(/scale=([^,\]}]+)/i);
+  const match = ARROW_SCALE_PATTERN.exec(raw);
   const parsed = Number.parseFloat(match?.[1] ?? '');
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 };
@@ -245,7 +270,7 @@ const parseArrowDimensionScale = (
   defaultValue: number
 ): number => {
   const raw = styles['arrow meta'] ?? '';
-  const match = raw.match(new RegExp(`${key}=([^,\\]}]+)`, 'i'));
+  const match = new RegExp(`${key}=([^,\\]}]+)`, 'i').exec(raw);
   const parsed = Number.parseFloat((match?.[1] ?? '').replace(/pt|cm|mm|ex|em/g, '').trim());
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return 1;
@@ -268,7 +293,7 @@ const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBen
 };
 
 const parseLine = (line: string): CanvasShape | null => {
-  const match = line.match(/^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/);
+  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -309,21 +334,30 @@ const parseLine = (line: string): CanvasShape | null => {
   return shape;
 };
 
+const parsePointList = (raw: string): readonly Point[] => {
+  const points: Point[] = [];
+  POINTS_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null = POINTS_PATTERN.exec(raw);
+
+  while (match) {
+    points.push({
+      x: Number(match[1]),
+      y: Number(match[2])
+    });
+    match = POINTS_PATTERN.exec(raw);
+  }
+
+  return points;
+};
+
 const parseSmoothLine = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/
-  );
+  const match = SMOOTH_LINE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;
   }
 
-  const points = Array.from(
-    match.groups['points'].matchAll(/\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)/g)
-  ).map(([, x, y]) => ({
-    x: Number(x),
-    y: Number(y)
-  }));
+  const points = parsePointList(match.groups['points']);
 
   if (points.length < 2) {
     return null;
@@ -358,7 +392,7 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
 };
 
 const parseRectangle = (line: string): CanvasShape | null => {
-  const match = line.match(/^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/);
+  const match = RECTANGLE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -393,9 +427,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
 };
 
 const parseTriangle = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/
-  );
+  const match = TRIANGLE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -440,9 +472,10 @@ const parseTriangle = (line: string): CanvasShape | null => {
 };
 
 const parseCircle = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
-  );
+  const match =
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
+      line
+    );
 
   if (!match?.groups) {
     return null;
@@ -473,9 +506,10 @@ const parseCircle = (line: string): CanvasShape | null => {
 };
 
 const parseEllipse = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/
-  );
+  const match =
+    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
+      line
+    );
 
   if (!match?.groups) {
     return null;
@@ -513,9 +547,7 @@ const imagePlaceholder = (label: string): string =>
   );
 
 const parseImageNode = (line: string): CanvasShape | null => {
-  const match = line.match(
-    /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/
-  );
+  const match = IMAGE_NODE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -527,8 +559,8 @@ const parseImageNode = (line: string): CanvasShape | null => {
   }
 
   const imageOptions = match.groups['imageOptions'] ?? '';
-  const widthMatch = imageOptions.match(/(?:^|,)\s*width\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i);
-  const heightMatch = imageOptions.match(/(?:^|,)\s*height\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i);
+  const widthMatch = IMAGE_WIDTH_PATTERN.exec(imageOptions);
+  const heightMatch = IMAGE_HEIGHT_PATTERN.exec(imageOptions);
   const width = Number.parseFloat(widthMatch?.[1] ?? '');
   const height = Number.parseFloat(heightMatch?.[1] ?? '');
   const safeWidth = Number.isFinite(width) && width > 0 ? width : 4.8;
@@ -557,8 +589,20 @@ const parseImageNode = (line: string): CanvasShape | null => {
   };
 };
 
+const textAlignFromAnchor = (anchor: string): TextShape['textAlign'] => {
+  if (anchor === 'west') {
+    return 'left';
+  }
+
+  if (anchor === 'east') {
+    return 'right';
+  }
+
+  return 'center';
+};
+
 const parseNode = (line: string): CanvasShape | null => {
-  const match = line.match(/^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/);
+  const match = TEXT_NODE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -594,7 +638,7 @@ const parseNode = (line: string): CanvasShape | null => {
     fontWeight: match.groups['text'].includes('\\bfseries') ? 'bold' : 'normal',
     fontStyle: match.groups['text'].includes('\\itshape') ? 'italic' : 'normal',
     textDecoration: match.groups['text'].includes('\\underline{') ? 'underline' : 'none',
-    textAlign: anchor === 'west' ? 'left' : anchor === 'east' ? 'right' : 'center',
+    textAlign: textAlignFromAnchor(anchor),
     rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
   };
 

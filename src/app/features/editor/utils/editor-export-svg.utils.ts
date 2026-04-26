@@ -47,15 +47,16 @@ export interface BuildSvgExportOptions {
   readonly sceneShapes: readonly CanvasShape[];
   readonly theme: ThemeMode;
   readonly helpers: SvgExportHelpers;
+  readonly omitImages?: boolean;
 }
 
 export const escapeXml = (value: string): string =>
   value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
 
 const buildEmptyCanvasExportDocument = (background: string): ExportSvgDocument => ({
   width: DEFAULT_EMPTY_EXPORT_WIDTH,
@@ -144,7 +145,8 @@ const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helper
         projectX(shape.x + shape.width / 2),
         projectY(shape.y + shape.height / 2)
       );
-      return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${escapeXml(shape.src)}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
+      const source = escapeXml(shape.src);
+      return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${source}" xlink:href="${source}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
     }
   }
 };
@@ -153,7 +155,8 @@ export const buildCanvasExportDocument = ({
   selectedShapes,
   sceneShapes,
   theme,
-  helpers
+  helpers,
+  omitImages = false
 }: BuildSvgExportOptions): ExportSvgDocument => {
   const shapes = selectedShapes.length ? selectedShapes : sceneShapes;
   const bounds = helpers.computeBounds(shapes);
@@ -186,12 +189,20 @@ export const buildCanvasExportDocument = ({
     )
     .join('');
 
-  const body = shapes.map((shape) => renderExportShape(shape, { scale, projectX, projectY }, helpers)).join('');
+  const body = shapes
+    .filter((shape) => !omitImages || shape.kind !== 'image')
+    .map((shape) => renderExportShape(shape, { scale, projectX, projectY }, helpers))
+    .join('');
 
   const defsMarkup = defs ? `<defs>${defs}</defs>` : '';
   return {
     width,
     height,
+    projection: {
+      bounds,
+      padding,
+      scale
+    },
     markup: [
       `<svg xmlns="${XML_NAMESPACE}" xmlns:xlink="${XML_LINK_NAMESPACE}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
       `<rect x="0" y="0" width="${width}" height="${height}" fill="${background}" />`,

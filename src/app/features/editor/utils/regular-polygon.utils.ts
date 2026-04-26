@@ -9,6 +9,8 @@ import {
 } from '../models/regular-polygon.models';
 import type { Point } from '../models/tikz.models';
 
+const DEFAULT_REGULAR_POLYGON_CENTER: Point = { x: 0, y: 0 };
+
 export const normalizeRegularPolygonDimensions = (dimensions: RegularPolygonDimensions): RegularPolygonDimensions => {
   const roundedSides = Number.isFinite(dimensions.sides)
     ? Math.round(dimensions.sides)
@@ -21,7 +23,7 @@ export const normalizeRegularPolygonDimensions = (dimensions: RegularPolygonDime
 export const regularPolygonPoints = (
   sides: number,
   radius: number,
-  center: Point = { x: 0, y: 0 }
+  center: Point = DEFAULT_REGULAR_POLYGON_CENTER
 ): readonly Point[] => {
   const dimensions = normalizeRegularPolygonDimensions({ sides });
   const startAngle = Math.PI / 2;

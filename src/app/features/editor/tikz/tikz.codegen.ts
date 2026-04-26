@@ -81,7 +81,9 @@ const wrapInlineMathCommands = (text: string): string => {
       return;
     }
 
-    result += inMathMode ? buffer : buffer.replace(INLINE_MATH_COMMAND_REGEX, (command) => `\\ensuremath{${command}}`);
+    result += inMathMode
+      ? buffer
+      : buffer.replace(INLINE_MATH_COMMAND_REGEX, (command) => String.raw`\ensuremath{${command}}`);
     buffer = '';
   };
 
@@ -256,7 +258,7 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
         : pointList.join(' -- ')
       : `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
 
-  return `\\draw[${entries.join(', ')}] ${path};`;
+  return String.raw`\draw[${entries.join(', ')}] ${path};`;
 };
 
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
@@ -269,7 +271,7 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
   }
 
-  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
+  return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
 };
 
 const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
@@ -288,7 +290,7 @@ const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): s
   const rightX = shape.x + shape.width;
   const rightY = shape.y;
 
-  return `\\draw[${entries.join(', ')}] (${formatNumber(apexX)}, ${formatNumber(apexY)}) -- (${formatNumber(leftX)}, ${formatNumber(leftY)}) -- (${formatNumber(rightX)}, ${formatNumber(rightY)}) -- cycle;`;
+  return String.raw`\draw[${entries.join(', ')}] (${formatNumber(apexX)}, ${formatNumber(apexY)}) -- (${formatNumber(leftX)}, ${formatNumber(leftY)}) -- (${formatNumber(rightX)}, ${formatNumber(rightY)}) -- cycle;`;
 };
 
 const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string => {
@@ -296,7 +298,7 @@ const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): strin
   if ((shape.rotation ?? 0) !== 0) {
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
   }
-  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
+  return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
 };
 
 const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string => {
@@ -304,7 +306,19 @@ const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): str
   if ((shape.rotation ?? 0) !== 0) {
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
   }
-  return `\\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
+  return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
+};
+
+const textAnchorToTikz = (align: TextShape['textAlign']): 'west' | 'east' | 'center' => {
+  if (align === 'left') {
+    return 'west';
+  }
+
+  if (align === 'right') {
+    return 'east';
+  }
+
+  return 'center';
 };
 
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string => {
@@ -312,7 +326,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
     `text=${context.registerColor(shape.color)}`,
     `text opacity=${formatNumber(shape.colorOpacity)}`,
     `scale=${formatNumber(Math.max(shape.fontSize / DEFAULT_TEXT_FONT_SIZE, 0.6))}`,
-    `anchor=${shape.textAlign === 'left' ? 'west' : shape.textAlign === 'right' ? 'east' : 'center'}`
+    `anchor=${textAnchorToTikz(shape.textAlign)}`
   ];
 
   if (shape.textBox) {
@@ -325,15 +339,15 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   }
 
   const fontTokens = [
-    shape.fontWeight === 'bold' ? '\\bfseries' : '',
-    shape.fontStyle === 'italic' ? '\\itshape' : ''
+    shape.fontWeight === 'bold' ? String.raw`\bfseries` : '',
+    shape.fontStyle === 'italic' ? String.raw`\itshape` : ''
   ].filter(Boolean);
 
   const normalizedText = wrapInlineMathCommands(shape.text);
-  const baseText = shape.textDecoration === 'underline' ? `\\underline{${normalizedText}}` : normalizedText;
+  const baseText = shape.textDecoration === 'underline' ? String.raw`\underline{${normalizedText}}` : normalizedText;
   const content = fontTokens.length ? `{${fontTokens.join(' ')} ${baseText}}` : `{${baseText}}`;
 
-  return `\\node[${nodeOptions.join(', ')}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) ${content};`;
+  return String.raw`\node[${nodeOptions.join(', ')}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) ${content};`;
 };
 
 const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
@@ -347,7 +361,7 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
     nodeOptions.push(`opacity=${formatNumber(shape.strokeOpacity)}`);
   }
   const lines = [
-    `\\node[${nodeOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
+    String.raw`\node[${nodeOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
   ];
 
   if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
@@ -362,7 +376,7 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
       );
     }
     lines.push(
-      `\\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
+      String.raw`\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
     );
   }
 
@@ -392,22 +406,24 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   const context = createTikzGenerationContext(options);
   const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
   const imports = [
-    '\\usepackage{tikz}',
+    String.raw`\usepackage{tikz}`,
     ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
-      ? ['\\usetikzlibrary{arrows.meta}']
+      ? [String.raw`\usetikzlibrary{arrows.meta}`]
       : []),
     ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none')
-      ? ['\\usetikzlibrary{bending}']
+      ? [String.raw`\usetikzlibrary{bending}`]
       : []),
-    ...(scene.shapes.some((shape) => shape.kind === 'image') ? ['\\usepackage{graphicx}'] : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'image') ? [String.raw`\usepackage{graphicx}`] : []),
     ...(context.colorMode === 'define-colors'
-      ? Array.from(context.colorMap.entries()).map(([hex, name]) => `\\definecolor{${name}}{HTML}{${hex}}`)
+      ? Array.from(context.colorMap.entries()).map(([hex, name]) => String.raw`\definecolor{${name}}{HTML}{${hex}}`)
       : [])
   ];
 
   return {
     imports: imports.join('\n'),
-    code: ['\\begin{tikzpicture}', ...lines.map((line) => `  ${line}`), '\\end{tikzpicture}'].join('\n')
+    code: [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join(
+      '\n'
+    )
   };
 };
 
@@ -418,10 +434,10 @@ export const sceneToStandaloneDocument = (scene: TikzScene, options: TikzExportO
   (() => {
     const bundle = sceneToTikzBundle(scene, options);
     return [
-      '\\documentclass[tikz]{standalone}',
+      String.raw`\documentclass[tikz]{standalone}`,
       bundle.imports,
-      '\\begin{document}',
+      String.raw`\begin{document}`,
       bundle.code,
-      '\\end{document}'
+      String.raw`\end{document}`
     ].join('\n');
   })();

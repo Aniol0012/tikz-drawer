@@ -437,29 +437,45 @@ export const cornerRadiusFromPointer = (
   }
   const center = shapeCenter(shape);
   const localPointer = rotatePointAround(pointer, center, shapeRotation(shape));
-  let horizontalInset = shape.cornerRadius;
-  let verticalInset = shape.cornerRadius;
+  const insets = roundedCornerInsets(shape, localPointer, handle);
+  if (!insets) {
+    return shape.cornerRadius;
+  }
+  return Math.max(0, Math.min(maxRadius, insets.horizontal, insets.vertical));
+};
+
+const roundedCornerInsets = (
+  shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
+  localPointer: Point,
+  handle: ResizeHandle
+): { readonly horizontal: number; readonly vertical: number } | null => {
   switch (handle) {
     case 'corner-radius-nw':
-      horizontalInset = localPointer.x - shape.x;
-      verticalInset = shape.y + shape.height - localPointer.y;
-      break;
+      return { horizontal: localPointer.x - shape.x, vertical: shape.y + shape.height - localPointer.y };
     case 'corner-radius-ne':
-      horizontalInset = shape.x + shape.width - localPointer.x;
-      verticalInset = shape.y + shape.height - localPointer.y;
-      break;
+      return { horizontal: shape.x + shape.width - localPointer.x, vertical: shape.y + shape.height - localPointer.y };
     case 'corner-radius-se':
-      horizontalInset = shape.x + shape.width - localPointer.x;
-      verticalInset = localPointer.y - shape.y;
-      break;
+      return { horizontal: shape.x + shape.width - localPointer.x, vertical: localPointer.y - shape.y };
     case 'corner-radius-sw':
-      horizontalInset = localPointer.x - shape.x;
-      verticalInset = localPointer.y - shape.y;
-      break;
+      return { horizontal: localPointer.x - shape.x, vertical: localPointer.y - shape.y };
     default:
-      return shape.cornerRadius;
+      return null;
   }
-  return Math.max(0, Math.min(maxRadius, horizontalInset, verticalInset));
+};
+
+const rotateBoxShapeAround = (
+  shape: Extract<CanvasShape, { height: number; rotation?: number; width: number; x: number; y: number }>,
+  pivot: Point,
+  rotationDeltaDegrees: number
+): CanvasShape => {
+  const center = shapeCenter(shape);
+  const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
+  return {
+    ...shape,
+    x: nextCenter.x - shape.width / 2,
+    y: nextCenter.y - shape.height / 2,
+    rotation: normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
+  };
 };
 
 export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDeltaDegrees: number): CanvasShape => {
@@ -475,26 +491,9 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
         to: rotatePointAround(shape.to, pivot, rotationDeltaDegrees),
         anchors: shape.anchors.map((anchor) => rotatePointAround(anchor, pivot, rotationDeltaDegrees))
       } as CanvasShape;
-    case 'rectangle': {
-      const center = shapeCenter(shape);
-      const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
-      return {
-        ...shape,
-        x: nextCenter.x - shape.width / 2,
-        y: nextCenter.y - shape.height / 2,
-        rotation: normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-      } as CanvasShape;
-    }
-    case 'triangle': {
-      const center = shapeCenter(shape);
-      const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
-      return {
-        ...shape,
-        x: nextCenter.x - shape.width / 2,
-        y: nextCenter.y - shape.height / 2,
-        rotation: normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-      } as CanvasShape;
-    }
+    case 'rectangle':
+    case 'triangle':
+      return rotateBoxShapeAround(shape, pivot, rotationDeltaDegrees);
     case 'circle': {
       const nextCenter = rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
       return {
@@ -521,15 +520,7 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
         rotation: normalizeRotationDegrees(shape.rotation + rotationDeltaDegrees)
       } as CanvasShape;
     }
-    case 'image': {
-      const center = shapeCenter(shape);
-      const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
-      return {
-        ...shape,
-        x: nextCenter.x - shape.width / 2,
-        y: nextCenter.y - shape.height / 2,
-        rotation: normalizeRotationDegrees((shape.rotation ?? 0) + rotationDeltaDegrees)
-      } as CanvasShape;
-    }
+    case 'image':
+      return rotateBoxShapeAround(shape, pivot, rotationDeltaDegrees);
   }
 };

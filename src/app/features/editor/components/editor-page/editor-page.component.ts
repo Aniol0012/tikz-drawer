@@ -1928,47 +1928,162 @@ export class EditorPageComponent {
 
   async downloadCanvasPng(): Promise<void> {
     const exportDocument = this.buildCanvasExportDocument();
-    const svgMarkup = exportDocument.markup;
+    const pngBlob = await this.renderCanvasExportToPngBlob(exportDocument);
+    if (!pngBlob) {
+      return;
+    }
+
+    const pngUrl = URL.createObjectURL(pngBlob);
+    const anchor = this.document.createElement('a');
+    anchor.href = pngUrl;
+    anchor.download = `${this.exportFileBaseName()}.png`;
+    anchor.click();
+    URL.revokeObjectURL(pngUrl);
+    this.showExportNotification('png');
+  }
+
+  private async renderCanvasExportToPngBlob(exportDocument: ExportSvgDocument): Promise<Blob | null> {
+    const exportShapes = this.canvasExportShapes();
+    if (!exportShapes.some((shape) => shape.kind === 'image')) {
+      return this.renderSvgExportToPngBlob(exportDocument);
+    }
+
+    const vectorDocument = this.buildCanvasExportDocument(true);
+    const canvas = this.createExportCanvas(exportDocument);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return null;
+    }
+
+    const scale = EDITOR_PNG_EXPORT_SCALE;
+    context.scale(scale, scale);
+    const vectorImage = await this.loadSvgExportImage(vectorDocument.markup);
+    context.drawImage(vectorImage, 0, 0, exportDocument.width, exportDocument.height);
+    await this.drawExportImages(context, exportDocument, exportShapes);
+
+    return this.canvasToPngBlob(canvas);
+  }
+
+  private async renderSvgExportToPngBlob(exportDocument: ExportSvgDocument): Promise<Blob | null> {
+    const image = await this.loadSvgExportImage(exportDocument.markup);
+    const canvas = this.createExportCanvas(exportDocument);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return null;
+    }
+
+    const scale = EDITOR_PNG_EXPORT_SCALE;
+    context.scale(scale, scale);
+    context.drawImage(image, 0, 0, exportDocument.width, exportDocument.height);
+
+    return this.canvasToPngBlob(canvas);
+  }
+
+  private createExportCanvas(exportDocument: ExportSvgDocument): HTMLCanvasElement {
+    const canvas = this.document.createElement('canvas');
+    canvas.width = exportDocument.width * EDITOR_PNG_EXPORT_SCALE;
+    canvas.height = exportDocument.height * EDITOR_PNG_EXPORT_SCALE;
+    return canvas;
+  }
+
+  private async loadSvgExportImage(svgMarkup: string): Promise<HTMLImageElement> {
     const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
 
     try {
-      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      return await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error('Unable to render canvas export.'));
         img.src = svgUrl;
       });
-
-      const width = exportDocument.width;
-      const height = exportDocument.height;
-      const scale = EDITOR_PNG_EXPORT_SCALE;
-      const canvas = this.document.createElement('canvas');
-      canvas.width = width * scale;
-      canvas.height = height * scale;
-      const context = canvas.getContext('2d');
-      if (!context) {
-        return;
-      }
-
-      context.scale(scale, scale);
-      context.drawImage(image, 0, 0, width, height);
-
-      const pngBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!pngBlob) {
-        return;
-      }
-
-      const pngUrl = URL.createObjectURL(pngBlob);
-      const anchor = this.document.createElement('a');
-      anchor.href = pngUrl;
-      anchor.download = `${this.exportFileBaseName()}.png`;
-      anchor.click();
-      URL.revokeObjectURL(pngUrl);
-      this.showExportNotification('png');
     } finally {
       URL.revokeObjectURL(svgUrl);
     }
+  }
+
+  private canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+    return new Promise<Blob | null>((resolve) => {
+      try {
+        canvas.toBlob(resolve, 'image/png');
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
+  private async drawExportImages(
+    context: CanvasRenderingContext2D,
+    exportDocument: ExportSvgDocument,
+    shapes: readonly CanvasShape[]
+  ): Promise<void> {
+    const projection = exportDocument.projection;
+    if (!projection) {
+      return;
+    }
+
+    for (const shape of shapes) {
+      if (shape.kind !== 'image') {
+        continue;
+      }
+
+      try {
+        const image = await this.loadRasterImage(shape.src);
+        this.drawImageShape(context, image, shape, projection);
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  private async loadRasterImage(src: string): Promise<HTMLImageElement> {
+    return await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Unable to load embedded image.'));
+      image.src = src;
+    });
+  }
+
+  private drawImageShape(
+    context: CanvasRenderingContext2D,
+    image: HTMLImageElement,
+    shape: Extract<CanvasShape, { kind: 'image' }>,
+    projection: NonNullable<ExportSvgDocument['projection']>
+  ): void {
+    const { bounds, padding, scale } = projection;
+    const x = (shape.x - bounds.left) * scale + padding;
+    const y = (bounds.top - (shape.y + shape.height)) * scale + padding;
+    const width = shape.width * scale;
+    const height = shape.height * scale;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const fitted = this.containedImageRect(image, x, y, width, height);
+
+    context.save();
+    context.globalAlpha = shape.strokeOpacity;
+    context.translate(centerX, centerY);
+    context.rotate(((shape.rotation ?? 0) * Math.PI) / 180);
+    context.drawImage(image, fitted.x - centerX, fitted.y - centerY, fitted.width, fitted.height);
+    context.restore();
+  }
+
+  private containedImageRect(
+    image: HTMLImageElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ): { readonly x: number; readonly y: number; readonly width: number; readonly height: number } {
+    const imageRatio = image.naturalWidth && image.naturalHeight ? image.naturalWidth / image.naturalHeight : 1;
+    const targetRatio = width / Math.max(height, 1);
+    if (imageRatio > targetRatio) {
+      const fittedHeight = width / imageRatio;
+      return { x, y: y + (height - fittedHeight) / 2, width, height: fittedHeight };
+    }
+
+    const fittedWidth = height * imageRatio;
+    return { x: x + (width - fittedWidth) / 2, y, width: fittedWidth, height };
   }
 
   copyExportedCode(): void {
@@ -2156,6 +2271,41 @@ export class EditorPageComponent {
       shapes: structuredClone(shapes),
       pasteCount: 0
     });
+    this.copySingleSelectedImageToSystemClipboard(shapes);
+  }
+
+  private copySingleSelectedImageToSystemClipboard(shapes: readonly CanvasShape[]): void {
+    const [shape] = shapes;
+    if (
+      shapes.length !== 1 ||
+      shape?.kind !== 'image' ||
+      !navigator.clipboard?.write ||
+      typeof ClipboardItem === 'undefined'
+    ) {
+      return;
+    }
+
+    const pngBlob = this.imageSourceToPngBlob(shape.src);
+    this.runAsync(navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]));
+  }
+
+  private async imageSourceToPngBlob(src: string): Promise<Blob> {
+    const image = await this.loadRasterImage(src);
+    const canvas = this.document.createElement('canvas');
+    canvas.width = Math.max(1, image.naturalWidth || image.width);
+    canvas.height = Math.max(1, image.naturalHeight || image.height);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Unable to prepare clipboard image.');
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await this.canvasToPngBlob(canvas);
+    if (!blob) {
+      throw new Error('Unable to copy image to the clipboard.');
+    }
+
+    return blob;
   }
 
   cutSelected(): void {
@@ -4062,8 +4212,8 @@ export class EditorPageComponent {
         x: corner.x + bisector.x * inset,
         y: corner.y + bisector.y * inset
       };
-      const id: ResizeHandle =
-        index === 0 ? 'corner-radius-apex' : index === 1 ? 'corner-radius-left' : 'corner-radius-right';
+      const ids: readonly ResizeHandle[] = ['corner-radius-apex', 'corner-radius-left', 'corner-radius-right'];
+      const id = ids[index] ?? 'corner-radius-right';
       return { id, corner, point };
     });
 
@@ -6213,11 +6363,17 @@ export class EditorPageComponent {
     return left;
   }
 
-  private buildCanvasExportDocument(): ExportSvgDocument {
+  private canvasExportShapes(): readonly CanvasShape[] {
+    const selectedShapes = this.selectedShapes();
+    return selectedShapes.length ? selectedShapes : this.scene().shapes;
+  }
+
+  private buildCanvasExportDocument(omitImages = false): ExportSvgDocument {
     return buildCanvasExportDocumentUtil({
       selectedShapes: this.selectedShapes(),
       sceneShapes: this.scene().shapes,
       theme: this.preferences().theme,
+      omitImages,
       helpers: {
         computeBounds: (shapes) => this.computeBounds(shapes),
         buildLinePath: (shape, mapPoint) => this.buildLinePath(shape, mapPoint),

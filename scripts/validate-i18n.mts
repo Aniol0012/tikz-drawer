@@ -19,7 +19,6 @@ const BASE_LOCALE = 'en';
 const LOCALES_DIR = 'src/app/features/editor/i18n';
 const CODE_EXTENSIONS = new Set(['.html', '.ts']);
 
-type LocaleCode = string;
 type FlatDictionary = Map<string, unknown>;
 type ValidationMode = 'diff' | 'all';
 
@@ -36,7 +35,7 @@ interface LocaleLoadFailure {
 type LocaleLoadResult = LocaleLoadSuccess | LocaleLoadFailure;
 
 interface LocaleFailure {
-  readonly locale: LocaleCode;
+  readonly locale: string;
   readonly missing: readonly string[];
   readonly extra: readonly string[];
   readonly empty: readonly string[];
@@ -44,7 +43,7 @@ interface LocaleFailure {
 
 interface MissingUsageKey {
   readonly key: string;
-  readonly locales: readonly LocaleCode[];
+  readonly locales: readonly string[];
 }
 
 interface CliOptions {
@@ -186,11 +185,15 @@ function getDiff(): string {
   return '';
 }
 
-function localeCodeFromFile(fileName: string): LocaleCode {
+function localeCodeFromFile(fileName: string): string {
   return path.basename(fileName, '.json');
 }
 
-function listLocales(): readonly LocaleCode[] {
+function localeSortPriority(locale: string): number {
+  return locale === BASE_LOCALE ? 0 : 1;
+}
+
+function listLocales(): readonly string[] {
   if (!fs.existsSync(localesPath)) {
     console.error(`[ERROR] Locale directory not found: ${LOCALES_DIR}`);
     process.exit(1);
@@ -200,7 +203,10 @@ function listLocales(): readonly LocaleCode[] {
     .readdirSync(localesPath)
     .filter((fileName) => fileName.endsWith('.json'))
     .map(localeCodeFromFile)
-    .sort((a, b) => (a === BASE_LOCALE ? -1 : b === BASE_LOCALE ? 1 : a.localeCompare(b)));
+    .sort((left, right) => {
+      const priorityDiff = localeSortPriority(left) - localeSortPriority(right);
+      return priorityDiff || compareAlphabetically(left, right);
+    });
 
   if (!locales.includes(BASE_LOCALE)) {
     console.error(`[ERROR] Base locale missing: ${BASE_LOCALE}.json`);
@@ -215,18 +221,20 @@ function duplicateKeys(raw: string): readonly string[] {
   const duplicates = new Set<string>();
   const keyPattern = /"((?:\\.|[^"\\])*)"\s*:/g;
 
-  for (const match of raw.matchAll(keyPattern)) {
+  let match: RegExpExecArray | null = keyPattern.exec(raw);
+  while (match) {
     const key = JSON.parse(`"${match[1]}"`) as string;
     if (keys.has(key)) {
       duplicates.add(key);
     }
     keys.add(key);
+    match = keyPattern.exec(raw);
   }
 
   return [...duplicates].sort(compareAlphabetically);
 }
 
-function loadLocale(locale: LocaleCode): LocaleLoadResult {
+function loadLocale(locale: string): LocaleLoadResult {
   const file = path.join(localesPath, `${locale}.json`);
   const raw = fs.readFileSync(file, 'utf8');
   const duplicates = duplicateKeys(raw);
@@ -279,9 +287,10 @@ function isStaticTranslationKey(key: string): boolean {
 function collectAddedCodeLines(diff: string): readonly string[] {
   const addedCodeLines: string[] = [];
   let currentFile: string | null = null;
+  const filePattern = /^\+\+\+ b\/(.+)/;
 
   for (const line of diff.split('\n')) {
-    const fileMatch = line.match(/^\+\+\+ b\/(.+)/);
+    const fileMatch = filePattern.exec(line);
     if (fileMatch) {
       currentFile = fileMatch[1];
       continue;
@@ -336,11 +345,14 @@ function collectTranslationKeys(lines: readonly string[]): ReadonlySet<string> {
 
   for (const line of lines) {
     for (const pattern of usagePatterns) {
-      for (const match of line.matchAll(pattern)) {
+      pattern.lastIndex = 0;
+      let match: RegExpExecArray | null = pattern.exec(line);
+      while (match) {
         const key = match[1].trim();
         if (key && isStaticTranslationKey(key)) {
           codeKeys.add(key);
         }
+        match = pattern.exec(line);
       }
     }
   }
@@ -370,7 +382,7 @@ function buildReport(localeFailures: readonly LocaleFailure[], missingUsageKeys:
 
 const localeCodes = listLocales();
 const options = parseCliOptions(process.argv.slice(2));
-const localeMaps = new Map<LocaleCode, FlatDictionary>();
+const localeMaps = new Map<string, FlatDictionary>();
 const localeLoadErrors: string[] = [];
 
 for (const locale of localeCodes) {
@@ -414,7 +426,8 @@ for (const locale of localeCodes) {
   }
 }
 
-const codeLines = options.mode === 'all' ? collectAllCodeLines() : collectAddedCodeLines(getDiff());
+const isFullScan = options.mode === 'all';
+const codeLines = isFullScan ? collectAllCodeLines() : collectAddedCodeLines(getDiff());
 const codeKeys = collectTranslationKeys(codeLines);
 const missingUsageKeys: MissingUsageKey[] = [...codeKeys]
   .sort(compareAlphabetically)
@@ -427,12 +440,10 @@ const missingUsageKeys: MissingUsageKey[] = [...codeKeys]
 console.log(`[INFO] Loaded locales: ${localeCodes.join(', ')}`);
 console.log(`[INFO] Base locale keys: ${baseKeys.length}`);
 console.log(`[INFO] Validation mode: ${options.mode}`);
-console.log(
-  `[INFO] Analyzing ${codeLines.length} ${options.mode === 'all' ? 'TS/HTML line(s)' : 'added TS/HTML line(s)'}`
-);
-console.log(
-  `[INFO] Found ${codeKeys.size} literal i18n key usage(s) in ${options.mode === 'all' ? 'all code' : 'added code'}`
-);
+const analyzedLineLabel = isFullScan ? 'TS/HTML line(s)' : 'added TS/HTML line(s)';
+const usageScopeLabel = isFullScan ? 'all code' : 'added code';
+console.log(`[INFO] Analyzing ${codeLines.length} ${analyzedLineLabel}`);
+console.log(`[INFO] Found ${codeKeys.size} literal i18n key usage(s) in ${usageScopeLabel}`);
 
 if (!localeFailures.length && !missingUsageKeys.length) {
   console.log('[SUCCESS] i18n validation passed');
