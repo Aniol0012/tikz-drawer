@@ -124,14 +124,81 @@ jobs:
           EOF
           fi
 
+      - name: Sync README release preview
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          PREVIEW_URL: ${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-light.png
+        run: |
+          if [ ! -f screenshots/editor-light.png ]; then
+            echo "No editor-light.png screenshot found; README preview left unchanged."
+            exit 0
+          fi
+
+          node - <<'NODE'
+          const fs = require('fs');
+
+          const readmePath = 'README.md';
+          const screenshotPath = 'screenshots/editor-light.png';
+          const original = fs.readFileSync(readmePath, 'utf8');
+          const image = fs.readFileSync(screenshotPath);
+
+          const pngSignature = '89504e470d0a1a0a';
+          if (image.subarray(0, 8).toString('hex') !== pngSignature) {
+            console.log('Generated preview is not a PNG; README preview left unchanged.');
+            process.exit(0);
+          }
+
+          const width = image.readUInt32BE(16);
+          const height = image.readUInt32BE(20);
+          const previewBlock = [
+            '## Preview',
+            '',
+            `> <img width="${width}" height="${height}" alt="image" src="${process.env.PREVIEW_URL}" />`,
+            `> ${process.env.RELEASE_TAG}`,
+            ''
+          ].join('\n');
+
+          const previewHeading = '## Preview';
+          const nextSectionIndex = original.indexOf('\n> [!TIP]', original.indexOf(previewHeading));
+          if (!original.includes(previewHeading) || nextSectionIndex === -1) {
+            console.log('README preview section was not found; README preview left unchanged.');
+            process.exit(0);
+          }
+
+          const previewStart = original.indexOf(previewHeading);
+          const next = `${original.slice(0, previewStart)}${previewBlock}${original.slice(nextSectionIndex)}`;
+          if (next === original) {
+            console.log('README release preview already up to date.');
+            process.exit(0);
+          }
+
+          fs.writeFileSync(readmePath, next);
+          console.log(`README release preview updated to ${process.env.RELEASE_TAG}.`);
+          NODE
+
+      - name: Configure release git author
+        shell: bash
+        env:
+          RELEASE_AUTHOR_NAME: ${{ github.actor }}
+          RELEASE_AUTHOR_ID: ${{ github.actor_id }}
+        run: |
+          if [ -n "$RELEASE_AUTHOR_ID" ]; then
+            RELEASE_AUTHOR_EMAIL="${RELEASE_AUTHOR_ID}+${RELEASE_AUTHOR_NAME}@users.noreply.github.com"
+          else
+            RELEASE_AUTHOR_EMAIL="${RELEASE_AUTHOR_NAME}@users.noreply.github.com"
+          fi
+
+          git config user.name "$RELEASE_AUTHOR_NAME"
+          git config user.email "$RELEASE_AUTHOR_EMAIL"
+          echo "Release git author configured as ${RELEASE_AUTHOR_NAME} <${RELEASE_AUTHOR_EMAIL}>."
+
       - name: Commit and push release metadata
         shell: bash
         run: |
           if [ -z "$(git status --porcelain package.json pnpm-lock.yaml README.md)" ]; then
             echo "No release metadata changes to commit."
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add package.json README.md
             if [ -f pnpm-lock.yaml ]; then
               git add pnpm-lock.yaml
@@ -189,4 +256,3 @@ jobs:
             .artifacts/release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
