@@ -1071,7 +1071,7 @@
                     [attr.aria-label]="t('ungroupFigures')"
                     (click)="ungroupSelected()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.layers"></path></svg
+                      <path [attr.d]="iconMap.ungroup"></path></svg
                     ><span>{{ t('ungroupFigures') }}</span>
                   </button>
                 }
@@ -2137,7 +2137,7 @@
                     [attr.aria-label]="t('ungroupFigures')"
                     (click)="ungroupSelected()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.layers"></path></svg
+                      <path [attr.d]="iconMap.ungroup"></path></svg
                     ><span>{{ t('ungroupFigures') }}</span>
                   </button>
                 }
@@ -2232,7 +2232,7 @@
                       [attr.aria-label]="t('ungroupFigures')"
                       (click)="ungroupSelected()">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="iconMap.layers"></path></svg
+                        <path [attr.d]="iconMap.ungroup"></path></svg
                       ><span>{{ t('ungroupFigures') }}</span>
                     </button>
                   }
@@ -3054,7 +3054,7 @@
                     [attr.aria-label]="t('ungroupFigures')"
                     (click)="ungroupSelected()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.layers"></path></svg
+                      <path [attr.d]="iconMap.ungroup"></path></svg
                     ><span>{{ t('ungroupFigures') }}</span>
                   </button>
                 }
@@ -3103,8 +3103,22 @@
             </svg>
           </button>
           @if (!isSectionCollapsed('sceneSettings')) {
-            <div class="form-grid">
-              <label class="field"
+            <div class="form-grid form-grid--scene-settings">
+              <label class="field field--color-picker"
+                ><span>{{ t('defaultStroke') }}</span
+                ><input
+                  type="color"
+                  [value]="preferences().defaultStroke"
+                  (input)="updatePreferenceText('defaultStroke', $event)"
+              /></label>
+              <label class="field field--color-picker"
+                ><span>{{ t('defaultFill') }}</span
+                ><input
+                  type="color"
+                  [value]="preferences().defaultFill"
+                  (input)="updatePreferenceText('defaultFill', $event)"
+              /></label>
+              <label class="field field--full"
                 ><span>{{ t('snapTolerance') }}</span>
                 <div class="range-field">
                   <input
@@ -3121,20 +3135,6 @@
                     [value]="preferences().snapStep"
                     (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /></div
               ></label>
-              <label class="field field--color-picker"
-                ><span>{{ t('defaultStroke') }}</span
-                ><input
-                  type="color"
-                  [value]="preferences().defaultStroke"
-                  (input)="updatePreferenceText('defaultStroke', $event)"
-              /></label>
-              <label class="field field--color-picker"
-                ><span>{{ t('defaultFill') }}</span
-                ><input
-                  type="color"
-                  [value]="preferences().defaultFill"
-                  (input)="updatePreferenceText('defaultFill', $event)"
-              /></label>
               <label class="field field--full"
                 ><span>{{ t('defaultLineWidth') }}</span>
                 <div class="range-field">
@@ -3316,7 +3316,7 @@
       @if (canUngroupSelection()) {
         <button type="button" (click)="runContextAction('ungroup')">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.layers"></path>
+            <path [attr.d]="iconMap.ungroup"></path>
           </svg>
           <span>{{ t('ungroupFigures') }}</span>
         </button>

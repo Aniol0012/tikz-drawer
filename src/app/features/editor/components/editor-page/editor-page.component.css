@@ -1663,6 +1663,10 @@ kbd {
   gap: 12px;
 }
 
+.right-sidebar .form-grid--scene-settings {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .sidebar-section > .form-grid > .field,
 .sidebar-section > .form-grid > .toggle-field {
   padding: 12px;
@@ -1803,13 +1807,14 @@ kbd {
 }
 
 .field input[type='color'] {
-  width: 52px;
-  min-width: 52px;
-  min-height: 40px;
-  padding: 3px;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 2px;
   cursor: pointer;
   justify-self: start;
-  border-radius: 999px;
+  border-radius: 50%;
   overflow: hidden;
 }
 
@@ -1829,7 +1834,12 @@ kbd {
 }
 
 .field--color-picker {
-  align-content: start;
+  grid-template-columns: minmax(0, max-content) 38px;
+  gap: 10px;
+  align-content: center;
+  align-items: center;
+  justify-content: start;
+  min-height: 54px;
 }
 
 .field textarea {
@@ -3095,6 +3105,10 @@ button:disabled {
     max-height: none;
   }
 
+  .right-sidebar .selection-title {
+    display: none;
+  }
+
   .right-sidebar .sidebar-tabs {
     margin: 8px 8px 0;
   }
@@ -3798,6 +3812,21 @@ button:disabled {
     padding-inline: 7px;
     border-radius: 7px;
     font-size: 0.82rem;
+  }
+
+  .right-sidebar .field input[type='color'] {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 2px;
+    border-radius: 50%;
+  }
+
+  .right-sidebar .field--color-picker {
+    grid-template-columns: minmax(0, max-content) 30px;
+    min-height: 38px;
+    gap: 7px;
   }
 
   .toggle-field {

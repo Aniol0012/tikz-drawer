@@ -88,6 +88,8 @@ export const iconPaths = {
   pin: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7',
   pinOff: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7M4.7 3.8 3.8 4.7 19.3 20.2 20.2 19.3 4.7 3.8z',
   layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75',
+  ungroup:
+    'M4.75 4.75h4.8v4.8h-4.8v-4.8Zm9.7 0h4.8v4.8h-4.8v-4.8Zm-9.7 9.7h4.8v4.8h-4.8v-4.8Zm9.7 0h4.8v4.8h-4.8v-4.8ZM11 7.15h2M7.15 11v2M16.85 11v2M11 16.85h2',
   rotation: 'M12 2V5L16 1L12 -3V0A12 12 0 1 0 24 12H21A9 9 0 1 1 12 3Z'
 } satisfies Record<string, string>;
 
