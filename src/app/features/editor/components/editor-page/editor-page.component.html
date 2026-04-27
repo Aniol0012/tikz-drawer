@@ -1023,50 +1023,106 @@
 
             <div class="property-group property-group--actions">
               <div class="inline-actions">
-                <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('duplicate')"
+                  [attr.aria-label]="t('duplicate')"
+                  (click)="duplicateSelected()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.copy"></path></svg
                   ><span>{{ t('duplicate') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('bringToFront')"
+                  [attr.aria-label]="t('bringToFront')"
+                  (click)="bringSelectedToFront()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.front"></path></svg
                   ><span>{{ t('bringToFront') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('sendToBack')"
+                  [attr.aria-label]="t('sendToBack')"
+                  (click)="sendSelectedToBack()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.back"></path></svg
                   ><span>{{ t('sendToBack') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('saveAsTemplate')"
+                  [attr.aria-label]="t('saveAsTemplate')"
+                  (click)="openSaveTemplateDialog()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.library"></path></svg
                   ><span>{{ t('saveAsTemplate') }}</span>
                 </button>
-              </div>
-            </div>
-            <div class="property-group">
-              <div class="property-group__title">{{ t('general') }}</div>
-              <div class="form-grid form-grid--section">
-                <label class="field field--full"
-                  ><span>{{ t('name') }}</span
-                  ><input
-                    type="text"
-                    [value]="shape.name"
-                    (input)="updateShapeText('name', $event)"
-                /></label>
-                @if (shape.kind === 'text') {
-                  <label class="field field--full"
-                    ><span>{{ t('text') }}</span
-                    ><textarea
-                      #inspectorTextInput
-                      rows="3"
-                      [value]="shape.text"
-                      (input)="updateShapeText('text', $event)"></textarea>
-                  </label>
+                @if (canUngroupSelection()) {
+                  <button
+                    class="secondary-button mobile-only-action"
+                    type="button"
+                    [title]="t('ungroupFigures')"
+                    [attr.aria-label]="t('ungroupFigures')"
+                    (click)="ungroupSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.layers"></path></svg
+                    ><span>{{ t('ungroupFigures') }}</span>
+                  </button>
                 }
+                <button
+                  class="secondary-button mobile-only-action"
+                  type="button"
+                  [title]="t('downloadPng')"
+                  [attr.aria-label]="t('downloadPng')"
+                  (click)="runContextAction('png')">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.download"></path></svg
+                  ><span>{{ t('downloadPng') }}</span>
+                </button>
+                <button
+                  class="secondary-button secondary-button--danger mobile-only-action"
+                  type="button"
+                  [title]="t('delete')"
+                  [attr.aria-label]="t('delete')"
+                  (click)="removeSelected()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.trash"></path></svg
+                  ><span>{{ t('delete') }}</span>
+                </button>
               </div>
             </div>
+            @if (!mobileLayout() || shape.kind === 'text') {
+              <div class="property-group">
+                <div class="property-group__title">{{ t('general') }}</div>
+                <div class="form-grid form-grid--section">
+                  @if (!mobileLayout()) {
+                    <label class="field field--full"
+                      ><span>{{ t('name') }}</span
+                      ><input
+                        type="text"
+                        [value]="shape.name"
+                        (input)="updateShapeText('name', $event)"
+                    /></label>
+                  }
+                  @if (shape.kind === 'text') {
+                    <label class="field field--full"
+                      ><span>{{ t('text') }}</span
+                      ><textarea
+                        #inspectorTextInput
+                        rows="3"
+                        [value]="shape.text"
+                        (input)="updateShapeText('text', $event)"></textarea>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
             @if (shape.kind !== 'text') {
               <div class="property-group">
                 <div class="property-group__title">{{ t('appearance') }}</div>
@@ -2033,25 +2089,77 @@
                 <span>{{ tableDimensionsLabel(table.columns, table.rows) }}</span>
               </div>
               <div class="inline-actions">
-                <button class="primary-button" type="button" (click)="openSelectedTableDialog()">
+                <button
+                  class="primary-button"
+                  type="button"
+                  [title]="t('configureTable')"
+                  [attr.aria-label]="t('configureTable')"
+                  (click)="openSelectedTableDialog()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.table"></path></svg
                   ><span>{{ t('configureTable') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('duplicate')"
+                  [attr.aria-label]="t('duplicate')"
+                  (click)="duplicateSelected()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.copy"></path></svg
                   ><span>{{ t('duplicate') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('bringToFront')"
+                  [attr.aria-label]="t('bringToFront')"
+                  (click)="bringSelectedToFront()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.front"></path></svg
                   ><span>{{ t('bringToFront') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('sendToBack')"
+                  [attr.aria-label]="t('sendToBack')"
+                  (click)="sendSelectedToBack()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.back"></path></svg
                   ><span>{{ t('sendToBack') }}</span>
+                </button>
+                @if (canUngroupSelection()) {
+                  <button
+                    class="secondary-button mobile-only-action"
+                    type="button"
+                    [title]="t('ungroupFigures')"
+                    [attr.aria-label]="t('ungroupFigures')"
+                    (click)="ungroupSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.layers"></path></svg
+                    ><span>{{ t('ungroupFigures') }}</span>
+                  </button>
+                }
+                <button
+                  class="secondary-button mobile-only-action"
+                  type="button"
+                  [title]="t('downloadPng')"
+                  [attr.aria-label]="t('downloadPng')"
+                  (click)="runContextAction('png')">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.download"></path></svg
+                  ><span>{{ t('downloadPng') }}</span>
+                </button>
+                <button
+                  class="secondary-button secondary-button--danger mobile-only-action"
+                  type="button"
+                  [title]="t('delete')"
+                  [attr.aria-label]="t('delete')"
+                  (click)="removeSelected()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.trash"></path></svg
+                  ><span>{{ t('delete') }}</span>
                 </button>
               </div>
               <div class="empty-panel">
@@ -2064,25 +2172,89 @@
               </div>
               <div class="property-group property-group--actions">
                 <div class="inline-actions">
-                  <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [title]="t('duplicate')"
+                    [attr.aria-label]="t('duplicate')"
+                    (click)="duplicateSelected()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.copy"></path></svg
                     ><span>{{ t('duplicate') }}</span>
                   </button>
-                  <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [title]="t('bringToFront')"
+                    [attr.aria-label]="t('bringToFront')"
+                    (click)="bringSelectedToFront()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.front"></path></svg
                     ><span>{{ t('bringToFront') }}</span>
                   </button>
-                  <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [title]="t('sendToBack')"
+                    [attr.aria-label]="t('sendToBack')"
+                    (click)="sendSelectedToBack()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.back"></path></svg
                     ><span>{{ t('sendToBack') }}</span>
                   </button>
-                  <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                  <button
+                    class="secondary-button"
+                    type="button"
+                    [title]="t('saveAsTemplate')"
+                    [attr.aria-label]="t('saveAsTemplate')"
+                    (click)="openSaveTemplateDialog()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="iconMap.library"></path></svg
                     ><span>{{ t('saveAsTemplate') }}</span>
+                  </button>
+                  @if (canGroupSelection()) {
+                    <button
+                      class="secondary-button mobile-only-action"
+                      type="button"
+                      [title]="t('groupFigures')"
+                      [attr.aria-label]="t('groupFigures')"
+                      (click)="mergeSelected()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.layers"></path></svg
+                      ><span>{{ t('groupFigures') }}</span>
+                    </button>
+                  }
+                  @if (canUngroupSelection()) {
+                    <button
+                      class="secondary-button mobile-only-action"
+                      type="button"
+                      [title]="t('ungroupFigures')"
+                      [attr.aria-label]="t('ungroupFigures')"
+                      (click)="ungroupSelected()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.layers"></path></svg
+                      ><span>{{ t('ungroupFigures') }}</span>
+                    </button>
+                  }
+                  <button
+                    class="secondary-button mobile-only-action"
+                    type="button"
+                    [title]="t('downloadPng')"
+                    [attr.aria-label]="t('downloadPng')"
+                    (click)="runContextAction('png')">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.download"></path></svg
+                    ><span>{{ t('downloadPng') }}</span>
+                  </button>
+                  <button
+                    class="secondary-button secondary-button--danger mobile-only-action"
+                    type="button"
+                    [title]="t('delete')"
+                    [attr.aria-label]="t('delete')"
+                    (click)="removeSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.trash"></path></svg
+                    ><span>{{ t('delete') }}</span>
                   </button>
                 </div>
               </div>
@@ -2822,25 +2994,89 @@
                 <strong>{{ selectionCount() }} {{ t('objects').toLowerCase() }}</strong>
               </div>
               <div class="inline-actions">
-                <button class="secondary-button" type="button" (click)="duplicateSelected()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('duplicate')"
+                  [attr.aria-label]="t('duplicate')"
+                  (click)="duplicateSelected()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.copy"></path></svg
                   ><span>{{ t('duplicate') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="bringSelectedToFront()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('bringToFront')"
+                  [attr.aria-label]="t('bringToFront')"
+                  (click)="bringSelectedToFront()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.front"></path></svg
                   ><span>{{ t('bringToFront') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="sendSelectedToBack()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('sendToBack')"
+                  [attr.aria-label]="t('sendToBack')"
+                  (click)="sendSelectedToBack()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.back"></path></svg
                   ><span>{{ t('sendToBack') }}</span>
                 </button>
-                <button class="secondary-button" type="button" (click)="openSaveTemplateDialog()">
+                <button
+                  class="secondary-button"
+                  type="button"
+                  [title]="t('saveAsTemplate')"
+                  [attr.aria-label]="t('saveAsTemplate')"
+                  (click)="openSaveTemplateDialog()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.library"></path></svg
                   ><span>{{ t('saveAsTemplate') }}</span>
+                </button>
+                @if (canGroupSelection()) {
+                  <button
+                    class="secondary-button mobile-only-action"
+                    type="button"
+                    [title]="t('groupFigures')"
+                    [attr.aria-label]="t('groupFigures')"
+                    (click)="mergeSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.layers"></path></svg
+                    ><span>{{ t('groupFigures') }}</span>
+                  </button>
+                }
+                @if (canUngroupSelection()) {
+                  <button
+                    class="secondary-button mobile-only-action"
+                    type="button"
+                    [title]="t('ungroupFigures')"
+                    [attr.aria-label]="t('ungroupFigures')"
+                    (click)="ungroupSelected()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="iconMap.layers"></path></svg
+                    ><span>{{ t('ungroupFigures') }}</span>
+                  </button>
+                }
+                <button
+                  class="secondary-button mobile-only-action"
+                  type="button"
+                  [title]="t('downloadPng')"
+                  [attr.aria-label]="t('downloadPng')"
+                  (click)="runContextAction('png')">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.download"></path></svg
+                  ><span>{{ t('downloadPng') }}</span>
+                </button>
+                <button
+                  class="secondary-button secondary-button--danger mobile-only-action"
+                  type="button"
+                  [title]="t('delete')"
+                  [attr.aria-label]="t('delete')"
+                  (click)="removeSelected()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="iconMap.trash"></path></svg
+                  ><span>{{ t('delete') }}</span>
                 </button>
               </div>
               <div class="selected-shape-list">
