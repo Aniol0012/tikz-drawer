@@ -72,11 +72,12 @@ describe('presets', () => {
       'rectangle',
       'line',
       'line',
+      'line',
       'text',
       'text',
       'text'
     ]);
-    expect(stickyNotePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'line', 'line', 'text']);
+    expect(stickyNotePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'text']);
     expect(documentPreset?.shapes.map((shape) => shape.kind)).toEqual([
       'rectangle',
       'rectangle',
@@ -131,9 +132,9 @@ describe('presets', () => {
     expect(stickyNoteLabel?.kind).toBe('text');
     if (stickyNoteLabel?.kind === 'text') {
       expect(stickyNoteLabel.textBox).toBe(true);
-      expect(stickyNoteLabel.boxWidth).toBe(2.4);
-      expect(stickyNoteLabel.x).toBe(-1.22);
-      expect(stickyNoteLabel.fontSize).toBe(0.34);
+      expect(stickyNoteLabel.boxWidth).toBe(2.7);
+      expect(stickyNoteLabel.x).toBe(-1.36);
+      expect(stickyNoteLabel.fontSize).toBe(0.38);
     }
 
     const messageLabel = messagePreset?.shapes.find((shape) => shape.kind === 'text' && shape.name === 'Message text');
