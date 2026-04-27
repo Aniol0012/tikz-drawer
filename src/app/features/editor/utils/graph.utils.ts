@@ -24,6 +24,7 @@ import type { CircleShape, LineShape, Point, TextShape } from '../models/tikz.mo
 const DEFAULT_GRAPH_RADIUS = 2.1;
 const DEFAULT_GRAPH_NODE_RADIUS = 0.18;
 const DEFAULT_GRAPH_SCALE = 1;
+const GRAPH_EDGE_CLEARANCE = 0.02;
 
 const clampInteger = (value: number, minimumValue: number, maximumValue: number): number => {
   if (!Number.isFinite(value)) {
@@ -157,10 +158,16 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
       if (!source || !target) {
         return null;
       }
-      return buildLine(
-        `${source.label} - ${target.label}`,
+      const edgeEndpoints = insetGraphEdge(
         project(source.position),
         project(target.position),
+        nodeRadius,
+        normalized.directed
+      );
+      return buildLine(
+        `${source.label} - ${target.label}`,
+        edgeEndpoints.from,
+        edgeEndpoints.to,
         mergeId,
         normalized.directed
       );
@@ -193,11 +200,11 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
           stroke: 'none',
           strokeOpacity: 1,
           strokeWidth: 0,
-          x: position.x,
+          x: position.x - nodeRadius,
           y: position.y - 0.07,
           text: node.label,
-          textBox: false,
-          boxWidth: 0.6,
+          textBox: true,
+          boxWidth: nodeRadius * 2,
           fontSize: 0.2,
           color: DEFAULT_TEXT_COLOR,
           colorOpacity: 1,
@@ -212,6 +219,40 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
     : [];
 
   return [...edges, ...nodes, ...labels];
+};
+
+export const insetGraphEdge = (
+  from: Point,
+  to: Point,
+  nodeRadius: number,
+  directed: boolean
+): { readonly from: Point; readonly to: Point } => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= 0.0001) {
+    return { from, to };
+  }
+
+  const unitX = dx / length;
+  const unitY = dy / length;
+  const startInset = nodeRadius + GRAPH_EDGE_CLEARANCE;
+  const endInset =
+    nodeRadius + GRAPH_EDGE_CLEARANCE + (directed ? Math.max(nodeRadius * 0.28, GRAPH_EDGE_CLEARANCE) : 0);
+  const maxInset = length * 0.42;
+  const safeStartInset = Math.min(startInset, maxInset);
+  const safeEndInset = Math.min(endInset, maxInset);
+
+  return {
+    from: {
+      x: from.x + unitX * safeStartInset,
+      y: from.y + unitY * safeStartInset
+    },
+    to: {
+      x: to.x - unitX * safeEndInset,
+      y: to.y - unitY * safeEndInset
+    }
+  };
 };
 
 const buildLine = (name: string, from: Point, to: Point, mergeId: string, directed: boolean): LineShape => ({

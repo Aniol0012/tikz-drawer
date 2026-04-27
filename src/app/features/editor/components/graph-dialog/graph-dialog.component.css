@@ -16,8 +16,10 @@
 
 .graph-dialog {
   width: min(620px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
   display: grid;
-  gap: 20px;
+  gap: 18px;
   padding: 22px;
   border: 1px solid var(--tool-border-strong);
   border-radius: 18px;
@@ -48,7 +50,7 @@
 .graph-dialog__copy span,
 .graph-dialog__field span,
 .graph-dialog__toggle,
-.graph-dialog__stats strong {
+.graph-dialog__stat span {
   color: var(--muted-foreground);
   font-size: 0.78rem;
   line-height: 1.45;
@@ -56,7 +58,7 @@
 
 .graph-dialog__copy p,
 .graph-dialog__field span,
-.graph-dialog__stats strong {
+.graph-dialog__stat span {
   font-weight: 700;
 }
 
@@ -109,16 +111,11 @@
 }
 
 .graph-dialog__preview-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 116px;
-  align-items: stretch;
-  gap: 14px;
+  min-width: 0;
 }
 
-.graph-dialog__preview {
-  width: 100%;
-  min-height: 184px;
-  padding: 10px;
+.graph-dialog__preview-card {
+  overflow: hidden;
   border: 1px solid var(--tool-border);
   border-radius: 14px;
   background:
@@ -130,10 +127,21 @@
     var(--panel-background);
 }
 
+.graph-dialog__preview {
+  width: 100%;
+  height: 230px;
+  display: block;
+  padding: 10px 12px 2px;
+}
+
 .graph-dialog__preview line {
   stroke: var(--muted-foreground);
   stroke-width: 2.4;
   stroke-linecap: round;
+}
+
+.graph-dialog__preview marker path {
+  fill: var(--muted-foreground);
 }
 
 .graph-dialog__preview circle {
@@ -145,6 +153,7 @@
 .graph-dialog__preview text {
   fill: var(--foreground);
   font-size: 8px;
+  dominant-baseline: central;
   text-anchor: middle;
   font-weight: 700;
   user-select: none;
@@ -152,17 +161,28 @@
 
 .graph-dialog__stats {
   display: grid;
-  grid-template-columns: 1fr;
-  align-content: center;
-  gap: 5px;
-  padding: 14px;
-  border: 1px solid var(--tool-border);
-  border-radius: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 9px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--tool-border) 88%, transparent);
   background: var(--tool-surface);
 }
 
-.graph-dialog__stats span {
-  font-size: 1.32rem;
+.graph-dialog__stat {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--tool-border) 74%, transparent);
+  border-radius: 10px;
+  background: var(--panel-background);
+}
+
+.graph-dialog__stat strong {
+  color: var(--foreground);
+  font-size: 1.08rem;
   line-height: 1;
   font-weight: 800;
 }
@@ -194,10 +214,12 @@
 }
 
 .graph-dialog__toggle {
-  min-height: 38px;
-  display: inline-flex;
+  min-height: 42px;
+  align-self: end;
+  display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 0 12px;
   border: 1px solid var(--tool-border);
   border-radius: 10px;
@@ -206,9 +228,39 @@
 }
 
 .graph-dialog__toggle input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: 0 0 auto;
+  appearance: none;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.graph-dialog__toggle input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--panel-background);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  transition: transform 160ms ease;
+}
+
+.graph-dialog__toggle input:checked {
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background: var(--accent);
+}
+
+.graph-dialog__toggle input:checked::before {
+  transform: translateX(16px);
 }
 
 .graph-dialog__footer {
@@ -269,19 +321,19 @@
     padding: 18px;
   }
 
-  .graph-dialog__preview-shell,
   .graph-dialog__fields {
     grid-template-columns: 1fr;
   }
 
   .graph-dialog__preview {
-    min-height: 156px;
+    height: 172px;
   }
 
-  .graph-dialog__stats {
-    grid-template-columns: repeat(4, auto);
+  .graph-dialog__stat {
+    grid-template-columns: 1fr;
     align-items: center;
-    justify-content: center;
+    justify-items: center;
+    gap: 3px;
   }
 
   .graph-dialog__footer {

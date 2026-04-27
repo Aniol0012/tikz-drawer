@@ -23,6 +23,7 @@ describe('graph utils', () => {
     expect(shapes.filter((shape) => shape.kind === 'line')).toHaveLength(4);
     expect(shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(4);
     expect(shapes.filter((shape) => shape.kind === 'text')).toHaveLength(4);
+    expect(shapes.filter((shape) => shape.kind === 'text').every((shape) => shape.textBox)).toBe(true);
     expect(new Set(shapes.map((shape) => shape.mergeId)).size).toBe(1);
   });
 
@@ -38,6 +39,8 @@ describe('graph utils', () => {
 
     expect(lines).toHaveLength(3);
     expect(lines.every((line) => line.arrowEnd)).toBe(true);
+    expect(lines[0].from.x).toBeGreaterThan(-1.5);
+    expect(lines[0].to.x).toBeLessThan(-0.5);
     expect(shapes.some((shape) => shape.kind === 'text')).toBe(false);
   });
 });

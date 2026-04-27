@@ -599,14 +599,14 @@ export const objectPresets: readonly ObjectPreset[] = [
     ],
     { searchTerms: ['venn', 'sets', 'overlap'] }
   ),
-  createGraphPreset('complete', 'graph', 'Complete graph', 'Clique K_n with every pair of vertices connected.', [
-    'graph',
+  createGraphPreset(
     'complete',
-    'clique',
-    'k_n',
-    'network'
-  ]),
-  createGraphPreset('cycle', 'graph', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', [
+    'graphComplete',
+    'Complete graph',
+    'Clique K_n with every pair of vertices connected.',
+    ['graph', 'complete', 'clique', 'k_n', 'network']
+  ),
+  createGraphPreset('cycle', 'graphCycle', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', [
     'graph',
     'cycle',
     'c_n',
@@ -618,25 +618,26 @@ export const objectPresets: readonly ObjectPreset[] = [
     'p_n',
     'chain'
   ]),
-  createGraphPreset('star', 'hub', 'Star graph', 'Central vertex connected to all leaves.', [
+  createGraphPreset('star', 'graphStar', 'Star graph', 'Central vertex connected to all leaves.', [
     'graph',
     'star',
     'hub',
     'tree'
   ]),
-  createGraphPreset('bipartite', 'graph', 'Complete bipartite graph', 'Two shores with all cross-connections.', [
-    'graph',
+  createGraphPreset(
     'bipartite',
-    'k_mn',
-    'matching'
-  ]),
+    'graphBipartite',
+    'Complete bipartite graph',
+    'Two shores with all cross-connections.',
+    ['graph', 'bipartite', 'k_mn', 'matching']
+  ),
   createGraphPreset('grid', 'graphGrid', 'Grid graph', 'Rectangular lattice with horizontal and vertical edges.', [
     'graph',
     'grid',
     'lattice',
     'mesh'
   ]),
-  createGraphPreset('binary-tree', 'hub', 'Binary tree', 'Balanced binary tree with configurable levels.', [
+  createGraphPreset('binary-tree', 'graphTree', 'Binary tree', 'Balanced binary tree with configurable levels.', [
     'graph',
     'tree',
     'binary',

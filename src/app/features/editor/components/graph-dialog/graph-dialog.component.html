@@ -26,26 +26,46 @@
 
     <div class="graph-dialog__body">
       <div class="graph-dialog__preview-shell">
-        <svg class="graph-dialog__preview" viewBox="0 0 240 160" aria-hidden="true">
-          @for (edge of preview().edges; track edge.source.id + '-' + edge.target.id) {
-            <line
-              [attr.x1]="edge.source.x"
-              [attr.y1]="edge.source.y"
-              [attr.x2]="edge.target.x"
-              [attr.y2]="edge.target.y"></line>
-          }
-          @for (node of preview().nodes; track node.id) {
-            <circle [attr.cx]="node.x" [attr.cy]="node.y" r="7"></circle>
-            @if (selected().showLabels) {
-              <text [attr.x]="node.x" [attr.y]="node.y + 3">{{ node.label }}</text>
+        <div class="graph-dialog__preview-card">
+          <svg class="graph-dialog__preview" viewBox="0 0 240 160" aria-hidden="true">
+            <defs>
+              <marker
+                id="graph-dialog-arrow"
+                viewBox="0 0 9 7"
+                markerWidth="9"
+                markerHeight="7"
+                refX="8"
+                refY="3.5"
+                orient="auto"
+                markerUnits="strokeWidth">
+                <path d="M0,0 L9,3.5 L0,7 z"></path>
+              </marker>
+            </defs>
+            @for (edge of preview().edges; track edge.id) {
+              <line
+                [attr.x1]="edge.from.x"
+                [attr.y1]="edge.from.y"
+                [attr.x2]="edge.to.x"
+                [attr.y2]="edge.to.y"
+                [attr.marker-end]="selected().directed ? 'url(#graph-dialog-arrow)' : null"></line>
             }
-          }
-        </svg>
-        <div class="graph-dialog__stats">
-          <strong>{{ statsVerticesLabel() }}</strong>
-          <span>{{ vertexCount() }}</span>
-          <strong>{{ statsEdgesLabel() }}</strong>
-          <span>{{ edgeCount() }}</span>
+            @for (node of preview().nodes; track node.id) {
+              <circle [attr.cx]="node.x" [attr.cy]="node.y" r="7"></circle>
+              @if (selected().showLabels) {
+                <text [attr.x]="node.x" [attr.y]="node.y">{{ node.label }}</text>
+              }
+            }
+          </svg>
+          <div class="graph-dialog__stats">
+            <div class="graph-dialog__stat">
+              <strong>{{ vertexCount() }}</strong>
+              <span>{{ statsVerticesLabel() }}</span>
+            </div>
+            <div class="graph-dialog__stat">
+              <strong>{{ edgeCount() }}</strong>
+              <span>{{ statsEdgesLabel() }}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -135,18 +155,18 @@
         }
 
         <label class="graph-dialog__toggle">
+          <span>{{ directedLabel() }}</span>
           <input
             type="checkbox"
             [checked]="selected().directed"
             (change)="updateToggle('directed', $event)" />
-          <span>{{ directedLabel() }}</span>
         </label>
         <label class="graph-dialog__toggle">
+          <span>{{ labelsLabel() }}</span>
           <input
             type="checkbox"
             [checked]="selected().showLabels"
             (change)="updateToggle('showLabels', $event)" />
-          <span>{{ labelsLabel() }}</span>
         </label>
       </div>
     </div>

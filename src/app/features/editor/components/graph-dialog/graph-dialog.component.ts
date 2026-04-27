@@ -14,8 +14,12 @@ import {
   graphDisplayName,
   graphEdgeCount,
   graphVertexCount,
+  insetGraphEdge,
   normalizeGraphDimensions
 } from '../../utils/graph.utils';
+import type { Point } from '../../models/tikz.models';
+
+const PREVIEW_NODE_RADIUS = 7;
 
 interface GraphPreviewNode {
   readonly id: string;
@@ -25,8 +29,9 @@ interface GraphPreviewNode {
 }
 
 interface GraphPreviewEdge {
-  readonly source: GraphPreviewNode;
-  readonly target: GraphPreviewNode;
+  readonly id: string;
+  readonly from: Point;
+  readonly to: Point;
 }
 
 @Component({
@@ -140,7 +145,16 @@ export class GraphDialogComponent implements OnChanges {
       .map((edge) => {
         const source = nodeById.get(edge.source);
         const target = nodeById.get(edge.target);
-        return source && target ? { source, target } : null;
+        if (!source || !target) {
+          return null;
+        }
+
+        const endpoints = insetGraphEdge(source, target, PREVIEW_NODE_RADIUS, dimensions.directed);
+        return {
+          id: `${source.id}-${target.id}`,
+          from: endpoints.from,
+          to: endpoints.to
+        };
       })
       .filter((edge): edge is GraphPreviewEdge => !!edge);
     return { nodes, edges };
