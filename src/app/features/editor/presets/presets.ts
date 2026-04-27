@@ -346,15 +346,6 @@ export const objectPresets: readonly ObjectPreset[] = [
     { quickAccess: true, searchTerms: ['image', 'photo', 'picture', 'asset'] }
   ),
   createPreset(
-    'card',
-    'interface',
-    'card',
-    'Card',
-    'Wide rounded card for interface sketches.',
-    [createRectangle({ name: 'Card', width: 4.8, height: 2.8, cornerRadius: 0.28, fill: '#f7f7f7' })],
-    { searchTerms: ['card', 'panel', 'ui'] }
-  ),
-  createPreset(
     'decision',
     'flow',
     'decision',
@@ -720,7 +711,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'concepts',
     'callout',
     'Callout',
-    'Annotation card with a leader line.',
+    'Annotation with a leader line.',
     [
       createRectangle({
         name: 'Callout body',
@@ -744,11 +735,40 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Cloud',
     'Soft cloud cluster for services and networks.',
     [
-      createCircle({ name: 'Cloud left', cx: -1.3, cy: -0.15, r: 1.15, fill: '#f4f4f4' }),
-      createCircle({ name: 'Cloud center', cx: 0, cy: 0.45, r: 1.4, fill: '#f4f4f4' }),
-      createCircle({ name: 'Cloud right', cx: 1.4, cy: -0.1, r: 1.1, fill: '#f4f4f4' }),
-      createEllipse({ name: 'Cloud base', cx: 0, cy: -0.65, rx: 2.4, ry: 0.95, fill: '#f4f4f4' }),
-      createText({ name: 'Cloud label', text: 'Cloud', y: -0.1 })
+      createCircle({ name: 'Cloud fill left', cx: -1.25, cy: -0.2, r: 1.05, fill: '#fbfbfb', strokeOpacity: 0 }),
+      createCircle({ name: 'Cloud fill center', cx: -0.1, cy: 0.45, r: 1.28, fill: '#fbfbfb', strokeOpacity: 0 }),
+      createCircle({ name: 'Cloud fill right', cx: 1.2, cy: -0.18, r: 0.98, fill: '#fbfbfb', strokeOpacity: 0 }),
+      createEllipse({
+        name: 'Cloud fill base',
+        cx: 0,
+        cy: -0.62,
+        rx: 2.35,
+        ry: 0.88,
+        fill: '#fbfbfb',
+        strokeOpacity: 0
+      }),
+      createLine({
+        name: 'Cloud outline',
+        from: { x: -2.35, y: -0.65 },
+        anchors: [
+          { x: -2.32, y: 0.1 },
+          { x: -1.65, y: 0.72 },
+          { x: -1.02, y: 0.6 },
+          { x: -0.68, y: 1.28 },
+          { x: 0.18, y: 1.36 },
+          { x: 0.78, y: 0.78 },
+          { x: 1.48, y: 0.76 },
+          { x: 2.18, y: 0.18 },
+          { x: 2.2, y: -0.52 },
+          { x: 1.7, y: -1.22 },
+          { x: 0.15, y: -1.42 },
+          { x: -1.62, y: -1.18 }
+        ],
+        to: { x: -2.35, y: -0.65 },
+        lineMode: 'curved',
+        strokeWidth: 0.06
+      }),
+      createText({ name: 'Cloud label', text: 'Cloud', y: -0.28, fontSize: 0.34 })
     ],
     { searchTerms: ['cloud', 'network', 'infra', 'service'] }
   ),
@@ -828,38 +848,24 @@ export const objectPresets: readonly ObjectPreset[] = [
         y: -1.6,
         width: 3.4,
         height: 3.1,
-        fill: '#fafafa',
+        fill: '#fff7c7',
         cornerRadius: 0.12
       }),
       createLine({
-        name: 'Note fold a',
-        from: { x: 1.0, y: 1.5 },
-        to: { x: 1.68, y: 0.86 },
-        stroke: '#8b8b8b',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Note fold b',
-        from: { x: 1.68, y: 0.86 },
-        to: { x: 1.68, y: 1.5 },
-        stroke: '#8b8b8b',
-        strokeWidth: 0.05
-      }),
-      createLine({
-        name: 'Note fold c',
-        from: { x: 1.0, y: 1.5 },
-        to: { x: 1.68, y: 1.5 },
-        stroke: '#8b8b8b',
+        name: 'Note fold',
+        from: { x: 0.98, y: 1.5 },
+        to: { x: 1.6, y: 0.88 },
+        stroke: '#6f6f6f',
         strokeWidth: 0.05
       }),
       createText({
         name: 'Note label',
         text: 'Note',
-        x: -1.22,
-        y: 0.2,
+        x: -1.36,
+        y: 0.08,
         textBox: true,
-        boxWidth: 2.4,
-        fontSize: 0.34,
+        boxWidth: 2.7,
+        fontSize: 0.38,
         textAlign: 'left'
       })
     ],
@@ -895,14 +901,7 @@ export const objectPresets: readonly ObjectPreset[] = [
         stroke: '#7e7e7e',
         strokeWidth: 0.05
       }),
-      createLine({
-        name: 'Swimlane divider 3',
-        from: { x: 3.75, y: 1.7 },
-        to: { x: 3.75, y: -1.7 },
-        stroke: '#7e7e7e',
-        strokeWidth: 0.05
-      }),
-      createText({ name: 'Swimlane title', text: 'Flow', x: -3.1, y: 0, fontSize: 0.36 })
+      createText({ name: 'Swimlane title', text: 'Flow', x: -2.52, y: 0, fontSize: 0.34 })
     ],
     { searchTerms: ['swimlane', 'lane', 'workflow', 'process'] }
   ),
@@ -1011,29 +1010,36 @@ export const objectPresets: readonly ObjectPreset[] = [
       createRectangle({
         name: 'Kanban frame',
         x: -3.45,
-        y: 0.25,
+        y: -1.6,
         width: 6.9,
-        height: 1.75,
+        height: 3.2,
         fill: '#fbfbfb',
         cornerRadius: 0.08
       }),
       createLine({
         name: 'Kanban divider 1',
-        from: { x: -2.05, y: 0.45 },
-        to: { x: -2.05, y: -1.7 },
+        from: { x: -1.15, y: 1.6 },
+        to: { x: -1.15, y: -1.6 },
         stroke: '#90959a',
         strokeWidth: 0.05
       }),
       createLine({
         name: 'Kanban divider 2',
-        from: { x: 0.25, y: 0.45 },
-        to: { x: 0.25, y: -1.7 },
+        from: { x: 1.15, y: 1.6 },
+        to: { x: 1.15, y: -1.6 },
         stroke: '#90959a',
         strokeWidth: 0.05
       }),
-      createText({ name: 'Kanban todo', text: 'To do', x: -3.0, y: 0.05, fontSize: 0.22 }),
-      createText({ name: 'Kanban doing', text: 'Doing', x: -0.9, y: 0.05, fontSize: 0.22 }),
-      createText({ name: 'Kanban done', text: 'Done', x: 1.45, y: 0.05, fontSize: 0.22 })
+      createLine({
+        name: 'Kanban header',
+        from: { x: -3.45, y: 0.78 },
+        to: { x: 3.45, y: 0.78 },
+        stroke: '#d2d2d2',
+        strokeWidth: 0.04
+      }),
+      createText({ name: 'Kanban todo', text: 'To do', x: -2.3, y: 1.18, fontSize: 0.24 }),
+      createText({ name: 'Kanban doing', text: 'Doing', x: 0, y: 1.18, fontSize: 0.24 }),
+      createText({ name: 'Kanban done', text: 'Done', x: 2.3, y: 1.18, fontSize: 0.24 })
     ],
     { searchTerms: ['kanban', 'board', 'tasks', 'workflow'] }
   ),
