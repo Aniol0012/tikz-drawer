@@ -3687,6 +3687,14 @@ button:disabled {
     display: none;
   }
 
+  .right-sidebar .field--name {
+    gap: 0;
+  }
+
+  .right-sidebar .field--name > span {
+    display: none;
+  }
+
   .right-sidebar .property-group--actions {
     padding: 0;
   }

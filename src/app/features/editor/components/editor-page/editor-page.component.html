@@ -1097,32 +1097,30 @@
                 </button>
               </div>
             </div>
-            @if (!mobileLayout() || shape.kind === 'text') {
-              <div class="property-group">
-                <div class="property-group__title">{{ t('general') }}</div>
-                <div class="form-grid form-grid--section">
-                  @if (!mobileLayout()) {
-                    <label class="field field--full"
-                      ><span>{{ t('name') }}</span
-                      ><input
-                        type="text"
-                        [value]="shape.name"
-                        (input)="updateShapeText('name', $event)"
-                    /></label>
-                  }
-                  @if (shape.kind === 'text') {
-                    <label class="field field--full"
-                      ><span>{{ t('text') }}</span
-                      ><textarea
-                        #inspectorTextInput
-                        rows="3"
-                        [value]="shape.text"
-                        (input)="updateShapeText('text', $event)"></textarea>
-                    </label>
-                  }
-                </div>
+            <div class="property-group">
+              <div class="property-group__title">{{ t('general') }}</div>
+              <div class="form-grid form-grid--section">
+                <label class="field field--full field--name"
+                  ><span>{{ t('name') }}</span
+                  ><input
+                    type="text"
+                    [attr.aria-label]="t('name')"
+                    [placeholder]="t('name')"
+                    [value]="shape.name"
+                    (input)="updateShapeText('name', $event)"
+                /></label>
+                @if (shape.kind === 'text') {
+                  <label class="field field--full"
+                    ><span>{{ t('text') }}</span
+                    ><textarea
+                      #inspectorTextInput
+                      rows="3"
+                      [value]="shape.text"
+                      (input)="updateShapeText('text', $event)"></textarea>
+                  </label>
+                }
               </div>
-            }
+            </div>
             @if (shape.kind !== 'text') {
               <div class="property-group">
                 <div class="property-group__title">{{ t('appearance') }}</div>
