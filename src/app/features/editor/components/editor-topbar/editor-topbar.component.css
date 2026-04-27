@@ -9,7 +9,7 @@
   right: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   min-height: var(--topbar-height);
@@ -541,7 +541,6 @@ button:disabled {
 
 @media (max-width: 1220px) {
   .topbar__left,
-  .topbar__center,
   .topbar__right {
     justify-content: flex-start;
   }

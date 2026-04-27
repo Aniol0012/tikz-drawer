@@ -756,31 +756,49 @@ export class EditorPageComponent {
       fontStyle: shape.fontStyle
     };
   });
-  readonly defaultToolbarTools = computed<readonly ToolDescriptor[]>(() => [
-    {
-      id: 'select',
-      label: this.t('selection'),
-      description: this.t('selection'),
-      iconPath: getIconPath('select'),
-      shortcut: 'V'
-    },
-    {
-      id: 'pencil',
-      label: this.t('freeDraw'),
-      description: this.t('freeDraw'),
-      iconPath: getIconPath('pencil'),
-      shortcut: 'P'
-    },
-    ...this.allInsertablePresets()
-      .filter((preset) => preset.quickAccess && preset.id !== 'note')
-      .map((preset) => ({
+  readonly defaultToolbarTools = computed<readonly ToolDescriptor[]>(() => {
+    const quickPresetOrder: readonly string[] = [
+      'segment',
+      'arrow',
+      'box',
+      'triangle',
+      'circle',
+      'ellipse',
+      'label',
+      'image'
+    ];
+    const quickPresets = this.allInsertablePresets().filter((preset) => preset.quickAccess && preset.id !== 'note');
+    const orderedQuickPresets = [
+      ...quickPresetOrder
+        .map((id) => quickPresets.find((preset) => preset.id === id))
+        .filter((preset): preset is ObjectPreset => !!preset),
+      ...quickPresets.filter((preset) => !quickPresetOrder.includes(preset.id))
+    ];
+
+    return [
+      {
+        id: 'select',
+        label: this.t('selection'),
+        description: this.t('selection'),
+        iconPath: getIconPath('select'),
+        shortcut: 'V'
+      },
+      {
+        id: 'pencil',
+        label: this.t('freeDraw'),
+        description: this.t('freeDraw'),
+        iconPath: getIconPath('pencil'),
+        shortcut: 'P'
+      },
+      ...orderedQuickPresets.map((preset) => ({
         id: preset.id,
         label: this.presetTitle(preset),
         description: this.presetDescription(preset),
         iconPath: getIconPath(preset.icon),
         shortcut: this.toolShortcut(preset.id)
       }))
-  ]);
+    ];
+  });
   readonly pinnedToolbarTools = computed<readonly ToolDescriptor[]>(() =>
     this.pinnedToolIds()
       .map((id) => this.allInsertablePresets().find((preset) => preset.id === id))

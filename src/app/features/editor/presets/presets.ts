@@ -564,7 +564,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'Triangle',
     'Three-edge geometry starter.',
     [createTriangle({ name: 'Triangle', fill: '#f3f3f3', apexOffset: 0.5 })],
-    { searchTerms: ['triangle', 'geometry', 'polygon'] }
+    { quickAccess: true, searchTerms: ['triangle', 'geometry', 'polygon'] }
   ),
   createPreset(
     REGULAR_POLYGON_PRESET_ID,
