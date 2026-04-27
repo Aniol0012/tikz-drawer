@@ -320,7 +320,6 @@ export class EditorPageComponent {
   private static readonly lineHitStrokeExtraPx = 10;
   private static readonly lineHitStrokeMinPx = 14;
   private static readonly sidebarResizeLimits = {
-    mobileMinHeight: 160,
     mobileMaxHeight: 640,
     leftMinWidth: 220,
     leftMaxWidth: 420,
@@ -1027,6 +1026,9 @@ export class EditorPageComponent {
   private syncRevision = 0;
   private applyingRemoteSync = false;
   private editorSyncInitialized = false;
+  private sidebarResizeMoved = false;
+  private sidebarResizeStartedFromToggle = false;
+  private suppressNextSidebarToggleClick = false;
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
   private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
@@ -1302,6 +1304,11 @@ export class EditorPageComponent {
   }
 
   toggleSidebarCollapsed(side: SidebarSide): void {
+    if (this.suppressNextSidebarToggleClick) {
+      this.suppressNextSidebarToggleClick = false;
+      return;
+    }
+
     if (side === 'left') {
       this.leftSidebarCollapsed.update((collapsed) => !collapsed);
       this.sidebarResizeState.set(null);
@@ -1312,13 +1319,16 @@ export class EditorPageComponent {
     this.sidebarResizeState.set(null);
   }
 
-  startSidebarResize(event: PointerEvent, side: SidebarSide): void {
+  startSidebarResize(event: PointerEvent, side: SidebarSide, fromToggle = false): void {
     if ((side === 'left' && this.leftSidebarCollapsed()) || (side === 'right' && this.rightSidebarCollapsed())) {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
+    this.sidebarResizeMoved = false;
+    this.sidebarResizeStartedFromToggle = fromToggle;
+    this.captureSidebarResizePointer(event);
     const stackedLayout = this.sidebarsOverlayLayout();
     const axis = stackedLayout ? 'y' : 'x';
     this.sidebarResizeState.set({
@@ -1327,6 +1337,27 @@ export class EditorPageComponent {
       startPointer: axis === 'y' ? event.clientY : event.clientX,
       startSize: this.sidebarResizeStartSize(side, stackedLayout)
     });
+  }
+
+  startSidebarResizeFromToggle(event: PointerEvent, side: SidebarSide): void {
+    if (!this.sidebarsOverlayLayout()) {
+      event.stopPropagation();
+      return;
+    }
+
+    this.startSidebarResize(event, side, true);
+  }
+
+  private captureSidebarResizePointer(event: PointerEvent): void {
+    if (!(event.currentTarget instanceof Element)) {
+      return;
+    }
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Some browsers refuse capture if the pointer has already been released.
+    }
   }
 
   private sidebarResizeStartSize(side: SidebarSide, stackedLayout: boolean): number {
@@ -1414,8 +1445,9 @@ export class EditorPageComponent {
     const limits = EditorPageComponent.sidebarResizeLimits;
     switch (side) {
       case 'mobile-left':
+        return Math.min(limits.mobileMaxHeight, Math.max(EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT, value));
       case 'mobile-right':
-        return Math.min(limits.mobileMaxHeight, Math.max(limits.mobileMinHeight, value));
+        return Math.min(limits.mobileMaxHeight, Math.max(EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT, value));
       case 'left':
         return Math.min(limits.leftMaxWidth, Math.max(limits.leftMinWidth, value));
       case 'right':
@@ -3117,10 +3149,12 @@ export class EditorPageComponent {
 
     if (event.button === 1 || (event.button === 0 && (this.spacePressed() || touchSelectPan))) {
       event.preventDefault();
+      const clientPoint = { x: event.clientX, y: event.clientY };
       this.interactionState.set({
         kind: 'pan',
         pointerId: event.pointerId,
-        lastClientPoint: { x: event.clientX, y: event.clientY },
+        startClientPoint: clientPoint,
+        lastClientPoint: clientPoint,
         sourceButton: event.button
       });
       this.canvasSvg().nativeElement.setPointerCapture(event.pointerId);
@@ -3438,6 +3472,7 @@ export class EditorPageComponent {
     this.interactionState.set({
       kind: 'pan',
       pointerId: interactionState.pointerId,
+      startClientPoint: interactionState.startClientPoint,
       lastClientPoint: { x: event.clientX, y: event.clientY },
       sourceButton: interactionState.sourceButton
     });
@@ -3609,7 +3644,7 @@ export class EditorPageComponent {
         this.finishMoveInteraction(event, interactionState);
         break;
       case 'pan':
-        this.finishPanInteraction(interactionState);
+        this.finishPanInteraction(event, interactionState);
         break;
       case 'pending-pan':
         this.releaseCanvasPointerCapture(event.pointerId);
@@ -3716,7 +3751,26 @@ export class EditorPageComponent {
     }
   }
 
-  private finishPanInteraction(interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
+  private finishPanInteraction(
+    event: PointerEvent,
+    interactionState: Extract<InteractionState, { kind: 'pan' }>
+  ): void {
+    const tapDistance = Math.hypot(
+      event.clientX - interactionState.startClientPoint.x,
+      event.clientY - interactionState.startClientPoint.y
+    );
+    if (
+      event.pointerType === 'touch' &&
+      interactionState.sourceButton === 0 &&
+      tapDistance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX &&
+      this.activeTool() === 'select'
+    ) {
+      this.store.selectShape(null);
+      this.recentTextTap.set(null);
+      this.recentSelectedShapeTap.set(null);
+      return;
+    }
+
     if (interactionState.sourceButton !== 2) {
       return;
     }
@@ -3808,9 +3862,12 @@ export class EditorPageComponent {
   }
 
   onCanvasTouchEnd(event: TouchEvent): void {
+    const wasPinching = this.pinchZoomState !== null;
     if (event.touches.length < 2) {
       this.pinchZoomState = null;
-      this.ignoreNextCanvasClick.set(true);
+      if (wasPinching) {
+        this.ignoreNextCanvasClick.set(true);
+      }
     }
   }
 
@@ -4739,6 +4796,7 @@ export class EditorPageComponent {
 
     if (resizeState.axis === 'y') {
       const delta = event.clientY - resizeState.startPointer;
+      this.sidebarResizeMoved ||= Math.abs(delta) > 3;
       if (resizeState.side === 'left') {
         this.mobileLeftSidebarHeight.set(this.clampSidebarSize('mobile-left', resizeState.startSize - delta));
         return;
@@ -4749,16 +4807,23 @@ export class EditorPageComponent {
 
     if (resizeState.side === 'left') {
       const delta = event.clientX - resizeState.startPointer;
+      this.sidebarResizeMoved ||= Math.abs(delta) > 3;
       this.leftSidebarWidth.set(this.clampSidebarSize('left', resizeState.startSize + delta));
       return;
     }
 
     const delta = resizeState.startPointer - event.clientX;
+    this.sidebarResizeMoved ||= Math.abs(delta) > 3;
     this.rightSidebarWidth.set(this.clampSidebarSize('right', resizeState.startSize + delta));
   }
 
   handleWindowPointerUp(): void {
+    if (this.sidebarResizeState() && this.sidebarResizeStartedFromToggle && this.sidebarResizeMoved) {
+      this.suppressNextSidebarToggleClick = true;
+    }
     this.sidebarResizeState.set(null);
+    this.sidebarResizeMoved = false;
+    this.sidebarResizeStartedFromToggle = false;
     this.minimapPanPointerId.set(null);
   }
 

@@ -1002,7 +1002,7 @@
         [attr.aria-expanded]="!rightSidebarCollapsed()"
         [class.is-collapsed]="rightSidebarCollapsed()"
         [class.is-stacked]="sidebarsOverlayLayout()"
-        (pointerdown)="$event.stopPropagation()"
+        (pointerdown)="startSidebarResizeFromToggle($event, 'right')"
         (click)="toggleSidebarCollapsed('right')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.chevronDown"></path>

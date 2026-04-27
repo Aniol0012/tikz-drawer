@@ -83,18 +83,30 @@
 @media (max-width: 760px) {
   :host {
     max-height: none;
+    gap: 6px;
+  }
+
+  .sidebar-tabs {
+    gap: 3px;
+    margin: 6px 6px 0;
+    padding: 2px;
+    border-radius: 8px;
   }
 
   .sidebar-tabs button {
-    font-size: 0.8rem;
+    min-height: 32px;
+    padding: 4px 6px;
+    font-size: 0.76rem;
+    line-height: 1.1;
   }
 
   .sidebar-scroll {
-    padding: 10px;
+    gap: 8px;
+    padding: 6px;
   }
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse) and (min-width: 761px) {
   .sidebar-tabs button {
     min-height: 42px;
     min-width: 42px;

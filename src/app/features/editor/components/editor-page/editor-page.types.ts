@@ -164,6 +164,7 @@ export interface MoveInteractionState {
 export interface PanInteractionState {
   readonly kind: 'pan';
   readonly pointerId: number;
+  readonly startClientPoint: Point;
   readonly lastClientPoint: Point;
   readonly sourceButton: number;
 }

@@ -3162,7 +3162,7 @@ button:disabled {
       minmax(300px, 1fr)
       18px
       minmax(
-        var(--mobile-right-sidebar-min-height, 200px),
+        var(--mobile-right-sidebar-min-height, 150px),
         var(--mobile-right-sidebar-height, 360px)
       );
   }
@@ -3527,7 +3527,7 @@ button:disabled {
   }
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse) and (min-width: 761px) {
   .menu-button,
   .primary-button,
   .secondary-button,
@@ -3562,6 +3562,280 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .right-sidebar,
+  .left-sidebar.is-overlay-layout {
+    gap: 8px;
+  }
+
+  .right-sidebar .sidebar-section,
+  .left-sidebar.is-overlay-layout .sidebar-section,
+  .property-group,
+  .anchor-editor,
+  .file-picker,
+  .selected-shape-list,
+  .color-pair-controls {
+    gap: 7px;
+  }
+
+  .right-sidebar .section-header,
+  .left-sidebar.is-overlay-layout .section-header {
+    min-height: 24px;
+  }
+
+  .right-sidebar .section-header svg,
+  .left-sidebar.is-overlay-layout .section-header svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .right-sidebar .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .right-sidebar .form-grid--line-anchor,
+  .right-sidebar .export-settings-form-grid,
+  .right-sidebar .export-settings-section--meta .export-settings-form-grid,
+  .right-sidebar .share-field,
+  .right-sidebar .code-tools-row {
+    grid-template-columns: 1fr;
+  }
+
+  .right-sidebar .field--full,
+  .left-sidebar.is-overlay-layout .field--full {
+    grid-column: 1 / -1;
+  }
+
+  .right-sidebar .color-pair-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .right-sidebar .color-pair-controls--line {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-section > .form-grid > .field,
+  .sidebar-section > .form-grid > .toggle-field,
+  .property-group,
+  .anchor-editor,
+  .file-picker,
+  .selected-shape-card,
+  .selection-summary,
+  .empty-panel,
+  .sidebar-section--nested {
+    padding: 7px;
+    border-radius: 8px;
+  }
+
+  .sidebar-section > .form-grid > .editor-range-input-card {
+    padding: 7px;
+  }
+
+  .field,
+  .search-field {
+    gap: 4px;
+  }
+
+  .field span,
+  .editor-range-input-card__label,
+  .sidebar-note,
+  .selection-summary span,
+  .empty-panel,
+  .selected-shape-card__meta,
+  .object-row__content small {
+    font-size: 0.7rem;
+    line-height: 1.25;
+  }
+
+  .selection-title strong,
+  .selected-shape-card__title {
+    font-size: 0.86rem;
+    line-height: 1.2;
+  }
+
+  .range-field,
+  .editor-range-input-card__controls {
+    grid-template-columns: minmax(0, 1fr) minmax(62px, 70px);
+    gap: 6px;
+  }
+
+  .range-field--anchor {
+    grid-template-columns: minmax(0, 1fr) 62px;
+  }
+
+  .range-field input[type='range'],
+  .editor-range-input-card__range,
+  .color-opacity-input {
+    height: 3px;
+    min-height: 10px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .range-field input[type='range']::-webkit-slider-runnable-track,
+  .editor-range-input-card__range::-webkit-slider-runnable-track,
+  .color-opacity-input::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 15%, var(--input-background));
+  }
+
+  .range-field input[type='range']::-webkit-slider-thumb,
+  .editor-range-input-card__range::-webkit-slider-thumb,
+  .color-opacity-input::-webkit-slider-thumb {
+    width: 10px;
+    height: 10px;
+    margin-top: -3.5px;
+  }
+
+  .range-field input[type='range']::-moz-range-track,
+  .editor-range-input-card__range::-moz-range-track,
+  .color-opacity-input::-moz-range-track {
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-foreground) 15%, var(--input-background));
+  }
+
+  .range-field input[type='range']::-moz-range-thumb,
+  .editor-range-input-card__range::-moz-range-thumb,
+  .color-opacity-input::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+  }
+
+  .field select,
+  .field input:not([type='range']),
+  .field textarea,
+  .editor-range-input-card__number,
+  .color-metric-input,
+  .toggle-field,
+  .primary-button,
+  .secondary-button,
+  .dropdown-row,
+  .mode-switch button,
+  .sidebar-tabs button {
+    min-height: 30px;
+  }
+
+  .field input:not([type='range']),
+  .field select,
+  .editor-range-input-card__number,
+  .color-metric-input {
+    padding-inline: 7px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+  }
+
+  .toggle-field {
+    gap: 7px;
+    padding: 0 7px;
+  }
+
+  .right-sidebar .field--stroke-width {
+    margin-top: 2px;
+  }
+
+  .right-sidebar .color-chip-field,
+  .right-sidebar .color-inline-field,
+  .right-sidebar .color-pair-controls--line .color-chip-field {
+    grid-template-columns: 24px minmax(44px, auto) minmax(0, 1fr);
+    grid-template-areas:
+      'swatch label value'
+      'swatch range range';
+    gap: 3px 6px;
+    align-items: center;
+    align-content: center;
+  }
+
+  .right-sidebar .color-chip-field small,
+  .right-sidebar .color-inline-field small {
+    font-size: 0.66rem;
+    line-height: 1.05;
+  }
+
+  .right-sidebar .color-opacity-input + small {
+    align-self: center;
+    justify-self: end;
+  }
+
+  .right-sidebar .color-swatch,
+  .right-sidebar .color-pair-controls--line .color-swatch {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px;
+    min-height: 24px !important;
+  }
+
+  .object-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 7px;
+    padding: 6px 7px;
+  }
+
+  .preset-card,
+  .object-row {
+    min-height: 36px;
+  }
+
+  .preset-card__icon,
+  .object-row__icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .arrow-tip-button,
+  .template-icon-button,
+  .text-symbol-button {
+    min-height: 34px;
+    border-radius: 8px;
+  }
+
+  .export-settings-layout {
+    gap: 8px;
+  }
+
+  .export-settings-layout .sidebar-section {
+    gap: 8px;
+    padding: 9px;
+    border-radius: 10px;
+  }
+
+  .export-settings-layout .section-header--static {
+    padding-bottom: 6px;
+  }
+
+  .export-settings-layout .section-header--static span {
+    font-size: 0.82rem;
+  }
+
+  .export-settings-layout .field {
+    gap: 5px;
+    padding: 8px;
+    border-radius: 9px;
+  }
+
+  .export-settings-layout .toggle-field {
+    min-height: 34px;
+    padding: 0 8px;
+    border-radius: 9px;
+  }
+
+  .sidebar-resizer {
+    height: 14px;
+  }
+
+  .sidebar-resizer::before {
+    height: 2px;
+    left: 34px;
+    right: 34px;
+  }
+
+  .sidebar-resizer-toggle--right.is-stacked {
+    width: 44px;
+    height: 14px;
+  }
+
   .export-btn {
     width: 100%;
   }
