@@ -3911,4 +3911,25 @@
       (cancelDialog)="closeRegularPolygonDialog()"
       (confirm)="confirmRegularPolygonDialog($event)"></app-regular-polygon-dialog>
   }
+
+  @if (graphDialogState(); as graphDialog) {
+    <app-graph-dialog
+      [title]="t('graphDialogTitle')"
+      [description]="t('graphDialogDescription')"
+      [confirmLabel]="t('continue')"
+      [cancelLabel]="t('cancel')"
+      [verticesLabel]="t('graphVertices')"
+      [leftVerticesLabel]="t('graphLeftVertices')"
+      [rightVerticesLabel]="t('graphRightVertices')"
+      [rowsLabel]="t('graphRows')"
+      [columnsLabel]="t('graphColumns')"
+      [levelsLabel]="t('graphLevels')"
+      [directedLabel]="t('graphDirected')"
+      [labelsLabel]="t('graphShowLabels')"
+      [statsVerticesLabel]="t('graphStatsVertices')"
+      [statsEdgesLabel]="t('graphStatsEdges')"
+      [initialDimensions]="graphDialog"
+      (cancelDialog)="closeGraphDialog()"
+      (confirm)="confirmGraphDialog($event)"></app-graph-dialog>
+  }
 </div>

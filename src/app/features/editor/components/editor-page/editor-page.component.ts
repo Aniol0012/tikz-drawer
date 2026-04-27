@@ -139,6 +139,7 @@ import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
+import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import {
   categoryOrder,
@@ -213,6 +214,16 @@ import {
 } from '../../models/regular-polygon.models';
 import { buildRegularPolygonShapes, normalizeRegularPolygonDimensions } from '../../utils/regular-polygon.utils';
 import {
+  DEFAULT_GRAPH_DIMENSIONS,
+  GRAPH_PRESET_ID_BY_KIND,
+  GRAPH_PRESET_KIND_BY_ID,
+  GRAPH_PRESET_IDS,
+  type GraphDialogState,
+  type GraphDimensions,
+  type GraphPresetId
+} from '../../models/graph.models';
+import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
+import {
   buildTableShapes,
   getTableSelectionInfo,
   normalizeTableDimensions,
@@ -266,6 +277,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     ImportCodeModalComponent,
     RangeInputCardComponent,
     RegularPolygonDialogComponent,
+    GraphDialogComponent,
     FigureSearchOverlayComponent
   ],
   templateUrl: './editor-page.component.html',
@@ -421,6 +433,8 @@ export class EditorPageComponent {
   readonly tablePresetDimensions = signal<TableDimensions>(DEFAULT_TABLE_DIMENSIONS);
   readonly regularPolygonDialogState = signal<RegularPolygonDialogState | null>(null);
   readonly regularPolygonDimensions = signal<RegularPolygonDimensions>(DEFAULT_REGULAR_POLYGON_DIMENSIONS);
+  readonly graphDialogState = signal<GraphDialogState | null>(null);
+  readonly graphDimensions = signal<GraphDimensions>(DEFAULT_GRAPH_DIMENSIONS);
   readonly regularPolygonMinSides = REGULAR_POLYGON_MIN_SIDES;
   readonly regularPolygonMaxSides = REGULAR_POLYGON_MAX_SIDES;
   readonly regularPolygonFigureName = (sides: number): string => this.regularPolygonName(sides);
@@ -1296,6 +1310,8 @@ export class EditorPageComponent {
         return 'pipeline';
       case 'geometry':
         return 'triangle';
+      case 'graphs':
+        return 'graph';
       case 'data':
         return 'bars';
       case 'interface':
@@ -1662,6 +1678,19 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.isGraphPresetId(toolId)) {
+      const kind = GRAPH_PRESET_KIND_BY_ID[toolId];
+      this.openGraphDialog({
+        submitMode: this.activeTool() === toolId ? 'center-insert' : 'arm-insert',
+        ...this.graphDimensions(),
+        kind
+      });
+      this.closeContextMenu();
+      this.closeFileMenu();
+      this.closeMobileLibraryPanelIfNeeded();
+      return;
+    }
+
     if (toolId !== 'select' && toolId !== 'pencil' && this.activeTool() === toolId) {
       this.runSceneMutation(() => {
         this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
@@ -1728,6 +1757,10 @@ export class EditorPageComponent {
     this.regularPolygonDialogState.set(null);
   }
 
+  closeGraphDialog(): void {
+    this.graphDialogState.set(null);
+  }
+
   confirmRegularPolygonDialog(dimensions: RegularPolygonDimensions): void {
     const dialogState = this.regularPolygonDialogState();
     if (!dialogState) {
@@ -1748,6 +1781,30 @@ export class EditorPageComponent {
     }
 
     this.activeTool.set(REGULAR_POLYGON_PRESET_ID);
+    this.inspectorTab.set('properties');
+  }
+
+  confirmGraphDialog(dimensions: GraphDimensions): void {
+    const dialogState = this.graphDialogState();
+    if (!dialogState) {
+      return;
+    }
+
+    const nextDimensions = normalizeGraphDimensions(dimensions);
+    const toolId = this.graphToolIdForKind(nextDimensions.kind);
+    this.graphDimensions.set(nextDimensions);
+    this.graphDialogState.set(null);
+
+    if (dialogState.submitMode === 'center-insert') {
+      this.runSceneMutation(() => {
+        this.insertPresetAt(toolId, this.snapScenePoint(this.viewportCenter()));
+        this.activeTool.set('select');
+        this.inspectorTab.set('properties');
+      });
+      return;
+    }
+
+    this.activeTool.set(toolId);
     this.inspectorTab.set('properties');
   }
 
@@ -5630,6 +5687,20 @@ export class EditorPageComponent {
       });
     }
 
+    if (this.isGraphPresetId(toolId)) {
+      const dimensions = normalizeGraphDimensions({
+        ...this.graphDimensions(),
+        kind: GRAPH_PRESET_KIND_BY_ID[toolId]
+      });
+      return buildGraphShapes({
+        ...dimensions,
+        cx: 0,
+        cy: 0,
+        scale: 1,
+        name: this.presetTitle(preset)
+      });
+    }
+
     return structuredClone(preset.shapes);
   }
 
@@ -5640,7 +5711,12 @@ export class EditorPageComponent {
   ): readonly CanvasShape[] {
     const localizedShapes = keepOwnStyle ? shapes : this.localizePresetCanvasShapes(shapes);
 
-    if (keepOwnStyle || preset.id === REGULAR_POLYGON_PRESET_ID || localizedShapes.length !== 1) {
+    if (
+      keepOwnStyle ||
+      preset.id === REGULAR_POLYGON_PRESET_ID ||
+      this.isGraphPresetId(preset.id) ||
+      localizedShapes.length !== 1
+    ) {
       return localizedShapes;
     }
 
@@ -5685,6 +5761,21 @@ export class EditorPageComponent {
       ...normalizeRegularPolygonDimensions(state),
       submitMode: state.submitMode
     });
+  }
+
+  private openGraphDialog(state: GraphDialogState): void {
+    this.graphDialogState.set({
+      ...normalizeGraphDimensions(state),
+      submitMode: state.submitMode
+    });
+  }
+
+  private isGraphPresetId(toolId: string): toolId is GraphPresetId {
+    return GRAPH_PRESET_IDS.includes(toolId as GraphPresetId);
+  }
+
+  private graphToolIdForKind(kind: GraphDimensions['kind']): GraphPresetId {
+    return GRAPH_PRESET_ID_BY_KIND[kind];
   }
 
   private replaceSelectedTable(dimensions: TableDimensions): void {

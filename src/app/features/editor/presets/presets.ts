@@ -33,6 +33,8 @@ import {
 } from '../constants/editor.constants';
 import { REGULAR_POLYGON_PRESET_ID } from '../models/regular-polygon.models';
 import { DEFAULT_TABLE_GEOMETRY } from '../models/table.models';
+import { DEFAULT_GRAPH_DIMENSIONS, GRAPH_PRESET_ID_BY_KIND, type GraphPresetKind } from '../models/graph.models';
+import { buildGraphShapes } from '../utils/graph.utils';
 import { buildRegularPolygonShapes } from '../utils/regular-polygon.utils';
 import { buildTableShapes } from '../utils/table.utils';
 
@@ -250,6 +252,23 @@ const createPreset = (
   preserveStyle: options.preserveStyle,
   searchTerms: options.searchTerms
 });
+
+const createGraphPreset = (
+  kind: GraphPresetKind,
+  icon: string,
+  title: string,
+  description: string,
+  searchTerms: readonly string[]
+): ObjectPreset =>
+  createPreset(
+    GRAPH_PRESET_ID_BY_KIND[kind],
+    'graphs',
+    icon,
+    title,
+    description,
+    buildGraphShapes({ ...DEFAULT_GRAPH_DIMENSIONS, kind, cx: 0, cy: 0 }),
+    { preserveStyle: true, searchTerms }
+  );
 
 export const buildTablePresetShapes = (
   overrides: Partial<typeof DEFAULT_TABLE_GEOMETRY> = {}
@@ -580,6 +599,49 @@ export const objectPresets: readonly ObjectPreset[] = [
     ],
     { searchTerms: ['venn', 'sets', 'overlap'] }
   ),
+  createGraphPreset('complete', 'graph', 'Complete graph', 'Clique K_n with every pair of vertices connected.', [
+    'graph',
+    'complete',
+    'clique',
+    'k_n',
+    'network'
+  ]),
+  createGraphPreset('cycle', 'graph', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', [
+    'graph',
+    'cycle',
+    'c_n',
+    'ring'
+  ]),
+  createGraphPreset('path', 'graphPath', 'Path graph', 'Path P_n for ordered vertex chains.', [
+    'graph',
+    'path',
+    'p_n',
+    'chain'
+  ]),
+  createGraphPreset('star', 'hub', 'Star graph', 'Central vertex connected to all leaves.', [
+    'graph',
+    'star',
+    'hub',
+    'tree'
+  ]),
+  createGraphPreset('bipartite', 'graph', 'Complete bipartite graph', 'Two shores with all cross-connections.', [
+    'graph',
+    'bipartite',
+    'k_mn',
+    'matching'
+  ]),
+  createGraphPreset('grid', 'graphGrid', 'Grid graph', 'Rectangular lattice with horizontal and vertical edges.', [
+    'graph',
+    'grid',
+    'lattice',
+    'mesh'
+  ]),
+  createGraphPreset('binary-tree', 'hub', 'Binary tree', 'Balanced binary tree with configurable levels.', [
+    'graph',
+    'tree',
+    'binary',
+    'hierarchy'
+  ]),
   createPreset(
     'browser',
     'interface',

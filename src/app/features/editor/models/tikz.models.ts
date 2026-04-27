@@ -164,7 +164,7 @@ export interface PersistedEditorState {
   readonly importCode: string;
 }
 
-export type PresetCategory = 'essentials' | 'flow' | 'geometry' | 'data' | 'interface' | 'concepts';
+export type PresetCategory = 'essentials' | 'flow' | 'geometry' | 'graphs' | 'data' | 'interface' | 'concepts';
 
 export interface ObjectPreset {
   readonly id: string;
