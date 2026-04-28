@@ -237,6 +237,7 @@ import type {
   CanvasShape,
   EditorPreferences,
   EditorSyncMessage,
+  LineEndpointAttachment,
   LineShape,
   ObjectPreset,
   PersistedEditorState,
@@ -3648,12 +3649,26 @@ export class EditorPageComponent {
 
     return {
       ...shape,
-      from:
-        fromShape && shape.fromAttachment
-          ? this.lineAttachmentPoint(fromShape, shape.fromAttachment, shape.from)
-          : shape.from,
-      to: toShape && shape.toAttachment ? this.lineAttachmentPoint(toShape, shape.toAttachment, shape.to) : shape.to
+      from: this.movedLineEndpoint(shape.from, shape.fromAttachment, attachmentShapeById),
+      to: this.movedLineEndpoint(shape.to, shape.toAttachment, attachmentShapeById)
     } as LineShape;
+  }
+
+  private movedLineEndpoint(
+    currentPoint: Point,
+    attachment: LineEndpointAttachment | undefined,
+    attachmentShapeById: ReadonlyMap<string, CanvasShape>
+  ): Point {
+    if (!attachment) {
+      return currentPoint;
+    }
+
+    const attachedShape = attachmentShapeById.get(attachment.shapeId);
+    if (!attachedShape) {
+      return currentPoint;
+    }
+
+    return this.lineAttachmentPoint(attachedShape, attachment, currentPoint);
   }
 
   private withAttachedLinesMoved(
@@ -5835,7 +5850,7 @@ export class EditorPageComponent {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
       const idMap = this.shapeIdMap(templateShapes, (_, index) => `preview-${index}`);
-      return this.localizeInsertedPresetShapes(
+      const previewShapes = this.localizeInsertedPresetShapes(
         preset,
         this.remapShapeSetAttachments(
           templateShapes.map((shape) =>
@@ -5857,6 +5872,7 @@ export class EditorPageComponent {
         ),
         keepOwnStyle
       );
+      return this.syncLineAttachmentsInShapeSet(previewShapes);
     }
 
     const targetLeft = Math.min(startPoint.x, currentPoint.x);
@@ -5869,7 +5885,7 @@ export class EditorPageComponent {
     const scaleY = targetHeight / templateHeight;
     const idMap = this.shapeIdMap(templateShapes, (_, index) => `preview-${index}`);
 
-    return this.localizeInsertedPresetShapes(
+    const previewShapes = this.localizeInsertedPresetShapes(
       preset,
       this.remapShapeSetAttachments(
         templateShapes.map((shape) =>
@@ -5891,6 +5907,7 @@ export class EditorPageComponent {
       ),
       keepOwnStyle
     );
+    return this.syncLineAttachmentsInShapeSet(previewShapes);
   }
 
   private buildFreehandLine(points: readonly Point[], id: string = crypto.randomUUID()): LineShape | null {
@@ -5992,28 +6009,30 @@ export class EditorPageComponent {
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
     const idMap = this.shapeIdMap(templateShapes, () => crypto.randomUUID());
-    const shapes = remapStructuralShapeIds(
-      this.localizeInsertedPresetShapes(
-        preset,
-        this.remapShapeSetAttachments(
-          templateShapes.map((shape) =>
-            this.applyPresetStyle(
-              this.transformShape(
-                shape,
-                point.x - centerX,
-                point.y - centerY,
-                1,
-                1,
-                0,
-                0,
-                idMap.get(shape.id) as string
-              ),
-              keepOwnStyle
-            )
+    const shapes = this.syncLineAttachmentsInShapeSet(
+      remapStructuralShapeIds(
+        this.localizeInsertedPresetShapes(
+          preset,
+          this.remapShapeSetAttachments(
+            templateShapes.map((shape) =>
+              this.applyPresetStyle(
+                this.transformShape(
+                  shape,
+                  point.x - centerX,
+                  point.y - centerY,
+                  1,
+                  1,
+                  0,
+                  0,
+                  idMap.get(shape.id) as string
+                ),
+                keepOwnStyle
+              )
+            ),
+            idMap
           ),
-          idMap
-        ),
-        keepOwnStyle
+          keepOwnStyle
+        )
       )
     );
     this.store.addShapes(shapes);
@@ -6138,17 +6157,59 @@ export class EditorPageComponent {
       return shape;
     }
 
-    const fromShapeId = shape.fromAttachment?.shapeId;
-    const toShapeId = shape.toAttachment?.shapeId;
     return {
       ...shape,
-      fromAttachment: shape.fromAttachment
-        ? { ...shape.fromAttachment, shapeId: idMap.get(fromShapeId as string) ?? (fromShapeId as string) }
-        : undefined,
-      toAttachment: shape.toAttachment
-        ? { ...shape.toAttachment, shapeId: idMap.get(toShapeId as string) ?? (toShapeId as string) }
-        : undefined
+      fromAttachment: this.remapLineAttachment(shape.fromAttachment, idMap),
+      toAttachment: this.remapLineAttachment(shape.toAttachment, idMap)
     } as LineShape;
+  }
+
+  private remapLineAttachment(
+    attachment: LineEndpointAttachment | undefined,
+    idMap: ReadonlyMap<string, string>
+  ): LineEndpointAttachment | undefined {
+    if (!attachment) {
+      return undefined;
+    }
+
+    return {
+      ...attachment,
+      shapeId: idMap.get(attachment.shapeId) ?? attachment.shapeId
+    };
+  }
+
+  private syncLineAttachmentsInShapeSet(shapes: readonly CanvasShape[]): readonly CanvasShape[] {
+    const shapeById = new Map(shapes.map((shape) => [shape.id, shape]));
+    return shapes.map((shape) => this.syncLineAttachmentEndpoints(shape, shapeById));
+  }
+
+  private syncLineAttachmentEndpoints(shape: CanvasShape, shapeById: ReadonlyMap<string, CanvasShape>): CanvasShape {
+    if (shape.kind !== 'line') {
+      return shape;
+    }
+
+    return {
+      ...shape,
+      from: this.syncedLineAttachmentPoint(shape.from, shape.fromAttachment, shapeById),
+      to: this.syncedLineAttachmentPoint(shape.to, shape.toAttachment, shapeById)
+    } as LineShape;
+  }
+
+  private syncedLineAttachmentPoint(
+    currentPoint: Point,
+    attachment: LineEndpointAttachment | undefined,
+    shapeById: ReadonlyMap<string, CanvasShape>
+  ): Point {
+    if (!attachment) {
+      return currentPoint;
+    }
+
+    const attachedShape = shapeById.get(attachment.shapeId);
+    if (!attachedShape) {
+      return currentPoint;
+    }
+
+    return this.lineAttachmentPoint(attachedShape, attachment, currentPoint);
   }
 
   private openTableDialog(state: TableDialogState): void {

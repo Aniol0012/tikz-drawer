@@ -24,7 +24,6 @@ import type { CircleShape, LineShape, Point, TextShape } from '../models/tikz.mo
 const DEFAULT_GRAPH_RADIUS = 2.1;
 const DEFAULT_GRAPH_NODE_RADIUS = 0.18;
 const DEFAULT_GRAPH_SCALE = 1;
-const GRAPH_EDGE_CLEARANCE = 0.02;
 
 const clampInteger = (value: number, minimumValue: number, maximumValue: number): number => {
   if (!Number.isFinite(value)) {
@@ -149,7 +148,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
     x: options.cx + point.x * scale,
     y: options.cy + point.y * scale
   });
-  const nodeById = new Map(layout.nodes.map((node) => [node.id, node]));
+  const layoutNodeById = new Map(layout.nodes.map((node) => [node.id, node]));
   const graphName = options.name ?? graphDisplayName(normalized.kind);
   const nodes = layout.nodes.map((node): CircleShape => {
     const position = project(node.position);
@@ -171,30 +170,21 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
   const canvasNodeByLayoutId = new Map(nodes.map((node, index) => [layout.nodes[index]?.id ?? '', node]));
   const edges = layout.edges
     .map((edge): LineShape | null => {
-      const source = nodeById.get(edge.source);
-      const target = nodeById.get(edge.target);
       const sourceShape = canvasNodeByLayoutId.get(edge.source);
       const targetShape = canvasNodeByLayoutId.get(edge.target);
-      if (!source || !target || !sourceShape || !targetShape) {
+      if (!sourceShape || !targetShape) {
         return null;
       }
-      const edgeEndpoints = insetGraphEdge(
-        project(source.position),
-        project(target.position),
-        nodeRadius,
-        normalized.directed
-      );
-      const sourcePosition = project(source.position);
-      const targetPosition = project(target.position);
+      const edgeEndpoints = graphEdgeEndpoints(sourceShape, targetShape);
       return buildLine(
-        `${source.label} - ${target.label}`,
+        graphEdgeName(edge, layoutNodeById),
         edgeEndpoints.from,
         edgeEndpoints.to,
         normalized.directed,
         sourceShape.id,
         targetShape.id,
-        normalizedAnchorFromCenter(sourcePosition, edgeEndpoints.from),
-        normalizedAnchorFromCenter(targetPosition, edgeEndpoints.to)
+        edgeEndpoints.fromAnchor,
+        edgeEndpoints.toAnchor
       );
     })
     .filter((shape): shape is LineShape => !!shape);
@@ -233,8 +223,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
 export const insetGraphEdge = (
   from: Point,
   to: Point,
-  nodeRadius: number,
-  directed: boolean
+  nodeRadius: number
 ): { readonly from: Point; readonly to: Point } => {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -245,9 +234,8 @@ export const insetGraphEdge = (
 
   const unitX = dx / length;
   const unitY = dy / length;
-  const startInset = nodeRadius + GRAPH_EDGE_CLEARANCE;
-  const endInset =
-    nodeRadius + GRAPH_EDGE_CLEARANCE + (directed ? Math.max(nodeRadius * 0.28, GRAPH_EDGE_CLEARANCE) : 0);
+  const startInset = nodeRadius;
+  const endInset = nodeRadius;
   const maxInset = length * 0.42;
   const safeStartInset = Math.min(startInset, maxInset);
   const safeEndInset = Math.min(endInset, maxInset);
@@ -263,6 +251,48 @@ export const insetGraphEdge = (
     }
   };
 };
+
+const graphEdgeEndpoints = (
+  source: CircleShape,
+  target: CircleShape
+): {
+  readonly from: Point;
+  readonly to: Point;
+  readonly fromAnchor: Point;
+  readonly toAnchor: Point;
+} => {
+  const sourceCenter = circleCenter(source);
+  const targetCenter = circleCenter(target);
+  const fromAnchor = normalizedAnchorFromCenter(sourceCenter, targetCenter);
+  const toAnchor = normalizedAnchorFromCenter(targetCenter, sourceCenter);
+
+  return {
+    from: pointOnCircle(source, fromAnchor),
+    to: pointOnCircle(target, toAnchor),
+    fromAnchor,
+    toAnchor
+  };
+};
+
+const graphEdgeName = (edge: GraphEdgeLayout, layoutNodeById: ReadonlyMap<string, GraphNodeLayout>): string => {
+  const source = layoutNodeById.get(edge.source);
+  const target = layoutNodeById.get(edge.target);
+  if (!source || !target) {
+    return `${edge.source} - ${edge.target}`;
+  }
+
+  return `${source.label} - ${target.label}`;
+};
+
+const circleCenter = (circle: CircleShape): Point => ({
+  x: circle.cx,
+  y: circle.cy
+});
+
+const pointOnCircle = (circle: CircleShape, anchor: Point): Point => ({
+  x: circle.cx + anchor.x * circle.r,
+  y: circle.cy + anchor.y * circle.r
+});
 
 const buildLine = (
   name: string,

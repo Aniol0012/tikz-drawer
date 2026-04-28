@@ -45,4 +45,56 @@ describe('graph utils', () => {
     expect(lines[0].to.x).toBeLessThan(-0.5);
     expect(shapes.some((shape) => shape.kind === 'text')).toBe(false);
   });
+
+  it('anchors every generated edge to its source and target node', () => {
+    const shapes = buildGraphShapes({
+      ...normalizeGraphDimensions({ kind: 'grid', rows: 3, columns: 4, showLabels: true }),
+      cx: 0,
+      cy: 0
+    });
+    const shapeIds = new Set(shapes.map((shape) => shape.id));
+    const lines = shapes.filter(
+      (shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line'
+    );
+
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      expect(line.fromAttachment).toBeDefined();
+      expect(line.toAttachment).toBeDefined();
+      expect(shapeIds.has(line.fromAttachment?.shapeId ?? '')).toBe(true);
+      expect(shapeIds.has(line.toAttachment?.shapeId ?? '')).toBe(true);
+      expect(Number.isFinite(line.fromAttachment?.anchor?.x)).toBe(true);
+      expect(Number.isFinite(line.fromAttachment?.anchor?.y)).toBe(true);
+      expect(Number.isFinite(line.toAttachment?.anchor?.x)).toBe(true);
+      expect(Number.isFinite(line.toAttachment?.anchor?.y)).toBe(true);
+    }
+  });
+
+  it('places generated edge endpoints exactly on their attached node anchors', () => {
+    const shapes = buildGraphShapes({
+      ...normalizeGraphDimensions({ kind: 'bipartite', leftVertices: 3, rightVertices: 4, showLabels: true }),
+      cx: 0,
+      cy: 0
+    });
+    const nodesById = new Map(
+      shapes
+        .filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'circle' }> => shape.kind === 'circle')
+        .map((shape) => [shape.id, shape])
+    );
+    const lines = shapes.filter(
+      (shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line'
+    );
+
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) {
+      const fromNode = nodesById.get(line.fromAttachment?.shapeId ?? '');
+      const toNode = nodesById.get(line.toAttachment?.shapeId ?? '');
+      expect(fromNode).toBeDefined();
+      expect(toNode).toBeDefined();
+      expect(line.from.x).toBeCloseTo((fromNode?.cx ?? 0) + (line.fromAttachment?.anchor?.x ?? 0) * (fromNode?.r ?? 0));
+      expect(line.from.y).toBeCloseTo((fromNode?.cy ?? 0) + (line.fromAttachment?.anchor?.y ?? 0) * (fromNode?.r ?? 0));
+      expect(line.to.x).toBeCloseTo((toNode?.cx ?? 0) + (line.toAttachment?.anchor?.x ?? 0) * (toNode?.r ?? 0));
+      expect(line.to.y).toBeCloseTo((toNode?.cy ?? 0) + (line.toAttachment?.anchor?.y ?? 0) * (toNode?.r ?? 0));
+    }
+  });
 });

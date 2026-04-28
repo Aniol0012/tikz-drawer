@@ -183,7 +183,7 @@ export class GraphDialogComponent implements OnChanges {
           return null;
         }
 
-        const endpoints = insetGraphEdge(source, target, PREVIEW_NODE_RADIUS, dimensions.directed);
+        const endpoints = insetGraphEdge(source, target, PREVIEW_NODE_RADIUS);
         return {
           id: `${source.id}-${target.id}`,
           from: endpoints.from,
