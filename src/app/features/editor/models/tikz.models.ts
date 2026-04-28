@@ -31,10 +31,16 @@ export interface CanvasShapeBase {
 
 export type ArrowTipKind = 'latex' | 'triangle' | 'stealth' | 'diamond' | 'circle' | 'bar' | 'hooks' | 'bracket';
 
+export interface LineEndpointAttachment {
+  readonly shapeId: string;
+}
+
 export interface LineShape extends CanvasShapeBase {
   readonly kind: 'line';
   readonly from: Point;
   readonly to: Point;
+  readonly fromAttachment?: LineEndpointAttachment;
+  readonly toAttachment?: LineEndpointAttachment;
   readonly anchors: readonly Point[];
   readonly lineMode: 'straight' | 'curved';
   readonly arrowStart: boolean;

@@ -136,7 +136,7 @@
 
 .graph-dialog__preview line {
   stroke: var(--muted-foreground);
-  stroke-width: 2.4;
+  stroke-width: 2.1;
   stroke-linecap: round;
 }
 

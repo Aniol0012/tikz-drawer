@@ -143,7 +143,6 @@ export const buildGraphLayout = (dimensions: GraphDimensions): GraphLayout => {
 export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly GraphShape[] => {
   const normalized = normalizeGraphDimensions(options);
   const layout = buildGraphLayout(normalized);
-  const mergeId = options.mergeId ?? crypto.randomUUID();
   const scale = options.scale ?? DEFAULT_GRAPH_SCALE;
   const nodeRadius = options.nodeRadius ?? DEFAULT_GRAPH_NODE_RADIUS;
   const project = (point: Point): Point => ({
@@ -151,11 +150,32 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
     y: options.cy + point.y * scale
   });
   const nodeById = new Map(layout.nodes.map((node) => [node.id, node]));
+  const graphName = options.name ?? graphDisplayName(normalized.kind);
+  const nodes = layout.nodes.map((node): CircleShape => {
+    const position = project(node.position);
+    return {
+      id: crypto.randomUUID(),
+      name: `${graphName} node ${node.label}`,
+      kind: 'circle',
+      stroke: DEFAULT_LINE_COLOR,
+      strokeOpacity: 1,
+      strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
+      fill: '#fbfbfb',
+      fillOpacity: 1,
+      cx: position.x,
+      cy: position.y,
+      r: nodeRadius,
+      mergeId: crypto.randomUUID()
+    };
+  });
+  const canvasNodeByLayoutId = new Map(nodes.map((node, index) => [layout.nodes[index]?.id ?? '', node]));
   const edges = layout.edges
     .map((edge): LineShape | null => {
       const source = nodeById.get(edge.source);
       const target = nodeById.get(edge.target);
-      if (!source || !target) {
+      const sourceShape = canvasNodeByLayoutId.get(edge.source);
+      const targetShape = canvasNodeByLayoutId.get(edge.target);
+      if (!source || !target || !sourceShape || !targetShape) {
         return null;
       }
       const edgeEndpoints = insetGraphEdge(
@@ -168,42 +188,27 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
         `${source.label} - ${target.label}`,
         edgeEndpoints.from,
         edgeEndpoints.to,
-        mergeId,
-        normalized.directed
+        normalized.directed,
+        sourceShape.id,
+        targetShape.id
       );
     })
     .filter((shape): shape is LineShape => !!shape);
-  const nodes = layout.nodes.map((node): CircleShape => {
-    const position = project(node.position);
-    return {
-      id: crypto.randomUUID(),
-      name: `${options.name ?? graphDisplayName(normalized.kind)} node ${node.label}`,
-      kind: 'circle',
-      stroke: DEFAULT_LINE_COLOR,
-      strokeOpacity: 1,
-      strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
-      fill: '#fbfbfb',
-      fillOpacity: 1,
-      cx: position.x,
-      cy: position.y,
-      r: nodeRadius,
-      mergeId
-    };
-  });
   const labels = normalized.showLabels
-    ? layout.nodes.map((node): TextShape => {
+    ? layout.nodes.map((node, index): TextShape => {
         const position = project(node.position);
+        const nodeShape = nodes[index];
         return {
           id: crypto.randomUUID(),
-          name: `${options.name ?? graphDisplayName(normalized.kind)} label ${node.label}`,
+          name: `${graphName} label ${node.label}`,
           kind: 'text',
           stroke: 'none',
           strokeOpacity: 1,
           strokeWidth: 0,
-          x: position.x - nodeRadius,
-          y: position.y - 0.07,
+          x: position.x,
+          y: position.y,
           text: node.label,
-          textBox: true,
+          textBox: false,
           boxWidth: nodeRadius * 2,
           fontSize: 0.2,
           color: DEFAULT_TEXT_COLOR,
@@ -213,7 +218,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
           textDecoration: 'none',
           textAlign: 'center',
           rotation: 0,
-          mergeId
+          mergeId: nodeShape?.mergeId
         };
       })
     : [];
@@ -255,7 +260,14 @@ export const insetGraphEdge = (
   };
 };
 
-const buildLine = (name: string, from: Point, to: Point, mergeId: string, directed: boolean): LineShape => ({
+const buildLine = (
+  name: string,
+  from: Point,
+  to: Point,
+  directed: boolean,
+  sourceShapeId: string,
+  targetShapeId: string
+): LineShape => ({
   id: crypto.randomUUID(),
   name,
   kind: 'line',
@@ -264,6 +276,8 @@ const buildLine = (name: string, from: Point, to: Point, mergeId: string, direct
   strokeWidth: DEFAULT_LINE_STROKE_WIDTH,
   from,
   to,
+  fromAttachment: { shapeId: sourceShapeId },
+  toAttachment: { shapeId: targetShapeId },
   anchors: [],
   lineMode: 'straight',
   arrowStart: false,
@@ -276,8 +290,7 @@ const buildLine = (name: string, from: Point, to: Point, mergeId: string, direct
   arrowScale: DEFAULT_ARROW_SCALE,
   arrowLengthScale: 1,
   arrowWidthScale: 1,
-  arrowBendMode: 'none',
-  mergeId
+  arrowBendMode: 'none'
 });
 
 const buildCircularNodes = (vertices: number): readonly GraphNodeLayout[] =>

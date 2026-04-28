@@ -20,12 +20,28 @@ const cloneShape = (shape: CanvasShape): CanvasShape => ({
   name: `${shape.name} copy`
 });
 
+const remapLineAttachments = (shape: CanvasShape, idMap: ReadonlyMap<string, string>): CanvasShape => {
+  if (shape.kind !== 'line') {
+    return shape;
+  }
+
+  const fromShapeId = shape.fromAttachment?.shapeId;
+  const toShapeId = shape.toAttachment?.shapeId;
+  return {
+    ...shape,
+    fromAttachment: fromShapeId ? { shapeId: idMap.get(fromShapeId) ?? fromShapeId } : undefined,
+    toAttachment: toShapeId ? { shapeId: idMap.get(toShapeId) ?? toShapeId } : undefined
+  } as CanvasShape;
+};
+
 const normalizeShape = (shape: CanvasShape): CanvasShape => {
   switch (shape.kind) {
     case 'line':
       return {
         ...shape,
         anchors: shape.anchors ?? [],
+        fromAttachment: shape.fromAttachment,
+        toAttachment: shape.toAttachment,
         lineMode: shape.lineMode ?? 'straight',
         strokeOpacity: shape.strokeOpacity ?? 1,
         arrowType: shape.arrowType ?? 'latex',
@@ -305,6 +321,8 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         stroke: shape.stroke,
         strokeOpacity: shape.strokeOpacity ?? 1,
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+        fromAttachment: shape.fromAttachment,
+        toAttachment: shape.toAttachment,
         lineMode: shape.lineMode ?? 'straight',
         arrowColor: shape.arrowColor ?? shape.stroke,
         arrowOpacity: shape.arrowOpacity ?? shape.strokeOpacity ?? 1,
@@ -547,8 +565,22 @@ export class EditorStore {
       return;
     }
 
+    const idMap = new Map(selectedShapes.map((shape) => [shape.id, crypto.randomUUID()]));
     const duplicatedShapes = remapStructuralShapeIds(
-      selectedShapes.map((shape) => translateShape(cloneShape(shape), 0.6, -0.6))
+      selectedShapes.map((shape) =>
+        remapLineAttachments(
+          translateShape(
+            {
+              ...structuredClone(shape),
+              id: idMap.get(shape.id) as string,
+              name: `${shape.name} copy`
+            } as CanvasShape,
+            0.6,
+            -0.6
+          ),
+          idMap
+        )
+      )
     );
     this.scene.update((scene) => ({
       ...scene,

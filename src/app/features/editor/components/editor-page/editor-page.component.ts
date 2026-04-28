@@ -331,6 +331,7 @@ export class EditorPageComponent {
   private static readonly wheelRotationMaxStepDegrees = 18;
   private static readonly lineHitStrokeExtraPx = 10;
   private static readonly lineHitStrokeMinPx = 14;
+  private static readonly lineAttachmentSnapRadiusPx = 14;
   private static readonly sidebarResizeLimits = {
     mobileMaxHeight: 640,
     leftMinWidth: 220,
@@ -2478,15 +2479,19 @@ export class EditorPageComponent {
 
     const offsetStep = EDITOR_PASTE_OFFSET_STEP;
     const offset = offsetStep * (clipboard.pasteCount + 1);
+    const idMap = this.shapeIdMap(clipboard.shapes, () => crypto.randomUUID());
     const pastedShapes = remapStructuralShapeIds(
-      clipboard.shapes.map((shape) => {
-        const duplicate = structuredClone(shape);
-        return {
-          ...translateShapeBy(duplicate, offset, -offset),
-          id: crypto.randomUUID(),
-          name: `${duplicate.name} copy`
-        } as CanvasShape;
-      })
+      this.remapShapeSetAttachments(
+        clipboard.shapes.map((shape) => {
+          const duplicate = structuredClone(shape);
+          return {
+            ...translateShapeBy(duplicate, offset, -offset),
+            id: idMap.get(shape.id) as string,
+            name: `${duplicate.name} copy`
+          } as CanvasShape;
+        }),
+        idMap
+      )
     );
 
     this.runSceneMutation(() => this.store.addShapes(pastedShapes));
@@ -2965,6 +2970,7 @@ export class EditorPageComponent {
 
       return {
         ...shape,
+        ...(target === 'from' ? { fromAttachment: undefined } : { toAttachment: undefined }),
         [target]: {
           ...shape[target],
           [axis]: value
@@ -3561,7 +3567,50 @@ export class EditorPageComponent {
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
     const nextShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
-    this.store.replaceShapes(nextShapes);
+    this.store.replaceShapes(this.withAttachedLinesMoved(interactionState.initialShapes, nextShapes));
+  }
+
+  private withAttachedLinesMoved(
+    initialMovedShapes: readonly CanvasShape[],
+    nextMovedShapes: readonly CanvasShape[]
+  ): readonly CanvasShape[] {
+    const movedShapeIds = new Set(nextMovedShapes.map((shape) => shape.id));
+    const movedDeltaByShapeId = new Map<string, Point>();
+
+    nextMovedShapes.forEach((nextShape) => {
+      const initialShape = initialMovedShapes.find((shape) => shape.id === nextShape.id);
+      if (!initialShape) {
+        return;
+      }
+      const initialCenter = this.shapeCenter(initialShape);
+      const nextCenter = this.shapeCenter(nextShape);
+      movedDeltaByShapeId.set(nextShape.id, {
+        x: nextCenter.x - initialCenter.x,
+        y: nextCenter.y - initialCenter.y
+      });
+    });
+
+    const attachedLines = this.scene().shapes.flatMap((shape): readonly LineShape[] => {
+      if (shape.kind !== 'line' || movedShapeIds.has(shape.id)) {
+        return [];
+      }
+
+      const fromDelta = shape.fromAttachment ? movedDeltaByShapeId.get(shape.fromAttachment.shapeId) : undefined;
+      const toDelta = shape.toAttachment ? movedDeltaByShapeId.get(shape.toAttachment.shapeId) : undefined;
+      if (!fromDelta && !toDelta) {
+        return [];
+      }
+
+      return [
+        {
+          ...shape,
+          from: fromDelta ? { x: shape.from.x + fromDelta.x, y: shape.from.y + fromDelta.y } : shape.from,
+          to: toDelta ? { x: shape.to.x + toDelta.x, y: shape.to.y + toDelta.y } : shape.to
+        }
+      ];
+    });
+
+    return [...nextMovedShapes, ...attachedLines];
   }
 
   private handlePanPointerMove(
@@ -3650,7 +3699,11 @@ export class EditorPageComponent {
       ? this.snapResizePointer(interactionState.initialShape, adjustedPointerPoint)
       : this.snapScenePoint(adjustedPointerPoint);
     if (interactionState.initialShape) {
-      const resizedShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
+      const resizedShape = this.withLineEndpointAttachment(
+        this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint),
+        interactionState.handle,
+        nextPoint
+      );
       this.store.patchSelectedShape(() => resizedShape);
       return;
     }
@@ -3667,6 +3720,117 @@ export class EditorPageComponent {
         nextPoint
       )
     );
+  }
+
+  private withLineEndpointAttachment(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
+    if (shape.kind !== 'line' || (handle !== 'from' && handle !== 'to')) {
+      return shape;
+    }
+
+    const attachment = this.findLineEndpointAttachment(shape, handle, point);
+    if (!attachment) {
+      return handle === 'from'
+        ? ({ ...shape, fromAttachment: undefined } as LineShape)
+        : ({ ...shape, toAttachment: undefined } as LineShape);
+    }
+
+    const adjacentPoint = handle === 'from' ? (shape.anchors[0] ?? shape.to) : (shape.anchors.at(-1) ?? shape.from);
+    const endpointPoint = this.lineAttachmentPoint(attachment.shape, adjacentPoint);
+
+    return handle === 'from'
+      ? ({
+          ...shape,
+          from: endpointPoint,
+          fromAttachment: { shapeId: attachment.shape.id }
+        } as LineShape)
+      : ({
+          ...shape,
+          to: endpointPoint,
+          toAttachment: { shapeId: attachment.shape.id }
+        } as LineShape);
+  }
+
+  private findLineEndpointAttachment(
+    line: LineShape,
+    endpoint: LineEndpoint,
+    point: Point
+  ): { readonly shape: CanvasShape; readonly distance: number } | null {
+    const threshold = EditorPageComponent.lineAttachmentSnapRadiusPx / this.preferences().scale;
+    const candidates = this.scene()
+      .shapes.filter((shape) => this.canAttachLineEndpointToShape(line, shape))
+      .map((shape) => ({ shape, distance: this.distanceToAttachableShape(point, shape) }))
+      .filter((entry) => entry.distance <= threshold)
+      .sort((a, b) => a.distance - b.distance);
+
+    const currentAttachment = endpoint === 'from' ? line.fromAttachment : line.toAttachment;
+    return candidates.find((entry) => entry.shape.id === currentAttachment?.shapeId) ?? candidates[0] ?? null;
+  }
+
+  private canAttachLineEndpointToShape(line: LineShape, shape: CanvasShape): boolean {
+    return shape.id !== line.id && shape.kind !== 'line' && shape.kind !== 'text';
+  }
+
+  private distanceToAttachableShape(point: Point, shape: CanvasShape): number {
+    if (shape.kind === 'circle') {
+      return Math.max(Math.hypot(point.x - shape.cx, point.y - shape.cy) - shape.r, 0);
+    }
+
+    if (shape.kind === 'ellipse' && !shape.rotation) {
+      const dx = point.x - shape.cx;
+      const dy = point.y - shape.cy;
+      if ((dx * dx) / (shape.rx * shape.rx) + (dy * dy) / (shape.ry * shape.ry) <= 1) {
+        return 0;
+      }
+    }
+
+    const bounds = this.shapeBounds(shape);
+    if (!bounds) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const deltaX = Math.max(bounds.left - point.x, 0, point.x - bounds.right);
+    const deltaY = Math.max(bounds.bottom - point.y, 0, point.y - bounds.top);
+    return Math.hypot(deltaX, deltaY);
+  }
+
+  private lineAttachmentPoint(shape: CanvasShape, adjacentPoint: Point): Point {
+    const center = this.shapeCenter(shape);
+    const deltaX = adjacentPoint.x - center.x;
+    const deltaY = adjacentPoint.y - center.y;
+    const length = Math.hypot(deltaX, deltaY);
+    if (length <= 0.0001) {
+      return center;
+    }
+
+    const unit = { x: deltaX / length, y: deltaY / length };
+    if (shape.kind === 'circle') {
+      return {
+        x: shape.cx + unit.x * shape.r,
+        y: shape.cy + unit.y * shape.r
+      };
+    }
+
+    if (shape.kind === 'ellipse' && !shape.rotation) {
+      const scale =
+        1 / Math.sqrt((unit.x * unit.x) / (shape.rx * shape.rx) + (unit.y * unit.y) / (shape.ry * shape.ry));
+      return {
+        x: shape.cx + unit.x * scale,
+        y: shape.cy + unit.y * scale
+      };
+    }
+
+    const bounds = this.shapeBounds(shape);
+    if (!bounds) {
+      return center;
+    }
+
+    const halfWidth = Math.max((bounds.right - bounds.left) / 2, 0.0001);
+    const halfHeight = Math.max((bounds.top - bounds.bottom) / 2, 0.0001);
+    const scale = 1 / Math.max(Math.abs(unit.x) / halfWidth, Math.abs(unit.y) / halfHeight);
+    return {
+      x: center.x + unit.x * scale,
+      y: center.y + unit.y * scale
+    };
   }
 
   private handleRotatePointerMove(
@@ -3761,7 +3925,7 @@ export class EditorPageComponent {
     }
 
     this.runSceneMutation(() => {
-      this.store.addShapes(previewShapes.map((shape) => ({ ...shape, id: crypto.randomUUID() })));
+      this.store.addShapes(this.remapShapeSetIds(previewShapes, () => crypto.randomUUID()));
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
@@ -5495,22 +5659,26 @@ export class EditorPageComponent {
     if (!hasDrag) {
       const centerX = (templateBounds.left + templateBounds.right) / 2;
       const centerY = (templateBounds.bottom + templateBounds.top) / 2;
+      const idMap = this.shapeIdMap(templateShapes, (_, index) => `preview-${index}`);
       return this.localizeInsertedPresetShapes(
         preset,
-        templateShapes.map((shape, index) =>
-          this.applyPresetStyle(
-            this.transformShape(
-              shape,
-              startPoint.x - centerX,
-              startPoint.y - centerY,
-              1,
-              1,
-              templateBounds.left,
-              templateBounds.bottom,
-              `preview-${index}`
-            ),
-            keepOwnStyle
-          )
+        this.remapShapeSetAttachments(
+          templateShapes.map((shape) =>
+            this.applyPresetStyle(
+              this.transformShape(
+                shape,
+                startPoint.x - centerX,
+                startPoint.y - centerY,
+                1,
+                1,
+                templateBounds.left,
+                templateBounds.bottom,
+                idMap.get(shape.id) as string
+              ),
+              keepOwnStyle
+            )
+          ),
+          idMap
         ),
         keepOwnStyle
       );
@@ -5524,23 +5692,27 @@ export class EditorPageComponent {
     const templateHeight = Math.max(templateBounds.top - templateBounds.bottom, MIN_SHAPE_DIMENSION);
     const scaleX = targetWidth / templateWidth;
     const scaleY = targetHeight / templateHeight;
+    const idMap = this.shapeIdMap(templateShapes, (_, index) => `preview-${index}`);
 
     return this.localizeInsertedPresetShapes(
       preset,
-      templateShapes.map((shape, index) =>
-        this.applyPresetStyle(
-          this.transformShape(
-            shape,
-            targetLeft - templateBounds.left * scaleX,
-            targetBottom - templateBounds.bottom * scaleY,
-            scaleX,
-            scaleY,
-            0,
-            0,
-            `preview-${index}`
-          ),
-          keepOwnStyle
-        )
+      this.remapShapeSetAttachments(
+        templateShapes.map((shape) =>
+          this.applyPresetStyle(
+            this.transformShape(
+              shape,
+              targetLeft - templateBounds.left * scaleX,
+              targetBottom - templateBounds.bottom * scaleY,
+              scaleX,
+              scaleY,
+              0,
+              0,
+              idMap.get(shape.id) as string
+            ),
+            keepOwnStyle
+          )
+        ),
+        idMap
       ),
       keepOwnStyle
     );
@@ -5644,14 +5816,27 @@ export class EditorPageComponent {
 
     const centerX = (templateBounds.left + templateBounds.right) / 2;
     const centerY = (templateBounds.bottom + templateBounds.top) / 2;
+    const idMap = this.shapeIdMap(templateShapes, () => crypto.randomUUID());
     const shapes = remapStructuralShapeIds(
       this.localizeInsertedPresetShapes(
         preset,
-        templateShapes.map((shape) =>
-          this.applyPresetStyle(
-            this.transformShape(shape, point.x - centerX, point.y - centerY, 1, 1, 0, 0, crypto.randomUUID()),
-            keepOwnStyle
-          )
+        this.remapShapeSetAttachments(
+          templateShapes.map((shape) =>
+            this.applyPresetStyle(
+              this.transformShape(
+                shape,
+                point.x - centerX,
+                point.y - centerY,
+                1,
+                1,
+                0,
+                0,
+                idMap.get(shape.id) as string
+              ),
+              keepOwnStyle
+            )
+          ),
+          idMap
         ),
         keepOwnStyle
       )
@@ -5746,6 +5931,45 @@ export class EditorPageComponent {
     id: string
   ): CanvasShape {
     return transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
+  }
+
+  private shapeIdMap(
+    shapes: readonly CanvasShape[],
+    nextId: (shape: CanvasShape, index: number) => string
+  ): ReadonlyMap<string, string> {
+    return new Map(shapes.map((shape, index) => [shape.id, nextId(shape, index)]));
+  }
+
+  private remapShapeSetIds(
+    shapes: readonly CanvasShape[],
+    nextId: (shape: CanvasShape, index: number) => string
+  ): readonly CanvasShape[] {
+    const idMap = this.shapeIdMap(shapes, nextId);
+    return this.remapShapeSetAttachments(
+      shapes.map((shape) => ({ ...shape, id: idMap.get(shape.id) as string }) as CanvasShape),
+      idMap
+    );
+  }
+
+  private remapShapeSetAttachments(
+    shapes: readonly CanvasShape[],
+    idMap: ReadonlyMap<string, string>
+  ): readonly CanvasShape[] {
+    return shapes.map((shape) => this.remapLineAttachments(shape, idMap));
+  }
+
+  private remapLineAttachments(shape: CanvasShape, idMap: ReadonlyMap<string, string>): CanvasShape {
+    if (shape.kind !== 'line') {
+      return shape;
+    }
+
+    const fromShapeId = shape.fromAttachment?.shapeId;
+    const toShapeId = shape.toAttachment?.shapeId;
+    return {
+      ...shape,
+      fromAttachment: fromShapeId ? { shapeId: idMap.get(fromShapeId) ?? fromShapeId } : undefined,
+      toAttachment: toShapeId ? { shapeId: idMap.get(toShapeId) ?? toShapeId } : undefined
+    } as LineShape;
   }
 
   private openTableDialog(state: TableDialogState): void {
