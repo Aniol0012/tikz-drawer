@@ -340,7 +340,8 @@ export class EditorPageComponent {
   private static readonly lineHitStrokeExtraPx = 10;
   private static readonly lineHitStrokeMinPx = 14;
   private static readonly lineAttachmentSnapRadiusPx = 14;
-  private static readonly lineAttachmentPreviewRadiusPx = 18;
+  private static readonly lineAttachmentPreviewRadiusPx = 44;
+  private static readonly lineMarqueeTolerancePx = 6;
   private static readonly sidebarResizeLimits = {
     mobileMaxHeight: 640,
     leftMinWidth: 220,
@@ -3606,10 +3607,17 @@ export class EditorPageComponent {
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
     const translatedShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
+    const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
     const nextShapes = event.altKey
       ? translatedShapes.map((shape) => this.withLineAttachmentsDetached(shape))
-      : translatedShapes;
+      : translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
     this.store.replaceShapes(this.withAttachedLinesMoved(interactionState.initialShapes, nextShapes));
+  }
+
+  private lineAttachmentShapeMap(movedShapes: readonly CanvasShape[]): ReadonlyMap<string, CanvasShape> {
+    const shapeById = new Map(this.scene().shapes.map((shape) => [shape.id, shape]));
+    movedShapes.forEach((shape) => shapeById.set(shape.id, shape));
+    return shapeById;
   }
 
   private withLineAttachmentsDetached(shape: CanvasShape): CanvasShape {
@@ -3621,6 +3629,30 @@ export class EditorPageComponent {
       ...shape,
       fromAttachment: undefined,
       toAttachment: undefined
+    } as LineShape;
+  }
+
+  private withMovedLineAttachmentsSynced(
+    shape: CanvasShape,
+    attachmentShapeById: ReadonlyMap<string, CanvasShape>
+  ): CanvasShape {
+    if (shape.kind !== 'line') {
+      return shape;
+    }
+
+    const fromShape = shape.fromAttachment ? attachmentShapeById.get(shape.fromAttachment.shapeId) : undefined;
+    const toShape = shape.toAttachment ? attachmentShapeById.get(shape.toAttachment.shapeId) : undefined;
+    if (!fromShape && !toShape) {
+      return shape;
+    }
+
+    return {
+      ...shape,
+      from:
+        fromShape && shape.fromAttachment
+          ? this.lineAttachmentPoint(fromShape, shape.fromAttachment, shape.from)
+          : shape.from,
+      to: toShape && shape.toAttachment ? this.lineAttachmentPoint(toShape, shape.toAttachment, shape.to) : shape.to
     } as LineShape;
   }
 
@@ -6110,8 +6142,12 @@ export class EditorPageComponent {
     const toShapeId = shape.toAttachment?.shapeId;
     return {
       ...shape,
-      fromAttachment: fromShapeId ? { shapeId: idMap.get(fromShapeId) ?? fromShapeId } : undefined,
-      toAttachment: toShapeId ? { shapeId: idMap.get(toShapeId) ?? toShapeId } : undefined
+      fromAttachment: shape.fromAttachment
+        ? { ...shape.fromAttachment, shapeId: idMap.get(fromShapeId as string) ?? (fromShapeId as string) }
+        : undefined,
+      toAttachment: shape.toAttachment
+        ? { ...shape.toAttachment, shapeId: idMap.get(toShapeId as string) ?? (toShapeId as string) }
+        : undefined
     } as LineShape;
   }
 
@@ -6350,17 +6386,82 @@ export class EditorPageComponent {
 
   private findShapesInsideBounds(bounds: SelectionBounds): string[] {
     return this.scene()
-      .shapes.filter((shape) => {
-        const shapeBounds = this.computeBounds([shape]);
-        return (
-          shapeBounds !== null &&
-          shapeBounds.left <= bounds.right &&
-          shapeBounds.right >= bounds.left &&
-          shapeBounds.bottom <= bounds.top &&
-          shapeBounds.top >= bounds.bottom
-        );
-      })
+      .shapes.filter((shape) => this.shapeIntersectsMarqueeBounds(shape, bounds))
       .map((shape) => shape.id);
+  }
+
+  private shapeIntersectsMarqueeBounds(shape: CanvasShape, bounds: SelectionBounds): boolean {
+    if (shape.kind === 'line') {
+      return this.lineIntersectsMarqueeBounds(shape, bounds);
+    }
+
+    const shapeBounds = this.computeBounds([shape]);
+    return (
+      shapeBounds !== null &&
+      shapeBounds.left <= bounds.right &&
+      shapeBounds.right >= bounds.left &&
+      shapeBounds.bottom <= bounds.top &&
+      shapeBounds.top >= bounds.bottom
+    );
+  }
+
+  private lineIntersectsMarqueeBounds(shape: LineShape, bounds: SelectionBounds): boolean {
+    const tolerance = EditorPageComponent.lineMarqueeTolerancePx / this.preferences().scale;
+    const expandedBounds = {
+      left: bounds.left - tolerance,
+      right: bounds.right + tolerance,
+      bottom: bounds.bottom - tolerance,
+      top: bounds.top + tolerance
+    };
+    const points = this.linePoints(shape);
+    return (
+      points.some((point) => this.pointInsideBounds(point, expandedBounds)) ||
+      points.slice(0, -1).some((point, index) => {
+        const nextPoint = points[index + 1];
+        return nextPoint ? this.segmentIntersectsBounds(point, nextPoint, expandedBounds) : false;
+      })
+    );
+  }
+
+  private pointInsideBounds(point: Point, bounds: SelectionBounds): boolean {
+    return point.x >= bounds.left && point.x <= bounds.right && point.y >= bounds.bottom && point.y <= bounds.top;
+  }
+
+  private segmentIntersectsBounds(start: Point, end: Point, bounds: SelectionBounds): boolean {
+    if (this.pointInsideBounds(start, bounds) || this.pointInsideBounds(end, bounds)) {
+      return true;
+    }
+
+    const segmentBounds = this.boundsFromPoints([start, end]);
+    if (
+      !segmentBounds ||
+      segmentBounds.right < bounds.left ||
+      segmentBounds.left > bounds.right ||
+      segmentBounds.top < bounds.bottom ||
+      segmentBounds.bottom > bounds.top
+    ) {
+      return false;
+    }
+
+    const corners = [
+      { x: bounds.left, y: bounds.bottom },
+      { x: bounds.right, y: bounds.bottom },
+      { x: bounds.right, y: bounds.top },
+      { x: bounds.left, y: bounds.top }
+    ];
+    return corners.some((corner, index) =>
+      this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] as Point)
+    );
+  }
+
+  private segmentsIntersect(firstStart: Point, firstEnd: Point, secondStart: Point, secondEnd: Point): boolean {
+    const direction = (origin: Point, target: Point, point: Point): number =>
+      (target.x - origin.x) * (point.y - origin.y) - (target.y - origin.y) * (point.x - origin.x);
+    const firstDirectionStart = direction(firstStart, firstEnd, secondStart);
+    const firstDirectionEnd = direction(firstStart, firstEnd, secondEnd);
+    const secondDirectionStart = direction(secondStart, secondEnd, firstStart);
+    const secondDirectionEnd = direction(secondStart, secondEnd, firstEnd);
+    return firstDirectionStart * firstDirectionEnd <= 0 && secondDirectionStart * secondDirectionEnd <= 0;
   }
 
   private computeBounds(shapes: readonly CanvasShape[]): SelectionBounds | null {
