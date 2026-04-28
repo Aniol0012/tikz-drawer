@@ -139,6 +139,13 @@ export interface SavedTemplate {
   readonly shapes: readonly CanvasShape[];
 }
 
+export interface LineAttachmentPreviewDescriptor {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+  readonly active: boolean;
+}
+
 export interface HandleDescriptor {
   readonly id: ResizeHandle;
   readonly x: number;

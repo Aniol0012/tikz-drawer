@@ -742,6 +742,21 @@
               [attr.y2]="rotateGuide.y2"></line>
           }
 
+          @if (lineAttachmentPreviewHandles().length) {
+            <g class="line-attachment-preview">
+              @for (anchor of lineAttachmentPreviewHandles(); track anchor.id) {
+                <circle
+                  class="line-attachment-preview__anchor"
+                  [class.line-attachment-preview__anchor--active]="anchor.active"
+                  [attr.cx]="anchor.x"
+                  [attr.cy]="anchor.y"
+                  [attr.r]="
+                    anchor.active ? selectionHandleOffset() * 0.85 : selectionHandleOffset() * 0.62
+                  "></circle>
+              }
+            </g>
+          }
+
           @if (selectionCount() > 0) {
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               @if (handle.variant === 'rotate') {

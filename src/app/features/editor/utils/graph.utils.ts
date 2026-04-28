@@ -184,13 +184,17 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
         nodeRadius,
         normalized.directed
       );
+      const sourcePosition = project(source.position);
+      const targetPosition = project(target.position);
       return buildLine(
         `${source.label} - ${target.label}`,
         edgeEndpoints.from,
         edgeEndpoints.to,
         normalized.directed,
         sourceShape.id,
-        targetShape.id
+        targetShape.id,
+        normalizedAnchorFromCenter(sourcePosition, edgeEndpoints.from),
+        normalizedAnchorFromCenter(targetPosition, edgeEndpoints.to)
       );
     })
     .filter((shape): shape is LineShape => !!shape);
@@ -266,7 +270,9 @@ const buildLine = (
   to: Point,
   directed: boolean,
   sourceShapeId: string,
-  targetShapeId: string
+  targetShapeId: string,
+  sourceAnchor: Point,
+  targetAnchor: Point
 ): LineShape => ({
   id: crypto.randomUUID(),
   name,
@@ -276,8 +282,8 @@ const buildLine = (
   strokeWidth: DEFAULT_LINE_STROKE_WIDTH,
   from,
   to,
-  fromAttachment: { shapeId: sourceShapeId },
-  toAttachment: { shapeId: targetShapeId },
+  fromAttachment: { shapeId: sourceShapeId, anchor: sourceAnchor },
+  toAttachment: { shapeId: targetShapeId, anchor: targetAnchor },
   anchors: [],
   lineMode: 'straight',
   arrowStart: false,
@@ -292,6 +298,17 @@ const buildLine = (
   arrowWidthScale: 1,
   arrowBendMode: 'none'
 });
+
+const normalizedAnchorFromCenter = (center: Point, point: Point): Point => {
+  const deltaX = point.x - center.x;
+  const deltaY = point.y - center.y;
+  const length = Math.hypot(deltaX, deltaY);
+  if (length <= 0.0001) {
+    return { x: 0, y: 0 };
+  }
+
+  return { x: deltaX / length, y: deltaY / length };
+};
 
 const buildCircularNodes = (vertices: number): readonly GraphNodeLayout[] =>
   Array.from({ length: vertices }, (_, index) => {

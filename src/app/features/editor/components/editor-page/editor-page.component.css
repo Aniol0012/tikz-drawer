@@ -1250,6 +1250,23 @@ kbd {
   pointer-events: none;
 }
 
+.line-attachment-preview {
+  pointer-events: none;
+}
+
+.line-attachment-preview__anchor {
+  fill: color-mix(in srgb, var(--panel-background) 84%, var(--accent));
+  stroke: color-mix(in srgb, var(--accent) 82%, white 18%);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.line-attachment-preview__anchor--active {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
 .canvas-empty {
   position: absolute;
   left: 16px;

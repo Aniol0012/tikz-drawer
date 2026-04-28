@@ -306,6 +306,7 @@
 .graph-dialog__close:focus-visible,
 .graph-dialog__button:focus-visible,
 .graph-dialog__field input:focus-visible,
+.graph-dialog__toggle:focus-visible,
 .graph-dialog__toggle:focus-within {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));

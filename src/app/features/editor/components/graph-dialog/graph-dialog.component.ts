@@ -92,6 +92,20 @@ export class GraphDialogComponent implements OnChanges {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: checked }));
   }
 
+  toggleBoolean(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
+    this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: !dimensions[key] }));
+  }
+
+  onToggleKeydown(event: KeyboardEvent, key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.toggleBoolean(key);
+  }
+
   onBackdropKeydown(event: KeyboardEvent): void {
     if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) {
       return;
@@ -108,11 +122,31 @@ export class GraphDialogComponent implements OnChanges {
       return;
     }
 
+    const toggleKey = this.toggleKeyFromEventTarget(event.target);
+    if (toggleKey && event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleBoolean(toggleKey);
+      return;
+    }
+
     event.stopPropagation();
   }
 
   submit(): void {
     this.confirm.emit(this.selected());
+  }
+
+  private toggleKeyFromEventTarget(
+    target: EventTarget | null
+  ): keyof Pick<GraphDimensions, 'directed' | 'showLabels'> | null {
+    if (!(target instanceof HTMLElement)) {
+      return null;
+    }
+
+    const toggle = target.closest<HTMLElement>('[data-graph-toggle]');
+    const key = toggle?.dataset['graphToggle'];
+    return key === 'directed' || key === 'showLabels' ? key : null;
   }
 
   private buildPreview(dimensions: GraphDimensions): {
