@@ -3349,7 +3349,7 @@ export class EditorPageComponent {
     const plainPrimaryGesture = !isSelectionModifierPressed(event);
     const isSingleSelectedShape = this.selectionCount() === 1 && this.selectedShape()?.id === shape.id;
 
-    if (shape.kind === 'text') {
+    if (shape.kind === 'text' && !this.textMovesWithShapeSet(shape)) {
       if (this.handleMoveStartForTextShape(event, shape)) {
         return;
       }
@@ -3389,6 +3389,14 @@ export class EditorPageComponent {
     }
 
     return false;
+  }
+
+  private textMovesWithShapeSet(shape: TextCanvasShape): boolean {
+    if (!shape.mergeId) {
+      return false;
+    }
+
+    return this.scene().shapes.some((entry) => entry.mergeId === shape.mergeId && entry.kind !== 'text');
   }
 
   private prepareMoveSelection(event: PointerEvent, shape: CanvasShape): boolean {
@@ -4116,6 +4124,7 @@ export class EditorPageComponent {
 
     this.runSceneMutation(() => {
       this.store.addShapes(this.remapShapeSetIds(previewShapes, () => crypto.randomUUID()));
+      this.clearInsertedGraphSelection(interactionState.toolId);
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
@@ -6036,6 +6045,15 @@ export class EditorPageComponent {
       )
     );
     this.store.addShapes(shapes);
+    this.clearInsertedGraphSelection(toolId);
+  }
+
+  private clearInsertedGraphSelection(toolId: ToolId): void {
+    if (!this.isGraphPresetId(toolId)) {
+      return;
+    }
+
+    this.store.selectShape(null);
   }
 
   private isQuickLineInsertionPreset(preset: ObjectPreset): boolean {
