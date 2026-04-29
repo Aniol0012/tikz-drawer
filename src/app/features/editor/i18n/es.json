@@ -177,7 +177,7 @@
   "arrowTypeLatex": "Latex",
   "arrowTypeTriangle": "Triángulo",
   "arrowTypeStealth": "Stealth",
-  "arrowTypeDiamond": "Diamante",
+  "arrowTypeDiamond": "Triángulo abierto",
   "arrowTypeCircle": "Círculo",
   "arrowTypeBar": "Barra",
   "arrowTypeHooks": "Ganchos",

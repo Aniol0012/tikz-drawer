@@ -561,7 +561,7 @@ export class EditorPageComponent {
     { id: 'latex', title: 'Latex' },
     { id: 'triangle', title: 'Triangle' },
     { id: 'stealth', title: 'Stealth' },
-    { id: 'diamond', title: 'Diamond' },
+    { id: 'diamond', title: 'Open triangle' },
     { id: 'circle', title: 'Circle' },
     { id: 'bar', title: 'Bar' },
     { id: 'hooks', title: 'Hooks' },
@@ -4800,7 +4800,47 @@ export class EditorPageComponent {
     if (selectedShape?.kind !== 'line') {
       return null;
     }
-    return this.lineSvgPath(selectedShape);
+    return this.lineSvgPath(this.lineSelectionShape(selectedShape));
+  }
+
+  private lineSelectionShape(shape: LineShape): LineShape {
+    if (!shape.arrowStart && !shape.arrowEnd) {
+      return shape;
+    }
+
+    const points = linePointsUtil(shape);
+    if (points.length < 2) {
+      return shape;
+    }
+
+    const from = shape.arrowStart ? this.insetLineSelectionEndpoint(shape, shape.from, points[1]) : shape.from;
+    const to = shape.arrowEnd ? this.insetLineSelectionEndpoint(shape, shape.to, points[points.length - 2]) : shape.to;
+
+    if (from === shape.from && to === shape.to) {
+      return shape;
+    }
+
+    return { ...shape, from, to };
+  }
+
+  private insetLineSelectionEndpoint(shape: LineShape, endpoint: Point, adjacentPoint: Point): Point {
+    const deltaX = adjacentPoint.x - endpoint.x;
+    const deltaY = adjacentPoint.y - endpoint.y;
+    const segmentLength = Math.hypot(deltaX, deltaY);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
+      return endpoint;
+    }
+
+    const renderedInset = this.arrowRenderedLength(shape) / this.preferences().scale;
+    const inset = Math.min(renderedInset * 0.95, segmentLength * 0.45);
+    if (inset <= 0) {
+      return endpoint;
+    }
+
+    return {
+      x: endpoint.x + (deltaX / segmentLength) * inset,
+      y: endpoint.y + (deltaY / segmentLength) * inset
+    };
   }
 
   lineSvgPath(shape: LineShape): string {
@@ -4969,13 +5009,13 @@ export class EditorPageComponent {
         path = `M0,0 L0,${width} L${length},${halfWidth} z`;
         break;
       case 'latex':
-        path = `M0.8,0.65 L${length},${halfWidth} L0.8,${Math.max(width - 0.65, 0.9)}`;
+        path = `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
         break;
       case 'stealth':
-        path = `M0.7,${halfWidth} L${length},0.6 L${Math.max(length * 0.72, 1.8)},${halfWidth} L${length},${Math.max(width - 0.6, 0.8)} z`;
+        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18, 0.9)} 0.45,${halfWidth} z`;
         break;
       case 'diamond':
-        path = `M0,${halfWidth} L${length * 0.47},0 L${length},${halfWidth} L${length * 0.47},${width} z`;
+        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
         break;
       case 'circle':
         {
@@ -5054,6 +5094,7 @@ export class EditorPageComponent {
   arrowMarkerFill(shape: LineShape): string {
     return shape.arrowOpen ||
       shape.arrowType === 'latex' ||
+      shape.arrowType === 'diamond' ||
       shape.arrowType === 'bar' ||
       shape.arrowType === 'hooks' ||
       shape.arrowType === 'bracket'

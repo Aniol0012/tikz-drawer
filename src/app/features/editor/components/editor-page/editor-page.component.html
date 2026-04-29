@@ -1326,6 +1326,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
+                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">
@@ -2409,6 +2410,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
+                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">

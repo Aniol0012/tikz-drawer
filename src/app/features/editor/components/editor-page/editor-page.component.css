@@ -2550,6 +2550,10 @@ kbd {
   stroke-linejoin: round;
 }
 
+.arrow-tip-button--filled svg {
+  fill: currentColor;
+}
+
 .arrow-tip-button.is-active {
   border-color: var(--accent-soft-border);
   background: var(--accent-soft);

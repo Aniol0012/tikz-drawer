@@ -206,7 +206,7 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
     case 'stealth':
       return 'Stealth';
     case 'diamond':
-      return 'Diamond';
+      return 'Triangle';
     case 'circle':
       return 'Circle';
     case 'bar':
@@ -222,7 +222,7 @@ const arrowTipSpec = (shape: LineShape): string => {
   const options = [`color=${shape.arrowColor}`];
   if (shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket') {
     // These tips are stroked shapes, so fill/open does not materially apply.
-  } else if (shape.arrowOpen) {
+  } else if (shape.arrowOpen || shape.arrowType === 'diamond') {
     options.push('open');
   } else {
     options.push(`fill=${shape.arrowColor}`);
