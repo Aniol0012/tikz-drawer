@@ -80,6 +80,22 @@ const rotationTransform = (rotation: number | undefined, centerX: number, center
 const scaledStrokeWidth = (strokeWidth: number, scale: number): number =>
   Math.max(strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
 
+const lineStrokeDashArray = (shape: LineShape, scale: number): string => {
+  const strokeWidth = scaledStrokeWidth(shape.strokeWidth, scale);
+  switch (shape.strokeStyle ?? 'solid') {
+    case 'solid':
+      return '';
+    case 'dashed':
+      return ` stroke-dasharray="${strokeWidth * 6} ${strokeWidth * 4}"`;
+    case 'dotted':
+      return ` stroke-dasharray="${strokeWidth * 0.8} ${strokeWidth * 3.2}"`;
+    case 'dash-dotted':
+      return ` stroke-dasharray="${strokeWidth * 6} ${strokeWidth * 3} ${strokeWidth * 0.8} ${strokeWidth * 3}"`;
+    case 'loosely-dashed':
+      return ` stroke-dasharray="${strokeWidth * 10} ${strokeWidth * 6}"`;
+  }
+};
+
 const renderLineShape = (shape: LineShape, projection: SvgProjection, helpers: SvgExportHelpers): string => {
   const { scale, projectX, projectY } = projection;
   const markerStart = shape.arrowStart
@@ -88,7 +104,7 @@ const renderLineShape = (shape: LineShape, projection: SvgProjection, helpers: S
   const markerEnd = shape.arrowEnd ? ` marker-end="url(#${escapeXml(helpers.arrowMarkerId(shape, 'end'))})"` : '';
   return `<path d="${escapeXml(
     helpers.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
-  )}" fill="none" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}" stroke-linecap="round" stroke-linejoin="round"${markerStart}${markerEnd} />`;
+  )}" fill="none" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}" stroke-linecap="round" stroke-linejoin="round"${lineStrokeDashArray(shape, scale)}${markerStart}${markerEnd} />`;
 };
 
 const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helpers: SvgExportHelpers): string => {

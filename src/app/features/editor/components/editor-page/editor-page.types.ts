@@ -324,6 +324,7 @@ export interface MinimapShapeBase {
 export interface MinimapLineShape extends MinimapShapeBase {
   readonly kind: 'line';
   readonly path: string;
+  readonly dashArray?: string;
 }
 
 export interface MinimapRectangleShape extends MinimapShapeBase {

@@ -3,6 +3,7 @@ export type ShapeKind = 'line' | 'rectangle' | 'triangle' | 'circle' | 'ellipse'
 export type TextWeight = 'normal' | 'bold';
 export type TextStyle = 'normal' | 'italic';
 export type TextAlign = 'left' | 'center' | 'right';
+export type LineStrokeStyle = 'solid' | 'dashed' | 'dotted' | 'dash-dotted' | 'loosely-dashed';
 
 export type TableShapeRole = 'frame' | 'row-divider' | 'column-divider';
 
@@ -44,6 +45,7 @@ export interface LineShape extends CanvasShapeBase {
   readonly toAttachment?: LineEndpointAttachment;
   readonly anchors: readonly Point[];
   readonly lineMode: 'straight' | 'curved';
+  readonly strokeStyle?: LineStrokeStyle;
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
   readonly arrowType: ArrowTipKind;

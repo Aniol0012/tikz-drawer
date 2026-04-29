@@ -384,6 +384,7 @@ const buildLine = (
   toAttachment: { shapeId: targetShapeId, anchor: targetAnchor },
   anchors: [],
   lineMode: 'straight',
+  strokeStyle: 'solid',
   arrowStart: false,
   arrowEnd: directed,
   arrowType: 'triangle',

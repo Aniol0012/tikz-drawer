@@ -397,6 +397,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     fill="none"
                     [attr.marker-start]="
                       shape.arrowStart ? 'url(#' + arrowMarkerId(shape, 'start') + ')' : null
@@ -565,6 +566,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       fill="none"
                       [attr.marker-start]="
                         previewShape.arrowStart
@@ -908,7 +910,8 @@
                       [attr.d]="shape.path"
                       fill="none"
                       [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></path>
+                      [attr.stroke-width]="shape.strokeWidth"
+                      [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
                   }
                   @case ('rectangle') {
                     <rect
@@ -1297,6 +1300,20 @@
                           (change)="setLineMode($any($event.target).value)">
                           <option value="straight">{{ t('lineModeStraight') }}</option>
                           <option value="curved">{{ t('lineModeCurved') }}</option>
+                        </select></label
+                      >
+                      <label class="field field--full"
+                        ><span>{{ t('lineStrokeStyle') }}</span
+                        ><select
+                          [value]="shape.strokeStyle ?? 'solid'"
+                          (change)="setLineStrokeStyle($any($event.target).value)">
+                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
+                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
+                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
+                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
+                          <option value="loosely-dashed">
+                            {{ t('lineStrokeStyleLooselyDashed') }}
+                          </option>
                         </select></label
                       >
                     </div>
@@ -2366,6 +2383,20 @@
                           (change)="setLineMode($any($event.target).value)">
                           <option value="straight">{{ t('lineModeStraight') }}</option>
                           <option value="curved">{{ t('lineModeCurved') }}</option>
+                        </select></label
+                      >
+                      <label class="field field--full"
+                        ><span>{{ t('lineStrokeStyle') }}</span
+                        ><select
+                          [value]="shape.strokeStyle ?? 'solid'"
+                          (change)="setLineStrokeStyle($any($event.target).value)">
+                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
+                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
+                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
+                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
+                          <option value="loosely-dashed">
+                            {{ t('lineStrokeStyleLooselyDashed') }}
+                          </option>
                         </select></label
                       >
                     </div>

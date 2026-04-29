@@ -106,6 +106,7 @@ interface ShapeStyleConfig {
   readonly stroke: string;
   readonly strokeOpacity?: number;
   readonly strokeWidth: number;
+  readonly strokeStyle?: LineShape['strokeStyle'];
   readonly fill?: string;
   readonly fillOpacity?: number;
 }
@@ -167,6 +168,23 @@ const buildStyleEntries = (shape: ShapeStyleConfig, context: TikzGenerationConte
 
   if (shape.strokeOpacity !== undefined && shape.strokeOpacity < 1) {
     entries.push(`draw opacity=${formatNumber(shape.strokeOpacity)}`);
+  }
+
+  switch (shape.strokeStyle ?? 'solid') {
+    case 'solid':
+      break;
+    case 'dashed':
+      entries.push('dashed');
+      break;
+    case 'dotted':
+      entries.push('dotted');
+      break;
+    case 'dash-dotted':
+      entries.push('dash dot');
+      break;
+    case 'loosely-dashed':
+      entries.push('loosely dashed');
+      break;
   }
 
   if ('fill' in shape && shape.fill && shape.fill !== 'none') {

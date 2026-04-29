@@ -51,6 +51,7 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   to: overrides.to ?? { x: 2, y: 0 },
   anchors: overrides.anchors ?? [],
   lineMode: overrides.lineMode ?? 'straight',
+  strokeStyle: overrides.strokeStyle ?? 'solid',
   arrowStart: overrides.arrowStart ?? false,
   arrowEnd: overrides.arrowEnd ?? false,
   arrowType: overrides.arrowType ?? ('triangle' satisfies ArrowTipKind),

@@ -64,6 +64,7 @@ export const buildRegularPolygonShapes = (
       to: firstPoint,
       anchors: points.slice(1),
       lineMode: 'straight',
+      strokeStyle: 'solid',
       arrowStart: false,
       arrowEnd: false,
       arrowType: 'triangle',

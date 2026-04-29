@@ -239,6 +239,7 @@ import type {
   EditorSyncMessage,
   LineEndpointAttachment,
   LineShape,
+  LineStrokeStyle,
   ObjectPreset,
   PersistedEditorState,
   Point,
@@ -2964,6 +2965,17 @@ export class EditorPageComponent {
     );
   }
 
+  setLineStrokeStyle(value: string): void {
+    const allowedStyles: readonly LineStrokeStyle[] = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'];
+    if (!allowedStyles.includes(value as LineStrokeStyle)) {
+      return;
+    }
+
+    this.patchInspectorSelection((shape) =>
+      shape.kind === 'line' ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as LineShape) : shape
+    );
+  }
+
   setTextBoxEnabled(event: Event): void {
     const value = (event.target as HTMLInputElement).checked;
     this.patchInspectorSelection((shape) => {
@@ -4379,6 +4391,26 @@ export class EditorPageComponent {
 
   scaledStrokeWidth(strokeWidth: number): number {
     return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+  }
+
+  lineStrokeDashArray(shape: LineShape): string | null {
+    const strokeWidth = this.scaledStrokeWidth(shape.strokeWidth);
+    return this.strokeDashArray(shape.strokeStyle ?? 'solid', strokeWidth);
+  }
+
+  private strokeDashArray(strokeStyle: LineStrokeStyle, strokeWidth: number): string | null {
+    switch (strokeStyle) {
+      case 'solid':
+        return null;
+      case 'dashed':
+        return `${strokeWidth * 6} ${strokeWidth * 4}`;
+      case 'dotted':
+        return `${strokeWidth * 0.8} ${strokeWidth * 3.2}`;
+      case 'dash-dotted':
+        return `${strokeWidth * 6} ${strokeWidth * 3} ${strokeWidth * 0.8} ${strokeWidth * 3}`;
+      case 'loosely-dashed':
+        return `${strokeWidth * 10} ${strokeWidth * 6}`;
+    }
   }
 
   lineHitStrokeWidth(strokeWidth: number): number {
@@ -5801,7 +5833,8 @@ export class EditorPageComponent {
           arrowWidthScale: 1,
           arrowBendMode: 'none',
           strokeOpacity: 1,
-          strokeWidth: preferences.defaultStrokeWidth
+          strokeWidth: preferences.defaultStrokeWidth,
+          strokeStyle: shape.strokeStyle ?? 'solid'
         };
       case 'rectangle':
       case 'triangle':
@@ -5958,6 +5991,7 @@ export class EditorPageComponent {
       to,
       anchors: rest.slice(0, -1),
       lineMode: 'curved',
+      strokeStyle: 'solid',
       arrowStart: false,
       arrowEnd: false,
       arrowType: 'latex',
@@ -6588,6 +6622,8 @@ export class EditorPageComponent {
           kind: 'line',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          dashArray:
+            this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           path: this.buildLinePath(shape, (point) => ({
             x: toMapX(point.x),
             y: toMapY(point.y)

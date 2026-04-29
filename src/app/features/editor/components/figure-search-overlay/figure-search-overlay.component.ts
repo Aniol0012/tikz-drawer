@@ -40,23 +40,21 @@ export class FigureSearchOverlayComponent {
     const query = this.query().trim().toLowerCase();
     const sourcePresets = this.presets();
     if (!query) {
-      return sourcePresets.slice(0, 8);
+      return sourcePresets;
     }
 
-    return sourcePresets
-      .filter((preset) => {
-        const haystack = [
-          this.titleForPreset()(preset),
-          this.descriptionForPreset()(preset),
-          preset.title,
-          preset.description,
-          ...(preset.searchTerms ?? [])
-        ]
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(query);
-      })
-      .slice(0, 8);
+    return sourcePresets.filter((preset) => {
+      const haystack = [
+        this.titleForPreset()(preset),
+        this.descriptionForPreset()(preset),
+        preset.title,
+        preset.description,
+        ...(preset.searchTerms ?? [])
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
   });
 
   constructor() {
