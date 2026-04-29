@@ -7,10 +7,17 @@ describe('graph utils', () => {
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'cycle', vertices: 6 }))).toBe(6);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'path', vertices: 6 }))).toBe(5);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'star', vertices: 6 }))).toBe(5);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'wheel', vertices: 6 }))).toBe(10);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'bipartite', leftVertices: 3, rightVertices: 4 }))).toBe(12);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'grid', rows: 3, columns: 4 }))).toBe(12);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'grid', rows: 3, columns: 4 }))).toBe(17);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'ladder', columns: 4 }))).toBe(8);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'ladder', columns: 4 }))).toBe(10);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'prism', vertices: 5 }))).toBe(10);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'prism', vertices: 5 }))).toBe(15);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'binary-tree', levels: 4 }))).toBe(15);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'petersen' }))).toBe(10);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'petersen' }))).toBe(15);
   });
 
   it('builds graph shapes with edges, nodes and optional labels', () => {

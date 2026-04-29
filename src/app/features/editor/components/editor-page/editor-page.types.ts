@@ -120,6 +120,7 @@ export interface ToolDescriptor {
   readonly label: string;
   readonly description: string;
   readonly iconPath: string;
+  readonly iconWidth?: number;
   readonly shortcut?: string;
 }
 

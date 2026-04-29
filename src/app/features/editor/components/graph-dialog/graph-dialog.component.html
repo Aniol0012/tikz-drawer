@@ -133,6 +133,27 @@
           </label>
         }
 
+        @if (selected().kind === 'ladder') {
+          <label class="graph-dialog__field">
+            <span>{{ columnsLabel() }}</span>
+            <input
+              type="range"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+          <label class="graph-dialog__field graph-dialog__field--number">
+            <span>{{ columnsLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+        }
+
         @if (selected().kind === 'binary-tree') {
           <label class="graph-dialog__field">
             <span>{{ levelsLabel() }}</span>

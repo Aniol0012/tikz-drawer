@@ -177,6 +177,7 @@ export interface ObjectPreset {
   readonly id: string;
   readonly category: PresetCategory;
   readonly icon: string;
+  readonly iconWidth?: number;
   readonly title: string;
   readonly description: string;
   readonly quickAccess?: boolean;

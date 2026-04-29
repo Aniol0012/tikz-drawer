@@ -240,11 +240,13 @@ const createPreset = (
     readonly quickAccess?: boolean;
     readonly preserveStyle?: boolean;
     readonly searchTerms?: readonly string[];
+    readonly iconWidth?: number;
   } = {}
 ): ObjectPreset => ({
   id,
   category,
   icon,
+  iconWidth: options.iconWidth,
   title,
   description,
   shapes,
@@ -267,7 +269,7 @@ const createGraphPreset = (
     title,
     description,
     buildGraphShapes({ ...DEFAULT_GRAPH_DIMENSIONS, kind, cx: 0, cy: 0 }),
-    { preserveStyle: true, searchTerms }
+    { preserveStyle: true, searchTerms, iconWidth: 22 }
   );
 
 export const buildTablePresetShapes = (
@@ -624,6 +626,13 @@ export const objectPresets: readonly ObjectPreset[] = [
     'hub',
     'tree'
   ]),
+  createGraphPreset('wheel', 'graphWheel', 'Wheel graph', 'Cycle with a central hub connected to every rim vertex.', [
+    'graph',
+    'wheel',
+    'hub',
+    'cycle',
+    'spokes'
+  ]),
   createGraphPreset(
     'bipartite',
     'graphBipartite',
@@ -637,12 +646,33 @@ export const objectPresets: readonly ObjectPreset[] = [
     'lattice',
     'mesh'
   ]),
+  createGraphPreset('ladder', 'graphLadder', 'Ladder graph', 'Two parallel paths connected by regular rungs.', [
+    'graph',
+    'ladder',
+    'rungs',
+    'parallel',
+    'path'
+  ]),
+  createGraphPreset('prism', 'graphPrism', 'Prism graph', 'Two matching cycles joined vertex to vertex.', [
+    'graph',
+    'prism',
+    'cycle',
+    'polyhedral',
+    'matching'
+  ]),
   createGraphPreset('binary-tree', 'graphTree', 'Binary tree', 'Balanced binary tree with configurable levels.', [
     'graph',
     'tree',
     'binary',
     'hierarchy'
   ]),
+  createGraphPreset(
+    'petersen',
+    'graphPetersen',
+    'Petersen graph',
+    'Classic 10-vertex cubic graph for graph theory examples.',
+    ['graph', 'petersen', 'cubic', 'regular']
+  ),
   createPreset(
     'browser',
     'interface',

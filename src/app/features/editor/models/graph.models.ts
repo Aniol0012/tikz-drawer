@@ -1,6 +1,17 @@
 import type { CanvasShape, Point } from './tikz.models';
 
-export type GraphPresetKind = 'complete' | 'cycle' | 'path' | 'star' | 'bipartite' | 'grid' | 'binary-tree';
+export type GraphPresetKind =
+  | 'complete'
+  | 'cycle'
+  | 'path'
+  | 'star'
+  | 'wheel'
+  | 'bipartite'
+  | 'grid'
+  | 'ladder'
+  | 'prism'
+  | 'binary-tree'
+  | 'petersen';
 
 export interface GraphDimensions {
   readonly kind: GraphPresetKind;
@@ -52,9 +63,13 @@ export const GRAPH_PRESET_IDS = [
   'graph-cycle',
   'graph-path',
   'graph-star',
+  'graph-wheel',
   'graph-bipartite',
   'graph-grid',
-  'graph-binary-tree'
+  'graph-ladder',
+  'graph-prism',
+  'graph-binary-tree',
+  'graph-petersen'
 ] as const;
 
 export type GraphPresetId = (typeof GRAPH_PRESET_IDS)[number];
@@ -64,9 +79,13 @@ export const GRAPH_PRESET_KIND_BY_ID: Readonly<Record<GraphPresetId, GraphPreset
   'graph-cycle': 'cycle',
   'graph-path': 'path',
   'graph-star': 'star',
+  'graph-wheel': 'wheel',
   'graph-bipartite': 'bipartite',
   'graph-grid': 'grid',
-  'graph-binary-tree': 'binary-tree'
+  'graph-ladder': 'ladder',
+  'graph-prism': 'prism',
+  'graph-binary-tree': 'binary-tree',
+  'graph-petersen': 'petersen'
 };
 
 export const GRAPH_PRESET_ID_BY_KIND: Readonly<Record<GraphPresetKind, GraphPresetId>> = {
@@ -74,9 +93,13 @@ export const GRAPH_PRESET_ID_BY_KIND: Readonly<Record<GraphPresetKind, GraphPres
   cycle: 'graph-cycle',
   path: 'graph-path',
   star: 'graph-star',
+  wheel: 'graph-wheel',
   bipartite: 'graph-bipartite',
   grid: 'graph-grid',
-  'binary-tree': 'graph-binary-tree'
+  ladder: 'graph-ladder',
+  prism: 'graph-prism',
+  'binary-tree': 'graph-binary-tree',
+  petersen: 'graph-petersen'
 };
 
 export const GRAPH_MIN_VERTICES = 2;

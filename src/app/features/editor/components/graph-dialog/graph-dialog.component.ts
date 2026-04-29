@@ -76,7 +76,14 @@ export class GraphDialogComponent implements OnChanges {
   }
 
   isSimpleVertexGraph(kind: GraphPresetKind): boolean {
-    return kind === 'complete' || kind === 'cycle' || kind === 'path' || kind === 'star';
+    return (
+      kind === 'complete' ||
+      kind === 'cycle' ||
+      kind === 'path' ||
+      kind === 'star' ||
+      kind === 'wheel' ||
+      kind === 'prism'
+    );
   }
 
   updateNumber(

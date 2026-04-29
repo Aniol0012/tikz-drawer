@@ -196,7 +196,10 @@
                     [title]="preset.title"
                     (click)="setActiveTool(preset.id)">
                     <span class="preset-card__icon"
-                      ><svg viewBox="0 0 24 24" aria-hidden="true">
+                      ><svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        [style.width.px]="preset.iconWidth ?? null">
                         <path [attr.d]="presetIconPath(preset.icon)"></path></svg
                     ></span>
                     <span class="preset-card__body">

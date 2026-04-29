@@ -35,11 +35,12 @@ const clampInteger = (value: number, minimumValue: number, maximumValue: number)
 
 export const normalizeGraphDimensions = (dimensions: Partial<GraphDimensions>): GraphDimensions => {
   const kind = (dimensions.kind ?? DEFAULT_GRAPH_DIMENSIONS.kind) as GraphPresetKind;
+  const minimumVertices = kind === 'wheel' ? 4 : kind === 'prism' ? 3 : GRAPH_MIN_VERTICES;
   return {
     kind,
     vertices: clampInteger(
       dimensions.vertices ?? DEFAULT_GRAPH_DIMENSIONS.vertices,
-      GRAPH_MIN_VERTICES,
+      minimumVertices,
       GRAPH_MAX_VERTICES
     ),
     leftVertices: clampInteger(
@@ -74,12 +75,20 @@ export const graphDisplayName = (kind: GraphPresetKind): string => {
       return 'P_n';
     case 'star':
       return 'S_n';
+    case 'wheel':
+      return 'W_n';
     case 'bipartite':
       return 'K_m,n';
     case 'grid':
       return 'Grid';
+    case 'ladder':
+      return 'Ladder';
+    case 'prism':
+      return 'Prism';
     case 'binary-tree':
       return 'Tree';
+    case 'petersen':
+      return 'Petersen';
   }
 };
 
@@ -90,12 +99,19 @@ export const graphVertexCount = (dimensions: GraphDimensions): number => {
       return normalized.leftVertices + normalized.rightVertices;
     case 'grid':
       return normalized.rows * normalized.columns;
+    case 'ladder':
+      return normalized.columns * 2;
+    case 'prism':
+      return normalized.vertices * 2;
     case 'binary-tree':
       return 2 ** normalized.levels - 1;
+    case 'petersen':
+      return 10;
     case 'complete':
     case 'cycle':
     case 'path':
     case 'star':
+    case 'wheel':
       return normalized.vertices;
   }
 };
@@ -110,12 +126,20 @@ export const graphEdgeCount = (dimensions: GraphDimensions): number => {
     case 'path':
     case 'star':
       return normalized.vertices - 1;
+    case 'wheel':
+      return (normalized.vertices - 1) * 2;
     case 'bipartite':
       return normalized.leftVertices * normalized.rightVertices;
     case 'grid':
       return normalized.rows * (normalized.columns - 1) + normalized.columns * (normalized.rows - 1);
+    case 'ladder':
+      return normalized.columns * 3 - 2;
+    case 'prism':
+      return normalized.vertices * 3;
     case 'binary-tree':
       return Math.max(graphVertexCount(normalized) - 1, 0);
+    case 'petersen':
+      return 15;
   }
 };
 
@@ -130,12 +154,20 @@ export const buildGraphLayout = (dimensions: GraphDimensions): GraphLayout => {
       return buildPathLayout(normalized.vertices);
     case 'star':
       return buildStarLayout(normalized.vertices);
+    case 'wheel':
+      return buildWheelLayout(normalized.vertices);
     case 'bipartite':
       return buildBipartiteLayout(normalized.leftVertices, normalized.rightVertices);
     case 'grid':
       return buildGridLayout(normalized.rows, normalized.columns);
+    case 'ladder':
+      return buildLadderLayout(normalized.columns);
+    case 'prism':
+      return buildPrismLayout(normalized.vertices);
     case 'binary-tree':
       return buildBinaryTreeLayout(normalized.levels);
+    case 'petersen':
+      return buildPetersenLayout();
   }
 };
 
@@ -409,6 +441,34 @@ const buildStarLayout = (vertices: number): GraphLayout => {
   };
 };
 
+const buildWheelLayout = (vertices: number): GraphLayout => {
+  const rimVertices = Math.max(vertices - 1, 3);
+  const center: GraphNodeLayout = { id: '1', label: '1', position: { x: 0, y: 0 } };
+  const rimNodes = Array.from({ length: rimVertices }, (_, index): GraphNodeLayout => {
+    const angle = Math.PI / 2 - (Math.PI * 2 * index) / rimVertices;
+    const id = String(index + 2);
+    return {
+      id,
+      label: id,
+      position: {
+        x: Math.cos(angle) * DEFAULT_GRAPH_RADIUS,
+        y: Math.sin(angle) * DEFAULT_GRAPH_RADIUS
+      }
+    };
+  });
+
+  return {
+    nodes: [center, ...rimNodes],
+    edges: [
+      ...rimNodes.map((node, index) => ({
+        source: node.id,
+        target: rimNodes[(index + 1) % rimNodes.length].id
+      })),
+      ...rimNodes.map((node) => ({ source: center.id, target: node.id }))
+    ]
+  };
+};
+
 const buildBipartiteLayout = (leftVertices: number, rightVertices: number): GraphLayout => {
   const left = verticalNodes('L', leftVertices, -1.6);
   const right = verticalNodes('R', rightVertices, 1.6);
@@ -456,6 +516,61 @@ const buildGridLayout = (rows: number, columns: number): GraphLayout => {
   return { nodes, edges };
 };
 
+const buildLadderLayout = (columns: number): GraphLayout => {
+  const spacing = Math.min(1.05, 5.6 / Math.max(columns, 2));
+  const left = (-spacing * (columns - 1)) / 2;
+  const rowY = 0.72;
+  const nodes: GraphNodeLayout[] = [];
+  const edges: GraphEdgeLayout[] = [];
+
+  for (let column = 0; column < columns; column += 1) {
+    const topId = `T${column + 1}`;
+    const bottomId = `B${column + 1}`;
+    nodes.push(
+      { id: topId, label: topId, position: { x: left + column * spacing, y: rowY } },
+      { id: bottomId, label: bottomId, position: { x: left + column * spacing, y: -rowY } }
+    );
+    edges.push({ source: topId, target: bottomId });
+    if (column > 0) {
+      edges.push({ source: `T${column}`, target: topId }, { source: `B${column}`, target: bottomId });
+    }
+  }
+
+  return { nodes, edges };
+};
+
+const buildPrismLayout = (vertices: number): GraphLayout => {
+  const outerRadius = DEFAULT_GRAPH_RADIUS;
+  const innerRadius = DEFAULT_GRAPH_RADIUS * 0.58;
+  const top = Array.from({ length: vertices }, (_, index): GraphNodeLayout => {
+    const angle = Math.PI / 2 - (Math.PI * 2 * index) / vertices;
+    const id = `A${index + 1}`;
+    return {
+      id,
+      label: id,
+      position: { x: Math.cos(angle) * outerRadius, y: Math.sin(angle) * outerRadius }
+    };
+  });
+  const bottom = Array.from({ length: vertices }, (_, index): GraphNodeLayout => {
+    const angle = Math.PI / 2 - (Math.PI * 2 * index) / vertices;
+    const id = `B${index + 1}`;
+    return {
+      id,
+      label: id,
+      position: { x: Math.cos(angle) * innerRadius, y: Math.sin(angle) * innerRadius }
+    };
+  });
+
+  return {
+    nodes: [...top, ...bottom],
+    edges: [
+      ...top.map((node, index) => ({ source: node.id, target: top[(index + 1) % top.length].id })),
+      ...bottom.map((node, index) => ({ source: node.id, target: bottom[(index + 1) % bottom.length].id })),
+      ...top.map((node, index) => ({ source: node.id, target: bottom[index].id }))
+    ]
+  };
+};
+
 const buildBinaryTreeLayout = (levels: number): GraphLayout => {
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
@@ -480,4 +595,34 @@ const buildBinaryTreeLayout = (levels: number): GraphLayout => {
     }
   }
   return { nodes, edges };
+};
+
+const buildPetersenLayout = (): GraphLayout => {
+  const outer = buildCircularNodes(5).map(
+    (node, index): GraphNodeLayout => ({
+      ...node,
+      id: `O${index + 1}`,
+      label: String(index + 1)
+    })
+  );
+  const inner = buildCircularNodes(5).map(
+    (node, index): GraphNodeLayout => ({
+      ...node,
+      id: `I${index + 1}`,
+      label: String(index + 6),
+      position: {
+        x: node.position.x * 0.45,
+        y: node.position.y * 0.45
+      }
+    })
+  );
+
+  return {
+    nodes: [...outer, ...inner],
+    edges: [
+      ...outer.map((node, index) => ({ source: node.id, target: outer[(index + 1) % outer.length].id })),
+      ...inner.map((node, index) => ({ source: node.id, target: inner[(index + 2) % inner.length].id })),
+      ...outer.map((node, index) => ({ source: node.id, target: inner[index].id }))
+    ]
+  };
 };

@@ -30,7 +30,10 @@
             (mouseenter)="activeIndex.set($index)"
             (click)="choosePreset(preset)">
             <span class="figure-search-result__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                [style.width.px]="preset.iconWidth ?? null">
                 <path [attr.d]="iconPath(preset.icon)"></path>
               </svg>
             </span>

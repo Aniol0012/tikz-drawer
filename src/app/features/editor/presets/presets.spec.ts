@@ -197,6 +197,30 @@ describe('presets', () => {
     expect(getIconPath('funnel')).not.toBe(getIconPath('triangle'));
   });
 
+  it('adds expanded graph presets with wider icons', () => {
+    const graphPresets = objectPresets.filter((preset) => preset.category === 'graphs');
+    const graphPresetIds = graphPresets.map((preset) => preset.id);
+
+    expect(graphPresetIds).toEqual([
+      'graph-complete',
+      'graph-cycle',
+      'graph-path',
+      'graph-star',
+      'graph-wheel',
+      'graph-bipartite',
+      'graph-grid',
+      'graph-ladder',
+      'graph-prism',
+      'graph-binary-tree',
+      'graph-petersen'
+    ]);
+    expect(graphPresets.every((preset) => preset.iconWidth === 22)).toBe(true);
+    expect(getIconPath('graphWheel')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphLadder')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphPrism')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphPetersen')).not.toBe(getIconPath('rectangle'));
+  });
+
   it('builds triangle as a single shape with triangle-specific controls', () => {
     const trianglePreset = objectPresets.find((preset) => preset.id === 'triangle');
 
