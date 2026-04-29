@@ -170,7 +170,11 @@
           [class.is-active]="activeTool() === tool.id"
           [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
           (click)="activeToolChange.emit(tool.id)">
-          <svg viewBox="0 0 24 24" aria-hidden="true" [style.width.px]="tool.iconWidth ?? null">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            [style.width.px]="tool.iconWidth ?? null"
+            [style.stroke-width]="tool.iconStrokeWidth ?? null">
             <path [attr.d]="tool.iconPath"></path>
           </svg>
           <span>{{ tool.label }}</span>
@@ -185,7 +189,11 @@
             [class.is-active]="activeTool() === tool.id"
             [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
             (click)="activeToolChange.emit(tool.id)">
-            <svg viewBox="0 0 24 24" aria-hidden="true" [style.width.px]="tool.iconWidth ?? null">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              [style.width.px]="tool.iconWidth ?? null"
+              [style.stroke-width]="tool.iconStrokeWidth ?? null">
               <path [attr.d]="tool.iconPath"></path>
             </svg>
             <span>{{ tool.label }}</span>

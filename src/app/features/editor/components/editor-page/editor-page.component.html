@@ -199,7 +199,8 @@
                       ><svg
                         viewBox="0 0 24 24"
                         aria-hidden="true"
-                        [style.width.px]="preset.iconWidth ?? null">
+                        [style.width.px]="preset.iconWidth ?? null"
+                        [style.stroke-width]="preset.iconStrokeWidth ?? null">
                         <path [attr.d]="presetIconPath(preset.icon)"></path></svg
                     ></span>
                     <span class="preset-card__body">
@@ -3942,6 +3943,9 @@
       [rowsLabel]="t('graphRows')"
       [columnsLabel]="t('graphColumns')"
       [levelsLabel]="t('graphLevels')"
+      [branchingFactorLabel]="t('graphBranchingFactor')"
+      [layersLabel]="t('graphLayers')"
+      [nodesPerLayerLabel]="t('graphNodesPerLayer')"
       [directedLabel]="t('graphDirected')"
       [labelsLabel]="t('graphShowLabels')"
       [statsVerticesLabel]="t('graphStatsVertices')"

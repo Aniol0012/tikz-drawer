@@ -24,6 +24,7 @@
       @if (filteredPresets().length) {
         @for (preset of filteredPresets(); track trackByPresetId($index, preset)) {
           <button
+            #resultButton
             class="figure-search-result"
             type="button"
             [class.is-active]="$index === activeIndex()"
@@ -33,7 +34,8 @@
               <svg
                 viewBox="0 0 24 24"
                 aria-hidden="true"
-                [style.width.px]="preset.iconWidth ?? null">
+                [style.width.px]="preset.iconWidth ?? null"
+                [style.stroke-width]="preset.iconStrokeWidth ?? null">
                 <path [attr.d]="iconPath(preset.icon)"></path>
               </svg>
             </span>

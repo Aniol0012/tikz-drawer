@@ -4,5 +4,6 @@ export interface TopbarTool {
   readonly description: string;
   readonly iconPath: string;
   readonly iconWidth?: number;
+  readonly iconStrokeWidth?: number;
   readonly shortcut?: string;
 }

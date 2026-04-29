@@ -241,12 +241,14 @@ const createPreset = (
     readonly preserveStyle?: boolean;
     readonly searchTerms?: readonly string[];
     readonly iconWidth?: number;
+    readonly iconStrokeWidth?: number;
   } = {}
 ): ObjectPreset => ({
   id,
   category,
   icon,
   iconWidth: options.iconWidth,
+  iconStrokeWidth: options.iconStrokeWidth,
   title,
   description,
   shapes,
@@ -260,7 +262,10 @@ const createGraphPreset = (
   icon: string,
   title: string,
   description: string,
-  searchTerms: readonly string[]
+  searchTerms: readonly string[],
+  options: {
+    readonly iconStrokeWidth?: number;
+  } = {}
 ): ObjectPreset =>
   createPreset(
     GRAPH_PRESET_ID_BY_KIND[kind],
@@ -269,7 +274,7 @@ const createGraphPreset = (
     title,
     description,
     buildGraphShapes({ ...DEFAULT_GRAPH_DIMENSIONS, kind, cx: 0, cy: 0 }),
-    { preserveStyle: true, searchTerms, iconWidth: 22 }
+    { preserveStyle: true, searchTerms, iconWidth: 22, iconStrokeWidth: options.iconStrokeWidth ?? 1.35 }
   );
 
 export const buildTablePresetShapes = (
@@ -601,12 +606,20 @@ export const objectPresets: readonly ObjectPreset[] = [
     ],
     { searchTerms: ['venn', 'sets', 'overlap'] }
   ),
+  createGraphPreset('independent', 'graphIndependent', 'Independent set', 'Isolated vertices with no edges.', [
+    'graph',
+    'independent',
+    'isolated',
+    'empty',
+    'vertices'
+  ]),
   createGraphPreset(
     'complete',
     'graphComplete',
     'Complete graph',
     'Clique K_n with every pair of vertices connected.',
-    ['graph', 'complete', 'clique', 'k_n', 'network']
+    ['graph', 'complete', 'clique', 'k_n', 'network'],
+    { iconStrokeWidth: 1.18 }
   ),
   createGraphPreset('cycle', 'graphCycle', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', [
     'graph',
@@ -614,12 +627,14 @@ export const objectPresets: readonly ObjectPreset[] = [
     'c_n',
     'ring'
   ]),
-  createGraphPreset('path', 'graphPath', 'Path graph', 'Path P_n for ordered vertex chains.', [
-    'graph',
+  createGraphPreset(
     'path',
-    'p_n',
-    'chain'
-  ]),
+    'graphPath',
+    'Path graph',
+    'Path P_n for ordered vertex chains.',
+    ['graph', 'path', 'p_n', 'chain'],
+    { iconStrokeWidth: 1.25 }
+  ),
   createGraphPreset('star', 'graphStar', 'Star graph', 'Central vertex connected to all leaves.', [
     'graph',
     'star',
@@ -638,14 +653,17 @@ export const objectPresets: readonly ObjectPreset[] = [
     'graphBipartite',
     'Complete bipartite graph',
     'Two shores with all cross-connections.',
-    ['graph', 'bipartite', 'k_mn', 'matching']
+    ['graph', 'bipartite', 'k_mn', 'matching'],
+    { iconStrokeWidth: 1.08 }
   ),
-  createGraphPreset('grid', 'graphGrid', 'Grid graph', 'Rectangular lattice with horizontal and vertical edges.', [
-    'graph',
+  createGraphPreset(
     'grid',
-    'lattice',
-    'mesh'
-  ]),
+    'graphGrid',
+    'Grid graph',
+    'Rectangular lattice with horizontal and vertical edges.',
+    ['graph', 'grid', 'lattice', 'mesh'],
+    { iconStrokeWidth: 1.18 }
+  ),
   createGraphPreset('ladder', 'graphLadder', 'Ladder graph', 'Two parallel paths connected by regular rungs.', [
     'graph',
     'ladder',
@@ -671,7 +689,39 @@ export const objectPresets: readonly ObjectPreset[] = [
     'graphPetersen',
     'Petersen graph',
     'Classic 10-vertex cubic graph for graph theory examples.',
-    ['graph', 'petersen', 'cubic', 'regular']
+    ['graph', 'petersen', 'cubic', 'regular'],
+    { iconStrokeWidth: 1.08 }
+  ),
+  createGraphPreset(
+    'kary-tree',
+    'graphKaryTree',
+    'k-ary tree',
+    'Complete rooted tree with a configurable branching factor.',
+    ['graph', 'tree', 'k-ary', 'rooted', 'hierarchy']
+  ),
+  createGraphPreset(
+    'layered-dag',
+    'graphLayeredDag',
+    'Layered DAG',
+    'Directed acyclic graph arranged by layers.',
+    ['graph', 'dag', 'directed', 'layers', 'acyclic'],
+    { iconStrokeWidth: 1.12 }
+  ),
+  createGraphPreset(
+    'flow-network',
+    'graphFlowNetwork',
+    'Flow network',
+    'Source-to-sink layered network for capacities and flows.',
+    ['graph', 'flow', 'network', 'source', 'sink', 'capacity'],
+    { iconStrokeWidth: 1.12 }
+  ),
+  createGraphPreset(
+    'neural-network',
+    'graphNeuralNetwork',
+    'Neural network',
+    'Layered dense network with input, hidden and output nodes.',
+    ['graph', 'neural', 'network', 'layers', 'machine learning'],
+    { iconStrokeWidth: 1.08 }
   ),
   createPreset(
     'browser',

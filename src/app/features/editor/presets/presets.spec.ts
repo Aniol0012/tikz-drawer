@@ -202,6 +202,7 @@ describe('presets', () => {
     const graphPresetIds = graphPresets.map((preset) => preset.id);
 
     expect(graphPresetIds).toEqual([
+      'graph-independent',
       'graph-complete',
       'graph-cycle',
       'graph-path',
@@ -212,13 +213,23 @@ describe('presets', () => {
       'graph-ladder',
       'graph-prism',
       'graph-binary-tree',
-      'graph-petersen'
+      'graph-petersen',
+      'graph-kary-tree',
+      'graph-layered-dag',
+      'graph-flow-network',
+      'graph-neural-network'
     ]);
     expect(graphPresets.every((preset) => preset.iconWidth === 22)).toBe(true);
+    expect(graphPresets.every((preset) => typeof preset.iconStrokeWidth === 'number')).toBe(true);
+    expect(getIconPath('graphIndependent')).not.toBe(getIconPath('rectangle'));
     expect(getIconPath('graphWheel')).not.toBe(getIconPath('rectangle'));
     expect(getIconPath('graphLadder')).not.toBe(getIconPath('rectangle'));
     expect(getIconPath('graphPrism')).not.toBe(getIconPath('rectangle'));
     expect(getIconPath('graphPetersen')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphKaryTree')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphLayeredDag')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphFlowNetwork')).not.toBe(getIconPath('rectangle'));
+    expect(getIconPath('graphNeuralNetwork')).not.toBe(getIconPath('rectangle'));
   });
 
   it('builds triangle as a single shape with triangle-specific controls', () => {

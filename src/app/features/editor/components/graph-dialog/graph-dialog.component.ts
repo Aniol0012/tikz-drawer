@@ -52,6 +52,9 @@ export class GraphDialogComponent implements OnChanges {
   readonly rowsLabel = input.required<string>();
   readonly columnsLabel = input.required<string>();
   readonly levelsLabel = input.required<string>();
+  readonly branchingFactorLabel = input.required<string>();
+  readonly layersLabel = input.required<string>();
+  readonly nodesPerLayerLabel = input.required<string>();
   readonly directedLabel = input.required<string>();
   readonly labelsLabel = input.required<string>();
   readonly statsVerticesLabel = input.required<string>();
@@ -70,6 +73,8 @@ export class GraphDialogComponent implements OnChanges {
   readonly vertexCount = computed(() => graphVertexCount(this.selected()));
   readonly edgeCount = computed(() => graphEdgeCount(this.selected()));
   readonly preview = computed(() => this.buildPreview(this.selected()));
+  readonly maxColumnsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? 4 : this.maxGridAxis));
+  readonly maxLevelsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? 4 : this.maxTreeLevels));
 
   ngOnChanges(): void {
     this.selected.set(normalizeGraphDimensions(this.initialDimensions()));
@@ -80,10 +85,15 @@ export class GraphDialogComponent implements OnChanges {
       kind === 'complete' ||
       kind === 'cycle' ||
       kind === 'path' ||
+      kind === 'independent' ||
       kind === 'star' ||
       kind === 'wheel' ||
       kind === 'prism'
     );
+  }
+
+  isLayeredGraph(kind: GraphPresetKind): boolean {
+    return kind === 'layered-dag' || kind === 'flow-network' || kind === 'neural-network';
   }
 
   updateNumber(

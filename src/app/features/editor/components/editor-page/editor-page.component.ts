@@ -822,6 +822,7 @@ export class EditorPageComponent {
         description: this.presetDescription(preset),
         iconPath: getIconPath(preset.icon),
         iconWidth: preset.iconWidth,
+        iconStrokeWidth: preset.iconStrokeWidth,
         shortcut: this.toolShortcut(preset.id)
       }))
     ];
@@ -836,6 +837,7 @@ export class EditorPageComponent {
         description: this.presetDescription(preset),
         iconPath: getIconPath(preset.icon),
         iconWidth: preset.iconWidth,
+        iconStrokeWidth: preset.iconStrokeWidth,
         shortcut: this.toolShortcut(preset.id)
       }))
   );

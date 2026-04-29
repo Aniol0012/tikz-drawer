@@ -1,6 +1,7 @@
 import type { CanvasShape, Point } from './tikz.models';
 
 export type GraphPresetKind =
+  | 'independent'
   | 'complete'
   | 'cycle'
   | 'path'
@@ -11,6 +12,10 @@ export type GraphPresetKind =
   | 'ladder'
   | 'prism'
   | 'binary-tree'
+  | 'kary-tree'
+  | 'layered-dag'
+  | 'flow-network'
+  | 'neural-network'
   | 'petersen';
 
 export interface GraphDimensions {
@@ -59,6 +64,7 @@ export type GraphShape = Extract<CanvasShape, { kind: 'line' | 'circle' | 'text'
 export const GRAPH_PRESET_ID_PREFIX = 'graph-';
 
 export const GRAPH_PRESET_IDS = [
+  'graph-independent',
   'graph-complete',
   'graph-cycle',
   'graph-path',
@@ -69,12 +75,17 @@ export const GRAPH_PRESET_IDS = [
   'graph-ladder',
   'graph-prism',
   'graph-binary-tree',
+  'graph-kary-tree',
+  'graph-layered-dag',
+  'graph-flow-network',
+  'graph-neural-network',
   'graph-petersen'
 ] as const;
 
 export type GraphPresetId = (typeof GRAPH_PRESET_IDS)[number];
 
 export const GRAPH_PRESET_KIND_BY_ID: Readonly<Record<GraphPresetId, GraphPresetKind>> = {
+  'graph-independent': 'independent',
   'graph-complete': 'complete',
   'graph-cycle': 'cycle',
   'graph-path': 'path',
@@ -85,10 +96,15 @@ export const GRAPH_PRESET_KIND_BY_ID: Readonly<Record<GraphPresetId, GraphPreset
   'graph-ladder': 'ladder',
   'graph-prism': 'prism',
   'graph-binary-tree': 'binary-tree',
+  'graph-kary-tree': 'kary-tree',
+  'graph-layered-dag': 'layered-dag',
+  'graph-flow-network': 'flow-network',
+  'graph-neural-network': 'neural-network',
   'graph-petersen': 'petersen'
 };
 
 export const GRAPH_PRESET_ID_BY_KIND: Readonly<Record<GraphPresetKind, GraphPresetId>> = {
+  independent: 'graph-independent',
   complete: 'graph-complete',
   cycle: 'graph-cycle',
   path: 'graph-path',
@@ -99,6 +115,10 @@ export const GRAPH_PRESET_ID_BY_KIND: Readonly<Record<GraphPresetKind, GraphPres
   ladder: 'graph-ladder',
   prism: 'graph-prism',
   'binary-tree': 'graph-binary-tree',
+  'kary-tree': 'graph-kary-tree',
+  'layered-dag': 'graph-layered-dag',
+  'flow-network': 'graph-flow-network',
+  'neural-network': 'graph-neural-network',
   petersen: 'graph-petersen'
 };
 

@@ -2,12 +2,15 @@ import { buildGraphShapes, graphEdgeCount, graphVertexCount, normalizeGraphDimen
 
 describe('graph utils', () => {
   it('computes common graph sizes', () => {
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'independent', vertices: 5 }))).toBe(5);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'independent', vertices: 5 }))).toBe(0);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'complete', vertices: 5 }))).toBe(5);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'complete', vertices: 5 }))).toBe(10);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'cycle', vertices: 6 }))).toBe(6);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'path', vertices: 6 }))).toBe(5);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'star', vertices: 6 }))).toBe(5);
-    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'wheel', vertices: 6 }))).toBe(10);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'wheel', vertices: 6 }))).toBe(7);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'wheel', vertices: 6 }))).toBe(12);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'bipartite', leftVertices: 3, rightVertices: 4 }))).toBe(12);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'grid', rows: 3, columns: 4 }))).toBe(12);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'grid', rows: 3, columns: 4 }))).toBe(17);
@@ -16,6 +19,14 @@ describe('graph utils', () => {
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'prism', vertices: 5 }))).toBe(10);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'prism', vertices: 5 }))).toBe(15);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'binary-tree', levels: 4 }))).toBe(15);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'kary-tree', columns: 3, levels: 3 }))).toBe(13);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'kary-tree', columns: 3, levels: 3 }))).toBe(12);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'layered-dag', rows: 3, columns: 4 }))).toBe(12);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'layered-dag', rows: 3, columns: 4 }))).toBe(32);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'flow-network', rows: 3, columns: 4 }))).toBe(14);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'flow-network', rows: 3, columns: 4 }))).toBe(40);
+    expect(graphVertexCount(normalizeGraphDimensions({ kind: 'neural-network', rows: 3, columns: 4 }))).toBe(12);
+    expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'neural-network', rows: 3, columns: 4 }))).toBe(32);
     expect(graphVertexCount(normalizeGraphDimensions({ kind: 'petersen' }))).toBe(10);
     expect(graphEdgeCount(normalizeGraphDimensions({ kind: 'petersen' }))).toBe(15);
   });
