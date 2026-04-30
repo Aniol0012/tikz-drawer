@@ -2985,7 +2985,9 @@ export class EditorPageComponent {
 
   setLineArrowType(value: string): void {
     this.patchInspectorSelection((shape) =>
-      shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind } as LineShape) : shape
+      shape.kind === 'line'
+        ? ({ ...shape, arrowType: value as ArrowTipKind, arrowOpen: false, arrowRound: false } as LineShape)
+        : shape
     );
   }
 
@@ -4542,6 +4544,10 @@ export class EditorPageComponent {
       case 'bracket':
         return getIconPath('arrowTipBracket');
     }
+  }
+
+  arrowTipIconFilled(arrowType: ArrowTipKind): boolean {
+    return arrowType === 'triangle' || arrowType === 'stealth' || arrowType === 'circle';
   }
 
   arrowTipLabel(arrowType: ArrowTipKind): string {

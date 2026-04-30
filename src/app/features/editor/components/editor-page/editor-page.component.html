@@ -1328,7 +1328,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
-                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
+                              [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">
@@ -1360,20 +1360,6 @@
                             <small
                               >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
                             >
-                          </label>
-                          <label class="toggle-field toggle-field--checkbox">
-                            <input
-                              type="checkbox"
-                              [checked]="shape.arrowOpen"
-                              (change)="updateShapeBoolean('arrowOpen', $event)" />
-                            <span>{{ t('arrowOpen') }}</span>
-                          </label>
-                          <label class="toggle-field toggle-field--checkbox">
-                            <input
-                              type="checkbox"
-                              [checked]="shape.arrowRound"
-                              (change)="updateShapeBoolean('arrowRound', $event)" />
-                            <span>{{ t('arrowRound') }}</span>
                           </label>
                         </div>
                       </div>
@@ -2412,7 +2398,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
-                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
+                              [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">
@@ -2444,20 +2430,6 @@
                             <small
                               >{{ t('opacity') }} {{ opacityPercent(shape.arrowOpacity) }}%</small
                             >
-                          </label>
-                          <label class="toggle-field toggle-field--checkbox">
-                            <input
-                              type="checkbox"
-                              [checked]="shape.arrowOpen"
-                              (change)="updateShapeBoolean('arrowOpen', $event)" />
-                            <span>{{ t('arrowOpen') }}</span>
-                          </label>
-                          <label class="toggle-field toggle-field--checkbox">
-                            <input
-                              type="checkbox"
-                              [checked]="shape.arrowRound"
-                              (change)="updateShapeBoolean('arrowRound', $event)" />
-                            <span>{{ t('arrowRound') }}</span>
                           </label>
                         </div>
                       </div>
