@@ -176,7 +176,8 @@ import {
   toggledShapeSetSelection
 } from '../../utils/editor-selection.utils';
 import {
-  arrowNavigationDeltaFromKey,
+  arrowNavigationDeltaFromKeys,
+  arrowNavigationKeyFromKey,
   isCopyShortcut,
   isCutShortcut,
   isDeleteShortcutKey,
@@ -339,9 +340,9 @@ export class EditorPageComponent {
   private static readonly selectionRotateHandleDistanceFactor = 3.2;
   private static readonly selectionRotateHandleMinDistance = 0.65;
   private static readonly rotationSnapStepDegrees = 15;
-  private static readonly keyboardNavigationBaseStep = 0.5;
-  private static readonly keyboardNavigationSnapMultiplier = 4;
-  private static readonly keyboardNavigationFastMultiplier = 10;
+  private static readonly keyboardNavigationBaseSpeed = 100;
+  private static readonly keyboardNavigationSnapSpeedMultiplier = 200;
+  private static readonly keyboardNavigationFastMultiplier = 100;
   private static readonly wheelRotationScale = 0.04;
   private static readonly wheelRotationMinStepDegrees = 3;
   private static readonly wheelRotationMaxStepDegrees = 18;
@@ -1105,6 +1106,9 @@ export class EditorPageComponent {
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
   private contextMenuPositionRafHandle: number | null = null;
+  private keyboardNavigationRafHandle: number | null = null;
+  private keyboardNavigationLastTimestamp: number | null = null;
+  private keyboardNavigationHistoryActive = false;
   private syncChannel: BroadcastChannel | null = null;
   private syncBroadcastRafHandle: number | null = null;
   private syncRevision = 0;
@@ -1114,6 +1118,7 @@ export class EditorPageComponent {
   private sidebarResizeStartedFromToggle = false;
   private suppressNextSidebarToggleClick = false;
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
+  private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
   private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
 
@@ -1127,6 +1132,9 @@ export class EditorPageComponent {
       }
       if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
+      }
+      if (this.keyboardNavigationRafHandle !== null && this.document.defaultView) {
+        this.document.defaultView.cancelAnimationFrame(this.keyboardNavigationRafHandle);
       }
       if (this.syncBroadcastRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.syncBroadcastRafHandle);
@@ -5266,32 +5274,84 @@ export class EditorPageComponent {
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {
-    const delta = arrowNavigationDeltaFromKey(event.key, this.keyboardNavigationStep(event));
-    if (!delta) {
+    const arrowKey = arrowNavigationKeyFromKey(event.key);
+    if (!arrowKey) {
       return false;
     }
 
     event.preventDefault();
     event.stopPropagation();
-    if (this.selectionCount() > 0) {
-      this.moveSelectedByKeyboard(delta.x, delta.y);
-      return true;
-    }
-
-    this.viewportCenter.update((viewportCenter) => ({
-      x: viewportCenter.x + delta.x,
-      y: viewportCenter.y + delta.y
-    }));
+    this.pressedArrowNavigationKeys.add(arrowKey);
+    this.startKeyboardNavigationLoop();
     return true;
   }
 
-  private keyboardNavigationStep(event: KeyboardEvent): number {
+  private keyboardNavigationSpeed(): number {
     const preferences = this.preferences();
-    const baseStep =
-      preferences.snapToGrid && !event.altKey
-        ? Math.max(preferences.snapStep, 0.01) * EditorPageComponent.keyboardNavigationSnapMultiplier
-        : EditorPageComponent.keyboardNavigationBaseStep;
-    return event.shiftKey ? baseStep * EditorPageComponent.keyboardNavigationFastMultiplier : baseStep;
+    const baseSpeed =
+      preferences.snapToGrid && !this.altPressed()
+        ? Math.max(preferences.snapStep, 0.01) * EditorPageComponent.keyboardNavigationSnapSpeedMultiplier
+        : EditorPageComponent.keyboardNavigationBaseSpeed;
+    return this.shiftPressed() ? baseSpeed * EditorPageComponent.keyboardNavigationFastMultiplier : baseSpeed;
+  }
+
+  private startKeyboardNavigationLoop(): void {
+    if (this.keyboardNavigationRafHandle !== null) {
+      return;
+    }
+
+    this.keyboardNavigationLastTimestamp = null;
+    const view = this.document.defaultView;
+    if (!view) {
+      return;
+    }
+    this.keyboardNavigationRafHandle = view.requestAnimationFrame((timestamp) =>
+      this.handleKeyboardNavigationFrame(timestamp)
+    );
+  }
+
+  private handleKeyboardNavigationFrame(timestamp: number): void {
+    this.keyboardNavigationRafHandle = null;
+    if (this.pressedArrowNavigationKeys.size === 0) {
+      this.stopKeyboardNavigationLoop();
+      return;
+    }
+
+    const lastTimestamp = this.keyboardNavigationLastTimestamp ?? timestamp;
+    const deltaSeconds = Math.min(Math.max((timestamp - lastTimestamp) / 1000, 0), 0.05);
+    this.keyboardNavigationLastTimestamp = timestamp;
+
+    const delta = arrowNavigationDeltaFromKeys(
+      this.pressedArrowNavigationKeys,
+      this.keyboardNavigationSpeed() * deltaSeconds
+    );
+    if (delta) {
+      this.applyKeyboardNavigationDelta(delta.x, delta.y);
+    }
+
+    const view = this.document.defaultView;
+    if (view) {
+      this.keyboardNavigationRafHandle = view.requestAnimationFrame((nextTimestamp) =>
+        this.handleKeyboardNavigationFrame(nextTimestamp)
+      );
+    }
+  }
+
+  private applyKeyboardNavigationDelta(deltaX: number, deltaY: number): void {
+    if (this.selectionCount() > 0) {
+      if (!this.keyboardNavigationHistoryActive) {
+        this.closeContextMenu();
+        this.store.recordHistoryCheckpoint();
+        this.keyboardNavigationHistoryActive = true;
+      }
+      this.moveSelectedByKeyboard(deltaX, deltaY);
+      return;
+    }
+
+    this.viewportCenter.update((viewportCenter) => ({
+      x: viewportCenter.x + deltaX,
+      y: viewportCenter.y + deltaY
+    }));
   }
 
   private moveSelectedByKeyboard(deltaX: number, deltaY: number): void {
@@ -5303,7 +5363,17 @@ export class EditorPageComponent {
     const translatedShapes = initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
     const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
     const nextShapes = translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
-    this.runSceneMutation(() => this.store.replaceShapes(this.withAttachedLinesMoved(initialShapes, nextShapes)));
+    this.store.replaceShapes(this.withAttachedLinesMoved(initialShapes, nextShapes));
+  }
+
+  private stopKeyboardNavigationLoop(): void {
+    const view = this.document.defaultView;
+    if (this.keyboardNavigationRafHandle !== null && view) {
+      view.cancelAnimationFrame(this.keyboardNavigationRafHandle);
+    }
+    this.keyboardNavigationRafHandle = null;
+    this.keyboardNavigationLastTimestamp = null;
+    this.keyboardNavigationHistoryActive = false;
   }
 
   private handlePreventableShortcut(
@@ -5321,6 +5391,9 @@ export class EditorPageComponent {
   }
 
   private handleEscapeShortcut(): void {
+    this.pressedArrowNavigationKeys.clear();
+    this.stopKeyboardNavigationLoop();
+
     const closeHandlers: ReadonlyArray<{ readonly isOpen: () => boolean; readonly close: () => void }> = [
       { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
       { isOpen: () => this.figureSearchOpen(), close: () => this.closeFigureSearch() },
@@ -5370,6 +5443,14 @@ export class EditorPageComponent {
   }
 
   handleWindowKeyup(event: KeyboardEvent): void {
+    const arrowKey = arrowNavigationKeyFromKey(event.key);
+    if (arrowKey) {
+      this.pressedArrowNavigationKeys.delete(arrowKey);
+      if (this.pressedArrowNavigationKeys.size === 0) {
+        this.stopKeyboardNavigationLoop();
+      }
+    }
+
     const modifier = pressedModifierFromKey(event.key);
     if (modifier) {
       this.setModifierPressed(modifier, false);
@@ -5382,6 +5463,8 @@ export class EditorPageComponent {
     this.controlPressed.set(false);
     this.metaPressed.set(false);
     this.altPressed.set(false);
+    this.pressedArrowNavigationKeys.clear();
+    this.stopKeyboardNavigationLoop();
     this.ignoreNextShapeClickId.set(null);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);

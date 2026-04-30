@@ -81,6 +81,11 @@ export const isDeleteShortcutKey = (key: string): boolean => {
 
 export const isEscapeShortcutKey = (key: string): boolean => normalizeKeyboardKey(key) === 'escape';
 
+export const arrowNavigationKeyFromKey = (key: string): string | null => {
+  const normalized = normalizeKeyboardKey(key);
+  return arrowNavigationDeltaFromKey(normalized, 1) ? normalized : null;
+};
+
 export const arrowNavigationDeltaFromKey = (key: string, step: number): ArrowNavigationDelta | null => {
   switch (normalizeKeyboardKey(key)) {
     case 'arrowleft':
@@ -94,6 +99,29 @@ export const arrowNavigationDeltaFromKey = (key: string, step: number): ArrowNav
     default:
       return null;
   }
+};
+
+export const arrowNavigationDeltaFromKeys = (keys: Iterable<string>, step: number): ArrowNavigationDelta | null => {
+  let x = 0;
+  let y = 0;
+
+  for (const key of keys) {
+    const delta = arrowNavigationDeltaFromKey(key, 1);
+    if (delta) {
+      x += delta.x;
+      y += delta.y;
+    }
+  }
+
+  const length = Math.hypot(x, y);
+  if (length === 0) {
+    return null;
+  }
+
+  return {
+    x: (x / length) * step,
+    y: (y / length) * step
+  };
 };
 
 export const isZoomInShortcutKey = (key: string): boolean => key === '=' || key === '+';

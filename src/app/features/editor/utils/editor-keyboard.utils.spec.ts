@@ -1,5 +1,7 @@
 import {
+  arrowNavigationDeltaFromKeys,
   arrowNavigationDeltaFromKey,
+  arrowNavigationKeyFromKey,
   isCopyShortcut,
   isCutShortcut,
   isDeleteShortcutKey,
@@ -83,11 +85,20 @@ describe('editor-keyboard utils', () => {
   });
 
   it('maps arrow navigation keys to world deltas', () => {
+    expect(arrowNavigationKeyFromKey('ArrowLeft')).toBe('arrowleft');
+    expect(arrowNavigationKeyFromKey('a')).toBeNull();
     expect(arrowNavigationDeltaFromKey('ArrowLeft', 0.25)).toEqual({ x: -0.25, y: 0 });
     expect(arrowNavigationDeltaFromKey('ArrowRight', 0.25)).toEqual({ x: 0.25, y: 0 });
     expect(arrowNavigationDeltaFromKey('ArrowUp', 0.25)).toEqual({ x: 0, y: 0.25 });
     expect(arrowNavigationDeltaFromKey('ArrowDown', 0.25)).toEqual({ x: 0, y: -0.25 });
     expect(arrowNavigationDeltaFromKey('a', 0.25)).toBeNull();
+  });
+
+  it('combines arrow navigation keys for diagonal movement', () => {
+    const diagonal = arrowNavigationDeltaFromKeys(['arrowright', 'arrowup'], 1);
+    expect(diagonal?.x).toBeCloseTo(Math.SQRT1_2);
+    expect(diagonal?.y).toBeCloseTo(Math.SQRT1_2);
+    expect(arrowNavigationDeltaFromKeys(['arrowleft', 'arrowright'], 1)).toBeNull();
   });
 
   it('detects selection modifiers consistently', () => {
