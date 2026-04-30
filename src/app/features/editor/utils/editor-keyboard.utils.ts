@@ -1,6 +1,7 @@
 import type { ToolId } from '../components/editor-page/editor-page.types';
 
 export type ModifierKey = 'space' | 'shift' | 'control' | 'meta' | 'alt';
+export type ArrowNavigationDelta = { readonly x: number; readonly y: number };
 
 type KeyboardShortcutEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 type SelectionModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>;
@@ -79,6 +80,21 @@ export const isDeleteShortcutKey = (key: string): boolean => {
 };
 
 export const isEscapeShortcutKey = (key: string): boolean => normalizeKeyboardKey(key) === 'escape';
+
+export const arrowNavigationDeltaFromKey = (key: string, step: number): ArrowNavigationDelta | null => {
+  switch (normalizeKeyboardKey(key)) {
+    case 'arrowleft':
+      return { x: -step, y: 0 };
+    case 'arrowright':
+      return { x: step, y: 0 };
+    case 'arrowup':
+      return { x: 0, y: step };
+    case 'arrowdown':
+      return { x: 0, y: -step };
+    default:
+      return null;
+  }
+};
 
 export const isZoomInShortcutKey = (key: string): boolean => key === '=' || key === '+';
 

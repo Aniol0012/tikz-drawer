@@ -176,6 +176,7 @@ import {
   toggledShapeSetSelection
 } from '../../utils/editor-selection.utils';
 import {
+  arrowNavigationDeltaFromKey,
   isCopyShortcut,
   isCutShortcut,
   isDeleteShortcutKey,
@@ -338,6 +339,8 @@ export class EditorPageComponent {
   private static readonly selectionRotateHandleDistanceFactor = 3.2;
   private static readonly selectionRotateHandleMinDistance = 0.65;
   private static readonly rotationSnapStepDegrees = 15;
+  private static readonly keyboardNavigationBaseStep = 0.1;
+  private static readonly keyboardNavigationFastMultiplier = 10;
   private static readonly wheelRotationScale = 0.04;
   private static readonly wheelRotationMinStepDegrees = 3;
   private static readonly wheelRotationMaxStepDegrees = 18;
@@ -5191,6 +5194,10 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.handleArrowNavigation(event)) {
+      return;
+    }
+
     const toolId = toolIdFromShortcutKey(event.key);
     if (toolId) {
       this.setActiveTool(toolId);
@@ -5255,6 +5262,47 @@ export class EditorPageComponent {
       return true;
     }
     return isPasteShortcut(event);
+  }
+
+  private handleArrowNavigation(event: KeyboardEvent): boolean {
+    const delta = arrowNavigationDeltaFromKey(event.key, this.keyboardNavigationStep(event));
+    if (!delta) {
+      return false;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.selectionCount() > 0) {
+      this.moveSelectedByKeyboard(delta.x, delta.y);
+      return true;
+    }
+
+    this.viewportCenter.update((viewportCenter) => ({
+      x: viewportCenter.x + delta.x,
+      y: viewportCenter.y + delta.y
+    }));
+    return true;
+  }
+
+  private keyboardNavigationStep(event: KeyboardEvent): number {
+    const preferences = this.preferences();
+    const baseStep =
+      preferences.snapToGrid && !event.altKey
+        ? Math.max(preferences.snapStep, 0.01)
+        : EditorPageComponent.keyboardNavigationBaseStep;
+    return event.shiftKey ? baseStep * EditorPageComponent.keyboardNavigationFastMultiplier : baseStep;
+  }
+
+  private moveSelectedByKeyboard(deltaX: number, deltaY: number): void {
+    const initialShapes = this.selectedShapes();
+    if (initialShapes.length === 0) {
+      return;
+    }
+
+    const translatedShapes = initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
+    const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
+    const nextShapes = translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
+    this.runSceneMutation(() => this.store.replaceShapes(this.withAttachedLinesMoved(initialShapes, nextShapes)));
   }
 
   private handlePreventableShortcut(

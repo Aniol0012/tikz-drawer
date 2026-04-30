@@ -1,4 +1,5 @@
 import {
+  arrowNavigationDeltaFromKey,
   isCopyShortcut,
   isCutShortcut,
   isDeleteShortcutKey,
@@ -79,6 +80,14 @@ describe('editor-keyboard utils', () => {
     expect(isZoomOutShortcutKey('-')).toBe(true);
     expect(isSpacebarKey(' ')).toBe(true);
     expect(isSpacebarKey('x')).toBe(false);
+  });
+
+  it('maps arrow navigation keys to world deltas', () => {
+    expect(arrowNavigationDeltaFromKey('ArrowLeft', 0.25)).toEqual({ x: -0.25, y: 0 });
+    expect(arrowNavigationDeltaFromKey('ArrowRight', 0.25)).toEqual({ x: 0.25, y: 0 });
+    expect(arrowNavigationDeltaFromKey('ArrowUp', 0.25)).toEqual({ x: 0, y: 0.25 });
+    expect(arrowNavigationDeltaFromKey('ArrowDown', 0.25)).toEqual({ x: 0, y: -0.25 });
+    expect(arrowNavigationDeltaFromKey('a', 0.25)).toBeNull();
   });
 
   it('detects selection modifiers consistently', () => {
