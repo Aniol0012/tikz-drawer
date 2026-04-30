@@ -71,6 +71,9 @@ export const isPasteShortcut = (event: KeyboardShortcutEvent): boolean =>
 export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && event.shiftKey && normalizeKeyboardKey(event.key) === 'k';
 
+export const isFindShortcut = (event: KeyboardShortcutEvent): boolean =>
+  isPrimaryModifierPressed(event) && !event.shiftKey && normalizeKeyboardKey(event.key) === 'f';
+
 export const toolIdFromShortcutKey = (key: string): ToolId | null =>
   TOOL_ID_BY_SHORTCUT_KEY[normalizeKeyboardKey(key)] ?? null;
 

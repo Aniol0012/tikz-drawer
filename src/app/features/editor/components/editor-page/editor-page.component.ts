@@ -183,6 +183,7 @@ import {
   isDeleteShortcutKey,
   isEscapeShortcutKey,
   isFigureSearchShortcut,
+  isFindShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectAllShortcut,
@@ -5178,7 +5179,7 @@ export class EditorPageComponent {
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
 
-    if (isFigureSearchShortcut(event)) {
+    if (isFigureSearchShortcut(event) || isFindShortcut(event)) {
       event.preventDefault();
       event.stopPropagation();
       this.openFigureSearch();

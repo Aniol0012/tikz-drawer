@@ -6,6 +6,7 @@ import {
   isCutShortcut,
   isDeleteShortcutKey,
   isEscapeShortcutKey,
+  isFindShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectionModifierPressed,
@@ -57,6 +58,13 @@ describe('editor-keyboard utils', () => {
     expect(isCopyShortcut(shortcutEvent({ key: 'c', metaKey: true }))).toBe(true);
     expect(isCutShortcut(shortcutEvent({ key: 'x', ctrlKey: true }))).toBe(true);
     expect(isPasteShortcut(shortcutEvent({ key: 'v', metaKey: true }))).toBe(true);
+  });
+
+  it('detects find shortcut with ctrl/cmd', () => {
+    expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true }))).toBe(true);
+    expect(isFindShortcut(shortcutEvent({ key: 'F', metaKey: true }))).toBe(true);
+    expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true, shiftKey: true }))).toBe(false);
+    expect(isFindShortcut(shortcutEvent({ key: 'f' }))).toBe(false);
   });
 
   it('detects undo and redo shortcuts', () => {
