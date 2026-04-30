@@ -3,6 +3,7 @@ import {
   TEXT_MIN_EXPORT_WIDTH_FACTOR,
   TEXT_MIN_HEIGHT_FACTOR,
   TEXT_RENDER_LINE_HEIGHT_FACTOR,
+  TEXT_TSPAN_LINE_STEP_FACTOR,
   TEXT_WRAP_CHAR_WIDTH_FACTOR,
   TEXT_WRAP_MIN_CHARACTERS,
   TEXT_WRAP_MIN_CHAR_WIDTH
@@ -137,6 +138,21 @@ export const estimateTextHeight = (
   lineHeightFactor = TEXT_BOUNDING_LINE_HEIGHT_FACTOR,
   minimumHeight = shape.fontSize * scale * TEXT_MIN_HEIGHT_FACTOR
 ): number => Math.max(lineCount * shape.fontSize * lineHeightFactor * scale, minimumHeight);
+
+export const estimateTextVerticalBounds = (
+  shape: TextShape,
+  lineCount: number,
+  scale = 1
+): { readonly topOffset: number; readonly bottomOffset: number } => {
+  const fontSize = shape.fontSize * scale;
+  const safeLineCount = Math.max(lineCount, 1);
+  const halfLineHeight = (fontSize * TEXT_RENDER_LINE_HEIGHT_FACTOR) / 2;
+  const lastBaselineOffset = (safeLineCount - 1) * fontSize * TEXT_TSPAN_LINE_STEP_FACTOR;
+  return {
+    topOffset: halfLineHeight,
+    bottomOffset: -lastBaselineOffset - halfLineHeight
+  };
+};
 
 export const defaultTextHeight = (shape: TextShape, lineCount: number, scale = 1): number =>
   estimateTextHeight(shape, lineCount, scale, TEXT_RENDER_LINE_HEIGHT_FACTOR);

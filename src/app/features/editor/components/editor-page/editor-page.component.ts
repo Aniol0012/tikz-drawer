@@ -339,7 +339,8 @@ export class EditorPageComponent {
   private static readonly selectionRotateHandleDistanceFactor = 3.2;
   private static readonly selectionRotateHandleMinDistance = 0.65;
   private static readonly rotationSnapStepDegrees = 15;
-  private static readonly keyboardNavigationBaseStep = 0.1;
+  private static readonly keyboardNavigationBaseStep = 0.5;
+  private static readonly keyboardNavigationSnapMultiplier = 4;
   private static readonly keyboardNavigationFastMultiplier = 10;
   private static readonly wheelRotationScale = 0.04;
   private static readonly wheelRotationMinStepDegrees = 3;
@@ -5288,7 +5289,7 @@ export class EditorPageComponent {
     const preferences = this.preferences();
     const baseStep =
       preferences.snapToGrid && !event.altKey
-        ? Math.max(preferences.snapStep, 0.01)
+        ? Math.max(preferences.snapStep, 0.01) * EditorPageComponent.keyboardNavigationSnapMultiplier
         : EditorPageComponent.keyboardNavigationBaseStep;
     return event.shiftKey ? baseStep * EditorPageComponent.keyboardNavigationFastMultiplier : baseStep;
   }

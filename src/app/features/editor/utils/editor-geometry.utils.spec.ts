@@ -132,6 +132,29 @@ describe('editor-geometry utils', () => {
     expect(computeBounds(shapes)).toEqual({ left: 0, right: 22, bottom: -6, top: 6 });
   });
 
+  it('fits text bounds around the rendered baseline', () => {
+    const bounds = shapeBounds({
+      id: 'text-1',
+      name: 'Text',
+      kind: 'text',
+      text: 'TEXT',
+      x: 0,
+      y: 0,
+      textBox: false,
+      boxWidth: 4,
+      fontSize: 1,
+      color: '#111111',
+      colorOpacity: 1,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textAlign: 'center',
+      rotation: 0
+    });
+
+    expect(bounds).toEqual({ left: -0.96, right: 0.96, bottom: -0.44, top: 0.44 });
+  });
+
   it('rotates a rectangle around a pivot while preserving size', () => {
     const rotated = rotateShapeAround(rectangleShape, { x: 0, y: 0 }, 90);
     expect(rotated.kind).toBe('rectangle');

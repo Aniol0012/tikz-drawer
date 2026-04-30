@@ -3,10 +3,14 @@ import type {
   ResizeHandle,
   TriangleCanvasShape
 } from '../components/editor-page/editor-page.types';
-import { TEXT_RENDER_LINE_HEIGHT_FACTOR } from '../constants/editor.constants';
 import type { CanvasShape, LineShape, Point } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
-import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from './text.utils';
+import {
+  displayTextLinesForShape,
+  estimateTextVerticalBounds,
+  estimateTextWidth,
+  textLeftForWidth
+} from './text.utils';
 
 const GEOMETRY_EPSILON = 1e-6;
 
@@ -361,13 +365,13 @@ export const shapeBounds = (shape: CanvasShape): SelectionBounds | null => {
     case 'text': {
       const lines = displayTextLinesForShape(shape);
       const width = estimateTextWidth(shape, 1, undefined, lines);
-      const height = estimateTextHeight(shape, lines.length, 1, TEXT_RENDER_LINE_HEIGHT_FACTOR);
+      const verticalBounds = estimateTextVerticalBounds(shape, lines.length);
       const left = textLeftForWidth(shape, shape.x, width);
       const baseCorners: readonly Point[] = [
-        { x: left, y: shape.y - height / 2 },
-        { x: left + width, y: shape.y - height / 2 },
-        { x: left + width, y: shape.y + height / 2 },
-        { x: left, y: shape.y + height / 2 }
+        { x: left, y: shape.y + verticalBounds.bottomOffset },
+        { x: left + width, y: shape.y + verticalBounds.bottomOffset },
+        { x: left + width, y: shape.y + verticalBounds.topOffset },
+        { x: left, y: shape.y + verticalBounds.topOffset }
       ];
       const rotatedCorners = shape.rotation
         ? baseCorners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
