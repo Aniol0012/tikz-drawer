@@ -8,7 +8,8 @@
   [style.--mobile-left-sidebar-height.px]="effectiveMobileLeftSidebarHeight()"
   [style.--mobile-right-sidebar-min-height.px]="mobileRightSidebarMinHeight()"
   [style.--mobile-left-sidebar-min-height.px]="mobileLeftSidebarMinHeight()"
-  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
+  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()"
+  (keydown)="onToggleFieldKeydown($event)">
   <app-editor-topbar
     [appVersion]="appVersion"
     [sceneName]="scene().name"
@@ -3540,7 +3541,11 @@
             <span>{{ t('shareLink') }}</span>
             <div class="share-field">
               <input type="text" readonly [value]="shareUrl()" />
-              <button class="secondary-button" type="button" (click)="copyShareLink()">
+              <button
+                class="secondary-button copy-action-button"
+                type="button"
+                [class.is-copying]="copyButtonAnimation() === 'shareLink'"
+                (click)="copyShareLink()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="iconMap.link"></path></svg
                 ><span>{{ t('copyLink') }}</span>
@@ -3607,9 +3612,10 @@
             <div class="code-panel">
               <div class="code-block-shell">
                 <button
-                  class="icon-button code-copy-button"
+                  class="icon-button code-copy-button copy-action-button"
                   type="button"
                   [title]="t('copy')"
+                  [class.is-copying]="copyButtonAnimation() === 'imports'"
                   (click)="copySnippetImports()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="iconMap.copy"></path>
@@ -3628,9 +3634,10 @@
           <div class="code-panel">
             <div class="code-block-shell">
               <button
-                class="icon-button code-copy-button"
+                class="icon-button code-copy-button copy-action-button"
                 type="button"
                 [title]="t('copy')"
+                [class.is-copying]="copyButtonAnimation() === 'currentExport'"
                 (click)="copyCurrentExportCode()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="iconMap.copy"></path>

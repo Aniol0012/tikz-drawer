@@ -24,7 +24,7 @@
           <span>{{ t('newScene') }}</span>
         </button>
         <button
-          class="secondary-button secondary-button--toolbar"
+          class="secondary-button secondary-button--toolbar copy-action-button"
           type="button"
           [title]="t('copyLink')"
           (click)="copyShareLink.emit()">
@@ -67,7 +67,10 @@
                 </svg>
                 <span>{{ t('newScene') }}</span>
               </button>
-              <button class="dropdown-row" type="button" (click)="copyShareLink.emit()">
+              <button
+                class="dropdown-row copy-action-button"
+                type="button"
+                (click)="copyShareLink.emit()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="icon('link')"></path>
                 </svg>

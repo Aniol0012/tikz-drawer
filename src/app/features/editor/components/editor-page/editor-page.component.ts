@@ -277,6 +277,8 @@ interface LineAttachmentCandidate {
   readonly distance: number;
 }
 
+type CopyButtonAnimationTarget = 'currentExport' | 'imports' | 'shareLink';
+
 @Component({
   selector: 'app-editor-page',
   imports: [
@@ -1092,8 +1094,10 @@ export class EditorPageComponent {
     }
   });
   readonly shareUrl = signal('');
+  readonly copyButtonAnimation = signal<CopyButtonAnimationTarget | null>(null);
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
+  private copyButtonAnimationHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
   private contextMenuPositionRafHandle: number | null = null;
@@ -1113,6 +1117,9 @@ export class EditorPageComponent {
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
         clearTimeout(this.themeToggleCooldownHandle);
+      }
+      if (this.copyButtonAnimationHandle !== null) {
+        clearTimeout(this.copyButtonAnimationHandle);
       }
       if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
@@ -2278,10 +2285,12 @@ export class EditorPageComponent {
   }
 
   copySnippetImports(): void {
+    this.animateCopyButton('imports');
     this.copyTextToClipboard(this.snippetExport().imports);
   }
 
   copyCurrentExportCode(): void {
+    this.animateCopyButton('currentExport');
     if (this.exportMode() === 'snippet') {
       this.copyExportedCode();
       return;
@@ -2301,6 +2310,7 @@ export class EditorPageComponent {
     }
     this.shareUrl.set(url);
     await navigator.clipboard.writeText(url);
+    this.animateCopyButton('shareLink');
     const hasImages = this.scene().shapes.some((shape) => shape.kind === 'image');
     if (hasImages) {
       const warningMessage = this.t('shareLinkImagesWarning');
@@ -2577,6 +2587,35 @@ export class EditorPageComponent {
 
   onBooleanPreferenceChange(key: PreferenceBooleanKey, event: Event): void {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
+  }
+
+  private animateCopyButton(target: CopyButtonAnimationTarget): void {
+    if (this.copyButtonAnimationHandle !== null) {
+      clearTimeout(this.copyButtonAnimationHandle);
+    }
+
+    this.copyButtonAnimation.set(null);
+    const view = this.document.defaultView;
+    view?.requestAnimationFrame(() => this.copyButtonAnimation.set(target));
+    this.copyButtonAnimationHandle = setTimeout(() => {
+      this.copyButtonAnimation.set(null);
+      this.copyButtonAnimationHandle = null;
+    }, 320);
+  }
+
+  onToggleFieldKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox' || target.disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    target.click();
   }
 
   onSceneNameInputValue(value: string): void {
