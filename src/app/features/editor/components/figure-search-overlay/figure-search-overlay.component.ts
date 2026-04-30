@@ -7,7 +7,8 @@ import {
   input,
   output,
   signal,
-  viewChild
+  viewChild,
+  viewChildren
 } from '@angular/core';
 import type { ObjectPreset } from '../../models/tikz.models';
 
@@ -19,6 +20,7 @@ import type { ObjectPreset } from '../../models/tikz.models';
 })
 export class FigureSearchOverlayComponent {
   readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  readonly resultButtons = viewChildren<ElementRef<HTMLButtonElement>>('resultButton');
 
   readonly presets = input.required<readonly ObjectPreset[]>();
   readonly iconMap = input.required<Record<string, string>>();
@@ -38,23 +40,21 @@ export class FigureSearchOverlayComponent {
     const query = this.query().trim().toLowerCase();
     const sourcePresets = this.presets();
     if (!query) {
-      return sourcePresets.slice(0, 8);
+      return sourcePresets;
     }
 
-    return sourcePresets
-      .filter((preset) => {
-        const haystack = [
-          this.titleForPreset()(preset),
-          this.descriptionForPreset()(preset),
-          preset.title,
-          preset.description,
-          ...(preset.searchTerms ?? [])
-        ]
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(query);
-      })
-      .slice(0, 8);
+    return sourcePresets.filter((preset) => {
+      const haystack = [
+        this.titleForPreset()(preset),
+        this.descriptionForPreset()(preset),
+        preset.title,
+        preset.description,
+        ...(preset.searchTerms ?? [])
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
   });
 
   constructor() {
@@ -68,6 +68,7 @@ export class FigureSearchOverlayComponent {
   updateQuery(value: string): void {
     this.query.set(value);
     this.activeIndex.set(0);
+    this.scrollActiveResultIntoView();
   }
 
   iconPath(key: string): string {
@@ -89,12 +90,14 @@ export class FigureSearchOverlayComponent {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       this.activeIndex.update((index) => (index + 1) % presets.length);
+      this.scrollActiveResultIntoView();
       return;
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       this.activeIndex.update((index) => (index - 1 + presets.length) % presets.length);
+      this.scrollActiveResultIntoView();
       return;
     }
 
@@ -119,5 +122,13 @@ export class FigureSearchOverlayComponent {
 
   trackByPresetId(_index: number, preset: ObjectPreset): string {
     return preset.id;
+  }
+
+  private scrollActiveResultIntoView(): void {
+    queueMicrotask(() => {
+      this.resultButtons()[this.activeIndex()]?.nativeElement.scrollIntoView({
+        block: 'nearest'
+      });
+    });
   }
 }

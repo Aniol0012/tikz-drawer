@@ -3,6 +3,7 @@ export type ShapeKind = 'line' | 'rectangle' | 'triangle' | 'circle' | 'ellipse'
 export type TextWeight = 'normal' | 'bold';
 export type TextStyle = 'normal' | 'italic';
 export type TextAlign = 'left' | 'center' | 'right';
+export type LineStrokeStyle = 'solid' | 'dashed' | 'dotted' | 'dash-dotted' | 'loosely-dashed';
 
 export type TableShapeRole = 'frame' | 'row-divider' | 'column-divider';
 
@@ -31,12 +32,20 @@ export interface CanvasShapeBase {
 
 export type ArrowTipKind = 'latex' | 'triangle' | 'stealth' | 'diamond' | 'circle' | 'bar' | 'hooks' | 'bracket';
 
+export interface LineEndpointAttachment {
+  readonly shapeId: string;
+  readonly anchor?: Point;
+}
+
 export interface LineShape extends CanvasShapeBase {
   readonly kind: 'line';
   readonly from: Point;
   readonly to: Point;
+  readonly fromAttachment?: LineEndpointAttachment;
+  readonly toAttachment?: LineEndpointAttachment;
   readonly anchors: readonly Point[];
   readonly lineMode: 'straight' | 'curved';
+  readonly strokeStyle?: LineStrokeStyle;
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
   readonly arrowType: ArrowTipKind;
@@ -164,12 +173,14 @@ export interface PersistedEditorState {
   readonly importCode: string;
 }
 
-export type PresetCategory = 'essentials' | 'flow' | 'geometry' | 'data' | 'interface' | 'concepts';
+export type PresetCategory = 'essentials' | 'flow' | 'geometry' | 'graphs' | 'data' | 'interface' | 'concepts';
 
 export interface ObjectPreset {
   readonly id: string;
   readonly category: PresetCategory;
   readonly icon: string;
+  readonly iconWidth?: number;
+  readonly iconStrokeWidth?: number;
   readonly title: string;
   readonly description: string;
   readonly quickAccess?: boolean;

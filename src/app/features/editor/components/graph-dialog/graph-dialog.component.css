@@ -1,0 +1,348 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.graph-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 16, 16, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.graph-dialog {
+  width: min(620px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 18px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.graph-dialog__header,
+.graph-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.graph-dialog__header {
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tool-border) 88%, transparent);
+}
+
+.graph-dialog__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.graph-dialog__copy p,
+.graph-dialog__copy span,
+.graph-dialog__field span,
+.graph-dialog__toggle,
+.graph-dialog__stat span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.graph-dialog__copy p,
+.graph-dialog__field span,
+.graph-dialog__stat span {
+  font-weight: 700;
+}
+
+.graph-dialog__copy h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.15;
+}
+
+.graph-dialog__close,
+.graph-dialog__button,
+.graph-dialog__field input {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease;
+}
+
+.graph-dialog__close,
+.graph-dialog__button,
+.graph-dialog__field input[type='number'] {
+  min-height: 38px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  color: inherit;
+}
+
+.graph-dialog__close {
+  width: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.graph-dialog__close svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.graph-dialog__body {
+  display: grid;
+  gap: 16px;
+}
+
+.graph-dialog__preview-shell {
+  min-width: 0;
+}
+
+.graph-dialog__preview-card {
+  overflow: hidden;
+  border: 1px solid var(--tool-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--panel-background) 94%, white 6%),
+      var(--panel-background)
+    ),
+    var(--panel-background);
+}
+
+.graph-dialog__preview {
+  width: 100%;
+  height: 230px;
+  display: block;
+  padding: 10px 12px 2px;
+}
+
+.graph-dialog__preview line {
+  stroke: var(--muted-foreground);
+  stroke-width: 2.1;
+  stroke-linecap: round;
+}
+
+.graph-dialog__preview marker path {
+  fill: var(--muted-foreground);
+}
+
+.graph-dialog__preview circle {
+  fill: var(--panel-background);
+  stroke: var(--accent);
+  stroke-width: 2.4;
+}
+
+.graph-dialog__preview text {
+  fill: var(--foreground);
+  font-size: 8px;
+  dominant-baseline: central;
+  text-anchor: middle;
+  font-weight: 700;
+  user-select: none;
+}
+
+.graph-dialog__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 9px 10px 10px;
+  border-top: 1px solid color-mix(in srgb, var(--tool-border) 88%, transparent);
+  background: var(--tool-surface);
+}
+
+.graph-dialog__stat {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--tool-border) 74%, transparent);
+  border-radius: 10px;
+  background: var(--panel-background);
+}
+
+.graph-dialog__stat strong {
+  color: var(--foreground);
+  font-size: 1.08rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.graph-dialog__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.graph-dialog__field {
+  display: grid;
+  gap: 6px;
+}
+
+.graph-dialog__field:not(.graph-dialog__field--number):has(input[type='range']) {
+  grid-column: 1 / -1;
+}
+
+.graph-dialog__field input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.graph-dialog__field input[type='number'] {
+  width: 100%;
+  padding: 0 12px;
+  background: var(--input-background);
+}
+
+.graph-dialog__toggle {
+  min-height: 42px;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: var(--tool-surface);
+  font-weight: 700;
+}
+
+.graph-dialog__toggle input {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex: 0 0 auto;
+  appearance: none;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.graph-dialog__toggle input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--panel-background);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
+  transition: transform 160ms ease;
+}
+
+.graph-dialog__toggle input:checked {
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background: var(--accent);
+}
+
+.graph-dialog__toggle input:checked::before {
+  transform: translateX(16px);
+}
+
+.graph-dialog__footer {
+  padding-top: 2px;
+}
+
+.graph-dialog__button {
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.graph-dialog__button--secondary {
+  min-width: 112px;
+}
+
+.graph-dialog__button--primary {
+  min-width: 144px;
+  border-color: color-mix(in srgb, var(--accent) 68%, transparent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.graph-dialog__close:hover,
+.graph-dialog__button--secondary:hover,
+.graph-dialog__field input[type='number']:hover,
+.graph-dialog__toggle:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.graph-dialog__button--primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, black 8%);
+}
+
+.graph-dialog__close:active,
+.graph-dialog__button:active {
+  transform: scale(0.97);
+}
+
+.graph-dialog__close:focus-visible,
+.graph-dialog__button:focus-visible,
+.graph-dialog__field input:focus-visible,
+.graph-dialog__toggle:focus-visible,
+.graph-dialog__toggle:focus-within {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@media (max-width: 640px) {
+  .graph-dialog-backdrop {
+    padding: 16px;
+  }
+
+  .graph-dialog {
+    padding: 18px;
+  }
+
+  .graph-dialog__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-dialog__preview {
+    height: 172px;
+  }
+
+  .graph-dialog__stat {
+    grid-template-columns: 1fr;
+    align-items: center;
+    justify-items: center;
+    gap: 3px;
+  }
+
+  .graph-dialog__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .graph-dialog__button {
+    width: 100%;
+  }
+}

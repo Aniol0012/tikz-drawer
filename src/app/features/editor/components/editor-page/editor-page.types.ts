@@ -120,6 +120,8 @@ export interface ToolDescriptor {
   readonly label: string;
   readonly description: string;
   readonly iconPath: string;
+  readonly iconWidth?: number;
+  readonly iconStrokeWidth?: number;
   readonly shortcut?: string;
 }
 
@@ -137,6 +139,13 @@ export interface SavedTemplate {
   readonly icon: string;
   readonly pinned?: boolean;
   readonly shapes: readonly CanvasShape[];
+}
+
+export interface LineAttachmentPreviewDescriptor {
+  readonly id: string;
+  readonly x: number;
+  readonly y: number;
+  readonly active: boolean;
 }
 
 export interface HandleDescriptor {
@@ -315,6 +324,7 @@ export interface MinimapShapeBase {
 export interface MinimapLineShape extends MinimapShapeBase {
   readonly kind: 'line';
   readonly path: string;
+  readonly dashArray?: string;
 }
 
 export interface MinimapRectangleShape extends MinimapShapeBase {

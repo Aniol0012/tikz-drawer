@@ -65,6 +65,7 @@ export const categoryOrder: readonly PresetCategory[] = [
   'essentials',
   'flow',
   'geometry',
+  'graphs',
   'data',
   'interface',
   'concepts'
@@ -74,6 +75,7 @@ export const categoryTranslationKey: Record<PresetCategory, string> = {
   essentials: 'categoryEssentials',
   flow: 'categoryFlow',
   geometry: 'categoryGeometry',
+  graphs: 'categoryGraphs',
   data: 'categoryData',
   interface: 'categoryInterface',
   concepts: 'categoryConcepts'

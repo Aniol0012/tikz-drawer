@@ -106,6 +106,7 @@ interface ShapeStyleConfig {
   readonly stroke: string;
   readonly strokeOpacity?: number;
   readonly strokeWidth: number;
+  readonly strokeStyle?: LineShape['strokeStyle'];
   readonly fill?: string;
   readonly fillOpacity?: number;
 }
@@ -169,6 +170,23 @@ const buildStyleEntries = (shape: ShapeStyleConfig, context: TikzGenerationConte
     entries.push(`draw opacity=${formatNumber(shape.strokeOpacity)}`);
   }
 
+  switch (shape.strokeStyle ?? 'solid') {
+    case 'solid':
+      break;
+    case 'dashed':
+      entries.push('dashed');
+      break;
+    case 'dotted':
+      entries.push('dotted');
+      break;
+    case 'dash-dotted':
+      entries.push('dash dot');
+      break;
+    case 'loosely-dashed':
+      entries.push('loosely dashed');
+      break;
+  }
+
   if ('fill' in shape && shape.fill && shape.fill !== 'none') {
     entries.push(`fill=${context.registerColor(shape.fill)}`);
     if (shape.fillOpacity !== undefined && shape.fillOpacity < 1) {
@@ -188,7 +206,7 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
     case 'stealth':
       return 'Stealth';
     case 'diamond':
-      return 'Diamond';
+      return 'Triangle';
     case 'circle':
       return 'Circle';
     case 'bar':
@@ -204,7 +222,7 @@ const arrowTipSpec = (shape: LineShape): string => {
   const options = [`color=${shape.arrowColor}`];
   if (shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket') {
     // These tips are stroked shapes, so fill/open does not materially apply.
-  } else if (shape.arrowOpen) {
+  } else if (shape.arrowOpen || shape.arrowType === 'diamond') {
     options.push('open');
   } else {
     options.push(`fill=${shape.arrowColor}`);

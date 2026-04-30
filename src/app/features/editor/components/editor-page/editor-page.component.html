@@ -196,7 +196,11 @@
                     [title]="preset.title"
                     (click)="setActiveTool(preset.id)">
                     <span class="preset-card__icon"
-                      ><svg viewBox="0 0 24 24" aria-hidden="true">
+                      ><svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        [style.width.px]="preset.iconWidth ?? null"
+                        [style.stroke-width]="preset.iconStrokeWidth ?? null">
                         <path [attr.d]="presetIconPath(preset.icon)"></path></svg
                     ></span>
                     <span class="preset-card__body">
@@ -393,6 +397,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     fill="none"
                     [attr.marker-start]="
                       shape.arrowStart ? 'url(#' + arrowMarkerId(shape, 'start') + ')' : null
@@ -561,6 +566,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       fill="none"
                       [attr.marker-start]="
                         previewShape.arrowStart
@@ -742,6 +748,21 @@
               [attr.y2]="rotateGuide.y2"></line>
           }
 
+          @if (lineAttachmentPreviewHandles().length) {
+            <g class="line-attachment-preview">
+              @for (anchor of lineAttachmentPreviewHandles(); track anchor.id) {
+                <circle
+                  class="line-attachment-preview__anchor"
+                  [class.line-attachment-preview__anchor--active]="anchor.active"
+                  [attr.cx]="anchor.x"
+                  [attr.cy]="anchor.y"
+                  [attr.r]="
+                    anchor.active ? selectionHandleOffset() * 0.85 : selectionHandleOffset() * 0.62
+                  "></circle>
+              }
+            </g>
+          }
+
           @if (selectionCount() > 0) {
             @for (handle of selectionHandles(); track handleTrackBy($index, handle)) {
               @if (handle.variant === 'rotate') {
@@ -889,7 +910,8 @@
                       [attr.d]="shape.path"
                       fill="none"
                       [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></path>
+                      [attr.stroke-width]="shape.strokeWidth"
+                      [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
                   }
                   @case ('rectangle') {
                     <rect
@@ -1280,6 +1302,20 @@
                           <option value="curved">{{ t('lineModeCurved') }}</option>
                         </select></label
                       >
+                      <label class="field field--full"
+                        ><span>{{ t('lineStrokeStyle') }}</span
+                        ><select
+                          [value]="shape.strokeStyle ?? 'solid'"
+                          (change)="setLineStrokeStyle($any($event.target).value)">
+                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
+                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
+                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
+                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
+                          <option value="loosely-dashed">
+                            {{ t('lineStrokeStyleLooselyDashed') }}
+                          </option>
+                        </select></label
+                      >
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
                       <div class="field field--full">
@@ -1290,6 +1326,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
+                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">
@@ -2349,6 +2386,20 @@
                           <option value="curved">{{ t('lineModeCurved') }}</option>
                         </select></label
                       >
+                      <label class="field field--full"
+                        ><span>{{ t('lineStrokeStyle') }}</span
+                        ><select
+                          [value]="shape.strokeStyle ?? 'solid'"
+                          (change)="setLineStrokeStyle($any($event.target).value)">
+                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
+                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
+                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
+                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
+                          <option value="loosely-dashed">
+                            {{ t('lineStrokeStyleLooselyDashed') }}
+                          </option>
+                        </select></label
+                      >
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
                       <div class="field field--full">
@@ -2359,6 +2410,7 @@
                               class="arrow-tip-button"
                               type="button"
                               [class.is-active]="shape.arrowType === arrowType.id"
+                              [class.arrow-tip-button--filled]="arrowType.id === 'triangle'"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
                               (click)="setLineArrowType(arrowType.id)">
@@ -3910,5 +3962,29 @@
       [maxSides]="regularPolygonMaxSides"
       (cancelDialog)="closeRegularPolygonDialog()"
       (confirm)="confirmRegularPolygonDialog($event)"></app-regular-polygon-dialog>
+  }
+
+  @if (graphDialogState(); as graphDialog) {
+    <app-graph-dialog
+      [title]="t('graphDialogTitle')"
+      [description]="t('graphDialogDescription')"
+      [confirmLabel]="t('continue')"
+      [cancelLabel]="t('cancel')"
+      [verticesLabel]="t('graphVertices')"
+      [leftVerticesLabel]="t('graphLeftVertices')"
+      [rightVerticesLabel]="t('graphRightVertices')"
+      [rowsLabel]="t('graphRows')"
+      [columnsLabel]="t('graphColumns')"
+      [levelsLabel]="t('graphLevels')"
+      [branchingFactorLabel]="t('graphBranchingFactor')"
+      [layersLabel]="t('graphLayers')"
+      [nodesPerLayerLabel]="t('graphNodesPerLayer')"
+      [directedLabel]="t('graphDirected')"
+      [labelsLabel]="t('graphShowLabels')"
+      [statsVerticesLabel]="t('graphStatsVertices')"
+      [statsEdgesLabel]="t('graphStatsEdges')"
+      [initialDimensions]="graphDialog"
+      (cancelDialog)="closeGraphDialog()"
+      (confirm)="confirmGraphDialog($event)"></app-graph-dialog>
   }
 </div>

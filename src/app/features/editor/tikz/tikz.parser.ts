@@ -202,6 +202,22 @@ const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeW
   strokeWidth: styleStrokeWidth(styles)
 });
 
+const parseLineStrokeStyle = (styles: Record<string, string>): LineShape['strokeStyle'] => {
+  if (styles['dash dot'] === 'true' || styles['dashdotted'] === 'true') {
+    return 'dash-dotted';
+  }
+  if (styles['loosely dashed'] === 'true') {
+    return 'loosely-dashed';
+  }
+  if (styles['dotted'] === 'true') {
+    return 'dotted';
+  }
+  if (styles['dashed'] === 'true') {
+    return 'dashed';
+  }
+  return 'solid';
+};
+
 const styleOpacity = (styles: Record<string, string>, key: string): number => {
   const raw = Number.parseFloat(styles[key] ?? '1');
   return Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 1;
@@ -317,6 +333,7 @@ const parseLine = (line: string): CanvasShape | null => {
     to,
     anchors: [],
     lineMode: 'straight',
+    strokeStyle: parseLineStrokeStyle(styles),
     arrowStart: styles['<-'] === 'true' || styles['<->'] === 'true',
     arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
@@ -374,6 +391,7 @@ const parseSmoothLine = (line: string): CanvasShape | null => {
     to: points.at(-1)!,
     anchors: points.slice(1, -1),
     lineMode: 'curved',
+    strokeStyle: parseLineStrokeStyle(styles),
     arrowStart: styles['<-'] === 'true' || styles['<->'] === 'true',
     arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
     strokeOpacity: styleOpacity(styles, 'draw opacity'),

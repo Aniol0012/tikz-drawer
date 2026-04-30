@@ -1,0 +1,252 @@
+<div
+  class="graph-dialog-backdrop"
+  tabindex="-1"
+  (click)="cancelDialog.emit()"
+  (keydown)="onBackdropKeydown($event)">
+  <section
+    class="graph-dialog"
+    (click)="$event.stopPropagation()"
+    (keydown)="onDialogKeydown($event)">
+    <header class="graph-dialog__header">
+      <div class="graph-dialog__copy">
+        <p>{{ displayName() }}</p>
+        <h2>{{ title() }}</h2>
+        <span>{{ description() }}</span>
+      </div>
+      <button
+        class="graph-dialog__close"
+        type="button"
+        (click)="cancelDialog.emit()"
+        [attr.aria-label]="cancelLabel()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="closeIconPath"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="graph-dialog__body">
+      <div class="graph-dialog__preview-shell">
+        <div class="graph-dialog__preview-card">
+          <svg class="graph-dialog__preview" viewBox="0 0 240 160" aria-hidden="true">
+            <defs>
+              <marker
+                id="graph-dialog-arrow"
+                viewBox="0 0 5.5 5"
+                markerWidth="4.8"
+                markerHeight="4.8"
+                refX="5.2"
+                refY="2.5"
+                orient="auto"
+                markerUnits="strokeWidth">
+                <path d="M0,0 L5.5,2.5 L0,5 z"></path>
+              </marker>
+            </defs>
+            @for (edge of preview().edges; track edge.id) {
+              <line
+                [attr.x1]="edge.from.x"
+                [attr.y1]="edge.from.y"
+                [attr.x2]="edge.to.x"
+                [attr.y2]="edge.to.y"
+                [attr.marker-end]="selected().directed ? 'url(#graph-dialog-arrow)' : null"></line>
+            }
+            @for (node of preview().nodes; track node.id) {
+              <circle [attr.cx]="node.x" [attr.cy]="node.y" r="7"></circle>
+              @if (selected().showLabels) {
+                <text [attr.x]="node.x" [attr.y]="node.y">{{ node.label }}</text>
+              }
+            }
+          </svg>
+          <div class="graph-dialog__stats">
+            <div class="graph-dialog__stat">
+              <strong>{{ vertexCount() }}</strong>
+              <span>{{ statsVerticesLabel() }}</span>
+            </div>
+            <div class="graph-dialog__stat">
+              <strong>{{ edgeCount() }}</strong>
+              <span>{{ statsEdgesLabel() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="graph-dialog__fields">
+        @if (isSimpleVertexGraph(selected().kind)) {
+          <label class="graph-dialog__field">
+            <span>{{ verticesLabel() }}</span>
+            <input
+              type="range"
+              [min]="minVertices"
+              [max]="maxVertices"
+              [value]="selected().vertices"
+              (input)="updateNumber('vertices', $event)" />
+          </label>
+          <label class="graph-dialog__field graph-dialog__field--number">
+            <span>{{ verticesLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxVertices"
+              [value]="selected().vertices"
+              (input)="updateNumber('vertices', $event)" />
+          </label>
+        }
+
+        @if (selected().kind === 'bipartite') {
+          <label class="graph-dialog__field">
+            <span>{{ leftVerticesLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxVertices"
+              [value]="selected().leftVertices"
+              (input)="updateNumber('leftVertices', $event)" />
+          </label>
+          <label class="graph-dialog__field">
+            <span>{{ rightVerticesLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxVertices"
+              [value]="selected().rightVertices"
+              (input)="updateNumber('rightVertices', $event)" />
+          </label>
+        }
+
+        @if (selected().kind === 'grid') {
+          <label class="graph-dialog__field">
+            <span>{{ rowsLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().rows"
+              (input)="updateNumber('rows', $event)" />
+          </label>
+          <label class="graph-dialog__field">
+            <span>{{ columnsLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+        }
+
+        @if (selected().kind === 'ladder') {
+          <label class="graph-dialog__field">
+            <span>{{ columnsLabel() }}</span>
+            <input
+              type="range"
+              [min]="minVertices"
+              [max]="maxColumnsForSelectedKind()"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+          <label class="graph-dialog__field graph-dialog__field--number">
+            <span>{{ columnsLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxColumnsForSelectedKind()"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+        }
+
+        @if (isLayeredGraph(selected().kind)) {
+          <label class="graph-dialog__field">
+            <span>{{ layersLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().rows"
+              (input)="updateNumber('rows', $event)" />
+          </label>
+          <label class="graph-dialog__field">
+            <span>{{ nodesPerLayerLabel() }}</span>
+            <input
+              type="number"
+              [min]="minVertices"
+              [max]="maxGridAxis"
+              [value]="selected().columns"
+              (input)="updateNumber('columns', $event)" />
+          </label>
+        }
+
+        @if (selected().kind === 'binary-tree' || selected().kind === 'kary-tree') {
+          @if (selected().kind === 'kary-tree') {
+            <label class="graph-dialog__field">
+              <span>{{ branchingFactorLabel() }}</span>
+              <input
+                type="number"
+                [min]="minVertices"
+                [max]="maxColumnsForSelectedKind()"
+                [value]="selected().columns"
+                (input)="updateNumber('columns', $event)" />
+            </label>
+          }
+          <label class="graph-dialog__field">
+            <span>{{ levelsLabel() }}</span>
+            <input
+              type="range"
+              min="1"
+              [max]="maxLevelsForSelectedKind()"
+              [value]="selected().levels"
+              (input)="updateNumber('levels', $event)" />
+          </label>
+          <label class="graph-dialog__field graph-dialog__field--number">
+            <span>{{ levelsLabel() }}</span>
+            <input
+              type="number"
+              min="1"
+              [max]="maxLevelsForSelectedKind()"
+              [value]="selected().levels"
+              (input)="updateNumber('levels', $event)" />
+          </label>
+        }
+
+        <label
+          class="graph-dialog__toggle"
+          data-graph-toggle="directed"
+          tabindex="0"
+          (keydown)="onToggleKeydown($event, 'directed')">
+          <span>{{ directedLabel() }}</span>
+          <input
+            type="checkbox"
+            [checked]="selected().directed"
+            (change)="updateToggle('directed', $event)"
+            (keydown)="onToggleKeydown($event, 'directed')" />
+        </label>
+        <label
+          class="graph-dialog__toggle"
+          data-graph-toggle="showLabels"
+          tabindex="0"
+          (keydown)="onToggleKeydown($event, 'showLabels')">
+          <span>{{ labelsLabel() }}</span>
+          <input
+            type="checkbox"
+            [checked]="selected().showLabels"
+            (change)="updateToggle('showLabels', $event)"
+            (keydown)="onToggleKeydown($event, 'showLabels')" />
+        </label>
+      </div>
+    </div>
+
+    <footer class="graph-dialog__footer">
+      <button
+        class="graph-dialog__button graph-dialog__button--secondary"
+        type="button"
+        (click)="cancelDialog.emit()">
+        {{ cancelLabel() }}
+      </button>
+      <button
+        class="graph-dialog__button graph-dialog__button--primary"
+        type="button"
+        (click)="submit()">
+        {{ confirmLabel() }}
+      </button>
+    </footer>
+  </section>
+</div>
