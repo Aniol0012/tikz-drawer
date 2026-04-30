@@ -5167,6 +5167,12 @@ export class EditorPageComponent {
       return;
     }
 
+    if (isEscapeShortcutKey(event.key)) {
+      event.preventDefault();
+      this.handleEscapeShortcut();
+      return;
+    }
+
     if (this.isEditableTarget(event.target)) {
       return;
     }
@@ -5187,11 +5193,6 @@ export class EditorPageComponent {
 
     if (isDeleteShortcutKey(event.key)) {
       this.removeSelected();
-      return;
-    }
-
-    if (isEscapeShortcutKey(event.key)) {
-      this.handleEscapeShortcut();
       return;
     }
 

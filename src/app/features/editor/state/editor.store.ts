@@ -1,5 +1,12 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { DEFAULT_TEXT_BOX_WIDTH, EDITOR_HISTORY_LIMIT, EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
+import {
+  DEFAULT_EDITOR_SCALE,
+  DEFAULT_TEXT_BOX_WIDTH,
+  EDITOR_HISTORY_LIMIT,
+  EDITOR_SCALE_MAX,
+  EDITOR_SCALE_MIN,
+  EDITOR_STORAGE_KEYS
+} from '../constants/editor.constants';
 import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '../presets/presets';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { parseTikz } from '../tikz/tikz.parser';
@@ -373,6 +380,19 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
   }
 };
 
+const normalizePreferences = (preferences: Partial<EditorPreferences> | undefined): EditorPreferences => {
+  const scale = Number(preferences?.scale);
+  const normalizedScale = Number.isFinite(scale)
+    ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale))
+    : DEFAULT_EDITOR_SCALE;
+
+  return {
+    ...defaultPreferences,
+    ...preferences,
+    scale: normalizedScale
+  };
+};
+
 @Injectable()
 export class EditorStore {
   private readonly editorStorage = inject(EditorLocalStorageService);
@@ -606,10 +626,7 @@ export class EditorStore {
   }
 
   patchPreferences(patch: Partial<EditorPreferences>): void {
-    this.preferences.update((preferences) => ({
-      ...preferences,
-      ...patch
-    }));
+    this.preferences.update((preferences) => normalizePreferences({ ...preferences, ...patch }));
   }
 
   patchSelectedShape(mutator: (shape: CanvasShape) => CanvasShape): void {
@@ -779,10 +796,7 @@ export class EditorStore {
 
   restoreSharedState(state: PersistedEditorState): void {
     this.scene.set(cloneScene(state.scene));
-    this.preferences.set({
-      ...defaultPreferences,
-      ...structuredClone(state.preferences)
-    });
+    this.preferences.set(normalizePreferences(structuredClone(state.preferences)));
     this.importCode.set(typeof state.importCode === 'string' ? state.importCode : sceneToTikz(state.scene));
     this.parserWarnings.set([]);
     this.selectedShapeIds.set([]);
@@ -808,10 +822,7 @@ export class EditorStore {
 
     try {
       if (parsed.preferences) {
-        this.preferences.set({
-          ...defaultPreferences,
-          ...parsed.preferences
-        });
+        this.preferences.set(normalizePreferences(parsed.preferences));
       }
 
       if (parsed.scene) {
