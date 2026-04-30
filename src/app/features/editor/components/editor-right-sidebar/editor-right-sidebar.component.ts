@@ -18,5 +18,5 @@ export class EditorRightSidebarComponent {
 
   readonly sidebarScroll = viewChild<ElementRef<HTMLElement>>('sidebarScroll');
 
-  readonly showSidebarContent = () => !(this.overlayLayout() && this.collapsed());
+  readonly showSidebarContent = () => !this.collapsed();
 }
