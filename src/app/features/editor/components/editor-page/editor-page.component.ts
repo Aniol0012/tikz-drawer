@@ -997,6 +997,20 @@ export class EditorPageComponent {
   });
   readonly lineAttachmentPreviewHandles = computed<readonly LineAttachmentPreviewDescriptor[]>(() => {
     const interactionState = this.interactionState();
+    if (interactionState?.kind === 'insert' && !this.altPressed()) {
+      const previewLine = this.insertionPreviewShapes().find(
+        (shape): shape is LineCanvasShape => shape.kind === 'line'
+      );
+      if (!previewLine) {
+        return [];
+      }
+
+      return [
+        ...this.lineAttachmentPreviewHandlesFor(previewLine, 'from', previewLine.from),
+        ...this.lineAttachmentPreviewHandlesFor(previewLine, 'to', previewLine.to)
+      ];
+    }
+
     const selectedShape = this.selectedShape();
     if (
       !interactionState ||
@@ -1010,17 +1024,7 @@ export class EditorPageComponent {
 
     const endpoint = interactionState.handle;
     const endpointPoint = endpoint === 'from' ? selectedShape.from : selectedShape.to;
-    const preview = this.lineAttachmentPreview(selectedShape, endpoint, endpointPoint);
-    if (!preview) {
-      return [];
-    }
-
-    return preview.candidates.map((candidate) => ({
-      id: `${candidate.shape.id}-${candidate.anchor.x}-${candidate.anchor.y}`,
-      x: this.toSvgX(candidate.point.x),
-      y: this.toSvgY(candidate.point.y),
-      active: candidate === preview.active
-    }));
+    return this.lineAttachmentPreviewHandlesFor(selectedShape, endpoint, endpointPoint);
   });
   readonly selectionRotateGuide = computed<{
     readonly x1: number;
@@ -3971,6 +3975,24 @@ export class EditorPageComponent {
     return preview.active.distance <= threshold ? preview.active : null;
   }
 
+  private lineAttachmentPreviewHandlesFor(
+    line: LineShape,
+    endpoint: LineEndpoint,
+    point: Point
+  ): readonly LineAttachmentPreviewDescriptor[] {
+    const preview = this.lineAttachmentPreview(line, endpoint, point);
+    if (!preview) {
+      return [];
+    }
+
+    return preview.candidates.map((candidate) => ({
+      id: `${endpoint}-${candidate.shape.id}-${candidate.anchor.x}-${candidate.anchor.y}`,
+      x: this.toSvgX(candidate.point.x),
+      y: this.toSvgY(candidate.point.y),
+      active: candidate === preview.active
+    }));
+  }
+
   private lineAttachmentPreview(
     line: LineShape,
     endpoint: LineEndpoint,
@@ -4249,7 +4271,7 @@ export class EditorPageComponent {
 
     this.runSceneMutation(() => {
       this.store.addShapes(this.remapShapeSetIds(previewShapes, () => crypto.randomUUID()));
-      this.clearInsertedGraphSelection(interactionState.toolId);
+      this.store.selectShape(null);
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
@@ -5189,7 +5211,7 @@ export class EditorPageComponent {
         path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
         break;
       case 'straight-barb':
-        path = `M0,0 L${length},${halfWidth} L0,${width}`;
+        path = `M0,0 L${length},${halfWidth} L0,${width} M0,${halfWidth} L${length},${halfWidth}`;
         break;
     }
 
@@ -6356,9 +6378,18 @@ export class EditorPageComponent {
         anchors: []
       } as LineShape,
       keepOwnStyle
-    );
+    ) as LineShape;
 
-    return this.localizeInsertedPresetShapes(preset, [nextLine], keepOwnStyle);
+    return this.localizeInsertedPresetShapes(
+      preset,
+      [this.withLineInsertionEndpointAttachments(nextLine)],
+      keepOwnStyle
+    );
+  }
+
+  private withLineInsertionEndpointAttachments(line: LineShape): LineShape {
+    const withFromAttachment = this.withLineEndpointAttachment(line, 'from', line.from) as LineShape;
+    return this.withLineEndpointAttachment(withFromAttachment, 'to', withFromAttachment.to) as LineShape;
   }
 
   private insertPresetAt(toolId: ToolId, point: Point): void {
@@ -6404,14 +6435,6 @@ export class EditorPageComponent {
       )
     );
     this.store.addShapes(shapes);
-    this.clearInsertedGraphSelection(toolId);
-  }
-
-  private clearInsertedGraphSelection(toolId: ToolId): void {
-    if (!this.isGraphPresetId(toolId)) {
-      return;
-    }
-
     this.store.selectShape(null);
   }
 
