@@ -1,4 +1,5 @@
 import type { LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
+import { DEFAULT_LATEX_EXPORT_CONFIG } from '../config/latex-export.config';
 import {
   normalizeLatexExportConfig,
   parsePinnedToolIdsFromStorage,
@@ -9,21 +10,7 @@ import {
   serializableLatexExportConfig
 } from './editor-storage.utils';
 
-const defaultLatexExportConfig: LatexExportConfig = {
-  colorMode: 'direct-rgb',
-  wrapInFigure: false,
-  figurePlacement: 'H',
-  alignment: 'center',
-  scaleToWidth: true,
-  includeFrame: false,
-  maxWidthPercent: 100,
-  standaloneBorderMm: 6,
-  fontSize: 'footnotesize',
-  includeCaption: true,
-  caption: '',
-  includeLabel: true,
-  label: ''
-};
+const defaultLatexExportConfig: LatexExportConfig = DEFAULT_LATEX_EXPORT_CONFIG;
 
 const templates: readonly SavedTemplate[] = [
   {

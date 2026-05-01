@@ -1,4 +1,3 @@
-import type { LatexColorMode } from '../../tikz/tikz.codegen';
 import type {
   ArrowTipKind,
   CanvasShape,
@@ -20,14 +19,6 @@ export type SvgTextAnchor = 'start' | 'middle' | 'end';
 export type CssTextAlign = 'left' | 'center' | 'right';
 export type TextStyleKey = 'fontWeight' | 'fontStyle' | 'textDecoration';
 export type TextStylePropertyKey = TextStyleKey | 'textAlign';
-export type LatexExportTextKey = 'figurePlacement' | 'caption' | 'label';
-export type LatexExportNumberKey = 'maxWidthPercent' | 'standaloneBorderMm';
-export type LatexExportBooleanKey =
-  | 'wrapInFigure'
-  | 'scaleToWidth'
-  | 'includeFrame'
-  | 'includeCaption'
-  | 'includeLabel';
 export type TemplateDialogTextKey = 'title' | 'description';
 export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale';
 export type PreferenceTextKey = 'defaultStroke' | 'defaultFill';
@@ -91,29 +82,15 @@ export interface ToastNotification {
   readonly tone: NotificationTone;
 }
 
-export const LATEX_ALIGNMENTS = ['center', 'left', 'right'] as const;
-export type LatexAlignment = (typeof LATEX_ALIGNMENTS)[number];
-
-export const LATEX_FONT_SIZES = ['tiny', 'scriptsize', 'footnotesize', 'small', 'normalsize', 'large'] as const;
-export type LatexFontSize = (typeof LATEX_FONT_SIZES)[number];
-
-export const LATEX_COLOR_MODES = ['direct-rgb', 'define-colors'] as const satisfies readonly LatexColorMode[];
-
-export interface LatexExportConfig {
-  readonly colorMode: LatexColorMode;
-  readonly wrapInFigure: boolean;
-  readonly figurePlacement: string;
-  readonly alignment: LatexAlignment;
-  readonly scaleToWidth: boolean;
-  readonly includeFrame: boolean;
-  readonly maxWidthPercent: number;
-  readonly standaloneBorderMm: number;
-  readonly fontSize: LatexFontSize;
-  readonly includeCaption: boolean;
-  readonly caption: string;
-  readonly includeLabel: boolean;
-  readonly label: string;
-}
+export { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../../config/latex-export.config';
+export type {
+  LatexAlignment,
+  LatexExportBooleanKey,
+  LatexExportConfig,
+  LatexExportNumberKey,
+  LatexExportTextKey,
+  LatexFontSize
+} from '../../config/latex-export.config';
 
 export interface ToolDescriptor {
   readonly id: ToolId;

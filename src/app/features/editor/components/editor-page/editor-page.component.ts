@@ -98,11 +98,7 @@ import {
   type InspectorTab,
   type InteractionState,
   type LatexAlignment,
-  type LatexExportBooleanKey,
   type LatexExportConfig,
-  type LatexExportNumberKey,
-  type LatexExportTextKey,
-  type LatexFontSize,
   type LibrarySection,
   type LineAttachmentPreviewDescriptor,
   type LineBooleanKey,
@@ -145,6 +141,7 @@ import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-s
 import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
+import { ExportModalComponent, type ExportCopyTarget } from '../export-modal/export-modal.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
@@ -206,7 +203,7 @@ import {
   buildTablePresetShapes,
   localizePresetCanvasShapes as localizePresetTemplateShapes
 } from '../../presets/presets';
-import { type LatexColorMode, sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
+import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import {
@@ -234,6 +231,7 @@ import {
   type GraphPresetId
 } from '../../models/graph.models';
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
+import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG } from '../../config/latex-export.config';
 import {
   buildTableShapes,
   getTableSelectionInfo,
@@ -291,8 +289,6 @@ interface LineAttachmentCandidate {
   readonly distance: number;
 }
 
-type CopyButtonAnimationTarget = 'currentExport' | 'imports' | 'shareLink';
-
 @Component({
   selector: 'app-editor-page',
   imports: [
@@ -301,6 +297,7 @@ type CopyButtonAnimationTarget = 'currentExport' | 'imports' | 'shareLink';
     EditorRightSidebarComponent,
     TableDialogComponent,
     ImportCodeModalComponent,
+    ExportModalComponent,
     RangeInputCardComponent,
     RegularPolygonDialogComponent,
     GraphDialogComponent,
@@ -391,21 +388,6 @@ export class EditorPageComponent {
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
   private readonly defaultScale = DEFAULT_EDITOR_SCALE;
-  private readonly defaultLatexExportConfig = {
-    colorMode: 'direct-rgb',
-    wrapInFigure: false,
-    figurePlacement: 'H',
-    alignment: 'center',
-    scaleToWidth: true,
-    includeFrame: false,
-    maxWidthPercent: 100,
-    standaloneBorderMm: 6,
-    fontSize: 'footnotesize',
-    includeCaption: true,
-    caption: '',
-    includeLabel: true,
-    label: ''
-  } satisfies LatexExportConfig;
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -1096,9 +1078,6 @@ export class EditorPageComponent {
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
   readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
-  readonly highlightedCodeThemePreview = computed(() =>
-    highlightLatex('\\begin{tikzpicture}\n\\draw (0,0) -- (1.6,0.8);\n\\end{tikzpicture}')
-  );
   readonly selectionHandleSize = computed(() =>
     this.coarsePointer()
       ? EditorPageComponent.selectionHandleSizeByPointer.coarse
@@ -1125,7 +1104,7 @@ export class EditorPageComponent {
     }
   });
   readonly shareUrl = signal('');
-  readonly copyButtonAnimation = signal<CopyButtonAnimationTarget | null>(null);
+  readonly copyButtonAnimation = signal<ExportCopyTarget | null>(null);
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
   private copyButtonAnimationHandle: ReturnType<typeof setTimeout> | null = null;
@@ -1669,48 +1648,6 @@ export class EditorPageComponent {
       ...config,
       ...patch
     }));
-  }
-
-  updateLatexExportText(key: LatexExportTextKey, event: Event): void {
-    this.patchLatexExportConfig({
-      [key]: (event.target as HTMLInputElement | HTMLSelectElement).value
-    } as Partial<LatexExportConfig>);
-  }
-
-  updateLatexExportNumber(key: LatexExportNumberKey, event: Event, min: number, max: number): void {
-    const input = event.target as HTMLInputElement;
-    const value = Number.parseFloat(input.value);
-    if (!Number.isFinite(value)) {
-      return;
-    }
-    this.patchLatexExportConfig({
-      [key]: Math.min(max, Math.max(min, value))
-    } as Partial<LatexExportConfig>);
-  }
-
-  updateLatexExportBoolean(key: LatexExportBooleanKey, event: Event): void {
-    this.patchLatexExportConfig({
-      [key]: (event.target as HTMLInputElement).checked
-    } as Partial<LatexExportConfig>);
-  }
-
-  setExportColorMode(mode: LatexColorMode): void {
-    this.patchLatexExportConfig({ colorMode: mode });
-  }
-
-  setLatexAlignment(alignment: LatexAlignment): void {
-    this.patchLatexExportConfig({ alignment });
-  }
-
-  setLatexFontSize(fontSize: LatexFontSize): void {
-    this.patchLatexExportConfig({ fontSize });
-  }
-
-  applySuggestedCaptionAndLabel(): void {
-    this.patchLatexExportConfig({
-      caption: this.suggestedCaption(),
-      label: this.suggestedLabel()
-    });
   }
 
   setInspectorTab(tab: InspectorTab): void {
@@ -2627,7 +2564,7 @@ export class EditorPageComponent {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
   }
 
-  private animateCopyButton(target: CopyButtonAnimationTarget): void {
+  private animateCopyButton(target: ExportCopyTarget): void {
     if (this.copyButtonAnimationHandle !== null) {
       clearTimeout(this.copyButtonAnimationHandle);
     }
@@ -2661,15 +2598,8 @@ export class EditorPageComponent {
   }
 
   setCodeHighlightTheme(theme: string): void {
-    if (
-      theme === 'aurora' ||
-      theme === 'sunset' ||
-      theme === 'midnight' ||
-      theme === 'forest' ||
-      theme === 'rose' ||
-      theme === 'graphite'
-    ) {
-      this.codeHighlightTheme.set(theme);
+    if (CODE_HIGHLIGHT_THEMES.includes(theme as CodeHighlightTheme)) {
+      this.codeHighlightTheme.set(theme as CodeHighlightTheme);
     }
   }
 
@@ -6770,7 +6700,7 @@ export class EditorPageComponent {
   }
 
   private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
-    return parseStoredLatexExportConfigUtil(raw, this.defaultLatexExportConfig);
+    return parseStoredLatexExportConfigUtil(raw, DEFAULT_LATEX_EXPORT_CONFIG);
   }
 
   private serializableLatexExportConfig(config: LatexExportConfig): Partial<LatexExportConfig> {
@@ -6781,7 +6711,7 @@ export class EditorPageComponent {
     config: Partial<LatexExportConfig> | null | undefined,
     preserveFreeText = true
   ): LatexExportConfig {
-    return normalizeLatexExportConfigUtil(config, this.defaultLatexExportConfig, preserveFreeText);
+    return normalizeLatexExportConfigUtil(config, DEFAULT_LATEX_EXPORT_CONFIG, preserveFreeText);
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
