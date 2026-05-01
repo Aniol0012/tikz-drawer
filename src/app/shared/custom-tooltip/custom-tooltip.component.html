@@ -1,0 +1,10 @@
+@if (tooltip(); as currentTooltip) {
+  <div
+    class="custom-tooltip"
+    role="tooltip"
+    [class.custom-tooltip--bottom]="currentTooltip.placement === 'bottom'"
+    [style.left.px]="currentTooltip.left"
+    [style.top.px]="currentTooltip.top">
+    {{ currentTooltip.text }}
+  </div>
+}

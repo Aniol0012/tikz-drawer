@@ -1,5 +1,8 @@
 <div class="modal-backdrop">
-  <section class="export-modal" (click)="$event.stopPropagation()">
+  <section
+    class="export-modal"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()">
     <header class="export-modal__header">
       <div>
         <p>{{ t('exportTitle') }}</p>
@@ -129,7 +132,10 @@
 
 @if (settingsOpen()) {
   <div class="modal-backdrop modal-backdrop--settings">
-    <section class="export-settings-modal" (click)="$event.stopPropagation()">
+    <section
+      class="export-settings-modal"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()">
       <header class="export-modal__header">
         <div>
           <p>{{ t('latexSettings') }}</p>

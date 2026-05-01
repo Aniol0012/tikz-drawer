@@ -5303,11 +5303,13 @@ export class EditorPageComponent {
       return false;
     }
 
-    if (this.isCanvasViewportFocused()) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.selectAllSceneShapes();
+    if (this.isPopupOpen()) {
+      return false;
     }
+
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectAllSceneShapes();
     return true;
   }
 
@@ -7236,6 +7238,24 @@ export class EditorPageComponent {
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
       (target instanceof HTMLElement && target.isContentEditable)
+    );
+  }
+
+  private isPopupOpen(): boolean {
+    return (
+      this.fileMenuOpen() ||
+      this.exportModalOpen() ||
+      this.importModalOpen() ||
+      this.exportSettingsModalOpen() ||
+      this.figureSearchOpen() ||
+      this.templateDialogOpen() ||
+      !!this.templateDeleteTarget() ||
+      !!this.tableDialogState() ||
+      !!this.regularPolygonDialogState() ||
+      !!this.graphDialogState() ||
+      !!this.sceneReplaceDialog() ||
+      !!this.contextMenu() ||
+      this.textSymbolPaletteOpen()
     );
   }
 
