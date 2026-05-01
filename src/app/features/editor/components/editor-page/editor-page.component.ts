@@ -4146,11 +4146,10 @@ export class EditorPageComponent {
         Math.round(rotationDeltaDegrees / EditorPageComponent.rotationSnapStepDegrees) *
         EditorPageComponent.rotationSnapStepDegrees;
     }
-    this.store.replaceShapes(
-      interactionState.initialShapes.map((shape) =>
-        this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
-      )
+    const rotatedShapes = interactionState.initialShapes.map((shape) =>
+      this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
     );
+    this.store.replaceShapes(this.withAttachedLinesMoved(interactionState.initialShapes, rotatedShapes));
   }
 
   endInteraction(event: PointerEvent): void {
@@ -7076,9 +7075,10 @@ export class EditorPageComponent {
     }
     const selectionPivot = this.selectionRotationPivot(selectedShapes, bounds);
     this.store.recordHistoryCheckpoint();
-    this.store.replaceShapes(
-      selectedShapes.map((shape) => this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees))
+    const rotatedShapes = selectedShapes.map((shape) =>
+      this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees)
     );
+    this.store.replaceShapes(this.withAttachedLinesMoved(selectedShapes, rotatedShapes));
   }
 
   private selectionRotationPivot(shapes: readonly CanvasShape[], bounds: SelectionBounds): Point {
