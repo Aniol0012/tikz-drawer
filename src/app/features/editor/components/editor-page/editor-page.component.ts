@@ -3510,10 +3510,7 @@ export class EditorPageComponent {
       if (!selectionBounds || !this.selectionCanRotate(selectedShapes)) {
         return;
       }
-      const pivot = {
-        x: (selectionBounds.left + selectionBounds.right) / 2,
-        y: (selectionBounds.bottom + selectionBounds.top) / 2
-      };
+      const pivot = this.selectionRotationPivot(selectedShapes, selectionBounds);
       this.store.recordHistoryCheckpoint();
       this.interactionState.set({
         kind: 'rotate',
@@ -7077,14 +7074,21 @@ export class EditorPageComponent {
     if (!bounds || !this.selectionCanRotate(selectedShapes)) {
       return;
     }
-    const selectionPivot = {
-      x: (bounds.left + bounds.right) / 2,
-      y: (bounds.bottom + bounds.top) / 2
-    };
+    const selectionPivot = this.selectionRotationPivot(selectedShapes, bounds);
     this.store.recordHistoryCheckpoint();
     this.store.replaceShapes(
       selectedShapes.map((shape) => this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees))
     );
+  }
+
+  private selectionRotationPivot(shapes: readonly CanvasShape[], bounds: SelectionBounds): Point {
+    const singleShape = shapes.length === 1 ? shapes[0] : null;
+    return singleShape
+      ? this.shapeCenter(singleShape)
+      : {
+          x: (bounds.left + bounds.right) / 2,
+          y: (bounds.bottom + bounds.top) / 2
+        };
   }
 
   private selectionCanRotate(shapes: readonly CanvasShape[]): boolean {
