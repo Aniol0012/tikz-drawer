@@ -104,6 +104,17 @@ describe('editor-geometry utils', () => {
     expect(maxTriangleCornerRadius(triangleShape)).toBeGreaterThan(0);
   });
 
+  it('uses the rounded triangle outline for shape bounds', () => {
+    const sharpBounds = shapeBounds({ ...triangleShape, cornerRadius: 0 });
+    const roundedBounds = shapeBounds(triangleShape);
+
+    expect(sharpBounds).toEqual({ left: -3, right: 3, bottom: -1.5, top: 2.5 });
+    expect(roundedBounds?.left).toBeGreaterThan(-3);
+    expect(roundedBounds?.right).toBeLessThan(3);
+    expect(roundedBounds?.bottom).toBe(-1.5);
+    expect(roundedBounds?.top).toBeLessThan(2.5);
+  });
+
   it('normalizes rotation values into the editor range', () => {
     expect(normalizeRotationDegrees(181)).toBe(-179);
     expect(normalizeRotationDegrees(-721)).toBe(-1);

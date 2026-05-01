@@ -30,7 +30,19 @@ export interface CanvasShapeBase {
   readonly table?: TableShapeMetadata;
 }
 
-export type ArrowTipKind = 'latex' | 'triangle' | 'stealth' | 'diamond' | 'circle' | 'bar' | 'hooks' | 'bracket';
+export type ArrowTipKind =
+  | 'latex'
+  | 'triangle'
+  | 'stealth'
+  | 'diamond'
+  | 'circle'
+  | 'bar'
+  | 'hooks'
+  | 'bracket'
+  | 'kite'
+  | 'square'
+  | 'parenthesis'
+  | 'straight-barb';
 
 export interface LineEndpointAttachment {
   readonly shapeId: string;

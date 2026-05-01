@@ -13,6 +13,7 @@ import {
 } from './text.utils';
 
 const GEOMETRY_EPSILON = 1e-6;
+const ROUNDED_CORNER_CURVE_SAMPLE_COUNT = 16;
 
 type RoundedCornerCanvasShape = RectangleCanvasShape | TriangleCanvasShape;
 
@@ -129,6 +130,32 @@ const buildRoundedPolygonPath = (points: readonly Point[], radius: number): stri
   return path;
 };
 
+const roundedPolygonOutlinePoints = (points: readonly Point[], radius: number): readonly Point[] => {
+  if (points.length < 3) {
+    return points;
+  }
+
+  const maxRadius = polygonMaxCornerRadius(points);
+  const clampedRadius = Math.min(Math.max(radius, 0), maxRadius);
+  if (!Number.isFinite(clampedRadius) || clampedRadius <= GEOMETRY_EPSILON) {
+    return points;
+  }
+
+  return points.flatMap((corner, index) => {
+    const previous = points[(index - 1 + points.length) % points.length];
+    const next = points[(index + 1) % points.length];
+    const geometry = roundedCornerGeometry(corner, previous, next, clampedRadius);
+    return Array.from({ length: ROUNDED_CORNER_CURVE_SAMPLE_COUNT + 1 }, (_, sampleIndex) => {
+      const t = sampleIndex / ROUNDED_CORNER_CURVE_SAMPLE_COUNT;
+      const inverseT = 1 - t;
+      return {
+        x: inverseT * inverseT * geometry.start.x + 2 * inverseT * t * corner.x + t * t * geometry.end.x,
+        y: inverseT * inverseT * geometry.start.y + 2 * inverseT * t * corner.y + t * t * geometry.end.y
+      };
+    });
+  });
+};
+
 const triangleCornerIndexFromHandle = (handle: ResizeHandle): number | null => {
   switch (handle) {
     case 'corner-radius-apex':
@@ -165,6 +192,15 @@ export const buildTrianglePath = (
 
 export const maxTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
   Math.max(polygonMaxCornerRadius(trianglePoints(shape)), 0);
+
+const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
+  const points = roundedPolygonOutlinePoints(trianglePoints(shape), shape.cornerRadius);
+  const rotation = shape.rotation ?? 0;
+  const rotatedPoints = rotation
+    ? points.map((point) => rotatePointAround(point, shapeCenter(shape), rotation))
+    : points;
+  return boundsFromPoints(rotatedPoints) as SelectionBounds;
+};
 
 export const buildLinePath = (
   shape: LineShape,
@@ -337,7 +373,7 @@ export const shapeBounds = (shape: CanvasShape): SelectionBounds | null => {
     case 'rectangle':
       return rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
     case 'triangle':
-      return rotatedRectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
+      return triangleBounds(shape);
     case 'circle':
       return {
         left: shape.cx - shape.r,

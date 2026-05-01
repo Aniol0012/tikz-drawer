@@ -215,12 +215,26 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
       return 'Hooks';
     case 'bracket':
       return 'Bracket';
+    case 'kite':
+      return 'Kite';
+    case 'square':
+      return 'Square';
+    case 'parenthesis':
+      return 'Parenthesis';
+    case 'straight-barb':
+      return 'Straight Barb';
   }
 };
 
 const arrowTipSpec = (shape: LineShape): string => {
   const options = [`color=${shape.arrowColor}`];
-  if (shape.arrowType === 'bar' || shape.arrowType === 'hooks' || shape.arrowType === 'bracket') {
+  if (
+    shape.arrowType === 'bar' ||
+    shape.arrowType === 'hooks' ||
+    shape.arrowType === 'bracket' ||
+    shape.arrowType === 'parenthesis' ||
+    shape.arrowType === 'straight-barb'
+  ) {
     // These tips are stroked shapes, so fill/open does not materially apply.
   } else if (shape.arrowOpen || shape.arrowType === 'diamond') {
     options.push('open');

@@ -119,6 +119,18 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).not.toContain('Triangle[draw=');
   });
 
+  it('exports additional arrow tip kinds through arrows.meta names', () => {
+    const scene: TikzScene = {
+      name: 'Arrow tip scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [{ ...baseLine, arrowType: 'square' }]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain('-{Square[');
+  });
+
   it('defines colors once when using define-colors mode', () => {
     const scene: TikzScene = {
       name: 'Color scene',

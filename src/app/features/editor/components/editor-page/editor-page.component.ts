@@ -584,7 +584,11 @@ export class EditorPageComponent {
     { id: 'circle', title: 'Circle' },
     { id: 'bar', title: 'Bar' },
     { id: 'hooks', title: 'Hooks' },
-    { id: 'bracket', title: 'Bracket' }
+    { id: 'bracket', title: 'Bracket' },
+    { id: 'kite', title: 'Kite' },
+    { id: 'square', title: 'Square' },
+    { id: 'parenthesis', title: 'Parenthesis' },
+    { id: 'straight-barb', title: 'Straight barb' }
   ];
   readonly templateIconOptions = [
     'pencil',
@@ -4569,11 +4573,25 @@ export class EditorPageComponent {
         return getIconPath('arrowTipHooks');
       case 'bracket':
         return getIconPath('arrowTipBracket');
+      case 'kite':
+        return getIconPath('arrowTipKite');
+      case 'square':
+        return getIconPath('arrowTipSquare');
+      case 'parenthesis':
+        return getIconPath('arrowTipParenthesis');
+      case 'straight-barb':
+        return getIconPath('arrowTipStraightBarb');
     }
   }
 
   arrowTipIconFilled(arrowType: ArrowTipKind): boolean {
-    return arrowType === 'triangle' || arrowType === 'stealth' || arrowType === 'circle';
+    return (
+      arrowType === 'triangle' ||
+      arrowType === 'stealth' ||
+      arrowType === 'circle' ||
+      arrowType === 'kite' ||
+      arrowType === 'square'
+    );
   }
 
   arrowTipLabel(arrowType: ArrowTipKind): string {
@@ -4594,6 +4612,14 @@ export class EditorPageComponent {
         return this.t('arrowTypeHooks');
       case 'bracket':
         return this.t('arrowTypeBracket');
+      case 'kite':
+        return this.t('arrowTypeKite');
+      case 'square':
+        return this.t('arrowTypeSquare');
+      case 'parenthesis':
+        return this.t('arrowTypeParenthesis');
+      case 'straight-barb':
+        return this.t('arrowTypeStraightBarb');
     }
   }
 
@@ -5105,6 +5131,22 @@ export class EditorPageComponent {
       case 'bracket':
         path = `M${length},0 L${length * 0.5},0 L${length * 0.5},${width} L${length},${width}`;
         break;
+      case 'kite':
+        path = `M0,${halfWidth} L${length * 0.62},0 L${length},${halfWidth} L${length * 0.62},${width} z`;
+        break;
+      case 'square':
+        {
+          const side = Math.min(length, width);
+          const left = Math.max(length - side, 0);
+          path = `M${left},${halfWidth - side / 2} L${length},${halfWidth - side / 2} L${length},${halfWidth + side / 2} L${left},${halfWidth + side / 2} z`;
+        }
+        break;
+      case 'parenthesis':
+        path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
+        break;
+      case 'straight-barb':
+        path = `M${length},${halfWidth} L0,0 M${length},${halfWidth} L0,${width}`;
+        break;
     }
 
     const geometry = {
@@ -5168,7 +5210,9 @@ export class EditorPageComponent {
       shape.arrowType === 'diamond' ||
       shape.arrowType === 'bar' ||
       shape.arrowType === 'hooks' ||
-      shape.arrowType === 'bracket'
+      shape.arrowType === 'bracket' ||
+      shape.arrowType === 'parenthesis' ||
+      shape.arrowType === 'straight-barb'
       ? 'none'
       : shape.arrowColor;
   }

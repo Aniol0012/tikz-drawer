@@ -225,6 +225,18 @@ const styleOpacity = (styles: Record<string, string>, key: string): number => {
 
 const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
   const raw = `${styles['arrow meta'] ?? styles['>='] ?? styles['<='] ?? ''}`.toLowerCase();
+  if (raw.includes('straight barb')) {
+    return 'straight-barb';
+  }
+  if (raw.includes('parenthesis')) {
+    return 'parenthesis';
+  }
+  if (raw.includes('square')) {
+    return 'square';
+  }
+  if (raw.includes('kite')) {
+    return 'kite';
+  }
   if (raw.includes('bracket')) {
     return 'bracket';
   }
