@@ -19,7 +19,7 @@ interface TooltipState {
 const TOOLTIP_MARGIN_PX = 12;
 const TOOLTIP_OFFSET_PX = 8;
 const TOOLTIP_MAX_WIDTH_PX = 280;
-const TOOLTIP_SHOW_DELAY_MS = 260;
+const TOOLTIP_SHOW_DELAY_MS = 500;
 const TOOLTIP_HIDE_DELAY_MS = 90;
 
 @Component({
