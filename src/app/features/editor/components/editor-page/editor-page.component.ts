@@ -266,7 +266,10 @@ import {
   buildTrianglePath as buildTrianglePathUtil,
   computeBounds as computeBoundsUtil,
   cornerRadiusFromPointer as cornerRadiusFromPointerUtil,
+  effectiveRectangleCornerRadius as effectiveRectangleCornerRadiusUtil,
+  effectiveTriangleCornerRadius as effectiveTriangleCornerRadiusUtil,
   linePoints as linePointsUtil,
+  maxRectangleCornerRadius as maxRectangleCornerRadiusUtil,
   maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
   rotatedEllipseBounds as rotatedEllipseBoundsUtil,
@@ -276,6 +279,7 @@ import {
   shapeBounds as shapeBoundsUtil,
   shapeCenter as shapeCenterUtil,
   shapeRotation as shapeRotationUtil,
+  triangleCornerAttachmentPoints as triangleCornerAttachmentPointsUtil,
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
@@ -350,14 +354,16 @@ export class EditorPageComponent {
   private static readonly rotationSnapStepDegrees = 15;
   private static readonly keyboardNavigationBaseSpeed = 100;
   private static readonly keyboardNavigationSnapSpeedMultiplier = 200;
-  private static readonly keyboardNavigationFastMultiplier = 100;
+  private static readonly keyboardNavigationFastMultiplier = 4;
   private static readonly wheelRotationScale = 0.04;
   private static readonly wheelRotationMinStepDegrees = 3;
   private static readonly wheelRotationMaxStepDegrees = 18;
   private static readonly lineHitStrokeExtraPx = 10;
   private static readonly lineHitStrokeMinPx = 14;
   private static readonly lineAttachmentSnapRadiusPx = 14;
+  private static readonly coarseLineAttachmentSnapRadiusPx = 28;
   private static readonly lineAttachmentPreviewRadiusPx = 44;
+  private static readonly coarseLineAttachmentPreviewRadiusPx = 72;
   private static readonly lineMarqueeTolerancePx = 6;
   private static readonly sidebarResizeLimits = {
     mobileMaxHeight: 640,
@@ -2943,7 +2949,15 @@ export class EditorPageComponent {
       this.setShapeRotation(value);
       return;
     }
-    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.patchInspectorSelection((shape) => {
+      if (key === 'cornerRadius' && (shape.kind === 'rectangle' || shape.kind === 'triangle')) {
+        const maxRadius =
+          shape.kind === 'rectangle' ? maxRectangleCornerRadiusUtil(shape) : maxTriangleCornerRadiusUtil(shape);
+        return { ...shape, cornerRadius: Math.max(0, Math.min(maxRadius, value)) } as CanvasShape;
+      }
+
+      return { ...shape, [key]: value } as CanvasShape;
+    });
   }
 
   updateTriangleApex(event: Event): void {
@@ -3953,7 +3967,7 @@ export class EditorPageComponent {
       return null;
     }
 
-    const threshold = EditorPageComponent.lineAttachmentSnapRadiusPx / this.preferences().scale;
+    const threshold = this.lineAttachmentSnapRadiusWorld();
     return preview.active.distance <= threshold ? preview.active : null;
   }
 
@@ -3962,8 +3976,8 @@ export class EditorPageComponent {
     endpoint: LineEndpoint,
     point: Point
   ): { readonly active: LineAttachmentCandidate; readonly candidates: readonly LineAttachmentCandidate[] } | null {
-    const threshold = EditorPageComponent.lineAttachmentSnapRadiusPx / this.preferences().scale;
-    const previewRadius = EditorPageComponent.lineAttachmentPreviewRadiusPx / this.preferences().scale;
+    const threshold = this.lineAttachmentSnapRadiusWorld();
+    const previewRadius = this.lineAttachmentPreviewRadiusWorld();
     const candidateGroups = this.scene()
       .shapes.filter((shape) => this.canAttachLineEndpointToShape(line, shape))
       .map((shape) => ({
@@ -3997,6 +4011,22 @@ export class EditorPageComponent {
     }
 
     return { active, candidates: group.anchors };
+  }
+
+  private lineAttachmentSnapRadiusWorld(): number {
+    const radiusPx =
+      this.coarsePointer() || this.mobileLayout()
+        ? EditorPageComponent.coarseLineAttachmentSnapRadiusPx
+        : EditorPageComponent.lineAttachmentSnapRadiusPx;
+    return radiusPx / this.preferences().scale;
+  }
+
+  private lineAttachmentPreviewRadiusWorld(): number {
+    const radiusPx =
+      this.coarsePointer() || this.mobileLayout()
+        ? EditorPageComponent.coarseLineAttachmentPreviewRadiusPx
+        : EditorPageComponent.lineAttachmentPreviewRadiusPx;
+    return radiusPx / this.preferences().scale;
   }
 
   private canAttachLineEndpointToShape(line: LineShape, shape: CanvasShape): boolean {
@@ -4041,7 +4071,7 @@ export class EditorPageComponent {
   private shapeAttachmentAnchors(shape: CanvasShape): readonly Point[] {
     if (shape.kind === 'triangle') {
       const center = this.shapeCenter(shape);
-      return this.trianglePoints(shape).map((point) => this.normalizeAttachmentAnchor(center, point));
+      return this.triangleAttachmentPoints(shape).map((point) => this.normalizeAttachmentAnchor(center, point));
     }
 
     return [
@@ -4100,6 +4130,16 @@ export class EditorPageComponent {
         x: shape.cx + unit.x * scale,
         y: shape.cy + unit.y * scale
       };
+    }
+
+    if (shape.kind === 'triangle') {
+      const anchors = this.shapeAttachmentAnchors(shape);
+      const attachmentIndex = anchors.findIndex((candidate) => this.sameAnchor(candidate, anchor));
+      if (attachmentIndex >= 0) {
+        const point = this.triangleAttachmentPoints(shape)[attachmentIndex];
+        const rotation = this.shapeRotation(shape);
+        return rotation ? this.rotatePointAround(point, center, -rotation) : point;
+      }
     }
 
     const bounds = this.shapeBounds(shape);
@@ -4792,7 +4832,7 @@ export class EditorPageComponent {
   }
 
   private rectangleCornerRadiusHandles(shape: RectangleCanvasShape): readonly HandleDescriptor[] {
-    const maxRadius = Math.min(shape.width, shape.height) / 2;
+    const maxRadius = maxRectangleCornerRadiusUtil(shape);
     if (maxRadius <= 0) {
       return [];
     }
@@ -4954,8 +4994,12 @@ export class EditorPageComponent {
         x: this.toSvgX(point.x),
         y: this.toSvgY(point.y)
       }),
-      shape.cornerRadius * this.preferences().scale
+      effectiveTriangleCornerRadiusUtil(shape) * this.preferences().scale
     );
+  }
+
+  rectangleCornerRadiusSvg(shape: RectangleCanvasShape): number {
+    return effectiveRectangleCornerRadiusUtil(shape) * this.preferences().scale;
   }
 
   lineEndpointHandle(shape: LineShape, endpoint: LineEndpoint, adjacentPoint: Point): HandleDescriptor {
@@ -5145,7 +5189,7 @@ export class EditorPageComponent {
         path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
         break;
       case 'straight-barb':
-        path = `M${length},${halfWidth} L0,0 M${length},${halfWidth} L0,${width}`;
+        path = `M0,0 L${length},${halfWidth} L0,${width}`;
         break;
     }
 
@@ -6870,6 +6914,10 @@ export class EditorPageComponent {
     return trianglePointsUtil(shape);
   }
 
+  private triangleAttachmentPoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
+    return triangleCornerAttachmentPointsUtil(shape);
+  }
+
   private buildTrianglePath(
     shape: TriangleCanvasShape,
     projectPoint: (point: Point) => { readonly x: number; readonly y: number },
@@ -6916,7 +6964,7 @@ export class EditorPageComponent {
           y: toMapY(shape.y + shape.height),
           width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
           height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          rx: Math.max(shape.cornerRadius * scale, 0.6)
+          rx: Math.max(effectiveRectangleCornerRadiusUtil(shape) * scale, 0.6)
         };
       case 'triangle':
         return {
@@ -6930,7 +6978,7 @@ export class EditorPageComponent {
               x: toMapX(point.x),
               y: toMapY(point.y)
             }),
-            shape.cornerRadius * scale
+            effectiveTriangleCornerRadiusUtil(shape) * scale
           )
         };
       case 'circle':

@@ -14,6 +14,8 @@ import {
 
 const GEOMETRY_EPSILON = 1e-6;
 const ROUNDED_CORNER_CURVE_SAMPLE_COUNT = 16;
+const RECTANGLE_CORNER_RADIUS_MAX_FACTOR = 0.42;
+const POLYGON_CORNER_RADIUS_MAX_FACTOR = 0.72;
 
 type RoundedCornerCanvasShape = RectangleCanvasShape | TriangleCanvasShape;
 
@@ -100,7 +102,7 @@ const buildRoundedPolygonPath = (points: readonly Point[], radius: number): stri
     return '';
   }
 
-  const maxRadius = polygonMaxCornerRadius(points);
+  const maxRadius = polygonMaxCornerRadius(points) * POLYGON_CORNER_RADIUS_MAX_FACTOR;
   const clampedRadius = Math.min(Math.max(radius, 0), maxRadius);
   if (!Number.isFinite(clampedRadius) || clampedRadius <= GEOMETRY_EPSILON) {
     return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z';
@@ -135,7 +137,7 @@ const roundedPolygonOutlinePoints = (points: readonly Point[], radius: number): 
     return points;
   }
 
-  const maxRadius = polygonMaxCornerRadius(points);
+  const maxRadius = polygonMaxCornerRadius(points) * POLYGON_CORNER_RADIUS_MAX_FACTOR;
   const clampedRadius = Math.min(Math.max(radius, 0), maxRadius);
   if (!Number.isFinite(clampedRadius) || clampedRadius <= GEOMETRY_EPSILON) {
     return points;
@@ -191,10 +193,41 @@ export const buildTrianglePath = (
 };
 
 export const maxTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
-  Math.max(polygonMaxCornerRadius(trianglePoints(shape)), 0);
+  Math.max(polygonMaxCornerRadius(trianglePoints(shape)) * POLYGON_CORNER_RADIUS_MAX_FACTOR, 0);
+
+export const maxRectangleCornerRadius = (
+  shape: Extract<CanvasShape, { readonly height: number; readonly width: number }>
+): number => Math.max(Math.min(shape.width, shape.height) * RECTANGLE_CORNER_RADIUS_MAX_FACTOR, 0);
+
+export const effectiveRectangleCornerRadius = (
+  shape: Extract<CanvasShape, { readonly cornerRadius: number; readonly height: number; readonly width: number }>
+): number => Math.min(Math.max(shape.cornerRadius, 0), maxRectangleCornerRadius(shape));
+
+export const effectiveTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
+  Math.min(Math.max(shape.cornerRadius, 0), maxTriangleCornerRadius(shape));
+
+export const triangleCornerAttachmentPoints = (shape: TriangleCanvasShape): readonly [Point, Point, Point] => {
+  const corners = trianglePoints(shape);
+  const radius = effectiveTriangleCornerRadius(shape);
+  if (radius <= GEOMETRY_EPSILON) {
+    return corners;
+  }
+
+  const attachmentPoint = (corner: Point, index: number): Point => {
+    const previous = corners[(index - 1 + corners.length) % corners.length];
+    const next = corners[(index + 1) % corners.length];
+    const geometry = roundedCornerGeometry(corner, previous, next, radius);
+    return {
+      x: geometry.start.x * 0.25 + corner.x * 0.5 + geometry.end.x * 0.25,
+      y: geometry.start.y * 0.25 + corner.y * 0.5 + geometry.end.y * 0.25
+    };
+  };
+
+  return [attachmentPoint(corners[0], 0), attachmentPoint(corners[1], 1), attachmentPoint(corners[2], 2)];
+};
 
 const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
-  const points = roundedPolygonOutlinePoints(trianglePoints(shape), shape.cornerRadius);
+  const points = roundedPolygonOutlinePoints(trianglePoints(shape), effectiveTriangleCornerRadius(shape));
   const rotation = shape.rotation ?? 0;
   const rotatedPoints = rotation
     ? points.map((point) => rotatePointAround(point, shapeCenter(shape), rotation))
@@ -471,7 +504,7 @@ export const cornerRadiusFromPointer = (
     return clamp(projectedDistance, 0, maxTriangleCornerRadius(shape));
   }
 
-  const maxRadius = Math.min(shape.width, shape.height) / 2;
+  const maxRadius = maxRectangleCornerRadius(shape);
   if (maxRadius <= 0) {
     return 0;
   }

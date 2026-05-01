@@ -10,7 +10,11 @@ import {
 import type { ArrowEndpoint, SvgTextAnchor, ExportSvgDocument } from '../components/editor-page/editor-page.types';
 import type { CanvasShape, LineShape, Point, TextShape, ThemeMode } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
-import { buildTrianglePath as buildTrianglePathUtil } from './editor-geometry.utils';
+import {
+  buildTrianglePath as buildTrianglePathUtil,
+  effectiveRectangleCornerRadius,
+  effectiveTriangleCornerRadius
+} from './editor-geometry.utils';
 
 const XML_NAMESPACE = 'http://www.w3.org/2000/svg';
 const XML_LINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
@@ -125,13 +129,13 @@ const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helper
         projectX(shape.x + shape.width / 2),
         projectY(shape.y + shape.height / 2)
       );
-      return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${shape.cornerRadius * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
+      return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${effectiveRectangleCornerRadius(shape) * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
     }
     case 'triangle': {
       const path = buildTrianglePathUtil(
         shape,
         (point) => ({ x: projectX(point.x), y: projectY(point.y) }),
-        shape.cornerRadius * scale
+        effectiveTriangleCornerRadius(shape) * scale
       );
       const rotate = rotationTransform(
         shape.rotation,

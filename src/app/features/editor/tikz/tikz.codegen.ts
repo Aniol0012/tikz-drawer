@@ -15,6 +15,7 @@ import {
   DEFAULT_ARROW_TIP_WIDTH,
   DEFAULT_TEXT_FONT_SIZE
 } from '../constants/editor.constants';
+import { effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from '../utils/editor-geometry.utils';
 
 export interface TikzExportBundle {
   readonly imports: string;
@@ -295,9 +296,10 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
 
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
+  const cornerRadius = effectiveRectangleCornerRadius(shape);
 
-  if (shape.cornerRadius > 0) {
-    entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
+  if (cornerRadius > 0) {
+    entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
   if ((shape.rotation ?? 0) !== 0) {
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
@@ -308,8 +310,9 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
 
 const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  if (shape.cornerRadius > 0) {
-    entries.push(`rounded corners=${formatNumber(shape.cornerRadius)}cm`);
+  const cornerRadius = effectiveTriangleCornerRadius(shape);
+  if (cornerRadius > 0) {
+    entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
   if ((shape.rotation ?? 0) !== 0) {
     entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);

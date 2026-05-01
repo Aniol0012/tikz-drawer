@@ -419,7 +419,7 @@
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
                     [attr.fill]="shape.fill"
                     [attr.fill-opacity]="shape.fillOpacity"
-                    [attr.rx]="shape.cornerRadius * preferences().scale"></rect>
+                    [attr.rx]="rectangleCornerRadiusSvg(shape)"></rect>
                 }
                 @case ('triangle') {
                   <path
@@ -592,7 +592,7 @@
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"
-                      [attr.rx]="previewShape.cornerRadius * preferences().scale"></rect>
+                      [attr.rx]="rectangleCornerRadiusSvg(previewShape)"></rect>
                   }
                   @case ('triangle') {
                     <path

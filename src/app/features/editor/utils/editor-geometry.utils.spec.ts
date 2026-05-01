@@ -8,7 +8,8 @@ import {
   maxTriangleCornerRadius,
   normalizeRotationDegrees,
   rotateShapeAround,
-  shapeBounds
+  shapeBounds,
+  triangleCornerAttachmentPoints
 } from './editor-geometry.utils';
 
 const lineShape: LineShape = {
@@ -98,10 +99,16 @@ describe('editor-geometry utils', () => {
   it('builds rounded triangle paths when corner radius is provided', () => {
     const roundedPath = buildTrianglePath(triangleShape, (point) => point, triangleShape.cornerRadius);
     const sharpPath = buildTrianglePath(triangleShape, (point) => point, 0);
+    const [apexSnap, leftSnap, rightSnap] = triangleCornerAttachmentPoints(triangleShape);
 
     expect(roundedPath.includes('Q')).toBe(true);
     expect(sharpPath.includes('Q')).toBe(false);
     expect(maxTriangleCornerRadius(triangleShape)).toBeGreaterThan(0);
+    expect(apexSnap.y).toBeLessThan(2.5);
+    expect(leftSnap.x).toBeGreaterThan(-3);
+    expect(leftSnap.y).toBeGreaterThan(-1.5);
+    expect(rightSnap.x).toBeLessThan(3);
+    expect(rightSnap.y).toBeGreaterThan(-1.5);
   });
 
   it('uses the rounded triangle outline for shape bounds', () => {
@@ -205,7 +212,7 @@ describe('editor-geometry utils', () => {
     const clampedRadius = cornerRadiusFromPointer(rectangleShape, 'corner-radius-nw', { x: 99, y: -99 });
 
     expect(radius).toBeCloseTo(2);
-    expect(clampedRadius).toBe(3);
+    expect(clampedRadius).toBe(2.52);
   });
 
   it('keeps rotated rectangle corner radius pointer mapping stable', () => {
