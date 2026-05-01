@@ -72,7 +72,7 @@ const clampInteger = (value: number, minimumValue: number, maximumValue: number)
 };
 
 export const normalizeGraphDimensions = (dimensions: Partial<GraphDimensions>): GraphDimensions => {
-  const kind = (dimensions.kind ?? DEFAULT_GRAPH_DIMENSIONS.kind) as GraphPresetKind;
+  const kind = dimensions.kind ?? DEFAULT_GRAPH_DIMENSIONS.kind;
   const minimumVertices = kind === 'wheel' || kind === 'prism' ? GRAPH_WHEEL_PRISM_MIN_VERTICES : GRAPH_MIN_VERTICES;
   const maximumColumns = kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_COLUMNS : GRAPH_MAX_GRID_AXIS;
   const maximumLevels = kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : GRAPH_MAX_TREE_LEVELS;
@@ -282,16 +282,16 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
         return null;
       }
       const edgeEndpoints = graphEdgeEndpoints(sourceShape, targetShape);
-      return buildLine(
-        graphEdgeName(edge, layoutNodeById),
-        edgeEndpoints.from,
-        edgeEndpoints.to,
-        normalized.directed,
-        sourceShape.id,
-        targetShape.id,
-        edgeEndpoints.fromAnchor,
-        edgeEndpoints.toAnchor
-      );
+      return buildLine({
+        name: graphEdgeName(edge, layoutNodeById),
+        from: edgeEndpoints.from,
+        to: edgeEndpoints.to,
+        directed: normalized.directed,
+        sourceShapeId: sourceShape.id,
+        targetShapeId: targetShape.id,
+        sourceAnchor: edgeEndpoints.fromAnchor,
+        targetAnchor: edgeEndpoints.toAnchor
+      });
     })
     .filter((shape): shape is LineShape => !!shape);
   const labels = normalized.showLabels
@@ -400,16 +400,27 @@ const pointOnCircle = (circle: CircleShape, anchor: Point): Point => ({
   y: circle.cy + anchor.y * circle.r
 });
 
-const buildLine = (
-  name: string,
-  from: Point,
-  to: Point,
-  directed: boolean,
-  sourceShapeId: string,
-  targetShapeId: string,
-  sourceAnchor: Point,
-  targetAnchor: Point
-): LineShape => ({
+interface BuildLineOptions {
+  readonly name: string;
+  readonly from: Point;
+  readonly to: Point;
+  readonly directed: boolean;
+  readonly sourceShapeId: string;
+  readonly targetShapeId: string;
+  readonly sourceAnchor: Point;
+  readonly targetAnchor: Point;
+}
+
+const buildLine = ({
+  name,
+  from,
+  to,
+  directed,
+  sourceShapeId,
+  targetShapeId,
+  sourceAnchor,
+  targetAnchor
+}: BuildLineOptions): LineShape => ({
   id: crypto.randomUUID(),
   name,
   kind: 'line',

@@ -26,9 +26,20 @@ export const buildLatexValidationDocument = (
     bundle: sceneToTikzBundle(fixture.scene)
   }));
   const imports = uniqueImports(bundles.flatMap(({ bundle }) => bundle.imports.split('\n').filter(Boolean)));
-  const body = bundles
-    .map(({ id, title, bundle }) => [`% Fixture: ${id} (${title})`, '\\par\\noindent', bundle.code].join('\n'))
-    .join('\n\n\\bigskip\n\n');
+  const body = bundles.map(({ id, title, bundle }) =>
+    [`% Fixture: ${id} (${title})`, String.raw`\par\noindent`, bundle.code].join('\n')
+  ).join(String.raw`
 
-  return ['\\documentclass[tikz]{standalone}', ...imports, '\\begin{document}', body, '\\end{document}', ''].join('\n');
+\bigskip
+
+`);
+
+  return [
+    String.raw`\documentclass[tikz]{standalone}`,
+    ...imports,
+    String.raw`\begin{document}`,
+    body,
+    String.raw`\end{document}`,
+    ''
+  ].join('\n');
 };

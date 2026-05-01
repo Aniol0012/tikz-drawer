@@ -160,6 +160,7 @@ import {
   encodeSharePayload,
   highlightLatex,
   type SelectionBounds,
+  type TransformCanvasShapeOptions,
   transformCanvasShape,
   translateShapeBy
 } from '../../utils/editor-page.utils';
@@ -512,55 +513,55 @@ export class EditorPageComponent {
     {
       label: 'Greek',
       symbols: [
-        { label: 'α', insert: '\\alpha', title: 'alpha' },
-        { label: 'β', insert: '\\beta', title: 'beta' },
-        { label: 'γ', insert: '\\gamma', title: 'gamma' },
-        { label: 'δ', insert: '\\delta', title: 'delta' },
-        { label: 'ε', insert: '\\epsilon', title: 'epsilon' },
-        { label: 'θ', insert: '\\theta', title: 'theta' },
-        { label: 'λ', insert: '\\lambda', title: 'lambda' },
-        { label: 'μ', insert: '\\mu', title: 'mu' },
-        { label: 'π', insert: '\\pi', title: 'pi' },
-        { label: 'σ', insert: '\\sigma', title: 'sigma' },
-        { label: 'φ', insert: '\\phi', title: 'phi' },
-        { label: 'ω', insert: '\\omega', title: 'omega' }
+        { label: 'α', insert: String.raw`\alpha`, title: 'alpha' },
+        { label: 'β', insert: String.raw`\beta`, title: 'beta' },
+        { label: 'γ', insert: String.raw`\gamma`, title: 'gamma' },
+        { label: 'δ', insert: String.raw`\delta`, title: 'delta' },
+        { label: 'ε', insert: String.raw`\epsilon`, title: 'epsilon' },
+        { label: 'θ', insert: String.raw`\theta`, title: 'theta' },
+        { label: 'λ', insert: String.raw`\lambda`, title: 'lambda' },
+        { label: 'μ', insert: String.raw`\mu`, title: 'mu' },
+        { label: 'π', insert: String.raw`\pi`, title: 'pi' },
+        { label: 'σ', insert: String.raw`\sigma`, title: 'sigma' },
+        { label: 'φ', insert: String.raw`\phi`, title: 'phi' },
+        { label: 'ω', insert: String.raw`\omega`, title: 'omega' }
       ]
     },
     {
       label: 'Arrows',
       symbols: [
-        { label: '←', insert: '\\leftarrow', title: 'left arrow' },
-        { label: '→', insert: '\\rightarrow', title: 'right arrow' },
-        { label: '↑', insert: '\\uparrow', title: 'up arrow' },
-        { label: '↓', insert: '\\downarrow', title: 'down arrow' },
-        { label: '↔', insert: '\\leftrightarrow', title: 'left-right arrow' },
-        { label: '⇒', insert: '\\Rightarrow', title: 'double right arrow' },
-        { label: '⇐', insert: '\\Leftarrow', title: 'double left arrow' },
-        { label: '⇔', insert: '\\Leftrightarrow', title: 'double left-right arrow' }
+        { label: '←', insert: String.raw`\leftarrow`, title: 'left arrow' },
+        { label: '→', insert: String.raw`\rightarrow`, title: 'right arrow' },
+        { label: '↑', insert: String.raw`\uparrow`, title: 'up arrow' },
+        { label: '↓', insert: String.raw`\downarrow`, title: 'down arrow' },
+        { label: '↔', insert: String.raw`\leftrightarrow`, title: 'left-right arrow' },
+        { label: '⇒', insert: String.raw`\Rightarrow`, title: 'double right arrow' },
+        { label: '⇐', insert: String.raw`\Leftarrow`, title: 'double left arrow' },
+        { label: '⇔', insert: String.raw`\Leftrightarrow`, title: 'double left-right arrow' }
       ]
     },
     {
       label: 'Math',
       symbols: [
-        { label: '×', insert: '\\times', title: 'times' },
-        { label: '÷', insert: '\\div', title: 'divide' },
-        { label: '±', insert: '\\pm', title: 'plus minus' },
-        { label: '∞', insert: '\\infty', title: 'infinity' },
-        { label: '∑', insert: '\\sum', title: 'sum' },
-        { label: '∏', insert: '\\prod', title: 'product' },
-        { label: '∫', insert: '\\int', title: 'integral' },
-        { label: '∂', insert: '\\partial', title: 'partial' }
+        { label: '×', insert: String.raw`\times`, title: 'times' },
+        { label: '÷', insert: String.raw`\div`, title: 'divide' },
+        { label: '±', insert: String.raw`\pm`, title: 'plus minus' },
+        { label: '∞', insert: String.raw`\infty`, title: 'infinity' },
+        { label: '∑', insert: String.raw`\sum`, title: 'sum' },
+        { label: '∏', insert: String.raw`\prod`, title: 'product' },
+        { label: '∫', insert: String.raw`\int`, title: 'integral' },
+        { label: '∂', insert: String.raw`\partial`, title: 'partial' }
       ]
     },
     {
       label: 'Logic',
       symbols: [
-        { label: '∀', insert: '\\forall', title: 'for all' },
-        { label: '∃', insert: '\\exists', title: 'exists' },
-        { label: '∈', insert: '\\in', title: 'belongs to' },
-        { label: '∉', insert: '\\notin', title: 'not belongs to' },
-        { label: '∪', insert: '\\cup', title: 'union' },
-        { label: '∩', insert: '\\cap', title: 'intersection' }
+        { label: '∀', insert: String.raw`\forall`, title: 'for all' },
+        { label: '∃', insert: String.raw`\exists`, title: 'exists' },
+        { label: '∈', insert: String.raw`\in`, title: 'belongs to' },
+        { label: '∉', insert: String.raw`\notin`, title: 'not belongs to' },
+        { label: '∪', insert: String.raw`\cup`, title: 'union' },
+        { label: '∩', insert: String.raw`\cap`, title: 'intersection' }
       ]
     }
   ];
@@ -995,8 +996,7 @@ export class EditorPageComponent {
 
     const selectedShape = this.selectedShape();
     if (
-      !interactionState ||
-      interactionState.kind !== 'resize' ||
+      interactionState?.kind !== 'resize' ||
       selectedShape?.kind !== 'line' ||
       (interactionState.handle !== 'from' && interactionState.handle !== 'to') ||
       this.altPressed()
@@ -1032,7 +1032,7 @@ export class EditorPageComponent {
   });
   readonly marqueeBounds = computed(() => {
     const interactionState = this.interactionState();
-    if (!interactionState || interactionState.kind !== 'marquee') {
+    if (interactionState?.kind !== 'marquee') {
       return null;
     }
     const left = Math.min(interactionState.startWorldPoint.x, interactionState.currentWorldPoint.x);
@@ -1048,7 +1048,7 @@ export class EditorPageComponent {
   });
   readonly insertionPreviewShapes = computed<readonly CanvasShape[]>(() => {
     const interactionState = this.interactionState();
-    if (!interactionState || interactionState.kind !== 'insert') {
+    if (interactionState?.kind !== 'insert') {
       if (interactionState?.kind === 'freehand') {
         const line = this.buildFreehandLine(interactionState.points, 'preview-freehand');
         return line ? [line] : [];
@@ -2339,6 +2339,29 @@ export class EditorPageComponent {
     this.setInspectorTab('properties');
   }
 
+  onShapeKeydown(event: Event, shape: CanvasShape): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.focusCanvasViewport();
+
+    if (event instanceof KeyboardEvent && isSelectionModifierPressed(event)) {
+      this.toggleShapeSetSelection(shape);
+      return;
+    }
+
+    this.selectShapeSet(shape);
+    this.setInspectorTab('properties');
+  }
+
+  onCanvasViewportKeydown(event: KeyboardEvent): void {
+    event.stopPropagation();
+    this.handleWindowKeydown(event);
+  }
+
+  onCanvasSurfaceKeydown(event: KeyboardEvent): void {
+    this.onCanvasViewportKeydown(event);
+  }
+
   private consumeIgnoredShapeClick(shapeId: string): boolean {
     if (this.ignoreNextShapeClickId() !== shapeId) {
       return false;
@@ -2514,7 +2537,7 @@ export class EditorPageComponent {
           const duplicate = structuredClone(shape);
           return {
             ...translateShapeBy(duplicate, offset, -offset),
-            id: idMap.get(shape.id) as string,
+            id: idMap.get(shape.id) ?? shape.id,
             name: `${duplicate.name} copy`
           } as CanvasShape;
         }),
@@ -2660,7 +2683,7 @@ export class EditorPageComponent {
 
     const inspectorInput = this.inspectorTextInput()?.nativeElement;
     const selectedShape = this.selectedShape();
-    if (!inspectorInput || !selectedShape || selectedShape.kind !== 'text') {
+    if (!inspectorInput || selectedShape?.kind !== 'text') {
       return;
     }
 
@@ -2795,17 +2818,19 @@ export class EditorPageComponent {
       }
 
       const aspectRatio = shape.aspectRatio || (shape.height !== 0 ? shape.width / shape.height : 1);
-      return key === 'width'
-        ? ({
-            ...shape,
-            width: value,
-            height: Math.max(value / Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
-          } as CanvasShape)
-        : ({
-            ...shape,
-            height: value,
-            width: Math.max(value * Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
-          } as CanvasShape);
+      if (key === 'width') {
+        return {
+          ...shape,
+          width: value,
+          height: Math.max(value / Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
+        } as CanvasShape;
+      }
+
+      return {
+        ...shape,
+        height: value,
+        width: Math.max(value * Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
+      } as CanvasShape;
     });
   }
 
@@ -2850,12 +2875,12 @@ export class EditorPageComponent {
       if (shape.kind !== 'text') {
         return shape;
       }
-      const text =
-        mode === 'uppercase'
-          ? shape.text.toUpperCase()
-          : mode === 'lowercase'
-            ? shape.text.toLowerCase()
-            : shape.text.replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+      let text = shape.text.replaceAll(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+      if (mode === 'uppercase') {
+        text = shape.text.toUpperCase();
+      } else if (mode === 'lowercase') {
+        text = shape.text.toLowerCase();
+      }
       return { ...shape, text } as CanvasShape;
     });
   }
@@ -3068,7 +3093,7 @@ export class EditorPageComponent {
 
   addLineAnchor(): void {
     const shape = this.selectedShape();
-    if (!shape || shape.kind !== 'line') {
+    if (shape?.kind !== 'line') {
       return;
     }
 
@@ -3577,7 +3602,7 @@ export class EditorPageComponent {
       return;
     }
     const interactionState = this.interactionState();
-    if (!interactionState || interactionState.pointerId !== event.pointerId) {
+    if (interactionState?.pointerId !== event.pointerId) {
       return;
     }
     if (event.altKey !== this.altPressed()) {
@@ -4157,7 +4182,7 @@ export class EditorPageComponent {
       return;
     }
     const interactionState = this.interactionState();
-    if (!interactionState || interactionState.pointerId !== event.pointerId) {
+    if (interactionState?.pointerId !== event.pointerId) {
       return;
     }
 
@@ -4920,7 +4945,9 @@ export class EditorPageComponent {
     }
 
     const from = shape.arrowStart ? this.insetLineSelectionEndpoint(shape, shape.from, points[1]) : shape.from;
-    const to = shape.arrowEnd ? this.insetLineSelectionEndpoint(shape, shape.to, points[points.length - 2]) : shape.to;
+    const to = shape.arrowEnd
+      ? this.insetLineSelectionEndpoint(shape, shape.to, points.at(-2) ?? shape.from)
+      : shape.to;
 
     if (from === shape.from && to === shape.to) {
       return shape;
@@ -5810,12 +5837,12 @@ export class EditorPageComponent {
   private normalizeWheelDelta(event: WheelEvent): { readonly x: number; readonly y: number } {
     const lineHeight = EDITOR_WHEEL_LINE_HEIGHT_PX;
     const pageHeight = this.canvasViewport().nativeElement.clientHeight || EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK;
-    const multiplier =
-      event.deltaMode === WheelEvent.DOM_DELTA_LINE
-        ? lineHeight
-        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-          ? pageHeight
-          : 1;
+    let multiplier = 1;
+    if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      multiplier = lineHeight;
+    } else if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      multiplier = pageHeight;
+    }
     return {
       x: event.deltaX * multiplier,
       y: event.deltaY * multiplier
@@ -6073,29 +6100,29 @@ export class EditorPageComponent {
     const slug = this.scene()
       .name.toLowerCase()
       .trim()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replaceAll(/[^a-z0-9]+/g, '-')
+      .replaceAll(/^-+|-+$/g, '');
     return `fig:${slug || 'tikz-figure'}`;
   }
 
   private latexAlignmentCommand(alignment: LatexAlignment): string {
     switch (alignment) {
       case 'center':
-        return '\\centering';
+        return String.raw`\centering`;
       case 'left':
-        return '\\raggedright';
+        return String.raw`\raggedright`;
       case 'right':
-        return '\\raggedleft';
+        return String.raw`\raggedleft`;
     }
   }
 
   private latexWidthExpression(percent: number): string {
     if (percent >= 100) {
-      return '\\textwidth';
+      return String.raw`\textwidth`;
     }
 
     const normalized = Number.parseFloat((percent / 100).toFixed(2));
-    return `${normalized}\\textwidth`;
+    return String.raw`${normalized}\textwidth`;
   }
 
   private canPreviewInsert(toolId: ToolId): boolean {
@@ -6193,16 +6220,15 @@ export class EditorPageComponent {
         this.remapShapeSetAttachments(
           templateShapes.map((shape) =>
             this.applyPresetStyle(
-              this.transformShape(
-                shape,
-                startPoint.x - centerX,
-                startPoint.y - centerY,
-                1,
-                1,
-                templateBounds.left,
-                templateBounds.bottom,
-                idMap.get(shape.id) as string
-              ),
+              this.transformShape(shape, {
+                deltaX: startPoint.x - centerX,
+                deltaY: startPoint.y - centerY,
+                scaleX: 1,
+                scaleY: 1,
+                originX: templateBounds.left,
+                originY: templateBounds.bottom,
+                id: idMap.get(shape.id) ?? shape.id
+              }),
               keepOwnStyle
             )
           ),
@@ -6228,16 +6254,15 @@ export class EditorPageComponent {
       this.remapShapeSetAttachments(
         templateShapes.map((shape) =>
           this.applyPresetStyle(
-            this.transformShape(
-              shape,
-              targetLeft - templateBounds.left * scaleX,
-              targetBottom - templateBounds.bottom * scaleY,
+            this.transformShape(shape, {
+              deltaX: targetLeft - templateBounds.left * scaleX,
+              deltaY: targetBottom - templateBounds.bottom * scaleY,
               scaleX,
               scaleY,
-              0,
-              0,
-              idMap.get(shape.id) as string
-            ),
+              originX: 0,
+              originY: 0,
+              id: idMap.get(shape.id) ?? shape.id
+            }),
             keepOwnStyle
           )
         ),
@@ -6310,7 +6335,7 @@ export class EditorPageComponent {
     }
 
     const [shape] = structuredClone(preset.shapes);
-    if (!shape || shape.kind !== 'line') {
+    if (shape?.kind !== 'line') {
       return null;
     }
 
@@ -6364,16 +6389,15 @@ export class EditorPageComponent {
           this.remapShapeSetAttachments(
             templateShapes.map((shape) =>
               this.applyPresetStyle(
-                this.transformShape(
-                  shape,
-                  point.x - centerX,
-                  point.y - centerY,
-                  1,
-                  1,
-                  0,
-                  0,
-                  idMap.get(shape.id) as string
-                ),
+                this.transformShape(shape, {
+                  deltaX: point.x - centerX,
+                  deltaY: point.y - centerY,
+                  scaleX: 1,
+                  scaleY: 1,
+                  originX: 0,
+                  originY: 0,
+                  id: idMap.get(shape.id) ?? shape.id
+                }),
                 keepOwnStyle
               )
             ),
@@ -6463,17 +6487,8 @@ export class EditorPageComponent {
     };
   }
 
-  private transformShape(
-    shape: CanvasShape,
-    deltaX: number,
-    deltaY: number,
-    scaleX: number,
-    scaleY: number,
-    originX: number,
-    originY: number,
-    id: string
-  ): CanvasShape {
-    return transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
+  private transformShape(shape: CanvasShape, options: TransformCanvasShapeOptions): CanvasShape {
+    return transformCanvasShape(shape, options);
   }
 
   private shapeIdMap(
@@ -6489,7 +6504,7 @@ export class EditorPageComponent {
   ): readonly CanvasShape[] {
     const idMap = this.shapeIdMap(shapes, nextId);
     return this.remapShapeSetAttachments(
-      shapes.map((shape) => ({ ...shape, id: idMap.get(shape.id) as string }) as CanvasShape),
+      shapes.map((shape) => ({ ...shape, id: idMap.get(shape.id) ?? shape.id }) as CanvasShape),
       idMap
     );
   }
@@ -6654,11 +6669,11 @@ export class EditorPageComponent {
     if (!firstShape) {
       return 'library';
     }
-    return firstShape.kind === 'line' && firstShape.arrowEnd
-      ? 'arrow'
-      : firstShape.kind === 'line'
-        ? 'segment'
-        : firstShape.kind;
+    if (firstShape.kind !== 'line') {
+      return firstShape.kind;
+    }
+
+    return firstShape.arrowEnd ? 'arrow' : 'segment';
   }
 
   private restoreSavedTemplates(): void {
@@ -6739,7 +6754,7 @@ export class EditorPageComponent {
     const caption = config.caption.trim() || this.suggestedCaption();
     const label = config.label.trim() || this.suggestedLabel();
     const useAdjustbox = config.scaleToWidth || config.includeFrame;
-    const imports = [baseBundle.imports, ...(useAdjustbox ? ['\\usepackage{adjustbox}'] : [])];
+    const imports = [baseBundle.imports, ...(useAdjustbox ? [String.raw`\usepackage{adjustbox}`] : [])];
     const adjustboxOptions = [
       ...(config.includeFrame ? ['frame'] : []),
       ...(config.scaleToWidth ? [`max width=${this.latexWidthExpression(config.maxWidthPercent)}`] : []),
@@ -6747,24 +6762,24 @@ export class EditorPageComponent {
     ];
 
     if (config.wrapInFigure && config.figurePlacement.includes('H')) {
-      imports.push('\\usepackage{float}');
+      imports.push(String.raw`\usepackage{float}`);
     }
 
     const contentLines = [
       this.latexAlignmentCommand(config.alignment),
       config.fontSize === 'normalsize' ? '' : `\\${config.fontSize}`,
       ...(useAdjustbox
-        ? [`\\begin{adjustbox}{${adjustboxOptions.join(',')}}`, baseBundle.code, '\\end{adjustbox}']
+        ? [String.raw`\begin{adjustbox}{${adjustboxOptions.join(',')}}`, baseBundle.code, String.raw`\end{adjustbox}`]
         : [baseBundle.code])
     ].filter(Boolean);
 
     const code = config.wrapInFigure
       ? [
-          `\\begin{figure}[${config.figurePlacement || 'H'}]`,
+          String.raw`\begin{figure}[${config.figurePlacement || 'H'}]`,
           ...contentLines.map((line) => `  ${line}`),
-          ...(config.includeCaption ? [`  \\caption{${caption}}`] : []),
-          ...(config.includeLabel ? [`  \\label{${label}}`] : []),
-          '\\end{figure}'
+          ...(config.includeCaption ? [String.raw`  \caption{${caption}}`] : []),
+          ...(config.includeLabel ? [String.raw`  \label{${label}}`] : []),
+          String.raw`\end{figure}`
         ].join('\n')
       : ['{', ...contentLines, '}'].join('\n');
 
@@ -6782,11 +6797,11 @@ export class EditorPageComponent {
     const border = this.formatLatexDecimal(this.latexExportConfig().standaloneBorderMm);
     const documentClassOptions = ['tikz', ...(Number.parseFloat(border) > 0 ? [`border=${border}mm`] : [])].join(',');
     return [
-      `\\documentclass[${documentClassOptions}]{standalone}`,
+      String.raw`\documentclass[${documentClassOptions}]{standalone}`,
       snippet.imports,
-      '\\begin{document}',
+      String.raw`\begin{document}`,
       snippet.code,
-      '\\end{document}'
+      String.raw`\end{document}`
     ].join('\n');
   }
 
@@ -7188,7 +7203,7 @@ export class EditorPageComponent {
     const { width, height } = this.imageInsertionSize(aspectRatio);
     const imageShape = this.applyInsertionDefaults({
       id: crypto.randomUUID(),
-      name: file.name.replace(/\.[^/.]+$/, '') || 'Image',
+      name: file.name.replaceAll(/\.[^/.]+$/g, '') || 'Image',
       kind: 'image',
       stroke: this.preferences().defaultStroke,
       strokeOpacity: 1,
@@ -7461,7 +7476,7 @@ export class EditorPageComponent {
   }
 
   private exportFileBaseName(): string {
-    return (this.scene().name || 'figure').trim().replace(/[\\/:*?"<>|]+/g, '-');
+    return (this.scene().name || 'figure').trim().replaceAll(/[\\/:*?"<>|]+/g, '-');
   }
 
   private isRepeatedTextTap(shapeId: string): boolean {

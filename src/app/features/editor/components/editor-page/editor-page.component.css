@@ -1171,7 +1171,7 @@ kbd {
 
 .inline-text-editor::selection {
   background: color-mix(in srgb, var(--accent) 82%, white);
-  color: white;
+  color: #0f172a;
 }
 
 .shape-layer.is-selected line,
@@ -2398,6 +2398,7 @@ kbd {
 
 .export-btn {
   min-height: 38px;
+  min-width: 0;
   padding: 0 14px;
   border-radius: 10px;
   justify-content: center;
@@ -3737,10 +3738,6 @@ button:disabled {
     rx: 4px;
     ry: 4px;
   }
-}
-
-.export-btn {
-  min-width: 0;
 }
 
 @media (max-width: 760px) {

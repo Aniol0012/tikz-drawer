@@ -103,7 +103,15 @@ describe('editor-page utils', () => {
   });
 
   it('transforms shapes while preserving the requested id', () => {
-    const transformed = transformCanvasShape(groupedShapes[0], 1, -1, 2, 2, 0, 0, 'scaled-1');
+    const transformed = transformCanvasShape(groupedShapes[0], {
+      deltaX: 1,
+      deltaY: -1,
+      scaleX: 2,
+      scaleY: 2,
+      originX: 0,
+      originY: 0,
+      id: 'scaled-1'
+    });
 
     expect(transformed.kind).toBe('rectangle');
     if (transformed.kind !== 'rectangle') {
@@ -148,8 +156,8 @@ describe('editor-page utils', () => {
     expect(formatValue(3)).toBe('3');
     expect(formatValue(3.456)).toBe('3.46');
 
-    const highlighted = highlightLatex('\\draw[red] (1, 2); % <note>');
-    expect(highlighted).toContain('<span class="tok-command">\\draw</span>');
+    const highlighted = highlightLatex(String.raw`\draw[red] (1, 2); % <note>`);
+    expect(highlighted).toContain(String.raw`<span class="tok-command">\draw</span>`);
     expect(highlighted).toContain('<span class="tok-number">1</span>');
     expect(highlighted).toContain('<span class="tok-comment">% &lt;note&gt;</span>');
   });

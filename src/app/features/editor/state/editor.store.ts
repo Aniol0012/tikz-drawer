@@ -282,6 +282,16 @@ const translatePositionedShape = (
   y: shape.y + deltaY
 });
 
+const translateCenteredShape = (
+  shape: Extract<CanvasShape, { cx: number; cy: number }>,
+  deltaX: number,
+  deltaY: number
+): CanvasShape => ({
+  ...shape,
+  cx: shape.cx + deltaX,
+  cy: shape.cy + deltaY
+});
+
 const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
   switch (shape.kind) {
     case 'line':
@@ -304,17 +314,8 @@ const translateShape = (shape: CanvasShape, deltaX: number, deltaY: number): Can
     case 'triangle':
       return translatePositionedShape(shape, deltaX, deltaY);
     case 'circle':
-      return {
-        ...shape,
-        cx: shape.cx + deltaX,
-        cy: shape.cy + deltaY
-      };
     case 'ellipse':
-      return {
-        ...shape,
-        cx: shape.cx + deltaX,
-        cy: shape.cy + deltaY
-      };
+      return translateCenteredShape(shape, deltaX, deltaY);
     case 'text':
     case 'image':
       return translatePositionedShape(shape, deltaX, deltaY);
@@ -594,7 +595,7 @@ export class EditorStore {
           translateShape(
             {
               ...structuredClone(shape),
-              id: idMap.get(shape.id) as string,
+              id: idMap.get(shape.id) ?? shape.id,
               name: `${shape.name} copy`
             } as CanvasShape,
             0.6,
@@ -732,13 +733,13 @@ export class EditorStore {
 
     const mergeIds = new Set(
       this.scene()
-        .shapes.filter((shape) => selectedShapeIdSet.has(shape.id) && shape.mergeId)
-        .map((shape) => shape.mergeId as string)
+        .shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? shape.mergeId : undefined))
+        .filter((mergeId): mergeId is string => mergeId !== undefined)
     );
     const tableIds = new Set(
       this.scene()
-        .shapes.filter((shape) => selectedShapeIdSet.has(shape.id) && shape.table)
-        .map((shape) => shape.table?.id as string)
+        .shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? shape.table?.id : undefined))
+        .filter((tableId): tableId is string => tableId !== undefined)
     );
 
     if (mergeIds.size === 0 && tableIds.size === 0) {

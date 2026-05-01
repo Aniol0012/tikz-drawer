@@ -131,7 +131,7 @@ export const remapStructuralShapeIds = (shapes: readonly CanvasShape[]): readonl
       ? (mergeIdMap.get(shape.mergeId) ??
         (() => {
           const value = crypto.randomUUID();
-          mergeIdMap.set(shape.mergeId as string, value);
+          mergeIdMap.set(shape.mergeId, value);
           return value;
         })())
       : undefined;
@@ -151,7 +151,7 @@ export const remapStructuralShapeIds = (shapes: readonly CanvasShape[]): readonl
       table: shape.table
         ? {
             ...shape.table,
-            id: nextTableId as string
+            id: nextTableId ?? shape.table.id
           }
         : undefined
     } as CanvasShape;

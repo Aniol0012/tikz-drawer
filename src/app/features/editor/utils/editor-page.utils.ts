@@ -21,89 +21,124 @@ export interface SelectionBounds {
 
 export type SelectionResizeHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
+export interface TransformCanvasShapeOptions {
+  readonly deltaX: number;
+  readonly deltaY: number;
+  readonly scaleX: number;
+  readonly scaleY: number;
+  readonly originX: number;
+  readonly originY: number;
+  readonly id?: string;
+}
+
 const transformRoundedBoxShape = (
   shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
-  deltaX: number,
-  deltaY: number,
-  scaleX: number,
-  scaleY: number,
-  originX: number,
-  originY: number,
-  id: string
+  options: Required<TransformCanvasShapeOptions>
 ): CanvasShape => ({
   ...shape,
-  id,
-  x: (shape.x - originX) * scaleX + originX + deltaX,
-  y: (shape.y - originY) * scaleY + originY + deltaY,
-  width: Math.max(shape.width * scaleX, MIN_SHAPE_DIMENSION),
-  height: Math.max(shape.height * scaleY, MIN_SHAPE_DIMENSION),
-  cornerRadius: Math.max(shape.cornerRadius * Math.min(scaleX, scaleY), 0)
+  id: options.id,
+  x: (shape.x - options.originX) * options.scaleX + options.originX + options.deltaX,
+  y: (shape.y - options.originY) * options.scaleY + options.originY + options.deltaY,
+  width: Math.max(shape.width * options.scaleX, MIN_SHAPE_DIMENSION),
+  height: Math.max(shape.height * options.scaleY, MIN_SHAPE_DIMENSION),
+  cornerRadius: Math.max(shape.cornerRadius * Math.min(options.scaleX, options.scaleY), 0)
 });
 
-export const transformCanvasShape = (
-  shape: CanvasShape,
-  deltaX: number,
-  deltaY: number,
-  scaleX: number,
-  scaleY: number,
-  originX: number,
-  originY: number,
-  id: string = shape.id
-): CanvasShape => {
+export const transformCanvasShape = (shape: CanvasShape, options: TransformCanvasShapeOptions): CanvasShape => {
+  const normalizedOptions: Required<TransformCanvasShapeOptions> = {
+    ...options,
+    id: options.id ?? shape.id
+  };
   const scalePoint = (point: Point): Point => ({
-    x: (point.x - originX) * scaleX + originX + deltaX,
-    y: (point.y - originY) * scaleY + originY + deltaY
+    x:
+      (point.x - normalizedOptions.originX) * normalizedOptions.scaleX +
+      normalizedOptions.originX +
+      normalizedOptions.deltaX,
+    y:
+      (point.y - normalizedOptions.originY) * normalizedOptions.scaleY +
+      normalizedOptions.originY +
+      normalizedOptions.deltaY
   });
 
   switch (shape.kind) {
     case 'line':
       return {
         ...shape,
-        id,
+        id: normalizedOptions.id,
         from: scalePoint(shape.from),
         to: scalePoint(shape.to),
         anchors: shape.anchors.map((anchor) => scalePoint(anchor))
       };
     case 'rectangle':
     case 'triangle':
-      return transformRoundedBoxShape(shape, deltaX, deltaY, scaleX, scaleY, originX, originY, id);
+      return transformRoundedBoxShape(shape, normalizedOptions);
     case 'circle':
       return {
         ...shape,
-        id,
-        cx: (shape.cx - originX) * scaleX + originX + deltaX,
-        cy: (shape.cy - originY) * scaleY + originY + deltaY,
-        r: Math.max(shape.r * Math.max(Math.min(scaleX, scaleY), MIN_SHAPE_DIMENSION), MIN_CIRCLE_RADIUS)
+        id: normalizedOptions.id,
+        cx:
+          (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX +
+          normalizedOptions.originX +
+          normalizedOptions.deltaX,
+        cy:
+          (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY +
+          normalizedOptions.originY +
+          normalizedOptions.deltaY,
+        r: Math.max(
+          shape.r * Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_SHAPE_DIMENSION),
+          MIN_CIRCLE_RADIUS
+        )
       };
     case 'ellipse':
       return {
         ...shape,
-        id,
-        cx: (shape.cx - originX) * scaleX + originX + deltaX,
-        cy: (shape.cy - originY) * scaleY + originY + deltaY,
-        rx: Math.max(shape.rx * scaleX, MIN_ELLIPSE_RADIUS),
-        ry: Math.max(shape.ry * scaleY, MIN_ELLIPSE_RADIUS)
+        id: normalizedOptions.id,
+        cx:
+          (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX +
+          normalizedOptions.originX +
+          normalizedOptions.deltaX,
+        cy:
+          (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY +
+          normalizedOptions.originY +
+          normalizedOptions.deltaY,
+        rx: Math.max(shape.rx * normalizedOptions.scaleX, MIN_ELLIPSE_RADIUS),
+        ry: Math.max(shape.ry * normalizedOptions.scaleY, MIN_ELLIPSE_RADIUS)
       };
     case 'text':
       return {
         ...shape,
-        id,
-        x: (shape.x - originX) * scaleX + originX + deltaX,
-        y: (shape.y - originY) * scaleY + originY + deltaY,
-        boxWidth: shape.textBox ? Math.max(shape.boxWidth * scaleX, MIN_TEXT_BOX_WIDTH) : shape.boxWidth,
+        id: normalizedOptions.id,
+        x:
+          (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX +
+          normalizedOptions.originX +
+          normalizedOptions.deltaX,
+        y:
+          (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY +
+          normalizedOptions.originY +
+          normalizedOptions.deltaY,
+        boxWidth: shape.textBox
+          ? Math.max(shape.boxWidth * normalizedOptions.scaleX, MIN_TEXT_BOX_WIDTH)
+          : shape.boxWidth,
         fontSize: Math.max(
-          shape.fontSize * Math.max(Math.min(scaleX, scaleY), MIN_TEXT_SCALE_FACTOR),
+          shape.fontSize *
+            Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_TEXT_SCALE_FACTOR),
           MIN_TEXT_FONT_SIZE
         )
       };
     case 'image':
       return {
         ...shape,
-        id,
-        x: (shape.x - originX) * scaleX + originX + deltaX,
-        y: (shape.y - originY) * scaleY + originY + deltaY,
-        width: Math.max(shape.width * scaleX, MIN_IMAGE_DIMENSION),
-        height: Math.max(shape.height * scaleY, MIN_IMAGE_DIMENSION)
+        id: normalizedOptions.id,
+        x:
+          (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX +
+          normalizedOptions.originX +
+          normalizedOptions.deltaX,
+        y:
+          (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY +
+          normalizedOptions.originY +
+          normalizedOptions.deltaY,
+        width: Math.max(shape.width * normalizedOptions.scaleX, MIN_IMAGE_DIMENSION),
+        height: Math.max(shape.height * normalizedOptions.scaleY, MIN_IMAGE_DIMENSION)
       };
   }
 };
@@ -181,7 +216,15 @@ export const resizeGroupedShapes = (
   const deltaY = resizedBounds.bottom - selectionBounds.bottom;
 
   return shapes.map((shape) =>
-    transformCanvasShape(shape, deltaX, deltaY, scaleX, scaleY, selectionBounds.left, selectionBounds.bottom, shape.id)
+    transformCanvasShape(shape, {
+      deltaX,
+      deltaY,
+      scaleX,
+      scaleY,
+      originX: selectionBounds.left,
+      originY: selectionBounds.bottom,
+      id: shape.id
+    })
   );
 };
 
@@ -230,11 +273,11 @@ export const highlightLatex = (source: string): string =>
       const base = commentIndex >= 0 ? escaped.slice(0, commentIndex) : escaped;
       const comment = commentIndex >= 0 ? escaped.slice(commentIndex) : '';
       const highlightedBase = base
-        .replace(/(\\[a-zA-Z@]+)/g, '<span class="tok-command">$1</span>')
-        .replace(/(\[[^\]]*\])/g, '<span class="tok-option">$1</span>')
-        .replace(/(\{|\}|\(|\)|\[|\])/g, '<span class="tok-punctuation">$1</span>')
-        .replace(/(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}))/g, '<span class="tok-color">$1</span>')
-        .replace(/(-?\d+(?:\.\d+)?)/g, '<span class="tok-number">$1</span>');
+        .replaceAll(/(\\[a-zA-Z@]+)/g, '<span class="tok-command">$1</span>')
+        .replaceAll(/(\[[^\]]*\])/g, '<span class="tok-option">$1</span>')
+        .replaceAll(/([()[\]{}])/g, '<span class="tok-punctuation">$1</span>')
+        .replaceAll(/(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}))/g, '<span class="tok-color">$1</span>')
+        .replaceAll(/(-?\d+(?:\.\d+)?)/g, '<span class="tok-number">$1</span>');
       const highlightedComment = comment ? `<span class="tok-comment">${comment}</span>` : '';
       return `${highlightedBase}${highlightedComment}`;
     })
@@ -255,16 +298,16 @@ const bytesToBase64Url = (bytes: Uint8Array): string => {
   let binary = '';
   const chunkSize = 0x8000;
   for (let index = 0; index < bytes.length; index += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+    binary += String.fromCodePoint(...bytes.subarray(index, index + chunkSize));
   }
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll(/=+$/g, '');
 };
 
 const base64UrlToBytes = (value: string): Uint8Array => {
   const normalized = value.replaceAll('-', '+').replaceAll('_', '/');
   const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
   const binary = atob(padded);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return Uint8Array.from(binary, (character) => character.codePointAt(0) ?? 0);
 };
 
 const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
@@ -327,7 +370,8 @@ export const decodeSharePayload = async (raw: string): Promise<SharedScenePayloa
       return parsed?.v === 1 ? expandSharePayload(parsed) : null;
     }
 
-    return JSON.parse(decodeURIComponent(escape(atob(raw)))) as SharedScenePayload;
+    const bytes = Uint8Array.from(atob(raw), (character) => character.codePointAt(0) ?? 0);
+    return JSON.parse(decoder.decode(bytes)) as SharedScenePayload;
   } catch {
     return null;
   }

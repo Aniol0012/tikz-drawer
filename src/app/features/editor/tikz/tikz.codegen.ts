@@ -68,7 +68,7 @@ const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMA
 
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
-  return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
+  return rounded.toString();
 };
 
 const wrapInlineMathCommands = (text: string): string => {
@@ -84,7 +84,7 @@ const wrapInlineMathCommands = (text: string): string => {
 
     result += inMathMode
       ? buffer
-      : buffer.replace(INLINE_MATH_COMMAND_REGEX, (command) => String.raw`\ensuremath{${command}}`);
+      : buffer.replaceAll(INLINE_MATH_COMMAND_REGEX, (command) => String.raw`\ensuremath{${command}}`);
     buffer = '';
   };
 
@@ -122,7 +122,7 @@ const sanitizeColorKey = (color: string): string => color.trim().toLowerCase();
 
 const normalizeHexColor = (color: string): string | null => {
   const trimmed = color.trim();
-  const match = trimmed.match(/^#?([0-9a-fA-F]{6})$/);
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(trimmed);
   return match ? match[1].toUpperCase() : null;
 };
 
@@ -284,12 +284,10 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
 
   const points = [shape.from, ...shape.anchors, shape.to];
   const pointList = points.map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`);
-  const path =
-    shape.anchors.length > 0
-      ? shape.lineMode === 'curved'
-        ? `plot[smooth] coordinates {${pointList.join(' ')}}`
-        : pointList.join(' -- ')
-      : `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
+  let path = `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
+  if (shape.anchors.length > 0) {
+    path = shape.lineMode === 'curved' ? `plot[smooth] coordinates {${pointList.join(' ')}}` : pointList.join(' -- ');
+  }
 
   return String.raw`\draw[${entries.join(', ')}] ${path};`;
 };
@@ -365,8 +363,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   ];
 
   if (shape.textBox) {
-    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`);
-    nodeOptions.push(`align=${shape.textAlign}`);
+    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`, `align=${shape.textAlign}`);
   }
 
   if (shape.rotation !== 0) {
