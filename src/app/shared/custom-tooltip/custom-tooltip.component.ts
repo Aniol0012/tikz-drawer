@@ -14,6 +14,7 @@ interface TooltipState {
   readonly left: number;
   readonly top: number;
   readonly placement: 'top' | 'bottom';
+  readonly phase: 'entering' | 'leaving';
 }
 
 const TOOLTIP_MARGIN_PX = 12;
@@ -21,6 +22,7 @@ const TOOLTIP_OFFSET_PX = 8;
 const TOOLTIP_MAX_WIDTH_PX = 280;
 const TOOLTIP_SHOW_DELAY_MS = 500;
 const TOOLTIP_HIDE_DELAY_MS = 90;
+const TOOLTIP_LEAVE_ANIMATION_MS = 120;
 
 @Component({
   selector: 'app-custom-tooltip',
@@ -35,6 +37,7 @@ export class CustomTooltipComponent {
   private activeTarget: HTMLElement | null = null;
   private showHandle: ReturnType<typeof setTimeout> | null = null;
   private hideHandle: ReturnType<typeof setTimeout> | null = null;
+  private dismissHandle: ReturnType<typeof setTimeout> | null = null;
   private lastPointerEvent: PointerEvent | null = null;
 
   readonly tooltip = signal<TooltipState | null>(null);
@@ -49,7 +52,11 @@ export class CustomTooltipComponent {
   @HostListener('document:pointerover', ['$event'])
   onPointerOver(event: PointerEvent): void {
     const target = this.tooltipTarget(event.target);
-    if (!target || target === this.activeTarget) {
+    if (!target) {
+      return;
+    }
+
+    if (target === this.activeTarget && this.tooltip()?.phase !== 'leaving') {
       return;
     }
 
@@ -148,6 +155,20 @@ export class CustomTooltipComponent {
 
   private hideNow(): void {
     this.clearTimers();
+    const currentTooltip = this.tooltip();
+    if (currentTooltip) {
+      this.tooltip.set({
+        ...currentTooltip,
+        phase: 'leaving'
+      });
+      this.dismissHandle = setTimeout(() => this.finishHide(), TOOLTIP_LEAVE_ANIMATION_MS);
+      return;
+    }
+
+    this.finishHide();
+  }
+
+  private finishHide(): void {
     this.restoreTitle(this.activeTarget);
     this.activeTarget = null;
     this.lastPointerEvent = null;
@@ -215,7 +236,8 @@ export class CustomTooltipComponent {
       text,
       left,
       top,
-      placement
+      placement,
+      phase: 'entering'
     };
   }
 
@@ -228,6 +250,11 @@ export class CustomTooltipComponent {
     if (this.hideHandle !== null) {
       clearTimeout(this.hideHandle);
       this.hideHandle = null;
+    }
+
+    if (this.dismissHandle !== null) {
+      clearTimeout(this.dismissHandle);
+      this.dismissHandle = null;
     }
   }
 }
