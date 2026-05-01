@@ -7,10 +7,13 @@ import {
 } from '../constants/editor.constants';
 import {
   DEFAULT_GRAPH_DIMENSIONS,
+  GRAPH_KARY_TREE_MAX_COLUMNS,
+  GRAPH_KARY_TREE_MAX_LEVELS,
   GRAPH_MAX_GRID_AXIS,
   GRAPH_MAX_TREE_LEVELS,
   GRAPH_MAX_VERTICES,
   GRAPH_MIN_VERTICES,
+  GRAPH_WHEEL_PRISM_MIN_VERTICES,
   type BuildGraphShapesOptions,
   type GraphDimensions,
   type GraphEdgeLayout,
@@ -24,6 +27,41 @@ import type { CircleShape, LineShape, Point, TextShape } from '../models/tikz.mo
 const DEFAULT_GRAPH_RADIUS = 2.1;
 const DEFAULT_GRAPH_NODE_RADIUS = 0.18;
 const DEFAULT_GRAPH_SCALE = 1;
+const GRAPH_FULL_TURN_RADIANS = Math.PI * 2;
+const GRAPH_START_ANGLE_RADIANS = Math.PI / 2;
+const GRAPH_LAYOUT_CENTER = 0;
+const GRAPH_LAYOUT_HALF_FACTOR = 2;
+const PETERSEN_VERTEX_COUNT = 10;
+const PETERSEN_EDGE_COUNT = 15;
+const PETERSEN_RING_NODE_COUNT = 5;
+const PETERSEN_INNER_LABEL_OFFSET = 6;
+const PETERSEN_INNER_RADIUS_FACTOR = 0.45;
+const PETERSEN_INNER_EDGE_SKIP = 2;
+const DEFAULT_GRAPH_NODE_FILL_COLOR = '#fbfbfb';
+const GRAPH_LABEL_FONT_SIZE = 0.2;
+const GRAPH_EDGE_MIN_LENGTH = 0.0001;
+const GRAPH_EDGE_MAX_INSET_FACTOR = 0.42;
+const PATH_COMPACT_VERTEX_THRESHOLD = 8;
+const PATH_SPACING_REGULAR = 1;
+const PATH_SPACING_COMPACT = 0.72;
+const BIPARTITE_COLUMN_X_OFFSET = 1.6;
+const VERTICAL_NODE_COMPACT_THRESHOLD = 6;
+const VERTICAL_NODE_SPACING_REGULAR = 0.82;
+const VERTICAL_NODE_SPACING_COMPACT = 0.58;
+const GRID_MAX_SPACING = 1.05;
+const GRID_LAYOUT_SPAN = 5.6;
+const LADDER_MIN_COLUMNS_FOR_SPACING = 2;
+const LADDER_ROW_Y = 0.72;
+const PRISM_INNER_RADIUS_FACTOR = 0.58;
+const TREE_BINARY_VERTICAL_GAP = 0.92;
+const TREE_BINARY_SPREAD_FACTOR = 0.64;
+const TREE_KARY_VERTICAL_GAP = 0.9;
+const TREE_KARY_NARROW_BRANCHING_THRESHOLD = 2;
+const LAYERED_MAX_LAYER_GAP = 1.25;
+const LAYERED_MAX_NODE_GAP = 0.86;
+const LAYERED_HORIZONTAL_SPAN = 5.4;
+const LAYERED_VERTICAL_SPAN = 4.5;
+const FLOW_TERMINAL_X_OFFSET = 2.85;
 
 const clampInteger = (value: number, minimumValue: number, maximumValue: number): number => {
   if (!Number.isFinite(value)) {
@@ -35,9 +73,9 @@ const clampInteger = (value: number, minimumValue: number, maximumValue: number)
 
 export const normalizeGraphDimensions = (dimensions: Partial<GraphDimensions>): GraphDimensions => {
   const kind = (dimensions.kind ?? DEFAULT_GRAPH_DIMENSIONS.kind) as GraphPresetKind;
-  const minimumVertices = kind === 'wheel' || kind === 'prism' ? 3 : GRAPH_MIN_VERTICES;
-  const maximumColumns = kind === 'kary-tree' ? 4 : GRAPH_MAX_GRID_AXIS;
-  const maximumLevels = kind === 'kary-tree' ? 4 : GRAPH_MAX_TREE_LEVELS;
+  const minimumVertices = kind === 'wheel' || kind === 'prism' ? GRAPH_WHEEL_PRISM_MIN_VERTICES : GRAPH_MIN_VERTICES;
+  const maximumColumns = kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_COLUMNS : GRAPH_MAX_GRID_AXIS;
+  const maximumLevels = kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : GRAPH_MAX_TREE_LEVELS;
   return {
     kind,
     vertices: clampInteger(
@@ -121,7 +159,7 @@ export const graphVertexCount = (dimensions: GraphDimensions): number => {
     case 'flow-network':
       return normalized.rows * normalized.columns + 2;
     case 'petersen':
-      return 10;
+      return PETERSEN_VERTEX_COUNT;
     case 'independent':
     case 'complete':
     case 'cycle':
@@ -163,7 +201,7 @@ export const graphEdgeCount = (dimensions: GraphDimensions): number => {
     case 'flow-network':
       return normalized.columns + (normalized.rows - 1) * normalized.columns * normalized.columns + normalized.columns;
     case 'petersen':
-      return 15;
+      return PETERSEN_EDGE_COUNT;
     case 'independent':
       return 0;
   }
@@ -227,7 +265,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
       stroke: DEFAULT_LINE_COLOR,
       strokeOpacity: 1,
       strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH,
-      fill: '#fbfbfb',
+      fill: DEFAULT_GRAPH_NODE_FILL_COLOR,
       fillOpacity: 1,
       cx: position.x,
       cy: position.y,
@@ -272,7 +310,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
           text: node.label,
           textBox: false,
           boxWidth: nodeRadius * 2,
-          fontSize: 0.2,
+          fontSize: GRAPH_LABEL_FONT_SIZE,
           color: DEFAULT_TEXT_COLOR,
           colorOpacity: 1,
           fontWeight: 'normal',
@@ -296,7 +334,7 @@ export const insetGraphEdge = (
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const length = Math.hypot(dx, dy);
-  if (length <= 0.0001) {
+  if (length <= GRAPH_EDGE_MIN_LENGTH) {
     return { from, to };
   }
 
@@ -304,7 +342,7 @@ export const insetGraphEdge = (
   const unitY = dy / length;
   const startInset = nodeRadius;
   const endInset = nodeRadius;
-  const maxInset = length * 0.42;
+  const maxInset = length * GRAPH_EDGE_MAX_INSET_FACTOR;
   const safeStartInset = Math.min(startInset, maxInset);
   const safeEndInset = Math.min(endInset, maxInset);
 
@@ -402,7 +440,7 @@ const normalizedAnchorFromCenter = (center: Point, point: Point): Point => {
   const deltaX = point.x - center.x;
   const deltaY = point.y - center.y;
   const length = Math.hypot(deltaX, deltaY);
-  if (length <= 0.0001) {
+  if (length <= GRAPH_EDGE_MIN_LENGTH) {
     return { x: 0, y: 0 };
   }
 
@@ -411,7 +449,7 @@ const normalizedAnchorFromCenter = (center: Point, point: Point): Point => {
 
 const buildCircularNodes = (vertices: number): readonly GraphNodeLayout[] =>
   Array.from({ length: vertices }, (_, index) => {
-    const angle = Math.PI / 2 - (Math.PI * 2 * index) / vertices;
+    const angle = GRAPH_START_ANGLE_RADIANS - (GRAPH_FULL_TURN_RADIANS * index) / vertices;
     return {
       id: String(index + 1),
       label: String(index + 1),
@@ -450,11 +488,11 @@ const buildCycleLayout = (vertices: number): GraphLayout => {
 };
 
 const buildPathLayout = (vertices: number): GraphLayout => {
-  const spacing = vertices <= 8 ? 1.0 : 0.72;
-  const left = (-spacing * (vertices - 1)) / 2;
+  const spacing = vertices <= PATH_COMPACT_VERTEX_THRESHOLD ? PATH_SPACING_REGULAR : PATH_SPACING_COMPACT;
+  const left = (-spacing * (vertices - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
   const nodes = Array.from({ length: vertices }, (_, index): GraphNodeLayout => {
     const id = String(index + 1);
-    return { id, label: id, position: { x: left + index * spacing, y: 0 } };
+    return { id, label: id, position: { x: left + index * spacing, y: GRAPH_LAYOUT_CENTER } };
   });
   return {
     nodes,
@@ -464,9 +502,9 @@ const buildPathLayout = (vertices: number): GraphLayout => {
 
 const buildStarLayout = (vertices: number): GraphLayout => {
   const leaves = Math.max(vertices - 1, 1);
-  const center: GraphNodeLayout = { id: '1', label: '1', position: { x: 0, y: 0 } };
+  const center: GraphNodeLayout = { id: '1', label: '1', position: { x: GRAPH_LAYOUT_CENTER, y: GRAPH_LAYOUT_CENTER } };
   const leafNodes = Array.from({ length: leaves }, (_, index): GraphNodeLayout => {
-    const angle = Math.PI / 2 - (Math.PI * 2 * index) / leaves;
+    const angle = GRAPH_START_ANGLE_RADIANS - (GRAPH_FULL_TURN_RADIANS * index) / leaves;
     const id = String(index + 2);
     return {
       id,
@@ -484,10 +522,10 @@ const buildStarLayout = (vertices: number): GraphLayout => {
 };
 
 const buildWheelLayout = (vertices: number): GraphLayout => {
-  const rimVertices = Math.max(vertices, 3);
-  const center: GraphNodeLayout = { id: '1', label: '1', position: { x: 0, y: 0 } };
+  const rimVertices = Math.max(vertices, GRAPH_WHEEL_PRISM_MIN_VERTICES);
+  const center: GraphNodeLayout = { id: '1', label: '1', position: { x: GRAPH_LAYOUT_CENTER, y: GRAPH_LAYOUT_CENTER } };
   const rimNodes = Array.from({ length: rimVertices }, (_, index): GraphNodeLayout => {
-    const angle = Math.PI / 2 - (Math.PI * 2 * index) / rimVertices;
+    const angle = GRAPH_START_ANGLE_RADIANS - (GRAPH_FULL_TURN_RADIANS * index) / rimVertices;
     const id = String(index + 2);
     return {
       id,
@@ -512,8 +550,8 @@ const buildWheelLayout = (vertices: number): GraphLayout => {
 };
 
 const buildBipartiteLayout = (leftVertices: number, rightVertices: number): GraphLayout => {
-  const left = verticalNodes('L', leftVertices, -1.6);
-  const right = verticalNodes('R', rightVertices, 1.6);
+  const left = verticalNodes('L', leftVertices, -BIPARTITE_COLUMN_X_OFFSET);
+  const right = verticalNodes('R', rightVertices, BIPARTITE_COLUMN_X_OFFSET);
   return {
     nodes: [...left, ...right],
     edges: left.flatMap((source) => right.map((target) => ({ source: source.id, target: target.id })))
@@ -521,8 +559,9 @@ const buildBipartiteLayout = (leftVertices: number, rightVertices: number): Grap
 };
 
 const verticalNodes = (prefix: string, count: number, x: number): readonly GraphNodeLayout[] => {
-  const spacing = count <= 6 ? 0.82 : 0.58;
-  const top = (spacing * (count - 1)) / 2;
+  const spacing =
+    count <= VERTICAL_NODE_COMPACT_THRESHOLD ? VERTICAL_NODE_SPACING_REGULAR : VERTICAL_NODE_SPACING_COMPACT;
+  const top = (spacing * (count - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
   return Array.from({ length: count }, (_, index): GraphNodeLayout => {
     const label = `${prefix}${index + 1}`;
     return {
@@ -534,9 +573,9 @@ const verticalNodes = (prefix: string, count: number, x: number): readonly Graph
 };
 
 const buildGridLayout = (rows: number, columns: number): GraphLayout => {
-  const spacing = Math.min(1.05, 5.6 / Math.max(rows, columns));
-  const left = (-spacing * (columns - 1)) / 2;
-  const top = (spacing * (rows - 1)) / 2;
+  const spacing = Math.min(GRID_MAX_SPACING, GRID_LAYOUT_SPAN / Math.max(rows, columns));
+  const left = (-spacing * (columns - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
+  const top = (spacing * (rows - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
   for (let row = 0; row < rows; row += 1) {
@@ -559,9 +598,9 @@ const buildGridLayout = (rows: number, columns: number): GraphLayout => {
 };
 
 const buildLadderLayout = (columns: number): GraphLayout => {
-  const spacing = Math.min(1.05, 5.6 / Math.max(columns, 2));
-  const left = (-spacing * (columns - 1)) / 2;
-  const rowY = 0.72;
+  const spacing = Math.min(GRID_MAX_SPACING, GRID_LAYOUT_SPAN / Math.max(columns, LADDER_MIN_COLUMNS_FOR_SPACING));
+  const left = (-spacing * (columns - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
+  const rowY = LADDER_ROW_Y;
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
 
@@ -583,9 +622,9 @@ const buildLadderLayout = (columns: number): GraphLayout => {
 
 const buildPrismLayout = (vertices: number): GraphLayout => {
   const outerRadius = DEFAULT_GRAPH_RADIUS;
-  const innerRadius = DEFAULT_GRAPH_RADIUS * 0.58;
+  const innerRadius = DEFAULT_GRAPH_RADIUS * PRISM_INNER_RADIUS_FACTOR;
   const top = Array.from({ length: vertices }, (_, index): GraphNodeLayout => {
-    const angle = Math.PI / 2 - (Math.PI * 2 * index) / vertices;
+    const angle = GRAPH_START_ANGLE_RADIANS - (GRAPH_FULL_TURN_RADIANS * index) / vertices;
     const id = `A${index + 1}`;
     return {
       id,
@@ -594,7 +633,7 @@ const buildPrismLayout = (vertices: number): GraphLayout => {
     };
   });
   const bottom = Array.from({ length: vertices }, (_, index): GraphNodeLayout => {
-    const angle = Math.PI / 2 - (Math.PI * 2 * index) / vertices;
+    const angle = GRAPH_START_ANGLE_RADIANS - (GRAPH_FULL_TURN_RADIANS * index) / vertices;
     const id = `B${index + 1}`;
     return {
       id,
@@ -616,10 +655,10 @@ const buildPrismLayout = (vertices: number): GraphLayout => {
 const buildBinaryTreeLayout = (levels: number): GraphLayout => {
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
-  const verticalGap = 0.92;
+  const verticalGap = TREE_BINARY_VERTICAL_GAP;
   for (let level = 0; level < levels; level += 1) {
     const count = 2 ** level;
-    const spread = Math.max(2 ** (levels - level - 1), 1) * 0.64;
+    const spread = Math.max(2 ** (levels - level - 1), 1) * TREE_BINARY_SPREAD_FACTOR;
     for (let index = 0; index < count; index += 1) {
       const id = String(2 ** level + index);
       const parentId = level > 0 ? String(2 ** (level - 1) + Math.floor(index / 2)) : null;
@@ -627,8 +666,8 @@ const buildBinaryTreeLayout = (levels: number): GraphLayout => {
         id,
         label: id,
         position: {
-          x: (index - (count - 1) / 2) * spread,
-          y: ((levels - 1) / 2 - level) * verticalGap
+          x: (index - (count - 1) / GRAPH_LAYOUT_HALF_FACTOR) * spread,
+          y: ((levels - 1) / GRAPH_LAYOUT_HALF_FACTOR - level) * verticalGap
         }
       });
       if (parentId) {
@@ -650,8 +689,11 @@ const karyTreeVertexCount = (branchingFactor: number, levels: number): number =>
 const buildKaryTreeLayout = (branchingFactor: number, levels: number): GraphLayout => {
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
-  const verticalGap = 0.9;
-  const horizontalGap = branchingFactor <= 2 ? 0.82 : 0.58;
+  const verticalGap = TREE_KARY_VERTICAL_GAP;
+  const horizontalGap =
+    branchingFactor <= TREE_KARY_NARROW_BRANCHING_THRESHOLD
+      ? VERTICAL_NODE_SPACING_REGULAR
+      : VERTICAL_NODE_SPACING_COMPACT;
   let currentLevel: readonly string[] = [];
   let nextIndex = 1;
 
@@ -664,8 +706,8 @@ const buildKaryTreeLayout = (branchingFactor: number, levels: number): GraphLayo
         id: levelIds[index],
         label: levelIds[index],
         position: {
-          x: index * horizontalGap - spread / 2,
-          y: ((levels - 1) / 2 - level) * verticalGap
+          x: index * horizontalGap - spread / GRAPH_LAYOUT_HALF_FACTOR,
+          y: ((levels - 1) / GRAPH_LAYOUT_HALF_FACTOR - level) * verticalGap
         }
       });
       if (level > 0) {
@@ -682,10 +724,10 @@ const buildKaryTreeLayout = (branchingFactor: number, levels: number): GraphLayo
 };
 
 const buildLayeredNodes = (layers: number, nodesPerLayer: number): readonly GraphNodeLayout[] => {
-  const layerGap = Math.min(1.25, 5.4 / Math.max(layers - 1, 1));
-  const nodeGap = Math.min(0.86, 4.5 / Math.max(nodesPerLayer - 1, 1));
-  const left = (-layerGap * (layers - 1)) / 2;
-  const top = (nodeGap * (nodesPerLayer - 1)) / 2;
+  const layerGap = Math.min(LAYERED_MAX_LAYER_GAP, LAYERED_HORIZONTAL_SPAN / Math.max(layers - 1, 1));
+  const nodeGap = Math.min(LAYERED_MAX_NODE_GAP, LAYERED_VERTICAL_SPAN / Math.max(nodesPerLayer - 1, 1));
+  const left = (-layerGap * (layers - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
+  const top = (nodeGap * (nodesPerLayer - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
   return Array.from({ length: layers }).flatMap((_, layer) =>
     Array.from({ length: nodesPerLayer }, (_, index): GraphNodeLayout => {
       const id = `${layer + 1}.${index + 1}`;
@@ -716,8 +758,16 @@ const buildLayeredDagLayout = (layers: number, nodesPerLayer: number): GraphLayo
 
 const buildFlowNetworkLayout = (layers: number, nodesPerLayer: number): GraphLayout => {
   const layeredNodes = buildLayeredNodes(layers, nodesPerLayer);
-  const source: GraphNodeLayout = { id: 's', label: 's', position: { x: -2.85, y: 0 } };
-  const sink: GraphNodeLayout = { id: 't', label: 't', position: { x: 2.85, y: 0 } };
+  const source: GraphNodeLayout = {
+    id: 's',
+    label: 's',
+    position: { x: -FLOW_TERMINAL_X_OFFSET, y: GRAPH_LAYOUT_CENTER }
+  };
+  const sink: GraphNodeLayout = {
+    id: 't',
+    label: 't',
+    position: { x: FLOW_TERMINAL_X_OFFSET, y: GRAPH_LAYOUT_CENTER }
+  };
   const layerEdges = buildLayeredDagLayout(layers, nodesPerLayer).edges;
   const edges: GraphEdgeLayout[] = [
     ...Array.from({ length: nodesPerLayer }, (_, index) => ({ source: source.id, target: `1.${index + 1}` })),
@@ -734,21 +784,21 @@ const buildNeuralNetworkLayout = (layers: number, nodesPerLayer: number): GraphL
   buildLayeredDagLayout(layers, nodesPerLayer);
 
 const buildPetersenLayout = (): GraphLayout => {
-  const outer = buildCircularNodes(5).map(
+  const outer = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map(
     (node, index): GraphNodeLayout => ({
       ...node,
       id: `O${index + 1}`,
       label: String(index + 1)
     })
   );
-  const inner = buildCircularNodes(5).map(
+  const inner = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map(
     (node, index): GraphNodeLayout => ({
       ...node,
       id: `I${index + 1}`,
-      label: String(index + 6),
+      label: String(index + PETERSEN_INNER_LABEL_OFFSET),
       position: {
-        x: node.position.x * 0.45,
-        y: node.position.y * 0.45
+        x: node.position.x * PETERSEN_INNER_RADIUS_FACTOR,
+        y: node.position.y * PETERSEN_INNER_RADIUS_FACTOR
       }
     })
   );
@@ -757,7 +807,10 @@ const buildPetersenLayout = (): GraphLayout => {
     nodes: [...outer, ...inner],
     edges: [
       ...outer.map((node, index) => ({ source: node.id, target: outer[(index + 1) % outer.length].id })),
-      ...inner.map((node, index) => ({ source: node.id, target: inner[(index + 2) % inner.length].id })),
+      ...inner.map((node, index) => ({
+        source: node.id,
+        target: inner[(index + PETERSEN_INNER_EDGE_SKIP) % inner.length].id
+      })),
       ...outer.map((node, index) => ({ source: node.id, target: inner[index].id }))
     ]
   };

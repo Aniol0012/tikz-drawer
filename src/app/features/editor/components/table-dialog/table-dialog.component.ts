@@ -4,6 +4,10 @@ import type { TableDimensions } from '../../models/table.models';
 import { normalizeTableDimensions, tableSizeLabel } from '../../utils/table.utils';
 import type { TableDialogCell } from './table-dialog.types';
 
+const DEFAULT_PICKER_ROWS = 6;
+const DEFAULT_PICKER_COLUMNS = 10;
+const INITIAL_TABLE_AXIS_SIZE = 1;
+
 @Component({
   selector: 'app-table-dialog',
   templateUrl: './table-dialog.component.html',
@@ -21,14 +25,14 @@ export class TableDialogComponent implements OnInit {
   readonly quickPickerLabel = input.required<string>();
   readonly initialRows = input.required<number>();
   readonly initialColumns = input.required<number>();
-  readonly maxPickerRows = input(6);
-  readonly maxPickerColumns = input(10);
+  readonly maxPickerRows = input(DEFAULT_PICKER_ROWS);
+  readonly maxPickerColumns = input(DEFAULT_PICKER_COLUMNS);
 
   readonly cancelDialog = output<void>();
   readonly confirm = output<TableDimensions>();
 
-  readonly selectedRows = signal(1);
-  readonly selectedColumns = signal(1);
+  readonly selectedRows = signal(INITIAL_TABLE_AXIS_SIZE);
+  readonly selectedColumns = signal(INITIAL_TABLE_AXIS_SIZE);
   readonly hoveredRows = signal<number | null>(null);
   readonly hoveredColumns = signal<number | null>(null);
   readonly pickerRows = computed(() => Array.from({ length: this.maxPickerRows() }, (_, index) => index + 1));
@@ -78,14 +82,20 @@ export class TableDialogComponent implements OnInit {
 
   updateRows(event: Event): void {
     this.selectedRows.set(
-      normalizeTableDimensions({ rows: Number((event.target as HTMLInputElement).value), columns: 1 }).rows
+      normalizeTableDimensions({
+        rows: Number((event.target as HTMLInputElement).value),
+        columns: INITIAL_TABLE_AXIS_SIZE
+      }).rows
     );
     this.clearPreview();
   }
 
   updateColumns(event: Event): void {
     this.selectedColumns.set(
-      normalizeTableDimensions({ rows: 1, columns: Number((event.target as HTMLInputElement).value) }).columns
+      normalizeTableDimensions({
+        rows: INITIAL_TABLE_AXIS_SIZE,
+        columns: Number((event.target as HTMLInputElement).value)
+      }).columns
     );
     this.clearPreview();
   }

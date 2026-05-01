@@ -19,6 +19,7 @@ import {
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_FONT_SIZE,
+  EDITOR_CANVAS_DEFAULT_HEIGHT,
   EDITOR_CANVAS_MIN_HEIGHT,
   EDITOR_CANVAS_MIN_WIDTH,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
@@ -32,6 +33,7 @@ import {
   EDITOR_LINE_ARROW_SCALE_MAX,
   EDITOR_LINE_ARROW_SCALE_MIN,
   EDITOR_MOBILE_BREAKPOINT_PX,
+  EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
   EDITOR_PASTE_OFFSET_STEP,
   EDITOR_PNG_EXPORT_SCALE,
   EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
@@ -43,6 +45,7 @@ import {
   EDITOR_SCALE_MIN,
   EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX,
   EDITOR_STORAGE_KEYS,
+  EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT,
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   EDITOR_VIEWPORT_FALLBACK_WIDTH,
   EDITOR_WHEEL_LINE_HEIGHT_PX,
@@ -50,6 +53,10 @@ import {
   EDITOR_WHEEL_ZOOM_SENSITIVITY,
   EDITOR_ZOOM_STEP,
   FREEHAND_POINT_MIN_DISTANCE,
+  LINE_DASH_DOTTED_PATTERN,
+  LINE_DASHED_PATTERN,
+  LINE_DOTTED_PATTERN,
+  LINE_LOOSELY_DASHED_PATTERN,
   MIN_IMAGE_DIMENSION,
   MIN_POINTER_DRAG_DELTA,
   MIN_RENDER_STROKE_WIDTH,
@@ -425,7 +432,7 @@ export class EditorPageComponent {
   readonly activeTool = signal<ToolId>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
   readonly canvasWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
-  readonly canvasHeight = signal(840);
+  readonly canvasHeight = signal(EDITOR_CANVAS_DEFAULT_HEIGHT);
   readonly canvasViewportWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly interactionState = signal<InteractionState | null>(null);
   readonly contextMenu = signal<ContextMenuState | null>(null);
@@ -466,7 +473,11 @@ export class EditorPageComponent {
   readonly templateDeleteTarget = signal<SavedTemplate | null>(null);
   readonly inlineTextEditor = signal<InlineTextEditorState | null>(null);
   readonly textSymbolPaletteOpen = signal(false);
-  readonly textSymbolPalettePosition = signal<TextSymbolPalettePosition>({ top: 0, left: 0, maxHeight: 320 });
+  readonly textSymbolPalettePosition = signal<TextSymbolPalettePosition>({
+    top: 0,
+    left: 0,
+    maxHeight: EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT
+  });
   readonly recentTextTap = signal<RecentTextTap | null>(null);
   readonly recentSelectedShapeTap = signal<RecentTextTap | null>(null);
   readonly suppressContextMenuUntil = signal(0);
@@ -476,8 +487,8 @@ export class EditorPageComponent {
   private readonly initialSidebarSizes = this.restoreSidebarSizes();
   readonly leftSidebarWidth = signal(this.initialSidebarSizes.left);
   readonly rightSidebarWidth = signal(this.initialSidebarSizes.right);
-  readonly mobileRightSidebarHeight = signal(320);
-  readonly mobileLeftSidebarHeight = signal(320);
+  readonly mobileRightSidebarHeight = signal(EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT);
+  readonly mobileLeftSidebarHeight = signal(EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT);
   readonly sidebarResizeState = signal<SidebarResizeState | null>(null);
   readonly coarsePointer = signal(false);
   readonly mobileLayout = signal(false);
@@ -4453,17 +4464,19 @@ export class EditorPageComponent {
   }
 
   private strokeDashArray(strokeStyle: LineStrokeStyle, strokeWidth: number): string | null {
+    const dashArray = (pattern: readonly number[]): string =>
+      pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
     switch (strokeStyle) {
       case 'solid':
         return null;
       case 'dashed':
-        return `${strokeWidth * 6} ${strokeWidth * 4}`;
+        return dashArray(LINE_DASHED_PATTERN);
       case 'dotted':
-        return `${strokeWidth * 0.8} ${strokeWidth * 3.2}`;
+        return dashArray(LINE_DOTTED_PATTERN);
       case 'dash-dotted':
-        return `${strokeWidth * 6} ${strokeWidth * 3} ${strokeWidth * 0.8} ${strokeWidth * 3}`;
+        return dashArray(LINE_DASH_DOTTED_PATTERN);
       case 'loosely-dashed':
-        return `${strokeWidth * 10} ${strokeWidth * 6}`;
+        return dashArray(LINE_LOOSELY_DASHED_PATTERN);
     }
   }
 

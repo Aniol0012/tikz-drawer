@@ -10,6 +10,8 @@ import {
 import type { Point } from '../models/tikz.models';
 
 const DEFAULT_REGULAR_POLYGON_CENTER: Point = { x: 0, y: 0 };
+const REGULAR_POLYGON_START_ANGLE_RADIANS = Math.PI / 2;
+const REGULAR_POLYGON_FULL_TURN_RADIANS = Math.PI * 2;
 
 export const normalizeRegularPolygonDimensions = (dimensions: RegularPolygonDimensions): RegularPolygonDimensions => {
   const roundedSides = Number.isFinite(dimensions.sides)
@@ -26,11 +28,10 @@ export const regularPolygonPoints = (
   center: Point = DEFAULT_REGULAR_POLYGON_CENTER
 ): readonly Point[] => {
   const dimensions = normalizeRegularPolygonDimensions({ sides });
-  const startAngle = Math.PI / 2;
-  const angleStep = (Math.PI * 2) / dimensions.sides;
+  const angleStep = REGULAR_POLYGON_FULL_TURN_RADIANS / dimensions.sides;
 
   return Array.from({ length: dimensions.sides }, (_, index) => {
-    const angle = startAngle + angleStep * index;
+    const angle = REGULAR_POLYGON_START_ANGLE_RADIANS + angleStep * index;
     return {
       x: center.x + Math.cos(angle) * radius,
       y: center.y + Math.sin(angle) * radius

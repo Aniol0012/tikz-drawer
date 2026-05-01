@@ -123,9 +123,12 @@ export const GRAPH_PRESET_ID_BY_KIND: Readonly<Record<GraphPresetKind, GraphPres
 };
 
 export const GRAPH_MIN_VERTICES = 2;
+export const GRAPH_WHEEL_PRISM_MIN_VERTICES = 3;
 export const GRAPH_MAX_VERTICES = 24;
 export const GRAPH_MAX_GRID_AXIS = 8;
 export const GRAPH_MAX_TREE_LEVELS = 6;
+export const GRAPH_KARY_TREE_MAX_COLUMNS = 4;
+export const GRAPH_KARY_TREE_MAX_LEVELS = 4;
 
 export const DEFAULT_GRAPH_DIMENSIONS: GraphDimensions = {
   kind: 'cycle',

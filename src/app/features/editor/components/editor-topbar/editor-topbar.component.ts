@@ -16,6 +16,11 @@ import type { LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import type { TopbarTool } from './editor-topbar.types';
 
+const DEFAULT_WINDOW_WIDTH = 1280;
+const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
+const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
+const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
+
 @Component({
   selector: 'app-editor-topbar',
   templateUrl: './editor-topbar.component.html',
@@ -58,7 +63,9 @@ export class EditorTopbarComponent {
   readonly exportOpen = output<void>();
 
   readonly compactTopbarActions = signal(false);
-  private readonly windowWidth = signal(typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : 1280);
+  private readonly windowWidth = signal(
+    typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH
+  );
 
   constructor() {
     effect(() => {
@@ -73,7 +80,7 @@ export class EditorTopbarComponent {
       const topbarActions = this.topbarActions().nativeElement;
       const win = this.document.defaultView;
       const updateWindowWidth = () => {
-        this.windowWidth.set(win?.innerWidth ?? globalThis.innerWidth ?? 1280);
+        this.windowWidth.set(win?.innerWidth ?? globalThis.innerWidth ?? DEFAULT_WINDOW_WIDTH);
       };
 
       const resizeObserver = new ResizeObserver(() => this.updateCompactTopbarActions());
@@ -115,9 +122,9 @@ export class EditorTopbarComponent {
     }
 
     const compact =
-      topbarActions.scrollWidth > topbarActions.clientWidth + 1 ||
-      this.viewportWidth() <= 1180 ||
-      this.windowWidth() <= 1320;
+      topbarActions.scrollWidth > topbarActions.clientWidth + TOPBAR_OVERFLOW_TOLERANCE_PX ||
+      this.viewportWidth() <= TOPBAR_COMPACT_VIEWPORT_WIDTH ||
+      this.windowWidth() <= TOPBAR_COMPACT_WINDOW_WIDTH;
     this.compactTopbarActions.set(compact);
     if (!compact && this.fileMenuOpen()) {
       this.fileMenuClose.emit();

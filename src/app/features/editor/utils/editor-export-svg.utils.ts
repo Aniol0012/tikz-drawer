@@ -1,4 +1,8 @@
 import {
+  LINE_DASH_DOTTED_PATTERN,
+  LINE_DASHED_PATTERN,
+  LINE_DOTTED_PATTERN,
+  LINE_LOOSELY_DASHED_PATTERN,
   MIN_RENDER_STROKE_WIDTH,
   SHAPE_STROKE_SCALE_FACTOR,
   TEXT_TSPAN_LINE_STEP_FACTOR
@@ -82,17 +86,19 @@ const scaledStrokeWidth = (strokeWidth: number, scale: number): number =>
 
 const lineStrokeDashArray = (shape: LineShape, scale: number): string => {
   const strokeWidth = scaledStrokeWidth(shape.strokeWidth, scale);
+  const dashArray = (pattern: readonly number[]): string =>
+    pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
   switch (shape.strokeStyle ?? 'solid') {
     case 'solid':
       return '';
     case 'dashed':
-      return ` stroke-dasharray="${strokeWidth * 6} ${strokeWidth * 4}"`;
+      return ` stroke-dasharray="${dashArray(LINE_DASHED_PATTERN)}"`;
     case 'dotted':
-      return ` stroke-dasharray="${strokeWidth * 0.8} ${strokeWidth * 3.2}"`;
+      return ` stroke-dasharray="${dashArray(LINE_DOTTED_PATTERN)}"`;
     case 'dash-dotted':
-      return ` stroke-dasharray="${strokeWidth * 6} ${strokeWidth * 3} ${strokeWidth * 0.8} ${strokeWidth * 3}"`;
+      return ` stroke-dasharray="${dashArray(LINE_DASH_DOTTED_PATTERN)}"`;
     case 'loosely-dashed':
-      return ` stroke-dasharray="${strokeWidth * 10} ${strokeWidth * 6}"`;
+      return ` stroke-dasharray="${dashArray(LINE_LOOSELY_DASHED_PATTERN)}"`;
   }
 };
 

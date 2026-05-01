@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, OnChanges, output,
 import { getIconPath } from '../../config/editor-icons';
 import {
   DEFAULT_GRAPH_DIMENSIONS,
+  GRAPH_KARY_TREE_MAX_COLUMNS,
+  GRAPH_KARY_TREE_MAX_LEVELS,
   GRAPH_MAX_GRID_AXIS,
   GRAPH_MAX_TREE_LEVELS,
   GRAPH_MAX_VERTICES,
@@ -20,6 +22,12 @@ import {
 import type { Point } from '../../models/tikz.models';
 
 const PREVIEW_NODE_RADIUS = 7;
+const PREVIEW_MIN_DIMENSION = 0.1;
+const PREVIEW_MAX_WIDTH = 180;
+const PREVIEW_MAX_HEIGHT = 126;
+const PREVIEW_CENTER_X = 120;
+const PREVIEW_CENTER_Y = 80;
+const PREVIEW_CENTER_DIVISOR = 2;
 
 interface GraphPreviewNode {
   readonly id: string;
@@ -73,8 +81,12 @@ export class GraphDialogComponent implements OnChanges {
   readonly vertexCount = computed(() => graphVertexCount(this.selected()));
   readonly edgeCount = computed(() => graphEdgeCount(this.selected()));
   readonly preview = computed(() => this.buildPreview(this.selected()));
-  readonly maxColumnsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? 4 : this.maxGridAxis));
-  readonly maxLevelsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? 4 : this.maxTreeLevels));
+  readonly maxColumnsForSelectedKind = computed(() =>
+    this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_COLUMNS : this.maxGridAxis
+  );
+  readonly maxLevelsForSelectedKind = computed(() =>
+    this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : this.maxTreeLevels
+  );
 
   ngOnChanges(): void {
     this.selected.set(normalizeGraphDimensions(this.initialDimensions()));
@@ -180,15 +192,15 @@ export class GraphDialogComponent implements OnChanges {
       }),
       { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
     );
-    const width = Math.max(bounds.maxX - bounds.minX, 0.1);
-    const height = Math.max(bounds.maxY - bounds.minY, 0.1);
-    const scale = Math.min(180 / width, 126 / height);
+    const width = Math.max(bounds.maxX - bounds.minX, PREVIEW_MIN_DIMENSION);
+    const height = Math.max(bounds.maxY - bounds.minY, PREVIEW_MIN_DIMENSION);
+    const scale = Math.min(PREVIEW_MAX_WIDTH / width, PREVIEW_MAX_HEIGHT / height);
     const nodes = layout.nodes.map(
       (node): GraphPreviewNode => ({
         id: node.id,
         label: node.label,
-        x: 120 + (node.position.x - (bounds.minX + bounds.maxX) / 2) * scale,
-        y: 80 - (node.position.y - (bounds.minY + bounds.maxY) / 2) * scale
+        x: PREVIEW_CENTER_X + (node.position.x - (bounds.minX + bounds.maxX) / PREVIEW_CENTER_DIVISOR) * scale,
+        y: PREVIEW_CENTER_Y - (node.position.y - (bounds.minY + bounds.maxY) / PREVIEW_CENTER_DIVISOR) * scale
       })
     );
     const nodeById = new Map(nodes.map((node) => [node.id, node]));
