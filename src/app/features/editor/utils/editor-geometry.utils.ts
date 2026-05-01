@@ -230,7 +230,7 @@ const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
   const points = roundedPolygonOutlinePoints(trianglePoints(shape), effectiveTriangleCornerRadius(shape));
   const rotation = shape.rotation ?? 0;
   const rotatedPoints = rotation
-    ? points.map((point) => rotatePointAround(point, shapeCenter(shape), rotation))
+    ? points.map((point) => rotatePointAround(point, shapeCenter(shape), -rotation))
     : points;
   return boundsFromPoints(rotatedPoints) as SelectionBounds;
 };
@@ -542,7 +542,7 @@ const rotateBoxShapeAround = (
   rotationDeltaDegrees: number
 ): CanvasShape => {
   const center = shapeCenter(shape);
-  const nextCenter = rotatePointAround(center, pivot, rotationDeltaDegrees);
+  const nextCenter = rotatePointAround(center, pivot, -rotationDeltaDegrees);
   return {
     ...shape,
     x: nextCenter.x - shape.width / 2,
@@ -560,15 +560,15 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
     case 'line':
       return {
         ...shape,
-        from: rotatePointAround(shape.from, pivot, rotationDeltaDegrees),
-        to: rotatePointAround(shape.to, pivot, rotationDeltaDegrees),
-        anchors: shape.anchors.map((anchor) => rotatePointAround(anchor, pivot, rotationDeltaDegrees))
+        from: rotatePointAround(shape.from, pivot, -rotationDeltaDegrees),
+        to: rotatePointAround(shape.to, pivot, -rotationDeltaDegrees),
+        anchors: shape.anchors.map((anchor) => rotatePointAround(anchor, pivot, -rotationDeltaDegrees))
       } as CanvasShape;
     case 'rectangle':
     case 'triangle':
       return rotateBoxShapeAround(shape, pivot, rotationDeltaDegrees);
     case 'circle': {
-      const nextCenter = rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
+      const nextCenter = rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, -rotationDeltaDegrees);
       return {
         ...shape,
         cx: nextCenter.x,
@@ -576,7 +576,7 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
       } as CanvasShape;
     }
     case 'ellipse': {
-      const nextCenter = rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, rotationDeltaDegrees);
+      const nextCenter = rotatePointAround({ x: shape.cx, y: shape.cy }, pivot, -rotationDeltaDegrees);
       return {
         ...shape,
         cx: nextCenter.x,
@@ -585,7 +585,7 @@ export const rotateShapeAround = (shape: CanvasShape, pivot: Point, rotationDelt
       } as CanvasShape;
     }
     case 'text': {
-      const nextCenter = rotatePointAround({ x: shape.x, y: shape.y }, pivot, rotationDeltaDegrees);
+      const nextCenter = rotatePointAround({ x: shape.x, y: shape.y }, pivot, -rotationDeltaDegrees);
       return {
         ...shape,
         x: nextCenter.x,

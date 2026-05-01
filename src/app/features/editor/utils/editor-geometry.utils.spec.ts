@@ -182,8 +182,8 @@ describe('editor-geometry utils', () => {
 
     expect(rotated.width).toBe(10);
     expect(rotated.height).toBe(6);
-    expect(rotated.x).toBeCloseTo(-8, 6);
-    expect(rotated.y).toBeCloseTo(2, 6);
+    expect(rotated.x).toBeCloseTo(-2, 6);
+    expect(rotated.y).toBeCloseTo(-8, 6);
     expect(rotated.rotation).toBe(90);
   });
 
@@ -202,9 +202,9 @@ describe('editor-geometry utils', () => {
     }
 
     expect(rotated.from.x).toBeCloseTo(1);
-    expect(rotated.from.y).toBeCloseTo(-1);
+    expect(rotated.from.y).toBeCloseTo(1);
     expect(rotated.to.x).toBeCloseTo(1);
-    expect(rotated.to.y).toBeCloseTo(1);
+    expect(rotated.to.y).toBeCloseTo(-1);
   });
 
   it('clamps corner radius from pointer movement', () => {

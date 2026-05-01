@@ -4045,6 +4045,21 @@ export class EditorPageComponent {
     return { x: deltaX / length, y: deltaY / length };
   }
 
+  private fallbackAttachmentAnchor(shape: CanvasShape, center: Point, fallbackPoint?: Point): Point | null {
+    if (!fallbackPoint) {
+      return null;
+    }
+
+    const rotation = this.shapeRotation(shape);
+    const localPoint = rotation ? this.rotatePointAround(fallbackPoint, center, rotation) : fallbackPoint;
+    return this.normalizeAttachmentAnchor(center, localPoint);
+  }
+
+  private rotatedShapeAttachmentPoint(shape: CanvasShape, point: Point, center: Point): Point {
+    const rotation = this.shapeRotation(shape);
+    return rotation ? this.rotatePointAround(point, center, -rotation) : point;
+  }
+
   private sameAnchor(first: Point, second: Point): boolean {
     return Math.abs(first.x - second.x) < 0.001 && Math.abs(first.y - second.y) < 0.001;
   }
@@ -4055,7 +4070,7 @@ export class EditorPageComponent {
     fallbackPoint?: Point
   ): Point {
     const center = this.shapeCenter(shape);
-    const anchor = attachment.anchor ?? (fallbackPoint ? this.normalizeAttachmentAnchor(center, fallbackPoint) : null);
+    const anchor = attachment.anchor ?? this.fallbackAttachmentAnchor(shape, center, fallbackPoint);
     if (!anchor) {
       return center;
     }
@@ -4075,13 +4090,14 @@ export class EditorPageComponent {
       };
     }
 
-    if (shape.kind === 'ellipse' && !shape.rotation) {
+    if (shape.kind === 'ellipse') {
       const scale =
         1 / Math.sqrt((unit.x * unit.x) / (shape.rx * shape.rx) + (unit.y * unit.y) / (shape.ry * shape.ry));
-      return {
+      const point = {
         x: shape.cx + unit.x * scale,
         y: shape.cy + unit.y * scale
       };
+      return this.rotatedShapeAttachmentPoint(shape, point, center);
     }
 
     if (shape.kind === 'triangle') {
@@ -4089,9 +4105,19 @@ export class EditorPageComponent {
       const attachmentIndex = anchors.findIndex((candidate) => this.sameAnchor(candidate, anchor));
       if (attachmentIndex >= 0) {
         const point = this.triangleAttachmentPoints(shape)[attachmentIndex];
-        const rotation = this.shapeRotation(shape);
-        return rotation ? this.rotatePointAround(point, center, -rotation) : point;
+        return this.rotatedShapeAttachmentPoint(shape, point, center);
       }
+    }
+
+    if (shape.kind === 'rectangle' || shape.kind === 'image') {
+      const halfWidth = Math.max(shape.width / 2, 0.0001);
+      const halfHeight = Math.max(shape.height / 2, 0.0001);
+      const scale = 1 / Math.max(Math.abs(unit.x) / halfWidth, Math.abs(unit.y) / halfHeight);
+      const point = {
+        x: center.x + unit.x * scale,
+        y: center.y + unit.y * scale
+      };
+      return this.rotatedShapeAttachmentPoint(shape, point, center);
     }
 
     const bounds = this.shapeBounds(shape);
@@ -4123,14 +4149,9 @@ export class EditorPageComponent {
         Math.round(rotationDeltaDegrees / EditorPageComponent.rotationSnapStepDegrees) *
         EditorPageComponent.rotationSnapStepDegrees;
     }
-    const usePerShapePivot = interactionState.initialShapes.length > 1;
     this.store.replaceShapes(
       interactionState.initialShapes.map((shape) =>
-        this.rotateShapeAround(
-          shape,
-          usePerShapePivot ? this.shapeCenter(shape) : interactionState.pivot,
-          rotationDeltaDegrees
-        )
+        this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
       )
     );
   }
@@ -7060,12 +7081,9 @@ export class EditorPageComponent {
       x: (bounds.left + bounds.right) / 2,
       y: (bounds.bottom + bounds.top) / 2
     };
-    const usePerShapePivot = selectedShapes.length > 1;
     this.store.recordHistoryCheckpoint();
     this.store.replaceShapes(
-      selectedShapes.map((shape) =>
-        this.rotateShapeAround(shape, usePerShapePivot ? this.shapeCenter(shape) : selectionPivot, rotationDeltaDegrees)
-      )
+      selectedShapes.map((shape) => this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees))
     );
   }
 
