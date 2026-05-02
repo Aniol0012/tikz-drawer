@@ -121,8 +121,8 @@ export const iconPaths = {
   trash:
     'M3 6h18 M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2 M18.5 6l-.6 14.2c-.1.9-.8 1.8-1.7 1.8H7.8c-.9 0-1.6-.9-1.7-1.8L5.5 6 M10 11v7 M14 11v7',
   pencil: 'M17.5 3.5a2.12 2.12 0 0 1 3 3L7 20l-4 1 1-4Z',
-  front: 'M8 8h8v8H8V8Zm4-4h8v8h-2.5v-5.5H12V4Z',
-  back: 'M12 8h8v8h-8V8ZM4 12h8v8H4v-8Z',
+  front: 'M8 8h8v8H8V8Zm4-4h8v8h-2V6h-6V4Z',
+  back: 'M12 4h8v8h-8V4ZM8 8h2v6h6v2H8V8Z',
   pin: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7',
   pinOff: 'M15 4v5l3 3v1H6v-1l3-3V4h6Zm-3 9v7M4.7 3.8 3.8 4.7 19.3 20.2 20.2 19.3 4.7 3.8z',
   layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75',
