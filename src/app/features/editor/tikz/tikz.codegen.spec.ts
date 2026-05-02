@@ -165,6 +165,27 @@ describe('sceneToTikzBundle', () => {
     );
   });
 
+  it('keeps generated math commands valid when followed immediately by text', () => {
+    const scene: TikzScene = {
+      name: 'Adjacent math text scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [
+        {
+          ...textWithInlineMath,
+          text: String.raw`\epsilonTexto\pm \pi \e \gamma\lambda`
+        }
+      ]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain(String.raw`\ensuremath{\epsilon}Texto`);
+    expect(bundle.code).toContain(String.raw`\ensuremath{\pm} \ensuremath{\pi} \ensuremath{\mathrm{e}}`);
+    expect(bundle.code).toContain(String.raw`\ensuremath{\gamma}\ensuremath{\lambda}`);
+    expect(bundle.code).not.toContain(String.raw`\epsilonTexto`);
+    expect(bundle.code).not.toContain(String.raw` \e `);
+  });
+
   it('exports rectangle coordinates using the bottom edge as the stored y origin', () => {
     const scene: TikzScene = {
       name: 'Rectangle scene',

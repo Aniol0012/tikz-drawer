@@ -29,26 +29,29 @@ export interface TikzExportOptions {
 }
 
 const INLINE_MATH_COMMANDS = [
+  'leftrightarrow',
+  'rightarrow',
+  'Leftrightarrow',
+  'leftarrow',
+  'Rightarrow',
+  'downarrow',
+  'uparrow',
+  'Leftarrow',
+  'epsilon',
+  'partial',
+  'exists',
+  'forall',
+  'lambda',
   'alpha',
   'beta',
   'gamma',
   'delta',
-  'epsilon',
   'theta',
-  'lambda',
   'mu',
   'pi',
   'sigma',
   'phi',
   'omega',
-  'leftarrow',
-  'rightarrow',
-  'uparrow',
-  'downarrow',
-  'leftrightarrow',
-  'Rightarrow',
-  'Leftarrow',
-  'Leftrightarrow',
   'times',
   'div',
   'pm',
@@ -56,15 +59,19 @@ const INLINE_MATH_COMMANDS = [
   'sum',
   'prod',
   'int',
-  'partial',
-  'forall',
-  'exists',
   'in',
   'notin',
   'cup',
-  'cap'
+  'cap',
+  'e'
 ] as const;
-const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})(?![A-Za-z])`, 'g');
+const INLINE_MATH_COMMAND_BY_NAME = new Map<string, string>(
+  INLINE_MATH_COMMANDS.map((command) => [
+    command,
+    command === 'e' ? String.raw`\ensuremath{\mathrm{e}}` : `\\ensuremath{\\${command}}`
+  ])
+);
+const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})`, 'g');
 
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
@@ -84,7 +91,10 @@ const wrapInlineMathCommands = (text: string): string => {
 
     result += inMathMode
       ? buffer
-      : buffer.replaceAll(INLINE_MATH_COMMAND_REGEX, (command) => String.raw`\ensuremath{${command}}`);
+      : buffer.replaceAll(
+          INLINE_MATH_COMMAND_REGEX,
+          (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command
+        );
     buffer = '';
   };
 
