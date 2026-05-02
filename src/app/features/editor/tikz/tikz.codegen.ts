@@ -11,9 +11,12 @@ import type {
   TikzScene
 } from '../models/tikz.models';
 import {
+  DEFAULT_EDITOR_SCALE,
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
-  DEFAULT_TEXT_FONT_SIZE
+  DEFAULT_TEXT_FONT_SIZE,
+  MIN_RENDER_STROKE_WIDTH,
+  SHAPE_STROKE_SCALE_FACTOR
 } from '../constants/editor.constants';
 import { effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from '../utils/editor-geometry.utils';
 
@@ -29,26 +32,29 @@ export interface TikzExportOptions {
 }
 
 const INLINE_MATH_COMMANDS = [
+  'leftrightarrow',
+  'rightarrow',
+  'Leftrightarrow',
+  'leftarrow',
+  'Rightarrow',
+  'downarrow',
+  'uparrow',
+  'Leftarrow',
+  'epsilon',
+  'partial',
+  'exists',
+  'forall',
+  'lambda',
   'alpha',
   'beta',
   'gamma',
   'delta',
-  'epsilon',
   'theta',
-  'lambda',
   'mu',
   'pi',
   'sigma',
   'phi',
   'omega',
-  'leftarrow',
-  'rightarrow',
-  'uparrow',
-  'downarrow',
-  'leftrightarrow',
-  'Rightarrow',
-  'Leftarrow',
-  'Leftrightarrow',
   'times',
   'div',
   'pm',
@@ -56,19 +62,42 @@ const INLINE_MATH_COMMANDS = [
   'sum',
   'prod',
   'int',
-  'partial',
-  'forall',
-  'exists',
   'in',
   'notin',
   'cup',
-  'cap'
+  'cap',
+  'e'
 ] as const;
-const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})(?![A-Za-z])`, 'g');
+const INLINE_MATH_COMMAND_BY_NAME = new Map<string, string>(
+  INLINE_MATH_COMMANDS.map((command) => [
+    command,
+    command === 'e' ? String.raw`\ensuremath{\mathrm{e}}` : `\\ensuremath{\\${command}}`
+  ])
+);
+const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})`, 'g');
 
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
-  return Number.isInteger(rounded) ? rounded.toString() : rounded.toString();
+  return rounded.toString();
+};
+
+const formatPoint = (point: { readonly x: number; readonly y: number }): string =>
+  `(${formatNumber(point.x)}, ${formatNumber(point.y)})`;
+
+const ptPerCm = 28.45274;
+
+const renderedStrokeWidth = (strokeWidth: number): number =>
+  Math.max(strokeWidth * DEFAULT_EDITOR_SCALE * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+
+const arrowDimensionPt = (base: number, shape: LineShape, dimensionScale: number): number =>
+  (base * renderedStrokeWidth(shape.strokeWidth) * shape.arrowScale * dimensionScale * ptPerCm) / DEFAULT_EDITOR_SCALE;
+
+const rotateAroundOption = (
+  rotation: number | undefined,
+  center: { readonly x: number; readonly y: number }
+): string | null => {
+  const normalizedRotation = rotation ?? 0;
+  return normalizedRotation === 0 ? null : `rotate around={${formatNumber(normalizedRotation)}:${formatPoint(center)}}`;
 };
 
 const wrapInlineMathCommands = (text: string): string => {
@@ -84,7 +113,10 @@ const wrapInlineMathCommands = (text: string): string => {
 
     result += inMathMode
       ? buffer
-      : buffer.replace(INLINE_MATH_COMMAND_REGEX, (command) => String.raw`\ensuremath{${command}}`);
+      : buffer.replaceAll(
+          INLINE_MATH_COMMAND_REGEX,
+          (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command
+        );
     buffer = '';
   };
 
@@ -122,7 +154,7 @@ const sanitizeColorKey = (color: string): string => color.trim().toLowerCase();
 
 const normalizeHexColor = (color: string): string | null => {
   const trimmed = color.trim();
-  const match = trimmed.match(/^#?([0-9a-fA-F]{6})$/);
+  const match = /^#?([0-9a-fA-F]{6})$/.exec(trimmed);
   return match ? match[1].toUpperCase() : null;
 };
 
@@ -242,21 +274,11 @@ const arrowTipSpec = (shape: LineShape): string => {
   } else {
     options.push(`fill=${shape.arrowColor}`);
   }
-  if (shape.arrowOpacity < 1) {
-    options.push(`opacity=${formatNumber(shape.arrowOpacity)}`);
-  }
   if (shape.arrowRound) {
     options.push('round');
   }
-  if (shape.arrowScale !== 1) {
-    options.push(`scale=${formatNumber(shape.arrowScale)}`);
-  }
-  if (shape.arrowLengthScale !== 1) {
-    options.push(`length=${formatNumber(DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale)}pt`);
-  }
-  if (shape.arrowWidthScale !== 1) {
-    options.push(`width=${formatNumber(DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale)}pt`);
-  }
+  options.push(`length=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_LENGTH, shape, shape.arrowLengthScale))}pt`);
+  options.push(`width=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_WIDTH, shape, shape.arrowWidthScale))}pt`);
   if (shape.arrowBendMode === 'flex') {
     options.push('flex');
   } else if (shape.arrowBendMode === 'flex-prime') {
@@ -267,42 +289,83 @@ const arrowTipSpec = (shape: LineShape): string => {
   return `{${arrowTipName(shape.arrowType)}[${options.join(', ')}]}`;
 };
 
+const isStrokedArrowTip = (shape: LineShape): boolean =>
+  shape.arrowOpen ||
+  shape.arrowType === 'bar' ||
+  shape.arrowType === 'hooks' ||
+  shape.arrowType === 'bracket' ||
+  shape.arrowType === 'parenthesis' ||
+  shape.arrowType === 'straight-barb';
+
+const transparentArrowEntries = (shape: LineShape): string[] => {
+  const entries = [
+    `draw=${shape.arrowColor}`,
+    `line width=${formatNumber(shape.strokeWidth)}pt`,
+    `fill opacity=${formatNumber(shape.arrowOpacity)}`
+  ];
+
+  if (isStrokedArrowTip(shape)) {
+    entries.push(`draw opacity=${formatNumber(shape.arrowOpacity)}`);
+  } else {
+    entries.push('draw opacity=0');
+  }
+
+  return entries;
+};
+
 const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  const tipSpec = arrowTipSpec({
+  const tikzArrowColor = context.registerColor(shape.arrowColor);
+  const tipShape = {
     ...shape,
-    arrowColor: context.registerColor(shape.arrowColor)
-  });
+    arrowColor: tikzArrowColor
+  };
+  const tipSpec = arrowTipSpec(tipShape);
+  const shouldSplitTransparentArrows = (shape.arrowStart || shape.arrowEnd) && shape.arrowOpacity < 1;
 
-  if (shape.arrowStart && shape.arrowEnd) {
+  if (shape.arrowStart && shape.arrowEnd && !shouldSplitTransparentArrows) {
     entries.push(`${tipSpec}-${tipSpec}`);
-  } else if (shape.arrowStart) {
+  } else if (shape.arrowStart && !shouldSplitTransparentArrows) {
     entries.push(`${tipSpec}-`);
-  } else if (shape.arrowEnd) {
+  } else if (shape.arrowEnd && !shouldSplitTransparentArrows) {
     entries.push(`-${tipSpec}`);
   }
 
   const points = [shape.from, ...shape.anchors, shape.to];
-  const pointList = points.map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`);
-  const path =
-    shape.anchors.length > 0
-      ? shape.lineMode === 'curved'
-        ? `plot[smooth] coordinates {${pointList.join(' ')}}`
-        : pointList.join(' -- ')
-      : `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
+  const pointList = points.map((point) => formatPoint(point));
+  let path = `${formatPoint(shape.from)} -- ${formatPoint(shape.to)}`;
+  if (shape.anchors.length > 0) {
+    path = shape.lineMode === 'curved' ? `plot[smooth] coordinates {${pointList.join(' ')}}` : pointList.join(' -- ');
+  }
 
-  return String.raw`\draw[${entries.join(', ')}] ${path};`;
+  const lines = [String.raw`\draw[${entries.join(', ')}] ${path};`];
+
+  if (shouldSplitTransparentArrows) {
+    const overlayEntries = transparentArrowEntries(tipShape);
+    if (shape.arrowStart) {
+      lines.push(String.raw`\draw[${overlayEntries.join(', ')}, ${tipSpec}-] ${path};`);
+    }
+    if (shape.arrowEnd) {
+      lines.push(String.raw`\draw[${overlayEntries.join(', ')}, -${tipSpec}] ${path};`);
+    }
+  }
+
+  return lines.join('\n  ');
 };
 
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
   const cornerRadius = effectiveRectangleCornerRadius(shape);
+  const rotationOption = rotateAroundOption(shape.rotation, {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2
+  });
 
   if (cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
 
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
@@ -311,11 +374,15 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
 const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
   const cornerRadius = effectiveTriangleCornerRadius(shape);
+  const rotationOption = rotateAroundOption(shape.rotation, {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2
+  });
   if (cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
 
   const apexX = shape.x + shape.width * shape.apexOffset;
@@ -330,16 +397,14 @@ const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): s
 
 const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
-  }
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
 };
 
 const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  const rotationOption = rotateAroundOption(shape.rotation, { x: shape.cx, y: shape.cy });
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
 };
@@ -365,8 +430,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   ];
 
   if (shape.textBox) {
-    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`);
-    nodeOptions.push(`align=${shape.textAlign}`);
+    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`, `align=${shape.textAlign}`);
   }
 
   if (shape.rotation !== 0) {

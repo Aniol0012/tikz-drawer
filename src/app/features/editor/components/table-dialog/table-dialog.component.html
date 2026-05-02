@@ -1,5 +1,11 @@
-<div class="table-dialog-backdrop" (click)="cancelDialog.emit()">
-  <section class="table-dialog" (click)="$event.stopPropagation()">
+<div
+  class="table-dialog-backdrop"
+  (click)="cancelDialog.emit()"
+  (keydown.escape)="cancelDialog.emit()">
+  <section
+    class="table-dialog"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()">
     <header class="table-dialog__header">
       <div class="table-dialog__copy">
         <p>{{ quickPickerLabel() }}</p>

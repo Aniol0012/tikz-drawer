@@ -754,7 +754,7 @@ export const objectPresets: readonly ObjectPreset[] = [
         name: 'Browser address bar',
         x: -1.45,
         y: 2.03,
-        width: 4.0,
+        width: 4,
         height: 0.42,
         cornerRadius: 0.18,
         fill: '#f3f5f7',
@@ -1077,7 +1077,7 @@ export const objectPresets: readonly ObjectPreset[] = [
         x: -2.45,
         y: -1.5,
         width: 4.9,
-        height: 3.0,
+        height: 3,
         fill: '#fbfbfb',
         cornerRadius: 0.14
       }),

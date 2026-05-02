@@ -11,7 +11,7 @@ import type { SelectionBounds } from '../../utils/editor-page.utils';
 export type InspectorTab = 'properties' | 'scene';
 export type ExportMode = 'snippet' | 'standalone';
 export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
-export type ToolId = 'select' | string;
+export type ToolId = string;
 export type NotificationTone = 'info' | 'warning';
 export type SidebarSide = 'left' | 'right';
 export type SidebarResizeTarget = SidebarSide | 'mobile-left' | 'mobile-right';

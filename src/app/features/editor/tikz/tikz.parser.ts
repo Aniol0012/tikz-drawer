@@ -194,7 +194,7 @@ const styleStrokeWidth = (styles: Record<string, string>): number => {
     return 0.08;
   }
 
-  return Number.parseFloat(raw.replace(/pt|cm/g, '').trim()) || 0.08;
+  return Number.parseFloat(raw.replaceAll(/(?:pt|cm)/g, '').trim()) || 0.08;
 };
 
 const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number } => ({
@@ -221,6 +221,17 @@ const parseLineStrokeStyle = (styles: Record<string, string>): LineShape['stroke
 const styleOpacity = (styles: Record<string, string>, key: string): number => {
   const raw = Number.parseFloat(styles[key] ?? '1');
   return Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 1;
+};
+
+const styleRotation = (styles: Record<string, string>): number => {
+  const rotateAround = styles['rotate around'];
+  if (rotateAround) {
+    const match = /[{]?\s*(-?\d+(?:\.\d+)?)/.exec(rotateAround);
+    const parsed = Number.parseFloat(match?.[1] ?? '');
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return Number.parseFloat(styles['rotate'] ?? '0') || 0;
 };
 
 const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
@@ -280,10 +291,10 @@ const parseArrowOpacity = (styles: Record<string, string>): number => {
 };
 
 const parseArrowOpen = (styles: Record<string, string>): boolean =>
-  /(?:\[|,)\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+  /[[,]\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
 
 const parseArrowRound = (styles: Record<string, string>): boolean =>
-  /(?:\[|,)\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+  /[[,]\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
 
 const parseArrowScale = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
@@ -299,7 +310,7 @@ const parseArrowDimensionScale = (
 ): number => {
   const raw = styles['arrow meta'] ?? '';
   const match = new RegExp(`${key}=([^,\\]}]+)`, 'i').exec(raw);
-  const parsed = Number.parseFloat((match?.[1] ?? '').replace(/pt|cm|mm|ex|em/g, '').trim());
+  const parsed = Number.parseFloat((match?.[1] ?? '').replaceAll(/(?:pt|cm|mm|ex|em)/g, '').trim());
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return 1;
   }
@@ -308,7 +319,7 @@ const parseArrowDimensionScale = (
 
 const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
   const raw = styles['arrow meta'] ?? '';
-  if (/(?:\[|,)\s*bend(?:\s*[,}\]])/i.test(raw)) {
+  if (/[[,]\s*bend(?:\s*[,}\]])/i.test(raw)) {
     return 'bend';
   }
   if (/flex'\s*(?:=|[,}\]])/i.test(raw)) {
@@ -450,7 +461,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -495,7 +506,7 @@ const parseTriangle = (line: string): CanvasShape | null => {
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
     apexOffset,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -529,7 +540,7 @@ const parseCircle = (line: string): CanvasShape | null => {
     r: Number(match.groups['radius']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -564,7 +575,7 @@ const parseEllipse = (line: string): CanvasShape | null => {
     ry: Number(match.groups['ry']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -615,7 +626,7 @@ const parseImageNode = (line: string): CanvasShape | null => {
     aspectRatio: safeWidth / safeHeight,
     src: imagePlaceholder(imageLabel),
     latexSource,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 };
 
@@ -660,16 +671,16 @@ const parseNode = (line: string): CanvasShape | null => {
     text: match.groups['text'].trim(),
     textBox: /text width=/.test(match.groups['styles'] ?? ''),
     boxWidth:
-      Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replace(/cm/g, '').trim()) ||
+      Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replaceAll('cm', '').trim()) ||
       DEFAULT_TEXT_BOX_WIDTH,
     fontSize: DEFAULT_TEXT_FONT_SIZE * scale,
     color: normalizeTikzColor(styles['text'], '#0f172a'),
     colorOpacity: styleOpacity(styles, 'text opacity'),
-    fontWeight: match.groups['text'].includes('\\bfseries') ? 'bold' : 'normal',
-    fontStyle: match.groups['text'].includes('\\itshape') ? 'italic' : 'normal',
-    textDecoration: match.groups['text'].includes('\\underline{') ? 'underline' : 'none',
+    fontWeight: match.groups['text'].includes(String.raw`\bfseries`) ? 'bold' : 'normal',
+    fontStyle: match.groups['text'].includes(String.raw`\itshape`) ? 'italic' : 'normal',
+    textDecoration: match.groups['text'].includes(String.raw`\underline{`) ? 'underline' : 'none',
     textAlign: textAlignFromAnchor(anchor),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;

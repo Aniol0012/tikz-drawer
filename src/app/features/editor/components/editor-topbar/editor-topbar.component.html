@@ -5,7 +5,7 @@
       <span>{{ t('version') }} {{ appVersion() }}</span>
     </div>
 
-    <label class="scene-input" htmlFor="scene-name-input">
+    <label class="scene-input" for="scene-name-input">
       <input
         id="scene-name-input"
         type="text"
@@ -47,7 +47,10 @@
     </div>
 
     @if (compactTopbarActions() || mobileLayout()) {
-      <div class="menu-cluster topbar-actions-menu" (click)="$event.stopPropagation()">
+      <div
+        class="menu-cluster topbar-actions-menu"
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()">
         <button
           class="icon-button topbar-menu-button"
           type="button"

@@ -6,10 +6,10 @@ describe('tikz latex validation fixtures', () => {
 
     expect(latexValidationFixtures.length).toBeGreaterThan(0);
     expect(document.trim().length).toBeGreaterThan(0);
-    expect(document).toContain('\\documentclass[tikz]{standalone}');
-    expect(document).toContain('\\begin{document}');
-    expect(document).toContain('\\begin{tikzpicture}');
-    expect(document).toContain('\\end{document}');
+    expect(document).toContain(String.raw`\documentclass[tikz]{standalone}`);
+    expect(document).toContain(String.raw`\begin{document}`);
+    expect(document).toContain(String.raw`\begin{tikzpicture}`);
+    expect(document).toContain(String.raw`\end{document}`);
 
     for (const fixture of latexValidationFixtures) {
       expect(document).toContain(`% Fixture: ${fixture.id} (${fixture.title})`);

@@ -75,16 +75,7 @@ export class CustomTooltipComponent {
 
   @HostListener('document:pointerout', ['$event'])
   onPointerOut(event: PointerEvent): void {
-    if (!this.activeTarget) {
-      return;
-    }
-
-    const relatedTarget = event.relatedTarget;
-    if (relatedTarget instanceof Node && this.activeTarget.contains(relatedTarget)) {
-      return;
-    }
-
-    this.scheduleHide();
+    this.scheduleHideAfterTargetExit(event.relatedTarget);
   }
 
   @HostListener('document:focusin', ['$event'])
@@ -99,11 +90,14 @@ export class CustomTooltipComponent {
 
   @HostListener('document:focusout', ['$event'])
   onFocusOut(event: FocusEvent): void {
+    this.scheduleHideAfterTargetExit(event.relatedTarget);
+  }
+
+  private scheduleHideAfterTargetExit(relatedTarget: EventTarget | null): void {
     if (!this.activeTarget) {
       return;
     }
 
-    const relatedTarget = event.relatedTarget;
     if (relatedTarget instanceof Node && this.activeTarget.contains(relatedTarget)) {
       return;
     }

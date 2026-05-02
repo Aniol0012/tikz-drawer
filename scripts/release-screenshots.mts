@@ -20,6 +20,7 @@ import type {
 import * as presetsModule from '../src/app/features/editor/presets/presets.ts';
 import * as tikzCodegenModule from '../src/app/features/editor/tikz/tikz.codegen.ts';
 import * as editorPageUtilsModule from '../src/app/features/editor/utils/editor-page.utils.ts';
+import type { TransformCanvasShapeOptions } from '../src/app/features/editor/utils/editor-page.utils.ts';
 
 const DIST_DIR = normalize(join(process.cwd(), 'dist', 'tikz-drawer', 'browser'));
 const OUTPUT_DIR = normalize(join(process.cwd(), 'screenshots'));
@@ -101,28 +102,10 @@ type RuntimeTikzCodegenExports = {
 
 type RuntimeEditorPageUtilsExports = {
   readonly encodeSharePayload?: (payload: SharedScenePayload) => Promise<string>;
-  readonly transformCanvasShape?: (
-    shape: CanvasShape,
-    deltaX: number,
-    deltaY: number,
-    scaleX: number,
-    scaleY: number,
-    originX: number,
-    originY: number,
-    id?: string
-  ) => CanvasShape;
+  readonly transformCanvasShape?: (shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape;
   readonly default?: {
     readonly encodeSharePayload?: (payload: SharedScenePayload) => Promise<string>;
-    readonly transformCanvasShape?: (
-      shape: CanvasShape,
-      deltaX: number,
-      deltaY: number,
-      scaleX: number,
-      scaleY: number,
-      originX: number,
-      originY: number,
-      id?: string
-    ) => CanvasShape;
+    readonly transformCanvasShape?: (shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape;
   };
 };
 
@@ -186,19 +169,12 @@ const defaultPreferences = resolvePresetExport<EditorPreferences>('defaultPrefer
 const objectPresets = resolvePresetExport<readonly ObjectPreset[]>('objectPresets');
 const scenePresets = resolvePresetExport<readonly ScenePreset[]>('scenePresets');
 const sceneToTikz = resolveTikzCodegenExport<(scene: TikzScene) => string>('sceneToTikz');
-const encodeSharePayload = resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
-const transformCanvasShape = resolveEditorPageUtilsExport<
-  (
-    shape: CanvasShape,
-    deltaX: number,
-    deltaY: number,
-    scaleX: number,
-    scaleY: number,
-    originX: number,
-    originY: number,
-    id?: string
-  ) => CanvasShape
->('transformCanvasShape');
+const encodeSharePayload =
+  resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
+const transformCanvasShape =
+  resolveEditorPageUtilsExport<(shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape>(
+    'transformCanvasShape'
+  );
 
 const PALETTES: readonly Palette[] = [
   {
@@ -269,7 +245,11 @@ class SeededRandom {
     if (!items.length) {
       throw new Error('Cannot pick from an empty array.');
     }
-    return items[this.int(0, items.length - 1)]!;
+    const item = items[this.int(0, items.length - 1)];
+    if (item === undefined) {
+      throw new Error('Random pick resolved outside the source array.');
+    }
+    return item;
   }
 
   shuffle<T>(items: readonly T[]): readonly T[] {
@@ -334,7 +314,7 @@ function cloneShapes(shapes: readonly CanvasShape[]): readonly CanvasShape[] {
       ? (mergeIdMap.get(shape.mergeId) ??
         (() => {
           const value = crypto.randomUUID();
-          mergeIdMap.set(shape.mergeId!, value);
+          mergeIdMap.set(shape.mergeId, value);
           return value;
         })())
       : undefined;
@@ -367,8 +347,12 @@ function textBounds(shape: TextShape): WorldBounds {
     ? Math.max(shape.boxWidth, shape.fontSize)
     : Math.max(...lines.map((line) => Math.max(line.length * shape.fontSize * 0.48, shape.fontSize * 0.7)));
   const height = Math.max(lines.length * shape.fontSize * 0.9, shape.fontSize * 0.72);
-  const left =
-    shape.textBox || shape.textAlign === 'left' ? shape.x : shape.textAlign === 'right' ? shape.x - width : shape.x - width / 2;
+  let left = shape.x - width / 2;
+  if (shape.textBox || shape.textAlign === 'left') {
+    left = shape.x;
+  } else if (shape.textAlign === 'right') {
+    left = shape.x - width;
+  }
 
   return {
     left,
@@ -383,7 +367,12 @@ function shapeBounds(shape: CanvasShape): WorldBounds | null {
     case 'rectangle':
       return { left: shape.x, right: shape.x + shape.width, bottom: shape.y, top: shape.y + shape.height };
     case 'circle':
-      return { left: shape.cx - shape.r, right: shape.cx + shape.r, bottom: shape.cy - shape.r, top: shape.cy + shape.r };
+      return {
+        left: shape.cx - shape.r,
+        right: shape.cx + shape.r,
+        bottom: shape.cy - shape.r,
+        top: shape.cy + shape.r
+      };
     case 'ellipse':
       return {
         left: shape.cx - shape.rx,
@@ -450,7 +439,14 @@ function fitShapesIntoBox(shapes: readonly CanvasShape[], box: LayoutBox): reado
   const targetBottom = box.y + (box.height - height * scale) / 2;
 
   return shapes.map((shape) =>
-    transformCanvasShape(shape, targetLeft - bounds.left, targetBottom - bounds.bottom, scale, scale, bounds.left, bounds.bottom)
+    transformCanvasShape(shape, {
+      deltaX: targetLeft - bounds.left,
+      deltaY: targetBottom - bounds.bottom,
+      scaleX: scale,
+      scaleY: scale,
+      originX: bounds.left,
+      originY: bounds.bottom
+    })
   );
 }
 
@@ -475,7 +471,7 @@ function replaceTextByName(
       return shape;
     }
 
-    const fallback = fallbackSequence[fallbackIndex % fallbackSequence.length]!;
+    const fallback = fallbackSequence[fallbackIndex % fallbackSequence.length] ?? '';
     fallbackIndex += 1;
     return { ...shape, text: fallback } satisfies TextShape;
   });
@@ -483,8 +479,8 @@ function replaceTextByName(
 
 function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: SeededRandom): readonly CanvasShape[] {
   return shapes.map((shape, index) => {
-    const fill = palette.fills[index % palette.fills.length]!;
-    const softFill = palette.softFills[index % palette.softFills.length]!;
+    const fill = palette.fills[index % palette.fills.length] ?? palette.accentSoft;
+    const softFill = palette.softFills[index % palette.softFills.length] ?? palette.accentSoft;
 
     switch (shape.kind) {
       case 'rectangle': {
@@ -534,7 +530,8 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
           color: palette.text,
           colorOpacity: 1,
           fontWeight:
-            shape.fontWeight === 'normal' && (shape.text.length <= 18 || /label|title|todo|doing|done|stage/i.test(shape.name))
+            shape.fontWeight === 'normal' &&
+            (shape.text.length <= 18 || /label|title|todo|doing|done|stage/i.test(shape.name))
               ? 'bold'
               : shape.fontWeight
         } satisfies TextShape;
@@ -593,7 +590,7 @@ function architectureScene(rng: SeededRandom, palette: Palette): GeneratedScreen
     [
       {
         id: 'pipeline',
-        box: { x: -14.2, y: 3.1, width: 7.3, height: 3.0 },
+        box: { x: -14.2, y: 3.1, width: 7.3, height: 3 },
         labels: ['Ingest', 'Shape', 'Export']
       },
       {
@@ -603,22 +600,22 @@ function architectureScene(rng: SeededRandom, palette: Palette): GeneratedScreen
       },
       {
         id: 'folder',
-        box: { x: 9.4, y: -1.3, width: 5.2, height: 3.0 },
+        box: { x: 9.4, y: -1.3, width: 5.2, height: 3 },
         labels: ['Assets']
       },
       {
         id: 'message',
-        box: { x: -14.0, y: -4.6, width: 6.2, height: 2.8 },
+        box: { x: -14, y: -4.6, width: 6.2, height: 2.8 },
         labels: ['Event bus']
       },
       {
         id: 'callout',
-        box: { x: 2.9, y: -5.0, width: 5.6, height: 3.0 },
+        box: { x: 2.9, y: -5, width: 5.6, height: 3 },
         labels: ['Reusable diagram presets']
       },
       {
         id: 'hub',
-        box: { x: -14.3, y: -0.8, width: 5.8, height: 4.0 },
+        box: { x: -14.3, y: -0.8, width: 5.8, height: 4 },
         labels: ['Routing']
       }
     ],
@@ -626,17 +623,11 @@ function architectureScene(rng: SeededRandom, palette: Palette): GeneratedScreen
   );
 
   const shapes = [
-    ...buildSceneModule(
-      'system-map',
-      { x: -8.4, y: -3.5, width: 16.8, height: 8.1 },
-      rng,
-      palette,
-      {
-        'Client label': client,
-        'API label': api,
-        'Database label': database
-      }
-    ),
+    ...buildSceneModule('system-map', { x: -8.4, y: -3.5, width: 16.8, height: 8.1 }, rng, palette, {
+      'Client label': client,
+      'API label': api,
+      'Database label': database
+    }),
     ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
   ];
 
@@ -659,12 +650,12 @@ function analyticsScene(rng: SeededRandom, palette: Palette): GeneratedScreensho
       },
       {
         id: 'network',
-        box: { x: 9.0, y: -4.8, width: 5.6, height: 3.5 },
+        box: { x: 9, y: -4.8, width: 5.6, height: 3.5 },
         labels: []
       },
       {
         id: 'funnel',
-        box: { x: -14.2, y: 2.0, width: 5.4, height: 4.0 },
+        box: { x: -14.2, y: 2, width: 5.4, height: 4 },
         labels: []
       },
       {
@@ -674,7 +665,7 @@ function analyticsScene(rng: SeededRandom, palette: Palette): GeneratedScreensho
       },
       {
         id: 'message',
-        box: { x: 1.7, y: -5.0, width: 6.3, height: 2.8 },
+        box: { x: 1.7, y: -5, width: 6.3, height: 2.8 },
         labels: ['Daily sync']
       },
       {
@@ -687,14 +678,15 @@ function analyticsScene(rng: SeededRandom, palette: Palette): GeneratedScreensho
   );
 
   const shapes = [
-    ...buildSceneModule(
-      'metrics-board',
-      { x: -8.6, y: -3.9, width: 16.5, height: 8.5 },
-      rng,
-      palette,
-      {},
-      ['Growth', 'Activation', 'Retention', 'Kickoff', 'Review', 'Launch', 'Keep exports tidy']
-    ),
+    ...buildSceneModule('metrics-board', { x: -8.6, y: -3.9, width: 16.5, height: 8.5 }, rng, palette, {}, [
+      'Growth',
+      'Activation',
+      'Retention',
+      'Kickoff',
+      'Review',
+      'Launch',
+      'Keep exports tidy'
+    ]),
     ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
   ];
 
@@ -724,17 +716,17 @@ function workflowScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
       },
       {
         id: 'cloud',
-        box: { x: -14.0, y: -4.8, width: 5.8, height: 3.4 },
+        box: { x: -14, y: -4.8, width: 5.8, height: 3.4 },
         labels: ['Shared snapshots']
       },
       {
         id: 'sticky-note',
-        box: { x: 9.0, y: -4.7, width: 5.3, height: 3.2 },
+        box: { x: 9, y: -4.7, width: 5.3, height: 3.2 },
         labels: ['Try another layout']
       },
       {
         id: 'hub',
-        box: { x: 3.6, y: -5.0, width: 4.8, height: 3.0 },
+        box: { x: 3.6, y: -5, width: 4.8, height: 3 },
         labels: ['Routing']
       },
       {
@@ -747,14 +739,12 @@ function workflowScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
   );
 
   const shapes = [
-    ...buildSceneModule(
-      'flow-starter',
-      { x: -8.8, y: -3.6, width: 17.2, height: 8.2 },
-      rng,
-      palette,
-      {},
-      ['Capture', 'Normalize', 'Review', 'Publish']
-    ),
+    ...buildSceneModule('flow-starter', { x: -8.8, y: -3.6, width: 17.2, height: 8.2 }, rng, palette, {}, [
+      'Capture',
+      'Normalize',
+      'Review',
+      'Publish'
+    ]),
     ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
   ];
 
@@ -768,43 +758,27 @@ function workflowScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
 }
 
 function planningScene(rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
-  const topBanner = buildModule(
-    'message',
-    { x: -14.1, y: 6.0, width: 7.8, height: 2.1 },
-    rng,
-    palette,
-    {},
-    [rng.pick(['Release planning', 'Diagram sprint', 'Editorial sync'])]
-  );
+  const topBanner = buildModule('message', { x: -14.1, y: 6, width: 7.8, height: 2.1 }, rng, palette, {}, [
+    rng.pick(['Release planning', 'Diagram sprint', 'Editorial sync'])
+  ]);
 
   const shapes = [
     ...topBanner,
-    ...buildModule(
-      'kanban',
-      { x: -14.2, y: -0.2, width: 18.6, height: 6.6 },
-      rng,
-      palette,
-      {},
-      [rng.pick(['Ideas', 'Backlog']), rng.pick(['Doing', 'In progress']), rng.pick(['Done', 'Ready'])]
-    ),
-    ...buildModule(
-      'timeline',
-      { x: -14.1, y: -5.9, width: 11.8, height: 4.4 },
-      rng,
-      palette,
-      {},
-      ['Kickoff', 'Review', 'Publish']
-    ),
-    ...buildModule('table', { x: 5.0, y: -5.8, width: 9.1, height: 4.4 }, rng, palette),
-    ...buildModule('swimlane', { x: 5.2, y: 1.0, width: 9.0, height: 5.2 }, rng, palette, {}, ['Owner']),
-    ...buildModule(
-      'sticky-note',
-      { x: 8.9, y: -0.8, width: 5.0, height: 3.0 },
-      rng,
-      palette,
-      {},
-      [rng.pick(['Presets stay editable', 'TikZ export is one click', 'Same board, many views'])]
-    )
+    ...buildModule('kanban', { x: -14.2, y: -0.2, width: 18.6, height: 6.6 }, rng, palette, {}, [
+      rng.pick(['Ideas', 'Backlog']),
+      rng.pick(['Doing', 'In progress']),
+      rng.pick(['Done', 'Ready'])
+    ]),
+    ...buildModule('timeline', { x: -14.1, y: -5.9, width: 11.8, height: 4.4 }, rng, palette, {}, [
+      'Kickoff',
+      'Review',
+      'Publish'
+    ]),
+    ...buildModule('table', { x: 5, y: -5.8, width: 9.1, height: 4.4 }, rng, palette),
+    ...buildModule('swimlane', { x: 5.2, y: 1, width: 9, height: 5.2 }, rng, palette, {}, ['Owner']),
+    ...buildModule('sticky-note', { x: 8.9, y: -0.8, width: 5, height: 3 }, rng, palette, {}, [
+      rng.pick(['Presets stay editable', 'TikZ export is one click', 'Same board, many views'])
+    ])
   ];
 
   return {
@@ -816,12 +790,7 @@ function planningScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
   };
 }
 
-const SCENE_COMPOSERS: readonly SceneComposer[] = [
-  architectureScene,
-  analyticsScene,
-  workflowScene,
-  planningScene
-];
+const SCENE_COMPOSERS: readonly SceneComposer[] = [architectureScene, analyticsScene, workflowScene, planningScene];
 
 function generateScreenshotScene(seed: number): GeneratedScreenshotScene {
   const rng = new SeededRandom(seed);
@@ -973,18 +942,27 @@ async function run(): Promise<void> {
 
   try {
     await captureScreenshot(browser, baseUrl, desktopPayload, DESKTOP_VIEWPORT, join(OUTPUT_DIR, 'editor-light.png'));
-    await captureScreenshot(browser, baseUrl, mobilePayload, MOBILE_VIEWPORT, join(OUTPUT_DIR, 'editor-mobile-light.png'), {
-      isMobile: true,
-      hasTouch: true,
-      deviceScaleFactor: 2
-    });
+    await captureScreenshot(
+      browser,
+      baseUrl,
+      mobilePayload,
+      MOBILE_VIEWPORT,
+      join(OUTPUT_DIR, 'editor-mobile-light.png'),
+      {
+        isMobile: true,
+        hasTouch: true,
+        deviceScaleFactor: 2
+      }
+    );
   } finally {
     await browser.close();
     server.close();
   }
 }
 
-run().catch((error) => {
+try {
+  await run();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

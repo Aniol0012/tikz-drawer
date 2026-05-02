@@ -10,7 +10,7 @@ const latexValidationFixtures =
   (validationModule.default as { latexValidationFixtures?: unknown } | undefined)?.latexValidationFixtures;
 
 if (typeof buildLatexValidationDocument !== 'function' || !Array.isArray(latexValidationFixtures)) {
-  throw new Error('Unable to load TikZ LaTeX validation exports from tikz.validation.fixtures.ts');
+  throw new TypeError('Unable to load TikZ LaTeX validation exports from tikz.validation.fixtures.ts');
 }
 
 const outputDirectory = path.resolve('.artifacts', 'tikz-validation');
@@ -23,7 +23,12 @@ if (!document.trim()) {
   throw new Error('Generated LaTeX validation document is empty.');
 }
 
-for (const requiredToken of ['\\documentclass[tikz]{standalone}', '\\begin{document}', '\\begin{tikzpicture}', '\\end{document}']) {
+for (const requiredToken of [
+  String.raw`\documentclass[tikz]{standalone}`,
+  String.raw`\begin{document}`,
+  String.raw`\begin{tikzpicture}`,
+  String.raw`\end{document}`
+]) {
   if (!document.includes(requiredToken)) {
     throw new Error(`Generated LaTeX validation document is missing required token: ${requiredToken}`);
   }

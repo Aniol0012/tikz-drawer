@@ -270,7 +270,8 @@
         (dragover)="onCanvasDragOver($event)"
         (drop)="onCanvasDrop($event)"
         (wheel)="onCanvasWheel($event)"
-        (contextmenu)="openCanvasContextMenu($event)">
+        (contextmenu)="openCanvasContextMenu($event)"
+        (keydown)="onCanvasViewportKeydown($event)">
         <svg
           #canvasSvg
           class="canvas-surface"
@@ -278,7 +279,8 @@
           (pointermove)="onCanvasPointerMove($event)"
           (pointerup)="endInteraction($event)"
           (pointercancel)="endInteraction($event)"
-          (click)="onCanvasBackgroundClick($event)">
+          (click)="onCanvasBackgroundClick($event)"
+          (keydown)="onCanvasSurfaceKeydown($event)">
           <defs>
             <marker
               id="arrow-end"
@@ -341,6 +343,7 @@
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"
               (click)="onShapeClick($event, shape)"
+              (keydown.enter)="onShapeKeydown($event, shape)"
               (dblclick)="onShapeDoubleClick($event, shape)"
               (pointerdown)="startMove($event, shape)"
               (contextmenu)="openShapeContextMenu($event, shape)">
@@ -1814,7 +1817,10 @@
                     </div>
                     <div class="field field--full">
                       <span>{{ t('textSymbols') }}</span>
-                      <div class="text-symbol-picker" (click)="$event.stopPropagation()">
+                      <div
+                        class="text-symbol-picker"
+                        (click)="$event.stopPropagation()"
+                        (keydown)="$event.stopPropagation()">
                         <button
                           class="secondary-button secondary-button--compact text-symbol-trigger"
                           type="button"
@@ -3271,7 +3277,8 @@
       [style.left.px]="contextMenuPosition()?.left ?? menu.clientX"
       [style.top.px]="contextMenuPosition()?.top ?? menu.clientY"
       role="menu"
-      (click)="$event.stopPropagation()">
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()">
       <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('copy')">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.copy"></path>
@@ -3352,7 +3359,8 @@
     <div class="modal-backdrop">
       <section
         class="export-settings-modal export-settings-modal--template"
-        (click)="$event.stopPropagation()">
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()">
         <header class="export-modal__header">
           <div>
             <p>{{ t('saveAsTemplate') }}</p>
@@ -3423,7 +3431,8 @@
     <div class="modal-backdrop">
       <section
         class="export-settings-modal export-settings-modal--template"
-        (click)="$event.stopPropagation()">
+        (click)="$event.stopPropagation()"
+        (keydown)="$event.stopPropagation()">
         <header class="export-modal__header">
           <div>
             <p>{{ t('delete') }}</p>
