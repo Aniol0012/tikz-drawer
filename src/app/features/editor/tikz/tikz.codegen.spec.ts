@@ -112,9 +112,9 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.imports).toContain(String.raw`\usetikzlibrary{bending}`);
     expect(bundle.code).toContain('-{Triangle[');
     expect(bundle.code).toContain('color={rgb,255:red,17;green,34;blue,51}');
-    expect(bundle.code).toContain('scale=1.5');
-    expect(bundle.code).toContain('length=12pt');
-    expect(bundle.code).toContain('width=4.5pt');
+    expect(bundle.code).toContain('length=21.34pt');
+    expect(bundle.code).toContain('width=8.002pt');
+    expect(bundle.code).toContain('fill opacity=0.8');
     expect(bundle.code).toContain('bend');
     expect(bundle.code).not.toContain('Triangle[draw=');
     expect(bundle.code).not.toMatch(/Triangle\[[^\]]*\bopacity=/);
@@ -130,6 +130,24 @@ describe('sceneToTikzBundle', () => {
     const bundle = sceneToTikzBundle(scene);
 
     expect(bundle.code).toContain('-{Square[');
+  });
+
+  it('exports arrow tip dimensions from rendered line and arrow scales', () => {
+    const scene: TikzScene = {
+      name: 'Scaled arrow scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [
+        { ...baseLine, id: 'small-arrow', strokeWidth: 0.1, arrowScale: 1, arrowLengthScale: 1, arrowWidthScale: 1 },
+        { ...baseLine, id: 'large-arrow', strokeWidth: 4, arrowScale: 2, arrowLengthScale: 1.25, arrowWidthScale: 1.5 }
+      ]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain('length=9.484pt');
+    expect(bundle.code).toContain('width=7.113pt');
+    expect(bundle.code).toContain('length=113.811pt');
+    expect(bundle.code).toContain('width=102.43pt');
   });
 
   it('defines colors once when using define-colors mode', () => {
@@ -199,6 +217,40 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('(-14.857, 9.101) rectangle (4.841, 4.007);');
     expect(bundle.code).toContain(String.raw`\node[`);
     expect(bundle.code).toContain('at (1, 2)');
+  });
+
+  it('rotates positioned shapes around their own centers', () => {
+    const scene: TikzScene = {
+      name: 'Rotation scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [
+        { ...rectangleWithInnerText, x: 10, y: 20, width: 4, height: 2, rotation: 37 },
+        { ...balancedTriangle, x: -8, y: 5, width: 6, height: 10, rotation: -22 }
+      ]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+    const parsed = parseTikz(bundle.code);
+
+    expect(bundle.code).toContain('rotate around={37:(12, 21)}');
+    expect(bundle.code).toContain('rotate around={-22:(-5, 10)}');
+
+    const rectangle = parsed.scene.shapes.find((shape) => shape.kind === 'rectangle');
+    const triangle = parsed.scene.shapes.find((shape) => shape.kind === 'triangle');
+
+    expect(rectangle?.kind).toBe('rectangle');
+    expect(triangle?.kind).toBe('triangle');
+
+    if (rectangle?.kind !== 'rectangle' || triangle?.kind !== 'triangle') {
+      throw new Error('Expected rotated rectangle and triangle after roundtrip');
+    }
+
+    expect(rectangle.x).toBeCloseTo(10);
+    expect(rectangle.y).toBeCloseTo(20);
+    expect(rectangle.rotation).toBe(37);
+    expect(triangle.x).toBeCloseTo(-8);
+    expect(triangle.y).toBeCloseTo(5);
+    expect(triangle.rotation).toBe(-22);
   });
 
   it('round-trips rectangle and text positions without vertical drift', () => {

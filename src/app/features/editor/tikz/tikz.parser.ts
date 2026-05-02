@@ -223,6 +223,17 @@ const styleOpacity = (styles: Record<string, string>, key: string): number => {
   return Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 1;
 };
 
+const styleRotation = (styles: Record<string, string>): number => {
+  const rotateAround = styles['rotate around'];
+  if (rotateAround) {
+    const match = /[{]?\s*(-?\d+(?:\.\d+)?)/.exec(rotateAround);
+    const parsed = Number.parseFloat(match?.[1] ?? '');
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return Number.parseFloat(styles['rotate'] ?? '0') || 0;
+};
+
 const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] => {
   const raw = `${styles['arrow meta'] ?? styles['>='] ?? styles['<='] ?? ''}`.toLowerCase();
   if (raw.includes('straight barb')) {
@@ -450,7 +461,7 @@ const parseRectangle = (line: string): CanvasShape | null => {
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -495,7 +506,7 @@ const parseTriangle = (line: string): CanvasShape | null => {
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: Number.parseFloat((styles['rounded corners'] ?? '0').replace('cm', '').trim()) || 0,
     apexOffset,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -529,7 +540,7 @@ const parseCircle = (line: string): CanvasShape | null => {
     r: Number(match.groups['radius']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -564,7 +575,7 @@ const parseEllipse = (line: string): CanvasShape | null => {
     ry: Number(match.groups['ry']),
     fill: normalizeTikzColor(styles['fill'], 'none'),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;
@@ -615,7 +626,7 @@ const parseImageNode = (line: string): CanvasShape | null => {
     aspectRatio: safeWidth / safeHeight,
     src: imagePlaceholder(imageLabel),
     latexSource,
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 };
 
@@ -669,7 +680,7 @@ const parseNode = (line: string): CanvasShape | null => {
     fontStyle: match.groups['text'].includes(String.raw`\itshape`) ? 'italic' : 'normal',
     textDecoration: match.groups['text'].includes(String.raw`\underline{`) ? 'underline' : 'none',
     textAlign: textAlignFromAnchor(anchor),
-    rotation: Number.parseFloat(styles['rotate'] ?? '0') || 0
+    rotation: styleRotation(styles)
   };
 
   return shape;

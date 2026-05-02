@@ -11,9 +11,12 @@ import type {
   TikzScene
 } from '../models/tikz.models';
 import {
+  DEFAULT_EDITOR_SCALE,
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
-  DEFAULT_TEXT_FONT_SIZE
+  DEFAULT_TEXT_FONT_SIZE,
+  MIN_RENDER_STROKE_WIDTH,
+  SHAPE_STROKE_SCALE_FACTOR
 } from '../constants/editor.constants';
 import { effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from '../utils/editor-geometry.utils';
 
@@ -76,6 +79,25 @@ const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMA
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return rounded.toString();
+};
+
+const formatPoint = (point: { readonly x: number; readonly y: number }): string =>
+  `(${formatNumber(point.x)}, ${formatNumber(point.y)})`;
+
+const ptPerCm = 28.45274;
+
+const renderedStrokeWidth = (strokeWidth: number): number =>
+  Math.max(strokeWidth * DEFAULT_EDITOR_SCALE * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+
+const arrowDimensionPt = (base: number, shape: LineShape, dimensionScale: number): number =>
+  (base * renderedStrokeWidth(shape.strokeWidth) * shape.arrowScale * dimensionScale * ptPerCm) / DEFAULT_EDITOR_SCALE;
+
+const rotateAroundOption = (
+  rotation: number | undefined,
+  center: { readonly x: number; readonly y: number }
+): string | null => {
+  const normalizedRotation = rotation ?? 0;
+  return normalizedRotation === 0 ? null : `rotate around={${formatNumber(normalizedRotation)}:${formatPoint(center)}}`;
 };
 
 const wrapInlineMathCommands = (text: string): string => {
@@ -255,15 +277,8 @@ const arrowTipSpec = (shape: LineShape): string => {
   if (shape.arrowRound) {
     options.push('round');
   }
-  if (shape.arrowScale !== 1) {
-    options.push(`scale=${formatNumber(shape.arrowScale)}`);
-  }
-  if (shape.arrowLengthScale !== 1) {
-    options.push(`length=${formatNumber(DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale)}pt`);
-  }
-  if (shape.arrowWidthScale !== 1) {
-    options.push(`width=${formatNumber(DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale)}pt`);
-  }
+  options.push(`length=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_LENGTH, shape, shape.arrowLengthScale))}pt`);
+  options.push(`width=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_WIDTH, shape, shape.arrowWidthScale))}pt`);
   if (shape.arrowBendMode === 'flex') {
     options.push('flex');
   } else if (shape.arrowBendMode === 'flex-prime') {
@@ -317,8 +332,8 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
   }
 
   const points = [shape.from, ...shape.anchors, shape.to];
-  const pointList = points.map((point) => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`);
-  let path = `(${formatNumber(shape.from.x)}, ${formatNumber(shape.from.y)}) -- (${formatNumber(shape.to.x)}, ${formatNumber(shape.to.y)})`;
+  const pointList = points.map((point) => formatPoint(point));
+  let path = `${formatPoint(shape.from)} -- ${formatPoint(shape.to)}`;
   if (shape.anchors.length > 0) {
     path = shape.lineMode === 'curved' ? `plot[smooth] coordinates {${pointList.join(' ')}}` : pointList.join(' -- ');
   }
@@ -341,12 +356,16 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
   const cornerRadius = effectiveRectangleCornerRadius(shape);
+  const rotationOption = rotateAroundOption(shape.rotation, {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2
+  });
 
   if (cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
 
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y + shape.height)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y)});`;
@@ -355,11 +374,15 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
 const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
   const cornerRadius = effectiveTriangleCornerRadius(shape);
+  const rotationOption = rotateAroundOption(shape.rotation, {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2
+  });
   if (cornerRadius > 0) {
     entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
   }
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
 
   const apexX = shape.x + shape.width * shape.apexOffset;
@@ -374,16 +397,14 @@ const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): s
 
 const circleToTikz = (shape: CircleShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
-  }
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) circle (${formatNumber(shape.r)});`;
 };
 
 const ellipseToTikz = (shape: EllipseShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  if ((shape.rotation ?? 0) !== 0) {
-    entries.push(`rotate=${formatNumber(shape.rotation ?? 0)}`);
+  const rotationOption = rotateAroundOption(shape.rotation, { x: shape.cx, y: shape.cy });
+  if (rotationOption) {
+    entries.push(rotationOption);
   }
   return String.raw`\draw[${entries.join(', ')}] (${formatNumber(shape.cx)}, ${formatNumber(shape.cy)}) ellipse (${formatNumber(shape.rx)} and ${formatNumber(shape.ry)});`;
 };
