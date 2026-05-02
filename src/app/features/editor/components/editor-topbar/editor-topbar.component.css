@@ -2,18 +2,6 @@
   display: contents;
 }
 
-@keyframes copy-button-pop {
-  0% {
-    transform: scale(0.94);
-  }
-  48% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
 .topbar {
   position: fixed;
   top: 0;
@@ -395,14 +383,6 @@
 
 .icon-button--github:hover .icon-button__github-mark {
   transform: translateY(-0.5px) scale(1.03);
-}
-
-.copy-action-button:active {
-  animation: copy-button-pop 260ms ease;
-}
-
-.copy-action-button:active svg {
-  animation: copy-button-pop 260ms ease;
 }
 
 .menu-cluster {

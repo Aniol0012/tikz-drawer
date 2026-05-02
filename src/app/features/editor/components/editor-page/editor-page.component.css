@@ -99,18 +99,6 @@
   }
 }
 
-@keyframes copy-button-pop {
-  0% {
-    transform: scale(0.94);
-  }
-  48% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
 .topbar__left,
 .topbar__center,
 .topbar__right,
@@ -2405,7 +2393,6 @@ kbd {
 }
 
 .share-panel,
-.copy-feedback,
 .export-section {
   display: grid;
   gap: 10px;
@@ -2419,16 +2406,6 @@ kbd {
   background: color-mix(in srgb, var(--tool-surface) 92%, transparent);
 }
 
-.copy-feedback {
-  color: var(--accent-strong);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.copy-feedback--warning {
-  color: color-mix(in srgb, var(--warning) 82%, var(--app-foreground));
-}
-
 .share-field {
   align-items: stretch;
   flex-wrap: wrap;
@@ -2436,28 +2413,6 @@ kbd {
 
 .share-field input {
   flex: 1 1 280px;
-}
-
-.code-copy-button {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  padding: 0;
-  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
-  border-color: color-mix(in srgb, var(--tool-border) 82%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-background) 88%, transparent);
-}
-
-.copy-action-button.is-copying {
-  animation: copy-button-pop 260ms ease;
-}
-
-.copy-action-button.is-copying svg {
-  animation: copy-button-pop 260ms ease;
 }
 
 :host ::ng-deep .tok-command {

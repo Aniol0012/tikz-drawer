@@ -23,16 +23,17 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('plus')"></path></svg>
           <span>{{ t('newScene') }}</span>
         </button>
-        <button
-          class="secondary-button secondary-button--toolbar copy-action-button"
-          type="button"
-          [title]="t('copyLink')"
-          (click)="copyShareLink.emit()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('link')"></path>
-          </svg>
-          <span>{{ t('copyLink') }}</span>
-        </button>
+        <app-copy-button
+          class="topbar-copy-button"
+          appearance="secondary"
+          [text]="t('copyLink')"
+          [copyLabel]="t('copyLink')"
+          [successLabel]="t('copied')"
+          [errorLabel]="t('copyError')"
+          [iconPath]="icon('link')"
+          [resolveValue]="shareLinkCopyValue()"
+          (copied)="onShareLinkCopied($event)"
+          (copyError)="copyError.emit($event)"></app-copy-button>
         <button
           class="secondary-button secondary-button--toolbar"
           type="button"
@@ -70,15 +71,16 @@
                 </svg>
                 <span>{{ t('newScene') }}</span>
               </button>
-              <button
-                class="dropdown-row copy-action-button"
-                type="button"
-                (click)="copyShareLink.emit()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="icon('link')"></path>
-                </svg>
-                <span>{{ t('copyLink') }}</span>
-              </button>
+              <app-copy-button
+                appearance="dropdown"
+                [text]="t('copyLink')"
+                [copyLabel]="t('copyLink')"
+                [successLabel]="t('copied')"
+                [errorLabel]="t('copyError')"
+                [iconPath]="icon('link')"
+                [resolveValue]="shareLinkCopyValue()"
+                (copied)="onShareLinkCopied($event, true)"
+                (copyError)="copyError.emit($event)"></app-copy-button>
               <button
                 class="dropdown-row"
                 type="button"

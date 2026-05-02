@@ -278,6 +278,7 @@
   "shareLinkReady": "Enlace copiado. Compártelo para abrir la figura completa.",
   "shareLinkImagesWarning": "El enlace se ha copiado, pero las imágenes no se guardarán al compartirlo.",
   "copied": "Copiado",
+  "copyError": "No se ha podido copiar",
   "codeWarnings": "Se omitieron algunas líneas:",
   "confirmReplaceScene": "Esto reemplazará la escena actual. ¿Quieres continuar?",
   "confirmReplaceSceneTitle": "¿Crear un lienzo nuevo?",

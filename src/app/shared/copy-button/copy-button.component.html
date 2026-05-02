@@ -1,0 +1,39 @@
+<button
+  class="copy-button"
+  type="button"
+  [class.copy-button--icon]="appearance() === 'icon'"
+  [class.copy-button--secondary]="appearance() === 'secondary'"
+  [class.copy-button--dropdown]="appearance() === 'dropdown'"
+  [class.is-copying]="state() === 'copying'"
+  [class.is-success]="state() === 'success'"
+  [class.is-error]="state() === 'error'"
+  [disabled]="buttonDisabled()"
+  [attr.aria-label]="feedbackLabel()"
+  [attr.title]="feedbackLabel()"
+  [attr.data-tooltip]="feedbackLabel()"
+  (click)="copy()">
+  <span class="copy-button__icon-stack" aria-hidden="true">
+    <svg
+      class="copy-button__icon copy-button__icon--copy"
+      viewBox="0 0 24 24"
+      [class.is-active]="state() === 'idle' || state() === 'copying'">
+      <path [attr.d]="iconPath()"></path>
+    </svg>
+    <svg
+      class="copy-button__icon copy-button__icon--success"
+      viewBox="0 0 24 24"
+      [class.is-active]="state() === 'success'">
+      <path [attr.d]="successIconPath()"></path>
+    </svg>
+    <svg
+      class="copy-button__icon copy-button__icon--error"
+      viewBox="0 0 24 24"
+      [class.is-active]="state() === 'error'">
+      <path [attr.d]="errorIconPath()"></path>
+    </svg>
+  </span>
+  @if (text()) {
+    <span class="copy-button__label">{{ text() }}</span>
+  }
+</button>
+<span class="copy-button__announcement" aria-live="polite">{{ announcement() }}</span>

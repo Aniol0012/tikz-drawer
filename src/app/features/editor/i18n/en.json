@@ -278,6 +278,7 @@
   "shareLinkReady": "Link copied. Share it to open the full figure.",
   "shareLinkImagesWarning": "The link was copied, but images will not be included when sharing it.",
   "copied": "Copied",
+  "copyError": "Could not copy",
   "codeWarnings": "Some lines were skipped:",
   "confirmReplaceScene": "This will replace the current scene. Do you want to continue?",
   "confirmReplaceSceneTitle": "Create a new canvas?",

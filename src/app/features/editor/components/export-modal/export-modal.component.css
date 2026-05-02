@@ -469,26 +469,6 @@
   padding-right: 14px;
 }
 
-.code-copy-button {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
-  border-color: color-mix(in srgb, var(--tool-border) 82%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-background) 88%, transparent);
-}
-
-.copy-action-button {
-  &.is-copying,
-  &.is-copying svg {
-    animation: copy-button-pop 260ms ease;
-  }
-}
-
 .sidebar-section,
 .export-settings-section {
   display: grid;
@@ -798,18 +778,6 @@
   & .code-stack--theme-preview {
     border-color: color-mix(in srgb, white 12%, var(--tool-border));
     background: color-mix(in srgb, var(--input-background) 86%, #141414 14%);
-  }
-}
-
-@keyframes copy-button-pop {
-  0% {
-    transform: scale(0.94);
-  }
-  48% {
-    transform: scale(1.08);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 

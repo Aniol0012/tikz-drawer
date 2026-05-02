@@ -141,7 +141,7 @@ import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-s
 import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
-import { ExportModalComponent, type ExportCopyTarget } from '../export-modal/export-modal.component';
+import { ExportModalComponent } from '../export-modal/export-modal.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
@@ -1104,10 +1104,8 @@ export class EditorPageComponent {
     }
   });
   readonly shareUrl = signal('');
-  readonly copyButtonAnimation = signal<ExportCopyTarget | null>(null);
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
   private shareUrlRequestId = 0;
-  private copyButtonAnimationHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
   private contextMenuPositionRafHandle: number | null = null;
@@ -1131,9 +1129,6 @@ export class EditorPageComponent {
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
         clearTimeout(this.themeToggleCooldownHandle);
-      }
-      if (this.copyButtonAnimationHandle !== null) {
-        clearTimeout(this.copyButtonAnimationHandle);
       }
       if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
@@ -2251,41 +2246,17 @@ export class EditorPageComponent {
     return { x: x + (width - fittedWidth) / 2, y, width: fittedWidth, height };
   }
 
-  copyExportedCode(): void {
-    this.copyTextToClipboard(this.snippetExport().code);
-  }
-
-  copyStandaloneCode(): void {
-    this.copyTextToClipboard(this.standaloneDocument());
-  }
-
-  copySnippetImports(): void {
-    this.animateCopyButton('imports');
-    this.copyTextToClipboard(this.snippetExport().imports);
-  }
-
-  copyCurrentExportCode(): void {
-    this.animateCopyButton('currentExport');
-    if (this.exportMode() === 'snippet') {
-      this.copyExportedCode();
-      return;
-    }
-
-    this.copyStandaloneCode();
-  }
-
-  async copyShareLink(): Promise<void> {
-    if (!navigator.clipboard) {
-      return;
-    }
-
+  readonly shareLinkCopyValue = async (): Promise<string> => {
     const url = await this.generateShareUrl();
     if (!url) {
-      return;
+      throw new Error('Unable to generate share link.');
     }
+
     this.shareUrl.set(url);
-    await navigator.clipboard.writeText(url);
-    this.animateCopyButton('shareLink');
+    return url;
+  };
+
+  handleShareLinkCopied(): void {
     const hasImages = this.scene().shapes.some((shape) => shape.kind === 'image');
     if (hasImages) {
       const warningMessage = this.t('shareLinkImagesWarning');
@@ -2294,6 +2265,10 @@ export class EditorPageComponent {
       this.showNotification(this.t('shareLinkReady'));
     }
     this.closeFileMenu();
+  }
+
+  handleCopyError(): void {
+    this.showNotification(this.t('copyError'), 'warning');
   }
 
   startMinimapPan(event: PointerEvent, minimap: MinimapOverview): void {
@@ -2585,20 +2560,6 @@ export class EditorPageComponent {
 
   onBooleanPreferenceChange(key: PreferenceBooleanKey, event: Event): void {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
-  }
-
-  private animateCopyButton(target: ExportCopyTarget): void {
-    if (this.copyButtonAnimationHandle !== null) {
-      clearTimeout(this.copyButtonAnimationHandle);
-    }
-
-    this.copyButtonAnimation.set(null);
-    const view = this.document.defaultView;
-    view?.requestAnimationFrame(() => this.copyButtonAnimation.set(target));
-    this.copyButtonAnimationHandle = setTimeout(() => {
-      this.copyButtonAnimation.set(null);
-      this.copyButtonAnimationHandle = null;
-    }, 320);
   }
 
   onToggleFieldKeydown(event: KeyboardEvent): void {
@@ -5802,13 +5763,6 @@ export class EditorPageComponent {
     this.lastRemoteRevisionByClient.set(message.senderId, message.revision);
     this.applyingRemoteSync = true;
     this.store.restoreSyncedDocument(message.scene, message.importCode);
-  }
-
-  private copyTextToClipboard(text: string): void {
-    if (!navigator.clipboard) {
-      return;
-    }
-    this.runAsync(navigator.clipboard.writeText(text));
   }
 
   private runSceneMutation(action: () => void): void {

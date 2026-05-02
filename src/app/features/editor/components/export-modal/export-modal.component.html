@@ -23,15 +23,16 @@
         <span>{{ t('shareLink') }}</span>
         <div class="share-field">
           <input type="text" readonly [value]="shareUrl()" />
-          <button
-            class="secondary-button copy-action-button"
-            type="button"
-            [class.is-copying]="copyButtonAnimation() === 'shareLink'"
-            (click)="copyShareLink.emit()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="icon('link')"></path></svg
-            ><span>{{ t('copyLink') }}</span>
-          </button>
+          <app-copy-button
+            appearance="secondary"
+            [text]="t('copyLink')"
+            [copyLabel]="t('copyLink')"
+            [successLabel]="t('copied')"
+            [errorLabel]="t('copyError')"
+            [iconPath]="icon('link')"
+            [resolveValue]="shareLinkCopyValue()"
+            (copied)="shareLinkCopied.emit($event)"
+            (copyError)="copyError.emit($event)"></app-copy-button>
           <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"
             ><svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="icon('open')"></path></svg
@@ -89,16 +90,14 @@
         </div>
         <div class="code-panel">
           <div class="code-block-shell">
-            <button
-              class="icon-button code-copy-button copy-action-button"
-              type="button"
-              [title]="t('copy')"
-              [class.is-copying]="copyButtonAnimation() === 'imports'"
-              (click)="copyImports.emit()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="icon('copy')"></path>
-              </svg>
-            </button>
+            <app-copy-button
+              class="code-copy-button"
+              [value]="exportImports()"
+              [copyLabel]="t('copy')"
+              [successLabel]="t('copied')"
+              [errorLabel]="t('copyError')"
+              [iconPath]="icon('copy')"
+              (copyError)="copyError.emit($event)"></app-copy-button>
             <pre
               class="code-block code-block--modal code-block--imports"><code [innerHTML]="highlightedExportImports()"></code></pre>
           </div>
@@ -112,16 +111,14 @@
       </div>
       <div class="code-panel">
         <div class="code-block-shell">
-          <button
-            class="icon-button code-copy-button copy-action-button"
-            type="button"
-            [title]="t('copy')"
-            [class.is-copying]="copyButtonAnimation() === 'currentExport'"
-            (click)="copyCurrentCode.emit()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="icon('copy')"></path>
-            </svg>
-          </button>
+          <app-copy-button
+            class="code-copy-button"
+            [value]="exportCode()"
+            [copyLabel]="t('copy')"
+            [successLabel]="t('copied')"
+            [errorLabel]="t('copyError')"
+            [iconPath]="icon('copy')"
+            (copyError)="copyError.emit($event)"></app-copy-button>
           <pre
             class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
         </div>

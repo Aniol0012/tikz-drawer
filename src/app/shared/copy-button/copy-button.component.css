@@ -1,0 +1,200 @@
+:host {
+  display: inline-flex;
+  min-width: 0;
+  color: inherit;
+}
+
+:host(.code-copy-button) {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.copy-button {
+  --copy-success-color: #17803d;
+  --copy-error-color: #c92a2a;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--tool-surface);
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    color 160ms ease;
+}
+
+.copy-button:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.copy-button:active {
+  transform: scale(0.97);
+}
+
+.copy-button:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.copy-button:disabled {
+  cursor: default;
+  opacity: 0.64;
+}
+
+.copy-button--icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  line-height: 0;
+}
+
+:host(.code-copy-button) .copy-button--icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
+  border-color: color-mix(in srgb, var(--tool-border) 82%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-background) 88%, transparent);
+}
+
+.copy-button--secondary {
+  min-height: 34px;
+  padding: 0 11px;
+}
+
+:host(.topbar-copy-button) {
+  flex: 0 1 auto;
+}
+
+:host(.topbar-copy-button) .copy-button--secondary {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+.copy-button--dropdown {
+  width: 100%;
+  min-height: 36px;
+  justify-content: flex-start;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.copy-button--dropdown:hover {
+  background: var(
+    --tool-surface-hover,
+    color-mix(in srgb, var(--tool-surface) 86%, var(--accent) 14%)
+  );
+}
+
+.copy-button__icon-stack {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.copy-button__icon {
+  position: absolute;
+  inset: 0;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transform: scale(0.72) rotate(-8deg);
+  transition:
+    opacity 160ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.copy-button__icon.is-active {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.copy-button__icon--success {
+  color: var(--copy-success-color);
+  stroke-width: 2.35;
+}
+
+.copy-button__icon--error {
+  color: var(--copy-error-color);
+}
+
+.copy-button.is-copying .copy-button__icon-stack,
+.copy-button.is-success .copy-button__icon-stack,
+.copy-button.is-error .copy-button__icon-stack {
+  animation: copy-button-pop 260ms ease;
+}
+
+.copy-button.is-success {
+  border-color: color-mix(in srgb, var(--copy-success-color) 48%, var(--tool-border));
+  background: color-mix(in srgb, var(--copy-success-color) 10%, var(--tool-surface));
+}
+
+.copy-button.is-error {
+  border-color: color-mix(in srgb, var(--copy-error-color) 50%, var(--tool-border));
+  background: color-mix(in srgb, var(--copy-error-color) 9%, var(--tool-surface));
+}
+
+.copy-button__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-button__announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes copy-button-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy-button,
+  .copy-button__icon,
+  .copy-button.is-copying .copy-button__icon-stack,
+  .copy-button.is-success .copy-button__icon-stack,
+  .copy-button.is-error .copy-button__icon-stack {
+    animation: none;
+    transition: none;
+  }
+}

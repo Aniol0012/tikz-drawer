@@ -14,6 +14,10 @@ import {
 } from '@angular/core';
 import type { LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
+import {
+  CopyButtonComponent,
+  type CopyButtonValueResolver
+} from '../../../../shared/copy-button/copy-button.component';
 import type { TopbarTool } from './editor-topbar.types';
 
 const DEFAULT_WINDOW_WIDTH = 1280;
@@ -23,6 +27,7 @@ const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
 
 @Component({
   selector: 'app-editor-topbar',
+  imports: [CopyButtonComponent],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,13 +54,15 @@ export class EditorTopbarComponent {
   readonly pinnedToolbarTools = input.required<readonly TopbarTool[]>();
   readonly iconMap = input.required<Record<string, string>>();
   readonly translate = input.required<(key: string) => string>();
+  readonly shareLinkCopyValue = input.required<CopyButtonValueResolver>();
 
   readonly sceneNameChange = output<string>();
   readonly activeToolChange = output<string>();
   readonly languageChange = output<LanguageCode>();
   readonly themeToggle = output<void>();
   readonly newScene = output<void>();
-  readonly copyShareLink = output<void>();
+  readonly shareLinkCopied = output<string>();
+  readonly copyError = output<unknown>();
   readonly importOpen = output<void>();
   readonly fileMenuToggle = output<void>();
   readonly fileMenuClose = output<void>();
@@ -102,6 +109,13 @@ export class EditorTopbarComponent {
 
   icon(key: string): string {
     return this.iconMap()[key] ?? '';
+  }
+
+  onShareLinkCopied(value: string, closeMenu = false): void {
+    this.shareLinkCopied.emit(value);
+    if (closeMenu) {
+      this.fileMenuClose.emit();
+    }
   }
 
   onSceneNameInput(event: Event): void {

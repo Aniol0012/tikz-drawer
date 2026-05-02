@@ -17,11 +17,14 @@ import {
 import type { ThemeMode } from '../../models/tikz.models';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import type { CodeHighlightTheme, ExportMode } from '../editor-page/editor-page.types';
-
-export type ExportCopyTarget = 'currentExport' | 'imports' | 'shareLink';
+import {
+  CopyButtonComponent,
+  type CopyButtonValueResolver
+} from '../../../../shared/copy-button/copy-button.component';
 
 @Component({
   selector: 'app-export-modal',
+  imports: [CopyButtonComponent],
   templateUrl: './export-modal.component.html',
   styleUrl: './export-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,22 +41,23 @@ export class ExportModalComponent {
   readonly shareUrl = input.required<string>();
   readonly codeTheme = input.required<CodeHighlightTheme>();
   readonly latexExportConfig = input.required<LatexExportConfig>();
+  readonly exportImports = input.required<string>();
+  readonly exportCode = input.required<string>();
   readonly highlightedExportImports = input.required<string>();
   readonly highlightedExportCode = input.required<string>();
-  readonly copyButtonAnimation = input<ExportCopyTarget | null>(null);
+  readonly shareLinkCopyValue = input.required<CopyButtonValueResolver>();
   readonly suggestedCaption = input.required<string>();
   readonly suggestedLabel = input.required<string>();
 
   readonly closeDialog = output<void>();
   readonly exportModeChange = output<ExportMode>();
-  readonly copyShareLink = output<void>();
+  readonly shareLinkCopied = output<string>();
+  readonly copyError = output<unknown>();
   readonly downloadPng = output<void>();
   readonly downloadSvg = output<void>();
   readonly openSettings = output<void>();
   readonly closeSettings = output<void>();
   readonly downloadTex = output<void>();
-  readonly copyImports = output<void>();
-  readonly copyCurrentCode = output<void>();
   readonly latexConfigPatch = output<Partial<LatexExportConfig>>();
   readonly codeThemeChange = output<CodeHighlightTheme>();
 

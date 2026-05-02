@@ -278,6 +278,7 @@
   "shareLinkReady": "Enllaç copiat. Comparteix-lo per obrir la figura sencera.",
   "shareLinkImagesWarning": "L'enllaç s'ha copiat, però les imatges no es guardaran en compartir-lo.",
   "copied": "Copiat",
+  "copyError": "No s'ha pogut copiar",
   "codeWarnings": "S'han ignorat algunes línies:",
   "confirmReplaceScene": "Això substituirà l'escena actual. Vols continuar?",
   "confirmReplaceSceneTitle": "Crear un llenç nou?",
