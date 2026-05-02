@@ -117,6 +117,7 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('width=4.5pt');
     expect(bundle.code).toContain('bend');
     expect(bundle.code).not.toContain('Triangle[draw=');
+    expect(bundle.code).not.toMatch(/Triangle\[[^\]]*\bopacity=/);
   });
 
   it('exports additional arrow tip kinds through arrows.meta names', () => {

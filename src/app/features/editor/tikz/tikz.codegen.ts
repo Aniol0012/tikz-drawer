@@ -252,9 +252,6 @@ const arrowTipSpec = (shape: LineShape): string => {
   } else {
     options.push(`fill=${shape.arrowColor}`);
   }
-  if (shape.arrowOpacity < 1) {
-    options.push(`opacity=${formatNumber(shape.arrowOpacity)}`);
-  }
   if (shape.arrowRound) {
     options.push('round');
   }
@@ -277,18 +274,45 @@ const arrowTipSpec = (shape: LineShape): string => {
   return `{${arrowTipName(shape.arrowType)}[${options.join(', ')}]}`;
 };
 
+const isStrokedArrowTip = (shape: LineShape): boolean =>
+  shape.arrowOpen ||
+  shape.arrowType === 'bar' ||
+  shape.arrowType === 'hooks' ||
+  shape.arrowType === 'bracket' ||
+  shape.arrowType === 'parenthesis' ||
+  shape.arrowType === 'straight-barb';
+
+const transparentArrowEntries = (shape: LineShape): string[] => {
+  const entries = [
+    `draw=${shape.arrowColor}`,
+    `line width=${formatNumber(shape.strokeWidth)}pt`,
+    `fill opacity=${formatNumber(shape.arrowOpacity)}`
+  ];
+
+  if (isStrokedArrowTip(shape)) {
+    entries.push(`draw opacity=${formatNumber(shape.arrowOpacity)}`);
+  } else {
+    entries.push('draw opacity=0');
+  }
+
+  return entries;
+};
+
 const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string => {
   const entries = buildStyleEntries(shape, context);
-  const tipSpec = arrowTipSpec({
+  const tikzArrowColor = context.registerColor(shape.arrowColor);
+  const tipShape = {
     ...shape,
-    arrowColor: context.registerColor(shape.arrowColor)
-  });
+    arrowColor: tikzArrowColor
+  };
+  const tipSpec = arrowTipSpec(tipShape);
+  const shouldSplitTransparentArrows = (shape.arrowStart || shape.arrowEnd) && shape.arrowOpacity < 1;
 
-  if (shape.arrowStart && shape.arrowEnd) {
+  if (shape.arrowStart && shape.arrowEnd && !shouldSplitTransparentArrows) {
     entries.push(`${tipSpec}-${tipSpec}`);
-  } else if (shape.arrowStart) {
+  } else if (shape.arrowStart && !shouldSplitTransparentArrows) {
     entries.push(`${tipSpec}-`);
-  } else if (shape.arrowEnd) {
+  } else if (shape.arrowEnd && !shouldSplitTransparentArrows) {
     entries.push(`-${tipSpec}`);
   }
 
@@ -299,7 +323,19 @@ const lineToTikz = (shape: LineShape, context: TikzGenerationContext): string =>
     path = shape.lineMode === 'curved' ? `plot[smooth] coordinates {${pointList.join(' ')}}` : pointList.join(' -- ');
   }
 
-  return String.raw`\draw[${entries.join(', ')}] ${path};`;
+  const lines = [String.raw`\draw[${entries.join(', ')}] ${path};`];
+
+  if (shouldSplitTransparentArrows) {
+    const overlayEntries = transparentArrowEntries(tipShape);
+    if (shape.arrowStart) {
+      lines.push(String.raw`\draw[${overlayEntries.join(', ')}, ${tipSpec}-] ${path};`);
+    }
+    if (shape.arrowEnd) {
+      lines.push(String.raw`\draw[${overlayEntries.join(', ')}, -${tipSpec}] ${path};`);
+    }
+  }
+
+  return lines.join('\n  ');
 };
 
 const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext): string => {
