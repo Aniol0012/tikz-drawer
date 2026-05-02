@@ -39,12 +39,14 @@ export class CustomTooltipComponent {
   private hideHandle: ReturnType<typeof setTimeout> | null = null;
   private dismissHandle: ReturnType<typeof setTimeout> | null = null;
   private lastPointerEvent: PointerEvent | null = null;
+  private mutationObserver: MutationObserver | null = null;
 
   readonly tooltip = signal<TooltipState | null>(null);
 
   constructor() {
     this.destroyRef.onDestroy(() => {
       this.clearTimers();
+      this.disconnectMutationObserver();
       this.restoreTitle(this.activeTarget);
     });
   }
@@ -71,6 +73,13 @@ export class CustomTooltipComponent {
     }
 
     this.lastPointerEvent = event;
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  onPointerDown(event: PointerEvent): void {
+    if (this.isNativeControlEventTarget(event.target)) {
+      this.hideNow();
+    }
   }
 
   @HostListener('document:pointerout', ['$event'])
@@ -139,6 +148,7 @@ export class CustomTooltipComponent {
     }
 
     this.removeNativeTitle(target);
+    this.observeTooltipText(target);
     this.tooltip.set(this.positionTooltip(target, text));
   }
 
@@ -163,14 +173,51 @@ export class CustomTooltipComponent {
   }
 
   private finishHide(): void {
+    this.disconnectMutationObserver();
     this.restoreTitle(this.activeTarget);
     this.activeTarget = null;
     this.lastPointerEvent = null;
     this.tooltip.set(null);
   }
 
+  private observeTooltipText(target: HTMLElement): void {
+    this.disconnectMutationObserver();
+    this.mutationObserver = new MutationObserver(() => this.refreshActiveTooltip());
+    this.mutationObserver.observe(target, {
+      attributeFilter: ['aria-label', 'data-tooltip', 'title'],
+      attributes: true
+    });
+  }
+
+  private refreshActiveTooltip(): void {
+    const currentTooltip = this.tooltip();
+    if (!this.activeTarget || !currentTooltip || currentTooltip.phase === 'leaving') {
+      return;
+    }
+
+    const text = this.tooltipText(this.activeTarget);
+    if (!text) {
+      this.hideNow();
+      return;
+    }
+
+    this.tooltip.set({
+      ...this.positionTooltip(this.activeTarget, text),
+      phase: currentTooltip.phase
+    });
+  }
+
+  private disconnectMutationObserver(): void {
+    this.mutationObserver?.disconnect();
+    this.mutationObserver = null;
+  }
+
   private tooltipTarget(target: EventTarget | null): HTMLElement | null {
     if (!(target instanceof Element)) {
+      return null;
+    }
+
+    if (this.isNativeControlEventTarget(target)) {
       return null;
     }
 
@@ -180,6 +227,10 @@ export class CustomTooltipComponent {
     }
 
     return this.tooltipText(candidate) ? candidate : null;
+  }
+
+  private isNativeControlEventTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && target.closest('select, option, input, textarea') !== null;
   }
 
   private tooltipText(target: HTMLElement): string {

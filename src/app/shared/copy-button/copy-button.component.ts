@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { getIconPath } from '../../features/editor/config/editor-icons';
 
 export type CopyButtonAppearance = 'icon' | 'secondary' | 'dropdown';
 export type CopyButtonState = 'idle' | 'copying' | 'success' | 'error';
@@ -10,10 +11,6 @@ export interface CopyButtonError {
   readonly value: string;
 }
 
-const COPY_ICON_PATH =
-  'M9.25 8.25h8.5a1.25 1.25 0 0 1 1.25 1.25v8.25A1.25 1.25 0 0 1 17.75 19h-8.5A1.25 1.25 0 0 1 8 17.75V9.5a1.25 1.25 0 0 1 1.25-1.25ZM6.75 15.75H6A1.25 1.25 0 0 1 4.75 14.5V6.25A1.25 1.25 0 0 1 6 5h8.25a1.25 1.25 0 0 1 1.25 1.25V7';
-const SUCCESS_ICON_PATH = 'm5 12.5 4.2 4.2L19 6.8';
-const ERROR_ICON_PATH = 'M12 7v6m0 4h.01M12 3.75 21 20.25H3L12 3.75Z';
 const DEFAULT_FEEDBACK_DURATION_MS = 1000;
 
 @Component({
@@ -37,9 +34,9 @@ export class CopyButtonComponent {
   readonly errorLabel = input('Could not copy');
   readonly feedbackDuration = input(DEFAULT_FEEDBACK_DURATION_MS);
   readonly appearance = input<CopyButtonAppearance>('icon');
-  readonly iconPath = input(COPY_ICON_PATH);
-  readonly successIconPath = input(SUCCESS_ICON_PATH);
-  readonly errorIconPath = input(ERROR_ICON_PATH);
+  readonly iconPath = input(getIconPath('copy'));
+  readonly successIconPath = input(getIconPath('copySuccess'));
+  readonly errorIconPath = input(getIconPath('copyError'));
 
   readonly copied = output<string>();
   readonly copyError = output<CopyButtonError>();
