@@ -201,6 +201,7 @@ export class CustomTooltipComponent {
       return;
     }
 
+    this.clearHideTimers();
     this.tooltip.set({
       ...this.positionTooltip(this.activeTarget, text),
       phase: currentTooltip.phase
@@ -292,6 +293,10 @@ export class CustomTooltipComponent {
       this.showHandle = null;
     }
 
+    this.clearHideTimers();
+  }
+
+  private clearHideTimers(): void {
     if (this.hideHandle !== null) {
       clearTimeout(this.hideHandle);
       this.hideHandle = null;

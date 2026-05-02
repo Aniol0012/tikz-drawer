@@ -11,7 +11,7 @@ export interface CopyButtonError {
   readonly value: string;
 }
 
-const DEFAULT_FEEDBACK_DURATION_MS = 1000;
+const DEFAULT_FEEDBACK_DURATION_MS = 1800;
 
 @Component({
   selector: 'app-copy-button',
