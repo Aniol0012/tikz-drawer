@@ -77,7 +77,7 @@ export class CustomTooltipComponent {
 
   @HostListener('document:pointerdown', ['$event'])
   onPointerDown(event: PointerEvent): void {
-    if (this.isNativeControlEventTarget(event.target)) {
+    if (this.isNativeControlEventTarget(event.target) || this.isShoelaceDropdownTarget(event.target)) {
       this.hideNow();
     }
   }
@@ -117,6 +117,13 @@ export class CustomTooltipComponent {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.hideNow();
+  }
+
+  @HostListener('document:sl-show', ['$event'])
+  onShoelaceDropdownShow(event: Event): void {
+    if (this.isShoelaceDropdownTarget(event.target)) {
+      this.hideNow();
+    }
   }
 
   @HostListener('window:scroll')
@@ -218,7 +225,7 @@ export class CustomTooltipComponent {
       return null;
     }
 
-    if (this.isNativeControlEventTarget(target)) {
+    if (this.isNativeControlEventTarget(target) || this.isShoelaceDropdownTarget(target)) {
       return null;
     }
 
@@ -232,6 +239,12 @@ export class CustomTooltipComponent {
 
   private isNativeControlEventTarget(target: EventTarget | null): boolean {
     return target instanceof Element && target.closest('select, option, input, textarea') !== null;
+  }
+
+  private isShoelaceDropdownTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof Element && target.closest('sl-dropdown, sl-select, sl-menu, sl-menu-item, sl-option') !== null
+    );
   }
 
   private tooltipText(target: HTMLElement): string {

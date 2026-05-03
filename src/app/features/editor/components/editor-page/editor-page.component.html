@@ -1291,38 +1291,39 @@
                     <div class="form-grid form-grid--section">
                       <label class="field field--full"
                         ><span>{{ t('arrowDirection') }}</span
-                        ><select
+                        ><app-select
                           [value]="lineArrowDirection(shape)"
-                          (change)="setLineArrowDirection($any($event.target).value)">
-                          <option value="none">{{ t('arrowDirectionNone') }}</option>
-                          <option value="forward">{{ t('arrowDirectionForward') }}</option>
-                          <option value="backward">{{ t('arrowDirectionBackward') }}</option>
-                          <option value="both">{{ t('arrowDirectionBoth') }}</option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'none', label: t('arrowDirectionNone') },
+                            { value: 'forward', label: t('arrowDirectionForward') },
+                            { value: 'backward', label: t('arrowDirectionBackward') },
+                            { value: 'both', label: t('arrowDirectionBoth') }
+                          ]"
+                          (valueChange)="setLineArrowDirection($any($event))"></app-select
+                      ></label>
                       <label class="field field--full"
                         ><span>{{ t('lineMode') }}</span
-                        ><select
+                        ><app-select
                           [value]="shape.lineMode"
-                          (change)="setLineMode($any($event.target).value)">
-                          <option value="straight">{{ t('lineModeStraight') }}</option>
-                          <option value="curved">{{ t('lineModeCurved') }}</option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'straight', label: t('lineModeStraight') },
+                            { value: 'curved', label: t('lineModeCurved') }
+                          ]"
+                          (valueChange)="setLineMode($event)"></app-select
+                      ></label>
                       <label class="field field--full"
                         ><span>{{ t('lineStrokeStyle') }}</span
-                        ><select
+                        ><app-select
                           [value]="shape.strokeStyle ?? 'solid'"
-                          (change)="setLineStrokeStyle($any($event.target).value)">
-                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
-                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
-                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
-                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
-                          <option value="loosely-dashed">
-                            {{ t('lineStrokeStyleLooselyDashed') }}
-                          </option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'solid', label: t('lineStrokeStyleSolid') },
+                            { value: 'dashed', label: t('lineStrokeStyleDashed') },
+                            { value: 'dotted', label: t('lineStrokeStyleDotted') },
+                            { value: 'dash-dotted', label: t('lineStrokeStyleDashDotted') },
+                            { value: 'loosely-dashed', label: t('lineStrokeStyleLooselyDashed') }
+                          ]"
+                          (valueChange)="setLineStrokeStyle($event)"></app-select
+                      ></label>
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
                       <div class="field field--full">
@@ -1389,15 +1390,16 @@
                         ></label>
                         <label class="field"
                           ><span>{{ t('arrowBendMode') }}</span
-                          ><select
+                          ><app-select
                             [value]="shape.arrowBendMode"
-                            (change)="setLineArrowBendMode($any($event.target).value)">
-                            <option value="none">{{ t('arrowBendNone') }}</option>
-                            <option value="flex">{{ t('arrowBendFlex') }}</option>
-                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                            <option value="bend">{{ t('arrowBendBend') }}</option>
-                          </select></label
-                        >
+                            [options]="[
+                              { value: 'none', label: t('arrowBendNone') },
+                              { value: 'flex', label: t('arrowBendFlex') },
+                              { value: 'flex-prime', label: t('arrowBendFlexPrime') },
+                              { value: 'bend', label: t('arrowBendBend') }
+                            ]"
+                            (valueChange)="setLineArrowBendMode($event)"></app-select
+                        ></label>
                       </div>
                     }
                   </div>
@@ -2364,38 +2366,39 @@
                     <div class="form-grid form-grid--section">
                       <label class="field field--full"
                         ><span>{{ t('arrowDirection') }}</span
-                        ><select
+                        ><app-select
                           [value]="lineArrowDirection(shape)"
-                          (change)="setLineArrowDirection($any($event.target).value)">
-                          <option value="none">{{ t('arrowDirectionNone') }}</option>
-                          <option value="forward">{{ t('arrowDirectionForward') }}</option>
-                          <option value="backward">{{ t('arrowDirectionBackward') }}</option>
-                          <option value="both">{{ t('arrowDirectionBoth') }}</option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'none', label: t('arrowDirectionNone') },
+                            { value: 'forward', label: t('arrowDirectionForward') },
+                            { value: 'backward', label: t('arrowDirectionBackward') },
+                            { value: 'both', label: t('arrowDirectionBoth') }
+                          ]"
+                          (valueChange)="setLineArrowDirection($any($event))"></app-select
+                      ></label>
                       <label class="field field--full"
                         ><span>{{ t('lineMode') }}</span
-                        ><select
+                        ><app-select
                           [value]="shape.lineMode"
-                          (change)="setLineMode($any($event.target).value)">
-                          <option value="straight">{{ t('lineModeStraight') }}</option>
-                          <option value="curved">{{ t('lineModeCurved') }}</option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'straight', label: t('lineModeStraight') },
+                            { value: 'curved', label: t('lineModeCurved') }
+                          ]"
+                          (valueChange)="setLineMode($event)"></app-select
+                      ></label>
                       <label class="field field--full"
                         ><span>{{ t('lineStrokeStyle') }}</span
-                        ><select
+                        ><app-select
                           [value]="shape.strokeStyle ?? 'solid'"
-                          (change)="setLineStrokeStyle($any($event.target).value)">
-                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
-                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
-                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
-                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
-                          <option value="loosely-dashed">
-                            {{ t('lineStrokeStyleLooselyDashed') }}
-                          </option>
-                        </select></label
-                      >
+                          [options]="[
+                            { value: 'solid', label: t('lineStrokeStyleSolid') },
+                            { value: 'dashed', label: t('lineStrokeStyleDashed') },
+                            { value: 'dotted', label: t('lineStrokeStyleDotted') },
+                            { value: 'dash-dotted', label: t('lineStrokeStyleDashDotted') },
+                            { value: 'loosely-dashed', label: t('lineStrokeStyleLooselyDashed') }
+                          ]"
+                          (valueChange)="setLineStrokeStyle($event)"></app-select
+                      ></label>
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
                       <div class="field field--full">
@@ -2462,15 +2465,16 @@
                         ></label>
                         <label class="field"
                           ><span>{{ t('arrowBendMode') }}</span
-                          ><select
+                          ><app-select
                             [value]="shape.arrowBendMode"
-                            (change)="setLineArrowBendMode($any($event.target).value)">
-                            <option value="none">{{ t('arrowBendNone') }}</option>
-                            <option value="flex">{{ t('arrowBendFlex') }}</option>
-                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                            <option value="bend">{{ t('arrowBendBend') }}</option>
-                          </select></label
-                        >
+                            [options]="[
+                              { value: 'none', label: t('arrowBendNone') },
+                              { value: 'flex', label: t('arrowBendFlex') },
+                              { value: 'flex-prime', label: t('arrowBendFlexPrime') },
+                              { value: 'bend', label: t('arrowBendBend') }
+                            ]"
+                            (valueChange)="setLineArrowBendMode($event)"></app-select
+                        ></label>
                       </div>
                     }
                   </div>

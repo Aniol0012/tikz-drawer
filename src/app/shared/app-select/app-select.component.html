@@ -1,0 +1,21 @@
+<div class="app-select-shell" [class.is-open]="isOpen()">
+  <sl-select
+    class="app-select"
+    [class.is-open]="isOpen()"
+    [value]="value()"
+    [attr.aria-label]="ariaLabel()"
+    [attr.hoist]="hoist() ? '' : null"
+    (sl-change)="onSelectionChange($event)"
+    (sl-show)="setOpen(true)"
+    (sl-hide)="setOpen(false)">
+    @for (option of options(); track option.value) {
+      <sl-option [value]="option.value" [disabled]="option.disabled ? true : null">
+        {{ option.label }}
+      </sl-option>
+    }
+  </sl-select>
+
+  <svg class="app-select-shell__arrow" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="m7 10 5 5 5-5"></path>
+  </svg>
+</div>

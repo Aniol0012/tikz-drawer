@@ -86,7 +86,7 @@
 .export-option-card,
 .code-block,
 .field input:not([type='range']),
-.field select {
+.field app-select {
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -166,8 +166,7 @@
 .secondary-button:hover,
 .mode-switch button:hover,
 .export-option-card:hover,
-.field input:not([type='range']):hover,
-.field select:hover {
+.field input:not([type='range']):hover {
   border-color: var(--tool-border-strong);
 }
 
@@ -188,8 +187,7 @@
 .secondary-button:focus-visible,
 .mode-switch button:focus-visible,
 .export-option-card:focus-visible,
-.field input:not([type='range']):focus-visible,
-.field select:focus-visible {
+.field input:not([type='range']):focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
@@ -273,29 +271,17 @@
   }
 
   & input:not([type='range']),
-  & select {
+  & app-select {
     width: 100%;
     min-height: 34px;
+  }
+
+  & input:not([type='range']) {
     padding: 0 10px;
     border: 1px solid var(--tool-border);
     border-radius: 8px;
     background: var(--input-background);
     color: var(--app-foreground);
-  }
-
-  & select {
-    appearance: none;
-    padding-right: 38px;
-    background-image:
-      linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
-      linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
-    background-position:
-      calc(100% - 18px) calc(50% - 3px),
-      calc(100% - 12px) calc(50% - 3px);
-    background-size:
-      6px 6px,
-      6px 6px;
-    background-repeat: no-repeat;
   }
 }
 

@@ -146,6 +146,7 @@ import { RangeInputCardComponent } from '../range-input-card/range-input-card.co
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
+import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import {
   categoryOrder,
   categoryTranslationKey,
@@ -302,7 +303,8 @@ interface LineAttachmentCandidate {
     RangeInputCardComponent,
     RegularPolygonDialogComponent,
     GraphDialogComponent,
-    FigureSearchOverlayComponent
+    FigureSearchOverlayComponent,
+    AppSelectComponent
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',

@@ -3,6 +3,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  CUSTOM_ELEMENTS_SCHEMA,
   DestroyRef,
   effect,
   ElementRef,
@@ -12,22 +13,39 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import type { LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import {
   CopyButtonComponent,
   type CopyButtonValueResolver
 } from '../../../../shared/copy-button/copy-button.component';
+import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import type { TopbarTool } from './editor-topbar.types';
 
 const DEFAULT_WINDOW_WIDTH = 1280;
 const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
 const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
+const LANGUAGE_SEARCH_THRESHOLD = 7;
+const LANGUAGE_OPTIONS: readonly {
+  readonly value: LanguageCode;
+  readonly label: string;
+  readonly flagSrc: string;
+}[] = [
+  { value: 'en', label: 'En', flagSrc: '/flags/GB.png' },
+  { value: 'ca', label: 'Ca', flagSrc: '/flags/EU-CA.png' },
+  { value: 'es', label: 'Es', flagSrc: '/flags/ES.png' }
+];
+
+interface ShoelaceDropdownElement extends HTMLElement {
+  hide?: () => void;
+}
 
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent],
+  imports: [CopyButtonComponent, AppSelectComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +88,8 @@ export class EditorTopbarComponent {
   readonly exportOpen = output<void>();
 
   readonly compactTopbarActions = signal(false);
+  readonly languageOptions = LANGUAGE_OPTIONS;
+  readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(
     typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH
   );
@@ -111,6 +131,17 @@ export class EditorTopbarComponent {
     return this.iconMap()[key] ?? '';
   }
 
+  languageLabel(language: LanguageCode = this.language()): string {
+    switch (language) {
+      case 'en':
+        return 'En';
+      case 'ca':
+        return 'Ca';
+      case 'es':
+        return 'Es';
+    }
+  }
+
   onShareLinkCopied(value: string, closeMenu = false): void {
     this.shareLinkCopied.emit(value);
     if (closeMenu) {
@@ -127,6 +158,20 @@ export class EditorTopbarComponent {
     if (closeMenu) {
       this.fileMenuClose.emit();
     }
+  }
+
+  onLanguageSelect(value: string, closeMenu: boolean = false): void {
+    if (value === 'en' || value === 'ca' || value === 'es') {
+      this.languageChange.emit(value);
+    }
+    if (closeMenu) {
+      this.fileMenuClose.emit();
+    }
+  }
+
+  selectLanguageOption(language: LanguageCode, dropdown: ShoelaceDropdownElement): void {
+    this.languageChange.emit(language);
+    dropdown.hide?.();
   }
 
   private updateCompactTopbarActions(): void {

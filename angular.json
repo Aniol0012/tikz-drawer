@@ -24,7 +24,7 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css", "node_modules/@shoelace-style/shoelace/dist/themes/light.css"]
           },
           "configurations": {
             "production": {

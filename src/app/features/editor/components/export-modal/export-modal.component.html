@@ -166,24 +166,18 @@
             @if (latexExportConfig().wrapInFigure) {
               <label class="field">
                 <span>{{ t('latexFigurePlacement') }}</span>
-                <select
+                <app-select
                   [value]="latexExportConfig().figurePlacement"
-                  (change)="updateLatexExportText('figurePlacement', $event)">
-                  @for (option of placementOptions; track option.value) {
-                    <option [value]="option.value">{{ t(option.labelKey) }}</option>
-                  }
-                </select>
+                  [options]="translatedSelectOptions(placementOptions)"
+                  (valueChange)="setLatexExportText('figurePlacement', $event)"></app-select>
               </label>
             }
             <label class="field">
               <span>{{ t('latexFontSize') }}</span>
-              <select
+              <app-select
                 [value]="latexExportConfig().fontSize"
-                (change)="setLatexFontSize($any($event.target).value)">
-                @for (fontSize of fontSizeOptions; track fontSize) {
-                  <option [value]="fontSize">{{ fontSize }}</option>
-                }
-              </select>
+                [options]="fontSizeSelectOptions()"
+                (valueChange)="setLatexFontSize($event)"></app-select>
             </label>
             @if (!latexExportConfig().wrapInFigure) {
               <p class="export-settings-note field--full">{{ t('latexScopeGuard') }}</p>
@@ -288,13 +282,10 @@
           <div class="form-grid export-settings-form-grid">
             <label class="field field--full">
               <span>{{ t('codeTheme') }}</span>
-              <select
+              <app-select
                 [value]="codeTheme()"
-                (change)="setCodeHighlightTheme($any($event.target).value)">
-                @for (option of codeThemeOptions; track option.value) {
-                  <option [value]="option.value">{{ t(option.labelKey) }}</option>
-                }
-              </select>
+                [options]="translatedSelectOptions(codeThemeOptions)"
+                (valueChange)="setCodeHighlightTheme($event)"></app-select>
             </label>
             <div class="code-stack code-stack--theme-preview" [attr.data-code-theme]="codeTheme()">
               <pre class="code-block code-block--theme-preview">
