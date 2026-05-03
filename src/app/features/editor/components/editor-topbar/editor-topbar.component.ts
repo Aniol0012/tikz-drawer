@@ -33,9 +33,9 @@ const LANGUAGE_OPTIONS: readonly {
   readonly label: string;
   readonly flagSrc: string;
 }[] = [
-  { value: 'en', label: 'En', flagSrc: '/flags/GB.png' },
-  { value: 'ca', label: 'Ca', flagSrc: '/flags/EU-CA.png' },
-  { value: 'es', label: 'Es', flagSrc: '/flags/ES.png' }
+  { value: 'en', label: 'En', flagSrc: 'flags/GB.png' },
+  { value: 'ca', label: 'Ca', flagSrc: 'flags/EU-CA.png' },
+  { value: 'es', label: 'Es', flagSrc: 'flags/ES.png' }
 ];
 
 interface ShoelaceDropdownElement extends HTMLElement {
