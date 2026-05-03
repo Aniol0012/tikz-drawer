@@ -31,11 +31,11 @@ const LANGUAGE_SEARCH_THRESHOLD = 7;
 const LANGUAGE_OPTIONS: readonly {
   readonly value: LanguageCode;
   readonly label: string;
-  readonly flagClass: string;
+  readonly flagSrc: string;
 }[] = [
-  { value: 'en', label: 'En', flagClass: 'language-menu__flag--en' },
-  { value: 'ca', label: 'Ca', flagClass: 'language-menu__flag--ca' },
-  { value: 'es', label: 'Es', flagClass: 'language-menu__flag--es' }
+  { value: 'en', label: 'En', flagSrc: '/flags/GB.png' },
+  { value: 'ca', label: 'Ca', flagSrc: '/flags/EU-CA.png' },
+  { value: 'es', label: 'Es', flagSrc: '/flags/ES.png' }
 ];
 
 interface ShoelaceDropdownElement extends HTMLElement {

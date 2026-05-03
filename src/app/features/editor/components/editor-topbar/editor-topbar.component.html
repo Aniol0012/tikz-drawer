@@ -237,10 +237,13 @@
               [class.is-selected]="language() === option.value"
               [attr.aria-checked]="language() === option.value"
               (click)="selectLanguageOption(option.value, languageDropdown)">
-              <span
+              <img
                 class="language-menu__flag"
-                [class]="option.flagClass"
-                aria-hidden="true"></span>
+                [src]="option.flagSrc"
+                width="16"
+                height="16"
+                alt=""
+                aria-hidden="true" />
               <span>{{ option.label }}</span>
             </button>
           }

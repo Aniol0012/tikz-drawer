@@ -28,9 +28,14 @@
   --sl-focus-ring-width: 2px;
 }
 
+.app-select-shell {
+  position: relative;
+  width: 100%;
+}
+
 .app-select::part(combobox) {
   min-height: 34px;
-  padding-inline: 10px 9px;
+  padding-inline: 10px 30px;
   box-shadow: none;
   cursor: pointer;
   transition:
@@ -47,31 +52,37 @@
 }
 
 .app-select::part(expand-icon) {
-  color: var(--muted-foreground);
-  transition:
-    color 160ms ease,
-    opacity 160ms ease;
+  display: none;
 }
 
-.app-select__expand-icon {
-  width: 16px;
-  height: 16px;
+.app-select-shell__arrow {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  width: 15px;
+  height: 15px;
   display: block;
+  color: var(--muted-foreground);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+  pointer-events: none;
   transform-origin: center;
-  transition: transform 180ms var(--ease-out);
+  transform: translateY(-50%) rotate(0deg);
+  transition:
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 180ms var(--ease-out);
 }
 
-.app-select__expand-icon.is-open {
-  transform: rotate(180deg);
+.app-select-shell.is-open .app-select-shell__arrow {
+  transform: translateY(-50%) rotate(180deg);
 }
 
-.app-select:hover::part(expand-icon),
-.app-select:focus-within::part(expand-icon) {
+.app-select-shell:hover .app-select-shell__arrow,
+.app-select-shell:focus-within .app-select-shell__arrow {
   color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
   opacity: 1;
 }
@@ -157,8 +168,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .app-select::part(combobox),
-  .app-select::part(expand-icon),
-  .app-select__expand-icon,
+  .app-select-shell__arrow,
   .app-select sl-option::part(base) {
     transition-duration: 0ms !important;
   }
