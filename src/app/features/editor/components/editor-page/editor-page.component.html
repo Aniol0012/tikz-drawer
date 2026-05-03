@@ -1291,37 +1291,45 @@
                     <div class="form-grid form-grid--section">
                       <label class="field field--full"
                         ><span>{{ t('arrowDirection') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="lineArrowDirection(shape)"
-                          (change)="setLineArrowDirection($any($event.target).value)">
-                          <option value="none">{{ t('arrowDirectionNone') }}</option>
-                          <option value="forward">{{ t('arrowDirectionForward') }}</option>
-                          <option value="backward">{{ t('arrowDirectionBackward') }}</option>
-                          <option value="both">{{ t('arrowDirectionBoth') }}</option>
-                        </select></label
+                          hoist
+                          (sl-change)="setLineArrowDirection($any($event.target).value)">
+                          <sl-option value="none">{{ t('arrowDirectionNone') }}</sl-option>
+                          <sl-option value="forward">{{ t('arrowDirectionForward') }}</sl-option>
+                          <sl-option value="backward">{{ t('arrowDirectionBackward') }}</sl-option>
+                          <sl-option value="both">{{ t('arrowDirectionBoth') }}</sl-option>
+                        </sl-select></label
                       >
                       <label class="field field--full"
                         ><span>{{ t('lineMode') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="shape.lineMode"
-                          (change)="setLineMode($any($event.target).value)">
-                          <option value="straight">{{ t('lineModeStraight') }}</option>
-                          <option value="curved">{{ t('lineModeCurved') }}</option>
-                        </select></label
+                          hoist
+                          (sl-change)="setLineMode($any($event.target).value)">
+                          <sl-option value="straight">{{ t('lineModeStraight') }}</sl-option>
+                          <sl-option value="curved">{{ t('lineModeCurved') }}</sl-option>
+                        </sl-select></label
                       >
                       <label class="field field--full"
                         ><span>{{ t('lineStrokeStyle') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="shape.strokeStyle ?? 'solid'"
-                          (change)="setLineStrokeStyle($any($event.target).value)">
-                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
-                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
-                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
-                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
-                          <option value="loosely-dashed">
+                          hoist
+                          (sl-change)="setLineStrokeStyle($any($event.target).value)">
+                          <sl-option value="solid">{{ t('lineStrokeStyleSolid') }}</sl-option>
+                          <sl-option value="dashed">{{ t('lineStrokeStyleDashed') }}</sl-option>
+                          <sl-option value="dotted">{{ t('lineStrokeStyleDotted') }}</sl-option>
+                          <sl-option value="dash-dotted">{{
+                            t('lineStrokeStyleDashDotted')
+                          }}</sl-option>
+                          <sl-option value="loosely-dashed">
                             {{ t('lineStrokeStyleLooselyDashed') }}
-                          </option>
-                        </select></label
+                          </sl-option>
+                        </sl-select></label
                       >
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
@@ -1389,14 +1397,16 @@
                         ></label>
                         <label class="field"
                           ><span>{{ t('arrowBendMode') }}</span
-                          ><select
+                          ><sl-select
+                            class="sl-field-select"
                             [value]="shape.arrowBendMode"
-                            (change)="setLineArrowBendMode($any($event.target).value)">
-                            <option value="none">{{ t('arrowBendNone') }}</option>
-                            <option value="flex">{{ t('arrowBendFlex') }}</option>
-                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                            <option value="bend">{{ t('arrowBendBend') }}</option>
-                          </select></label
+                            hoist
+                            (sl-change)="setLineArrowBendMode($any($event.target).value)">
+                            <sl-option value="none">{{ t('arrowBendNone') }}</sl-option>
+                            <sl-option value="flex">{{ t('arrowBendFlex') }}</sl-option>
+                            <sl-option value="flex-prime">{{ t('arrowBendFlexPrime') }}</sl-option>
+                            <sl-option value="bend">{{ t('arrowBendBend') }}</sl-option>
+                          </sl-select></label
                         >
                       </div>
                     }
@@ -2364,37 +2374,45 @@
                     <div class="form-grid form-grid--section">
                       <label class="field field--full"
                         ><span>{{ t('arrowDirection') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="lineArrowDirection(shape)"
-                          (change)="setLineArrowDirection($any($event.target).value)">
-                          <option value="none">{{ t('arrowDirectionNone') }}</option>
-                          <option value="forward">{{ t('arrowDirectionForward') }}</option>
-                          <option value="backward">{{ t('arrowDirectionBackward') }}</option>
-                          <option value="both">{{ t('arrowDirectionBoth') }}</option>
-                        </select></label
+                          hoist
+                          (sl-change)="setLineArrowDirection($any($event.target).value)">
+                          <sl-option value="none">{{ t('arrowDirectionNone') }}</sl-option>
+                          <sl-option value="forward">{{ t('arrowDirectionForward') }}</sl-option>
+                          <sl-option value="backward">{{ t('arrowDirectionBackward') }}</sl-option>
+                          <sl-option value="both">{{ t('arrowDirectionBoth') }}</sl-option>
+                        </sl-select></label
                       >
                       <label class="field field--full"
                         ><span>{{ t('lineMode') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="shape.lineMode"
-                          (change)="setLineMode($any($event.target).value)">
-                          <option value="straight">{{ t('lineModeStraight') }}</option>
-                          <option value="curved">{{ t('lineModeCurved') }}</option>
-                        </select></label
+                          hoist
+                          (sl-change)="setLineMode($any($event.target).value)">
+                          <sl-option value="straight">{{ t('lineModeStraight') }}</sl-option>
+                          <sl-option value="curved">{{ t('lineModeCurved') }}</sl-option>
+                        </sl-select></label
                       >
                       <label class="field field--full"
                         ><span>{{ t('lineStrokeStyle') }}</span
-                        ><select
+                        ><sl-select
+                          class="sl-field-select"
                           [value]="shape.strokeStyle ?? 'solid'"
-                          (change)="setLineStrokeStyle($any($event.target).value)">
-                          <option value="solid">{{ t('lineStrokeStyleSolid') }}</option>
-                          <option value="dashed">{{ t('lineStrokeStyleDashed') }}</option>
-                          <option value="dotted">{{ t('lineStrokeStyleDotted') }}</option>
-                          <option value="dash-dotted">{{ t('lineStrokeStyleDashDotted') }}</option>
-                          <option value="loosely-dashed">
+                          hoist
+                          (sl-change)="setLineStrokeStyle($any($event.target).value)">
+                          <sl-option value="solid">{{ t('lineStrokeStyleSolid') }}</sl-option>
+                          <sl-option value="dashed">{{ t('lineStrokeStyleDashed') }}</sl-option>
+                          <sl-option value="dotted">{{ t('lineStrokeStyleDotted') }}</sl-option>
+                          <sl-option value="dash-dotted">{{
+                            t('lineStrokeStyleDashDotted')
+                          }}</sl-option>
+                          <sl-option value="loosely-dashed">
                             {{ t('lineStrokeStyleLooselyDashed') }}
-                          </option>
-                        </select></label
+                          </sl-option>
+                        </sl-select></label
                       >
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
@@ -2462,14 +2480,16 @@
                         ></label>
                         <label class="field"
                           ><span>{{ t('arrowBendMode') }}</span
-                          ><select
+                          ><sl-select
+                            class="sl-field-select"
                             [value]="shape.arrowBendMode"
-                            (change)="setLineArrowBendMode($any($event.target).value)">
-                            <option value="none">{{ t('arrowBendNone') }}</option>
-                            <option value="flex">{{ t('arrowBendFlex') }}</option>
-                            <option value="flex-prime">{{ t('arrowBendFlexPrime') }}</option>
-                            <option value="bend">{{ t('arrowBendBend') }}</option>
-                          </select></label
+                            hoist
+                            (sl-change)="setLineArrowBendMode($any($event.target).value)">
+                            <sl-option value="none">{{ t('arrowBendNone') }}</sl-option>
+                            <sl-option value="flex">{{ t('arrowBendFlex') }}</sl-option>
+                            <sl-option value="flex-prime">{{ t('arrowBendFlexPrime') }}</sl-option>
+                            <sl-option value="bend">{{ t('arrowBendBend') }}</sl-option>
+                          </sl-select></label
                         >
                       </div>
                     }

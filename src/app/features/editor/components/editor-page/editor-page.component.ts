@@ -3,6 +3,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  CUSTOM_ELEMENTS_SCHEMA,
   computed,
   DestroyRef,
   effect,
@@ -11,6 +12,8 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/option/option.js';
 import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
@@ -306,6 +309,7 @@ interface LineAttachmentCandidate {
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [EditorStore],
   host: {

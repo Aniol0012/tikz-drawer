@@ -213,16 +213,45 @@
 
   @if (!mobileLayout()) {
     <div class="topbar__right">
-      <label class="language-select" [attr.aria-label]="t('language')">
-        <select [value]="language()" (change)="onLanguageChange($event)">
-          <option value="en">En</option>
-          <option value="ca">Ca</option>
-          <option value="es">Es</option>
-        </select>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="icon('chevronDown')"></path>
-        </svg>
-      </label>
+      <sl-dropdown
+        #languageDropdown
+        class="language-dropdown"
+        placement="bottom-end"
+        distance="6"
+        hoist>
+        <button
+          slot="trigger"
+          class="language-select language-select--shoelace"
+          type="button"
+          [attr.aria-label]="t('language')">
+          <span>{{ languageLabel() }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icon('chevronDown')"></path>
+          </svg>
+        </button>
+        <div class="language-menu" role="menu" [attr.aria-label]="t('language')">
+          @if (languageOptions.length >= languageSearchThreshold) {
+            <label class="language-menu__search">
+              <input type="search" [attr.placeholder]="t('search')" />
+            </label>
+          }
+          @for (option of languageOptions; track option.code) {
+            <button
+              class="language-menu__item"
+              type="button"
+              role="menuitemradio"
+              [class.is-selected]="language() === option.code"
+              [attr.aria-checked]="language() === option.code"
+              (click)="selectLanguageOption(option.code, languageDropdown)">
+              <span
+                class="language-menu__flag"
+                [class]="option.flagClass"
+                aria-hidden="true"></span>
+              <span>{{ option.label }}</span>
+            </button>
+          }
+        </div>
+      </sl-dropdown>
 
       <a
         class="icon-button icon-button--github"

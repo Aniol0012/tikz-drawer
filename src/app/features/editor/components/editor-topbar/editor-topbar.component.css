@@ -257,9 +257,143 @@
     box-shadow 160ms ease;
 }
 
+.language-dropdown {
+  display: inline-flex;
+  font: inherit;
+  --sl-font-sans: var(--font-sans);
+  --sl-color-primary-600: var(--accent);
+  --sl-color-neutral-0: var(--panel-background);
+  --sl-color-neutral-700: var(--app-foreground);
+}
+
+.language-dropdown::part(panel) {
+  min-width: 100px;
+  padding: 5px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
 .language-select:hover {
   border-color: var(--tool-border-strong);
   background: color-mix(in srgb, var(--tool-surface) 90%, var(--toolbar-background-hover));
+}
+
+.language-select--shoelace {
+  gap: 6px;
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding-right: 10px;
+}
+
+.language-select--shoelace span {
+  line-height: 1;
+}
+
+.language-select--shoelace svg {
+  position: static;
+  display: block;
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  opacity: 0.72;
+  transform-origin: center;
+  transition:
+    opacity 160ms ease,
+    transform 180ms var(--ease-out);
+}
+
+.language-dropdown[open] .language-select--shoelace {
+  border-color: var(--tool-border-strong);
+  background: color-mix(in srgb, var(--tool-surface) 86%, var(--toolbar-background-hover));
+}
+
+.language-dropdown[open] .language-select--shoelace svg {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.language-menu {
+  display: grid;
+  gap: 2px;
+  min-width: 88px;
+  padding: 0;
+  font-family: var(--font-sans);
+}
+
+.language-menu__item {
+  width: 100%;
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: left;
+}
+
+.language-menu__item:hover,
+.language-menu__item:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--accent) 5%, var(--panel-background));
+}
+
+.language-menu__item.is-selected {
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel-background));
+}
+
+.language-menu__flag {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--app-foreground) 14%, transparent),
+    0 1px 1px rgba(0, 0, 0, 0.08);
+}
+
+.language-menu__flag--en {
+  background:
+    linear-gradient(90deg, transparent 42%, #ffffff 42% 58%, transparent 58%),
+    linear-gradient(0deg, transparent 38%, #ffffff 38% 62%, transparent 62%),
+    linear-gradient(90deg, transparent 45%, #cf142b 45% 55%, transparent 55%),
+    linear-gradient(0deg, transparent 43%, #cf142b 43% 57%, transparent 57%), #243a7a;
+}
+
+.language-menu__flag--ca {
+  background: repeating-linear-gradient(180deg, #ffd447 0 2px, #c8102e 2px 4px);
+}
+
+.language-menu__flag--es {
+  background: linear-gradient(180deg, #c60b1e 0 25%, #ffc400 25% 75%, #c60b1e 75%);
+}
+
+.language-menu__search {
+  display: block;
+  padding: 2px 2px 5px;
+}
+
+.language-menu__search input {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--tool-border);
+  border-radius: 6px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  font: inherit;
 }
 
 .language-select select {
@@ -312,6 +446,14 @@
     transform 160ms ease;
 }
 
+.language-select.language-select--shoelace svg {
+  position: static;
+  right: auto;
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+}
+
 .language-select:hover svg,
 .language-select:focus-within svg {
   stroke: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
@@ -325,6 +467,11 @@
 
 :host([data-theme='dark']) .language-select:hover {
   background: color-mix(in srgb, var(--tool-surface) 86%, var(--toolbar-background-hover));
+}
+
+:host([data-theme='dark']) .language-dropdown::part(panel) {
+  border-color: var(--tool-border-strong);
+  background: #111827;
 }
 
 :host([data-theme='dark']) .language-select select {
@@ -343,6 +490,19 @@
 
 :host([data-theme='dark']) .language-select select option:hover {
   background-color: color-mix(in srgb, var(--accent) 16%, #111827);
+}
+
+:host([data-theme='dark']) .language-menu__item {
+  color: #f8fafc;
+}
+
+:host([data-theme='dark']) .language-menu__item:hover,
+:host([data-theme='dark']) .language-menu__item:focus-visible {
+  background: color-mix(in srgb, var(--accent) 8%, #111827);
+}
+
+:host([data-theme='dark']) .language-menu__item.is-selected {
+  background: color-mix(in srgb, var(--accent) 12%, #111827);
 }
 
 .icon-button--github .icon-button__github-mark {
