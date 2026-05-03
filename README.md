@@ -11,6 +11,7 @@
 [![Angular](https://img.shields.io/badge/Angular-21.2.10-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
 [![RxJS](https://img.shields.io/badge/RxJS-7.8.0-B7178C?style=flat-square&logo=reactivex&logoColor=white)](https://rxjs.dev/)
+[![Shoelace](https://img.shields.io/badge/Shoelace-2.20.1-1E88E5?style=flat-square&logo=shoelace&logoColor=white)](https://shoelace.style/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1.5-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.3-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.33.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)

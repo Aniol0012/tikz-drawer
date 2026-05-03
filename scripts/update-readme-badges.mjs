@@ -66,6 +66,11 @@ const badgeVersions = [
     version: normalizeVersion(packageJson.dependencies?.rxjs),
   },
   {
+    label: 'Shoelace',
+    slug: 'Shoelace',
+    version: normalizeVersion(packageJson.dependencies?.['@shoelace-style/shoelace']),
+  },
+  {
     label: 'Vitest',
     slug: 'Vitest',
     version: normalizeVersion(packageJson.devDependencies?.vitest),
