@@ -1,0 +1,12 @@
+<sl-select
+  class="app-select"
+  [value]="value()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.hoist]="hoist() ? '' : null"
+  (sl-change)="onSelectionChange($event)">
+  @for (option of options(); track option.value) {
+    <sl-option [value]="option.value" [disabled]="option.disabled ? true : null">
+      {{ option.label }}
+    </sl-option>
+  }
+</sl-select>

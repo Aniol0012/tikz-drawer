@@ -205,111 +205,6 @@
   background-repeat: no-repeat;
 }
 
-.sl-field-select {
-  width: 100%;
-  color: var(--app-foreground);
-  font: inherit;
-  --sl-font-sans: var(--font-sans);
-  --sl-font-size-medium: 14px;
-  --sl-font-weight-normal: 400;
-  --sl-input-height-medium: 34px;
-  --sl-input-border-width: 1px;
-  --sl-input-border-radius-medium: 8px;
-  --sl-input-background-color: var(--input-background);
-  --sl-input-background-color-hover: var(--input-background);
-  --sl-input-background-color-focus: var(--input-background);
-  --sl-input-border-color: var(--tool-border);
-  --sl-input-border-color-hover: var(--tool-border-strong);
-  --sl-input-border-color-focus: color-mix(in srgb, var(--accent) 42%, var(--tool-border-strong));
-  --sl-input-color: var(--app-foreground);
-  --sl-input-icon-color: var(--muted-foreground);
-  --sl-input-placeholder-color: var(--muted-foreground);
-  --sl-focus-ring-color: color-mix(in srgb, var(--accent) 9%, transparent);
-  --sl-focus-ring-width: 2px;
-}
-
-.sl-field-select::part(combobox) {
-  min-height: 34px;
-  padding-inline: 10px 9px;
-  box-shadow: none;
-  cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease,
-    transform 160ms ease;
-}
-
-.sl-field-select::part(display-input) {
-  color: var(--app-foreground);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 400;
-}
-
-.sl-field-select::part(expand-icon) {
-  color: var(--muted-foreground);
-  transition:
-    color 160ms ease,
-    opacity 160ms ease,
-    transform 180ms var(--ease-out);
-}
-
-.sl-field-select:hover::part(expand-icon),
-.sl-field-select:focus-within::part(expand-icon) {
-  color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
-  opacity: 1;
-}
-
-.sl-field-select[open]::part(combobox) {
-  border-color: var(--tool-border-strong);
-  background: var(--input-background);
-}
-
-.sl-field-select[open]::part(expand-icon) {
-  transform: rotate(180deg);
-}
-
-.sl-field-select::part(listbox) {
-  padding: 4px;
-  border: 1px solid var(--tool-border);
-  border-radius: 8px;
-  background: var(--panel-background);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
-}
-
-.sl-field-select sl-option::part(base) {
-  min-height: 30px;
-  border-radius: 6px;
-  color: var(--app-foreground);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 400;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-
-.sl-field-select sl-option::part(checked-icon) {
-  color: color-mix(in srgb, var(--accent) 72%, var(--muted-foreground));
-}
-
-.sl-field-select sl-option::part(label) {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 400;
-}
-
-.sl-field-select sl-option::part(base):hover {
-  background: color-mix(in srgb, var(--accent) 4%, var(--panel-background));
-}
-
-.sl-field-select sl-option[aria-selected='true']::part(base),
-.sl-field-select sl-option[current]::part(base) {
-  background: color-mix(in srgb, var(--accent) 6%, var(--panel-background));
-  color: var(--app-foreground);
-}
-
 .search-field {
   grid-template-columns: 18px minmax(0, 1fr);
   align-items: center;
@@ -351,7 +246,6 @@
 .scene-input input:hover,
 .search-field:hover,
 .field select:hover,
-.sl-field-select:hover::part(combobox),
 .field input:not([type='range']):hover,
 .field textarea:hover,
 .code-input:hover,
@@ -371,7 +265,6 @@
 
 .scene-input input:focus-visible,
 .field select:focus-visible,
-.sl-field-select:focus-within::part(combobox),
 .field input:not([type='range']):focus-visible,
 .field textarea:focus-visible,
 .code-input:focus-visible,
@@ -788,39 +681,6 @@
 
 :host([data-theme='dark']) .language-select select option:hover {
   background-color: color-mix(in srgb, var(--accent) 16%, #111827);
-}
-
-:host([data-theme='dark']) .sl-field-select {
-  --sl-input-background-color: var(--input-background);
-  --sl-input-background-color-hover: color-mix(
-    in srgb,
-    var(--input-background) 86%,
-    var(--toolbar-background-hover)
-  );
-  --sl-input-background-color-focus: var(--input-background);
-  --sl-input-border-color: var(--tool-border-strong);
-  --sl-input-border-color-hover: color-mix(in srgb, white 30%, var(--tool-border-strong));
-  --sl-input-color: #f8fafc;
-  --sl-input-icon-color: #a7a7a7;
-}
-
-:host([data-theme='dark']) .sl-field-select::part(listbox) {
-  border-color: var(--tool-border-strong);
-  background: #111827;
-}
-
-:host([data-theme='dark']) .sl-field-select sl-option::part(base) {
-  color: #f8fafc;
-}
-
-:host([data-theme='dark']) .sl-field-select sl-option::part(base):hover {
-  background: color-mix(in srgb, var(--accent) 7%, #111827);
-}
-
-:host([data-theme='dark']) .sl-field-select sl-option[aria-selected='true']::part(base),
-:host([data-theme='dark']) .sl-field-select sl-option[current]::part(base) {
-  background: color-mix(in srgb, var(--accent) 10%, #111827);
-  color: #f8fafc;
 }
 
 .icon-button--github .icon-button__github-mark {
@@ -1904,7 +1764,7 @@ kbd {
 
 .property-group .toggle-field,
 .property-group .field > select,
-.property-group .field > .sl-field-select {
+.property-group .field > app-select {
   min-height: 40px;
 }
 
@@ -2782,7 +2642,7 @@ kbd {
 
 .property-group--arrow .toggle-field,
 .property-group--arrow .field > select,
-.property-group--arrow .field > .sl-field-select,
+.property-group--arrow .field > app-select,
 .property-group--arrow .field > input:not([type='range']) {
   min-height: 44px;
 }
@@ -3195,10 +3055,7 @@ button:disabled {
   .toggle-field,
   .export-option-card,
   .context-menu button,
-  .text-symbol-button,
-  .sl-field-select::part(combobox),
-  .sl-field-select::part(expand-icon),
-  .sl-field-select sl-option::part(base) {
+  .text-symbol-button {
     transition-duration: 0ms !important;
   }
 }
@@ -3823,7 +3680,7 @@ button:disabled {
   .canvas-chip,
   .toggle-field,
   .field select,
-  .field > .sl-field-select,
+  .field > app-select,
   .field input:not([type='range']),
   .field textarea {
     min-height: 42px;
@@ -4023,7 +3880,7 @@ button:disabled {
   }
 
   .field select,
-  .field > .sl-field-select,
+  .field > app-select,
   .field input:not([type='range']),
   .field textarea,
   .editor-range-input-card__number,
@@ -4041,12 +3898,6 @@ button:disabled {
   .field select,
   .editor-range-input-card__number,
   .color-metric-input {
-    padding-inline: 7px;
-    border-radius: 7px;
-    font-size: 0.82rem;
-  }
-
-  .field > .sl-field-select::part(combobox) {
     padding-inline: 7px;
     border-radius: 7px;
     font-size: 0.82rem;

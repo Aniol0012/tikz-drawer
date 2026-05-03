@@ -1,0 +1,152 @@
+:host {
+  display: block;
+  width: 100%;
+  color: var(--app-foreground);
+  font: inherit;
+}
+
+.app-select {
+  width: 100%;
+  color: var(--app-foreground);
+  font: inherit;
+  --sl-font-sans: var(--font-sans);
+  --sl-font-size-medium: 14px;
+  --sl-font-weight-normal: 400;
+  --sl-input-height-medium: 34px;
+  --sl-input-border-width: 1px;
+  --sl-input-border-radius-medium: 8px;
+  --sl-input-background-color: var(--input-background);
+  --sl-input-background-color-hover: var(--input-background);
+  --sl-input-background-color-focus: var(--input-background);
+  --sl-input-border-color: var(--tool-border);
+  --sl-input-border-color-hover: var(--tool-border-strong);
+  --sl-input-border-color-focus: color-mix(in srgb, var(--accent) 42%, var(--tool-border-strong));
+  --sl-input-color: var(--app-foreground);
+  --sl-input-icon-color: var(--muted-foreground);
+  --sl-input-placeholder-color: var(--muted-foreground);
+  --sl-focus-ring-color: color-mix(in srgb, var(--accent) 9%, transparent);
+  --sl-focus-ring-width: 2px;
+}
+
+.app-select::part(combobox) {
+  min-height: 34px;
+  padding-inline: 10px 9px;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.app-select::part(display-input) {
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.app-select::part(expand-icon) {
+  color: var(--muted-foreground);
+  transform-origin: center;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 180ms var(--ease-out);
+}
+
+.app-select:hover::part(expand-icon),
+.app-select:focus-within::part(expand-icon) {
+  color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
+  opacity: 1;
+}
+
+.app-select[open]::part(combobox) {
+  border-color: var(--tool-border-strong);
+  background: var(--input-background);
+}
+
+.app-select[open]::part(expand-icon) {
+  transform: rotate(180deg);
+}
+
+.app-select::part(listbox) {
+  padding: 4px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.app-select sl-option::part(base) {
+  min-height: 30px;
+  border-radius: 6px;
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.app-select sl-option::part(checked-icon) {
+  color: color-mix(in srgb, var(--accent) 72%, var(--muted-foreground));
+}
+
+.app-select sl-option::part(label) {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.app-select sl-option::part(base):hover {
+  background: color-mix(in srgb, var(--accent) 4%, var(--panel-background));
+}
+
+.app-select sl-option[aria-selected='true']::part(base),
+.app-select sl-option[current]::part(base) {
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel-background));
+  color: var(--app-foreground);
+}
+
+:host-context([data-theme='dark']) .app-select {
+  --sl-input-background-color: var(--input-background);
+  --sl-input-background-color-hover: color-mix(
+    in srgb,
+    var(--input-background) 86%,
+    var(--toolbar-background-hover)
+  );
+  --sl-input-background-color-focus: var(--input-background);
+  --sl-input-border-color: var(--tool-border-strong);
+  --sl-input-border-color-hover: color-mix(in srgb, white 30%, var(--tool-border-strong));
+  --sl-input-color: #f8fafc;
+  --sl-input-icon-color: #a7a7a7;
+}
+
+:host-context([data-theme='dark']) .app-select::part(listbox) {
+  border-color: var(--tool-border-strong);
+  background: #111827;
+}
+
+:host-context([data-theme='dark']) .app-select sl-option::part(base) {
+  color: #f8fafc;
+}
+
+:host-context([data-theme='dark']) .app-select sl-option::part(base):hover {
+  background: color-mix(in srgb, var(--accent) 7%, #111827);
+}
+
+:host-context([data-theme='dark']) .app-select sl-option[aria-selected='true']::part(base),
+:host-context([data-theme='dark']) .app-select sl-option[current]::part(base) {
+  background: color-mix(in srgb, var(--accent) 10%, #111827);
+  color: #f8fafc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-select::part(combobox),
+  .app-select::part(expand-icon),
+  .app-select sl-option::part(base) {
+    transition-duration: 0ms !important;
+  }
+}

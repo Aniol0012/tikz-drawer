@@ -21,10 +21,16 @@ import {
   CopyButtonComponent,
   type CopyButtonValueResolver
 } from '../../../../shared/copy-button/copy-button.component';
+import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
+
+type LabelKeyOption = {
+  readonly value: string;
+  readonly labelKey: string;
+};
 
 @Component({
   selector: 'app-export-modal',
-  imports: [CopyButtonComponent],
+  imports: [CopyButtonComponent, AppSelectComponent],
   templateUrl: './export-modal.component.html',
   styleUrl: './export-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,6 +88,12 @@ export class ExportModalComponent {
     } as Partial<LatexExportConfig>);
   }
 
+  setLatexExportText(key: LatexExportTextKey, value: string): void {
+    this.latexConfigPatch.emit({
+      [key]: value
+    } as Partial<LatexExportConfig>);
+  }
+
   updateLatexExportNumber(key: LatexExportNumberKey, event: Event, min: number, max: number): void {
     const inputValue = Number.parseFloat((event.target as HTMLInputElement).value);
     if (!Number.isFinite(inputValue)) {
@@ -113,6 +125,20 @@ export class ExportModalComponent {
     if (this.codeThemeOptions.some((option) => option.value === theme)) {
       this.codeThemeChange.emit(theme as CodeHighlightTheme);
     }
+  }
+
+  translatedSelectOptions(options: readonly LabelKeyOption[]): readonly AppSelectOption[] {
+    return options.map((option) => ({
+      value: option.value,
+      label: this.t(option.labelKey)
+    }));
+  }
+
+  fontSizeSelectOptions(): readonly AppSelectOption[] {
+    return this.fontSizeOptions.map((fontSize) => ({
+      value: fontSize,
+      label: fontSize
+    }));
   }
 
   applySuggestedCaptionAndLabel(): void {

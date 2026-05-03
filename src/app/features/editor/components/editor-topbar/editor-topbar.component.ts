@@ -20,6 +20,7 @@ import {
   CopyButtonComponent,
   type CopyButtonValueResolver
 } from '../../../../shared/copy-button/copy-button.component';
+import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import type { TopbarTool } from './editor-topbar.types';
 
 const DEFAULT_WINDOW_WIDTH = 1280;
@@ -28,13 +29,13 @@ const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
 const LANGUAGE_SEARCH_THRESHOLD = 7;
 const LANGUAGE_OPTIONS: readonly {
-  readonly code: LanguageCode;
+  readonly value: LanguageCode;
   readonly label: string;
   readonly flagClass: string;
 }[] = [
-  { code: 'en', label: 'En', flagClass: 'language-menu__flag--en' },
-  { code: 'ca', label: 'Ca', flagClass: 'language-menu__flag--ca' },
-  { code: 'es', label: 'Es', flagClass: 'language-menu__flag--es' }
+  { value: 'en', label: 'En', flagClass: 'language-menu__flag--en' },
+  { value: 'ca', label: 'Ca', flagClass: 'language-menu__flag--ca' },
+  { value: 'es', label: 'Es', flagClass: 'language-menu__flag--es' }
 ];
 
 interface ShoelaceDropdownElement extends HTMLElement {
@@ -43,7 +44,7 @@ interface ShoelaceDropdownElement extends HTMLElement {
 
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent],
+  imports: [CopyButtonComponent, AppSelectComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
@@ -154,6 +155,15 @@ export class EditorTopbarComponent {
 
   onLanguageChange(event: Event, closeMenu: boolean = false): void {
     this.languageChange.emit((event.target as HTMLSelectElement).value as LanguageCode);
+    if (closeMenu) {
+      this.fileMenuClose.emit();
+    }
+  }
+
+  onLanguageSelect(value: string, closeMenu: boolean = false): void {
+    if (value === 'en' || value === 'ca' || value === 'es') {
+      this.languageChange.emit(value);
+    }
     if (closeMenu) {
       this.fileMenuClose.emit();
     }

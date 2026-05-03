@@ -366,10 +366,8 @@
 
 .language-menu__flag--en {
   background:
-    linear-gradient(90deg, transparent 42%, #ffffff 42% 58%, transparent 58%),
-    linear-gradient(0deg, transparent 38%, #ffffff 38% 62%, transparent 62%),
-    linear-gradient(90deg, transparent 45%, #cf142b 45% 55%, transparent 55%),
-    linear-gradient(0deg, transparent 43%, #cf142b 43% 57%, transparent 57%), #243a7a;
+    linear-gradient(90deg, transparent 41%, #cf142b 41% 59%, transparent 59%),
+    linear-gradient(0deg, transparent 41%, #cf142b 41% 59%, transparent 59%), #ffffff;
 }
 
 .language-menu__flag--ca {

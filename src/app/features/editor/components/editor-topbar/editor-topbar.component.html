@@ -115,18 +115,12 @@
               }
               <div class="dropdown-menu__group dropdown-menu__group--topbar-mobile">
                 <div class="dropdown-menu__topbar-inline">
-                  <label
-                    class="language-select language-select--menu"
-                    [attr.aria-label]="t('language')">
-                    <select [value]="language()" (change)="onLanguageChange($event, true)">
-                      <option value="en">En</option>
-                      <option value="ca">Ca</option>
-                      <option value="es">Es</option>
-                    </select>
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="icon('chevronDown')"></path>
-                    </svg>
-                  </label>
+                  <app-select
+                    class="language-select--menu"
+                    [value]="language()"
+                    [options]="languageOptions"
+                    [ariaLabel]="t('language')"
+                    (valueChange)="onLanguageSelect($event, true)"></app-select>
 
                   <a
                     class="icon-button icon-button--github"
@@ -235,14 +229,14 @@
               <input type="search" [attr.placeholder]="t('search')" />
             </label>
           }
-          @for (option of languageOptions; track option.code) {
+          @for (option of languageOptions; track option.value) {
             <button
               class="language-menu__item"
               type="button"
               role="menuitemradio"
-              [class.is-selected]="language() === option.code"
-              [attr.aria-checked]="language() === option.code"
-              (click)="selectLanguageOption(option.code, languageDropdown)">
+              [class.is-selected]="language() === option.value"
+              [attr.aria-checked]="language() === option.value"
+              (click)="selectLanguageOption(option.value, languageDropdown)">
               <span
                 class="language-menu__flag"
                 [class]="option.flagClass"
