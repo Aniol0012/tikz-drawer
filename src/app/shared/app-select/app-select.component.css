@@ -48,11 +48,26 @@
 
 .app-select::part(expand-icon) {
   color: var(--muted-foreground);
-  transform-origin: center;
   transition:
     color 160ms ease,
-    opacity 160ms ease,
-    transform 180ms var(--ease-out);
+    opacity 160ms ease;
+}
+
+.app-select__expand-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-origin: center;
+  transition: transform 180ms var(--ease-out);
+}
+
+.app-select__expand-icon.is-open {
+  transform: rotate(180deg);
 }
 
 .app-select:hover::part(expand-icon),
@@ -61,13 +76,10 @@
   opacity: 1;
 }
 
-.app-select[open]::part(combobox) {
+.app-select[open]::part(combobox),
+.app-select.is-open::part(combobox) {
   border-color: var(--tool-border-strong);
   background: var(--input-background);
-}
-
-.app-select[open]::part(expand-icon) {
-  transform: rotate(180deg);
 }
 
 .app-select::part(listbox) {
@@ -146,6 +158,7 @@
 @media (prefers-reduced-motion: reduce) {
   .app-select::part(combobox),
   .app-select::part(expand-icon),
+  .app-select__expand-icon,
   .app-select sl-option::part(base) {
     transition-duration: 0ms !important;
   }

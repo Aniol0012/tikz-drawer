@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output, signal } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 
@@ -20,10 +20,15 @@ export class AppSelectComponent {
   readonly options = input.required<readonly AppSelectOption[]>();
   readonly ariaLabel = input<string | null>(null);
   readonly hoist = input(true);
+  readonly isOpen = signal(false);
 
   readonly valueChange = output<string>();
 
   onSelectionChange(event: Event): void {
     this.valueChange.emit((event.target as HTMLSelectElement).value);
+  }
+
+  setOpen(open: boolean): void {
+    this.isOpen.set(open);
   }
 }
