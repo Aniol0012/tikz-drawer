@@ -3,8 +3,84 @@ import ca from './ca.json';
 import es from './es.json';
 import type { CanvasShape, PersistedEditorState, Point, PresetCategory } from '../models/tikz.models';
 
-export type LanguageCode = 'en' | 'ca' | 'es';
+export const languageCodes = ['en', 'ca', 'es'] as const;
+export type LanguageCode = (typeof languageCodes)[number];
 export type TranslationDictionary = Record<string, string>;
+
+type LocalizedShapeKindDictionary = Record<CanvasShape['kind'], string>;
+
+export interface Language {
+  readonly code: LanguageCode;
+  readonly label: string;
+  readonly flagSrc: string;
+  readonly browserPrefixes: readonly string[];
+  readonly translations: TranslationDictionary;
+  readonly shapeKinds: LocalizedShapeKindDictionary;
+}
+
+export const languages: readonly Language[] = [
+  {
+    code: 'en',
+    label: 'En',
+    flagSrc: 'flags/GB.png',
+    browserPrefixes: ['en'],
+    translations: en,
+    shapeKinds: {
+      line: 'Line',
+      rectangle: 'Rectangle',
+      triangle: 'Triangle',
+      circle: 'Circle',
+      ellipse: 'Ellipse',
+      text: 'Text',
+      image: 'Image'
+    }
+  },
+  {
+    code: 'ca',
+    label: 'Ca',
+    flagSrc: 'flags/EU-CA.png',
+    browserPrefixes: ['ca'],
+    translations: ca,
+    shapeKinds: {
+      line: 'Línia',
+      rectangle: 'Rectangle',
+      triangle: 'Triangle',
+      circle: 'Cercle',
+      ellipse: 'El·lipse',
+      text: 'Text',
+      image: 'Imatge'
+    }
+  },
+  {
+    code: 'es',
+    label: 'Es',
+    flagSrc: 'flags/ES.png',
+    browserPrefixes: ['es'],
+    translations: es,
+    shapeKinds: {
+      line: 'Línea',
+      rectangle: 'Rectángulo',
+      triangle: 'Triángulo',
+      circle: 'Círculo',
+      ellipse: 'Elipse',
+      text: 'Texto',
+      image: 'Imagen'
+    }
+  }
+] as const;
+
+export const languageOptions: readonly {
+  readonly value: LanguageCode;
+  readonly label: string;
+  readonly flagSrc: string;
+}[] = languages.map(({ code, label, flagSrc }) => ({ value: code, label, flagSrc }));
+
+export const languageByCode: Record<LanguageCode, Language> = Object.fromEntries(
+  languages.map((language) => [language.code, language])
+) as Record<LanguageCode, Language>;
+
+export const isLanguageCode = (value: unknown): value is LanguageCode =>
+  typeof value === 'string' && languageCodes.includes(value as LanguageCode);
 
 export interface SharedScenePayload extends PersistedEditorState {
   readonly viewportCenter: Point;
@@ -24,42 +100,6 @@ export interface SharedScenePayload extends PersistedEditorState {
     readonly label?: string;
   };
 }
-
-export const translations: Record<LanguageCode, TranslationDictionary> = {
-  en,
-  ca,
-  es
-};
-
-export const localizedShapeKinds: Record<LanguageCode, Record<CanvasShape['kind'], string>> = {
-  en: {
-    line: 'Line',
-    rectangle: 'Rectangle',
-    triangle: 'Triangle',
-    circle: 'Circle',
-    ellipse: 'Ellipse',
-    text: 'Text',
-    image: 'Image'
-  },
-  ca: {
-    line: 'Línia',
-    rectangle: 'Rectangle',
-    triangle: 'Triangle',
-    circle: 'Cercle',
-    ellipse: 'El·lipse',
-    text: 'Text',
-    image: 'Imatge'
-  },
-  es: {
-    line: 'Línea',
-    rectangle: 'Rectángulo',
-    triangle: 'Triángulo',
-    circle: 'Círculo',
-    ellipse: 'Elipse',
-    text: 'Texto',
-    image: 'Imagen'
-  }
-};
 
 export const categoryOrder: readonly PresetCategory[] = [
   'essentials',
@@ -81,13 +121,26 @@ export const categoryTranslationKey: Record<PresetCategory, string> = {
   concepts: 'categoryConcepts'
 };
 
+export const fallbackLanguageCode: LanguageCode = 'en';
+
 export const detectLanguage = (): LanguageCode => {
-  const browserLanguage = globalThis.navigator?.language?.toLowerCase() ?? 'en';
-  if (browserLanguage.startsWith('ca')) {
-    return 'ca';
-  }
-  if (browserLanguage.startsWith('es')) {
-    return 'es';
-  }
-  return 'en';
+  const browserLanguage: string = globalThis.navigator?.language?.toLowerCase() ?? 'en';
+  return (
+    languages.find((language) => language.browserPrefixes.some((prefix) => browserLanguage.startsWith(prefix)))?.code ??
+    fallbackLanguageCode
+  );
 };
+
+export const restoreLanguage = (
+  raw: string | null | undefined,
+  detectLanguageFallback: () => LanguageCode = detectLanguage
+): LanguageCode => (isLanguageCode(raw) ? raw : detectLanguageFallback());
+
+export const translate = (language: LanguageCode, key: string): string =>
+  languageByCode[language].translations[key] ?? key;
+
+export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string =>
+  languageByCode[language].translations[key] ?? fallback;
+
+export const localizedShapeKind = (language: LanguageCode, kind: CanvasShape['kind']): string =>
+  languageByCode[language].shapeKinds[kind];

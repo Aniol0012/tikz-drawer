@@ -1,7 +1,6 @@
 import type { CodeHighlightTheme, LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
 import { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../components/editor-page/editor-page.types';
 import { CODE_HIGHLIGHT_THEMES } from '../config/latex-export.config';
-import type { LanguageCode } from '../i18n/editor-page.i18n';
 
 const isOneOf = <const T extends readonly string[]>(value: unknown, options: T): value is T[number] =>
   typeof value === 'string' && options.includes(value);
@@ -44,11 +43,6 @@ export const parsePinnedToolIdsFromStorage = (
     return templatePinnedIds;
   }
 };
-
-export const restoreLanguageFromStorage = (
-  raw: string | null | undefined,
-  detectLanguage: () => LanguageCode
-): LanguageCode => (raw === 'ca' || raw === 'es' || raw === 'en' ? raw : detectLanguage());
 
 export const restoreCodeHighlightThemeFromStorage = (
   raw: string | null | undefined,

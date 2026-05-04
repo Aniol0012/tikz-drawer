@@ -1,12 +1,12 @@
 import type { LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
 import { DEFAULT_LATEX_EXPORT_CONFIG } from '../config/latex-export.config';
+import { restoreLanguage } from '../i18n/editor-page.i18n';
 import {
   normalizeLatexExportConfig,
   parsePinnedToolIdsFromStorage,
   parseSavedTemplatesFromStorage,
   parseStoredLatexExportConfig,
   restoreCodeHighlightThemeFromStorage,
-  restoreLanguageFromStorage,
   serializableLatexExportConfig
 } from './editor-storage.utils';
 
@@ -45,8 +45,8 @@ describe('editor-storage utils', () => {
   });
 
   it('restores language and code theme with fallback', () => {
-    expect(restoreLanguageFromStorage('ca', () => 'en')).toBe('ca');
-    expect(restoreLanguageFromStorage('de', () => 'en')).toBe('en');
+    expect(restoreLanguage('ca', () => 'en')).toBe('ca');
+    expect(restoreLanguage('de', () => 'en')).toBe('en');
     expect(restoreCodeHighlightThemeFromStorage('forest', 'aurora')).toBe('forest');
     expect(restoreCodeHighlightThemeFromStorage('unknown', 'aurora')).toBe('aurora');
   });

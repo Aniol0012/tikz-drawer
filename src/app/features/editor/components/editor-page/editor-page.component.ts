@@ -151,10 +151,13 @@ import {
   categoryOrder,
   categoryTranslationKey,
   detectLanguage,
+  isLanguageCode,
   type LanguageCode,
-  localizedShapeKinds,
+  localizedShapeKind as localizedShapeKindForLanguage,
+  restoreLanguage as restoreLanguageFromI18n,
   type SharedScenePayload,
-  translations
+  translate,
+  translateOrFallback
 } from '../../i18n/editor-page.i18n';
 import {
   decodeSharePayload,
@@ -173,7 +176,6 @@ import {
   parseSavedTemplatesFromStorage,
   parseStoredLatexExportConfig as parseStoredLatexExportConfigUtil,
   restoreCodeHighlightThemeFromStorage,
-  restoreLanguageFromStorage,
   serializableLatexExportConfig as serializableLatexExportConfigUtil
 } from '../../utils/editor-storage.utils';
 import {
@@ -1262,15 +1264,15 @@ export class EditorPageComponent {
   }
 
   t(key: string): string {
-    return translations[this.language()][key] ?? key;
+    return translate(this.language(), key);
   }
 
   tOrFallback(key: string, fallback: string): string {
-    return translations[this.language()][key] ?? fallback;
+    return translateOrFallback(this.language(), key, fallback);
   }
 
   localizedShapeKind(kind: CanvasShape['kind']): string {
-    return localizedShapeKinds[this.language()][kind];
+    return localizedShapeKindForLanguage(this.language(), kind);
   }
 
   openFigureSearch(): void {
@@ -5639,7 +5641,7 @@ export class EditorPageComponent {
   }
 
   private applyStoredLanguage(value: string): void {
-    if (value === 'ca' || value === 'es' || value === 'en') {
+    if (isLanguageCode(value)) {
       this.language.set(value);
     }
   }
@@ -6662,7 +6664,7 @@ export class EditorPageComponent {
 
   private restoreLanguage(): LanguageCode {
     const saved = this.editorStorage.getString(this.languageStorageKey);
-    return restoreLanguageFromStorage(saved, detectLanguage);
+    return restoreLanguageFromI18n(saved, detectLanguage);
   }
 
   private restoreCodeHighlightTheme(): CodeHighlightTheme {

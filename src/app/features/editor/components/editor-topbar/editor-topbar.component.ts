@@ -14,7 +14,7 @@ import {
   viewChild
 } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
-import type { LanguageCode } from '../../i18n/editor-page.i18n';
+import { isLanguageCode, languageByCode, languageOptions, type LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import {
   CopyButtonComponent,
@@ -28,15 +28,6 @@ const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
 const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
 const LANGUAGE_SEARCH_THRESHOLD = 7;
-const LANGUAGE_OPTIONS: readonly {
-  readonly value: LanguageCode;
-  readonly label: string;
-  readonly flagSrc: string;
-}[] = [
-  { value: 'en', label: 'En', flagSrc: 'flags/GB.png' },
-  { value: 'ca', label: 'Ca', flagSrc: 'flags/EU-CA.png' },
-  { value: 'es', label: 'Es', flagSrc: 'flags/ES.png' }
-];
 
 interface ShoelaceDropdownElement extends HTMLElement {
   hide?: () => void;
@@ -88,7 +79,7 @@ export class EditorTopbarComponent {
   readonly exportOpen = output<void>();
 
   readonly compactTopbarActions = signal(false);
-  readonly languageOptions = LANGUAGE_OPTIONS;
+  readonly languageOptions = languageOptions;
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(
     typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH
@@ -132,14 +123,7 @@ export class EditorTopbarComponent {
   }
 
   languageLabel(language: LanguageCode = this.language()): string {
-    switch (language) {
-      case 'en':
-        return 'En';
-      case 'ca':
-        return 'Ca';
-      case 'es':
-        return 'Es';
-    }
+    return languageByCode[language].label;
   }
 
   onShareLinkCopied(value: string, closeMenu = false): void {
@@ -161,7 +145,7 @@ export class EditorTopbarComponent {
   }
 
   onLanguageSelect(value: string, closeMenu: boolean = false): void {
-    if (value === 'en' || value === 'ca' || value === 'es') {
+    if (isLanguageCode(value)) {
       this.languageChange.emit(value);
     }
     if (closeMenu) {
