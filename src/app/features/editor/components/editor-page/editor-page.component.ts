@@ -1947,6 +1947,11 @@ export class EditorPageComponent {
     }
   }
 
+  selectSceneShape(shapeId: string): void {
+    this.selectShape(shapeId);
+    this.centerViewportOnShape(shapeId);
+  }
+
   applyScenePreset(presetId: string): void {
     this.closeMobileLibraryPanelIfNeeded();
     this.requestSceneReplacement(presetId);
@@ -5956,6 +5961,15 @@ export class EditorPageComponent {
 
     this.store.patchPreferences({ scale: clampedScale });
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
+  }
+
+  private centerViewportOnShape(shapeId: string): void {
+    const shape = this.scene().shapes.find((entry) => entry.id === shapeId);
+    if (!shape) {
+      return;
+    }
+
+    this.viewportCenter.set(this.shapeCenter(shape));
   }
 
   private touchDistance(firstTouch: Touch, secondTouch: Touch): number {
