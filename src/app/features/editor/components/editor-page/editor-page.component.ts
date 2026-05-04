@@ -435,7 +435,7 @@ export class EditorPageComponent {
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly figureSearchOpen = signal(false);
-  readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl+Shift+K', '⌘⇧K');
+  readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl + F', '⌘ F');
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
@@ -5230,7 +5230,7 @@ export class EditorPageComponent {
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
 
-    if (isFigureSearchShortcut(event) || isFindShortcut(event)) {
+    if (isFigureSearchShortcut(event)) {
       event.preventDefault();
       event.stopPropagation();
       this.openFigureSearch();
