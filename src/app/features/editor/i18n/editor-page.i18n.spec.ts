@@ -36,4 +36,29 @@ describe('editor-page i18n', () => {
     expect(translateOrFallback('en', 'missing.translation', 'Fallback')).toBe('Fallback');
     expect(localizedShapeKind('ca', 'circle')).toBe('Cercle');
   });
+
+  it('requires every language to define translations for all language names', () => {
+    for (const targetLanguage of languages) {
+      for (const namedLanguage of languages) {
+        const translation = translateOrFallback(
+          targetLanguage.code,
+          namedLanguage.longLabelKey,
+          '__missing__'
+        );
+        expect(translation).not.toBe('__missing__');
+        expect(translation).not.toBe(namedLanguage.longLabelKey);
+      }
+    }
+  });
+
+  it('exposes translated long labels for each language in options', () => {
+    for (const targetLanguage of languages) {
+      const options = getLanguageOptions(targetLanguage.code);
+      for (const option of options) {
+        expect(option.longLabel).toBe(
+          translateOrFallback(targetLanguage.code, `languageName.${option.value}`, option.longLabel)
+        );
+      }
+    }
+  });
 });
