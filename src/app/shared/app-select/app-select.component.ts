@@ -5,6 +5,7 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 export interface AppSelectOption {
   readonly value: string;
   readonly label: string;
+  readonly longLabel?: string;
   readonly disabled?: boolean;
 }
 

@@ -10,6 +10,8 @@ type LocalizedShapeKindDictionary = Record<CanvasShape['kind'], string>;
 interface LanguageDefinition {
   readonly code: string;
   readonly label: string;
+  readonly longLabel: string;
+  readonly longLabelKey: string;
   readonly flagSrc: string;
   readonly browserPrefixes: readonly string[];
   readonly translations: TranslationDictionary;
@@ -20,6 +22,8 @@ export const languages = [
   {
     code: 'en',
     label: 'En',
+    longLabel: 'English',
+    longLabelKey: 'languageName.en',
     flagSrc: 'flags/GB.png',
     browserPrefixes: ['en'],
     translations: en,
@@ -36,6 +40,8 @@ export const languages = [
   {
     code: 'ca',
     label: 'Ca',
+    longLabel: 'Català',
+    longLabelKey: 'languageName.ca',
     flagSrc: 'flags/EU-CA.png',
     browserPrefixes: ['ca'],
     translations: ca,
@@ -52,6 +58,8 @@ export const languages = [
   {
     code: 'es',
     label: 'Es',
+    longLabel: 'Español',
+    longLabelKey: 'languageName.es',
     flagSrc: 'flags/ES.png',
     browserPrefixes: ['es'],
     translations: es,
@@ -72,11 +80,12 @@ export type Language = LanguageDefinition & { readonly code: LanguageCode };
 
 export const languageCodes = languages.map((language) => language.code) as readonly LanguageCode[];
 
-export const languageOptions: readonly {
+export interface LanguageOption {
   readonly value: LanguageCode;
   readonly label: string;
+  readonly longLabel: string;
   readonly flagSrc: string;
-}[] = languages.map(({ code, label, flagSrc }) => ({ value: code, label, flagSrc }));
+}
 
 export const languageByCode = languages.reduce(
   (accumulator, language) => ({
@@ -148,6 +157,14 @@ export const translate = (language: LanguageCode, key: string): string =>
 
 export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string =>
   languageByCode[language].translations[key] ?? fallback;
+
+export const getLanguageOptions = (language: LanguageCode): readonly LanguageOption[] =>
+  languages.map(({ code, label, flagSrc, longLabel, longLabelKey }) => ({
+    value: code,
+    label,
+    flagSrc,
+    longLabel: translateOrFallback(language, longLabelKey, longLabel)
+  }));
 
 export const localizedShapeKind = (language: LanguageCode, kind: CanvasShape['kind']): string =>
   languageByCode[language].shapeKinds[kind];

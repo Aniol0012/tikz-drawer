@@ -1,8 +1,9 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, NgOptimizedImage } from '@angular/common';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   CUSTOM_ELEMENTS_SCHEMA,
   DestroyRef,
   effect,
@@ -15,7 +16,7 @@ import {
 } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
-import { isLanguageCode, languageByCode, languageOptions, type LanguageCode } from '../../i18n/editor-page.i18n';
+import { getLanguageOptions, isLanguageCode, languageByCode, type LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import {
   CopyButtonComponent,
@@ -36,7 +37,7 @@ interface ShoelaceDropdownElement extends HTMLElement {
 
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent, AppSelectComponent],
+  imports: [CopyButtonComponent, AppSelectComponent, NgOptimizedImage],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
@@ -79,7 +80,7 @@ export class EditorTopbarComponent {
 
   readonly compactTopbarActions = signal(false);
   readonly language = this.languageService.language;
-  readonly languageOptions = languageOptions;
+  readonly languageOptions = computed(() => getLanguageOptions(this.language()));
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(
     typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH

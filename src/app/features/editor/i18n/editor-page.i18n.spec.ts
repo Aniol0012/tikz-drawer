@@ -1,8 +1,8 @@
 import {
   fallbackLanguageCode,
+  getLanguageOptions,
   isLanguageCode,
   languageCodes,
-  languageOptions,
   languages,
   localizedShapeKind,
   restoreLanguage,
@@ -13,7 +13,14 @@ import {
 describe('editor-page i18n', () => {
   it('derives language options from the central language config', () => {
     expect(languageCodes).toEqual(languages.map(({ code }) => code));
-    expect(languageOptions).toEqual(languages.map(({ code, label, flagSrc }) => ({ value: code, label, flagSrc })));
+    expect(getLanguageOptions('en')).toEqual(
+      languages.map(({ code, label, flagSrc, longLabel, longLabelKey }) => ({
+        value: code,
+        label,
+        flagSrc,
+        longLabel: translateOrFallback('en', longLabelKey, longLabel)
+      }))
+    );
   });
 
   it('validates and restores language codes with fallback', () => {

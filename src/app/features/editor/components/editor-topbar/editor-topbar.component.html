@@ -118,7 +118,7 @@
                   <app-select
                     class="language-select--menu"
                     [value]="language()"
-                    [options]="languageOptions"
+                    [options]="languageOptions()"
                     [ariaLabel]="t('language')"
                     (valueChange)="onLanguageSelect($event, true)"></app-select>
 
@@ -224,12 +224,12 @@
           </svg>
         </button>
         <div class="language-menu" role="menu" [attr.aria-label]="t('language')">
-          @if (languageOptions.length >= languageSearchThreshold) {
+          @if (languageOptions().length >= languageSearchThreshold) {
             <label class="language-menu__search">
               <input type="search" [attr.placeholder]="t('search')" />
             </label>
           }
-          @for (option of languageOptions; track option.value) {
+          @for (option of languageOptions(); track option.value) {
             <button
               class="language-menu__item"
               type="button"
@@ -239,12 +239,12 @@
               (click)="selectLanguageOption(option.value, languageDropdown)">
               <img
                 class="language-menu__flag"
-                [src]="option.flagSrc"
+                ngSrc="{{ option.flagSrc }}"
                 width="16"
                 height="16"
                 alt=""
                 aria-hidden="true" />
-              <span>{{ option.label }}</span>
+              <span>{{ option.longLabel }}</span>
             </button>
           }
         </div>
