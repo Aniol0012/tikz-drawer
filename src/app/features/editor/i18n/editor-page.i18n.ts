@@ -3,14 +3,12 @@ import ca from './ca.json';
 import es from './es.json';
 import type { CanvasShape, PersistedEditorState, Point, PresetCategory } from '../models/tikz.models';
 
-export const languageCodes = ['en', 'ca', 'es'] as const;
-export type LanguageCode = (typeof languageCodes)[number];
 export type TranslationDictionary = Record<string, string>;
 
 type LocalizedShapeKindDictionary = Record<CanvasShape['kind'], string>;
 
-export interface Language {
-  readonly code: LanguageCode;
+interface LanguageDefinition {
+  readonly code: string;
   readonly label: string;
   readonly flagSrc: string;
   readonly browserPrefixes: readonly string[];
@@ -18,7 +16,7 @@ export interface Language {
   readonly shapeKinds: LocalizedShapeKindDictionary;
 }
 
-export const languages: readonly Language[] = [
+export const languages = [
   {
     code: 'en',
     label: 'En',
@@ -67,7 +65,12 @@ export const languages: readonly Language[] = [
       image: 'Imagen'
     }
   }
-] as const;
+] as const satisfies readonly LanguageDefinition[];
+
+export type LanguageCode = (typeof languages)[number]['code'];
+export type Language = LanguageDefinition & { readonly code: LanguageCode };
+
+export const languageCodes = languages.map((language) => language.code) as readonly LanguageCode[];
 
 export const languageOptions: readonly {
   readonly value: LanguageCode;
@@ -75,9 +78,13 @@ export const languageOptions: readonly {
   readonly flagSrc: string;
 }[] = languages.map(({ code, label, flagSrc }) => ({ value: code, label, flagSrc }));
 
-export const languageByCode: Record<LanguageCode, Language> = Object.fromEntries(
-  languages.map((language) => [language.code, language])
-) as Record<LanguageCode, Language>;
+export const languageByCode = languages.reduce(
+  (accumulator, language) => ({
+    ...accumulator,
+    [language.code]: language
+  }),
+  {} as Record<LanguageCode, Language>
+);
 
 export const isLanguageCode = (value: unknown): value is LanguageCode =>
   typeof value === 'string' && languageCodes.includes(value as LanguageCode);

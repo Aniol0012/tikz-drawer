@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
   LATEX_ALIGNMENT_OPTIONS,
@@ -16,6 +16,7 @@ import {
 } from '../../config/latex-export.config';
 import type { ThemeMode } from '../../models/tikz.models';
 import { highlightLatex } from '../../utils/editor-page.utils';
+import { EditorLanguageService } from '../../i18n/editor-language.service';
 import type { CodeHighlightTheme, ExportMode } from '../editor-page/editor-page.types';
 import {
   CopyButtonComponent,
@@ -39,9 +40,10 @@ type LabelKeyOption = {
   }
 })
 export class ExportModalComponent {
+  private readonly languageService = inject(EditorLanguageService);
+
   readonly theme = input.required<ThemeMode>();
   readonly iconMap = input.required<Record<string, string>>();
-  readonly translate = input.required<(key: string) => string>();
   readonly exportMode = input.required<ExportMode>();
   readonly settingsOpen = input.required<boolean>();
   readonly shareUrl = input.required<string>();
@@ -75,7 +77,7 @@ export class ExportModalComponent {
   readonly highlightedCodeThemePreview = highlightLatex(LATEX_CODE_THEME_PREVIEW_SOURCE);
 
   t(key: string): string {
-    return this.translate()(key);
+    return this.languageService.t(key);
   }
 
   icon(key: string): string {

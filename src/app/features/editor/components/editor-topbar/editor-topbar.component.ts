@@ -14,6 +14,7 @@ import {
   viewChild
 } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
+import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { isLanguageCode, languageByCode, languageOptions, type LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import {
@@ -47,13 +48,13 @@ interface ShoelaceDropdownElement extends HTMLElement {
 export class EditorTopbarComponent {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly languageService = inject(EditorLanguageService);
 
   readonly topbarActions = viewChild.required<ElementRef<HTMLDivElement>>('topbarActions');
 
   readonly appVersion = input.required<string>();
   readonly sceneName = input.required<string>();
   readonly theme = input.required<ThemeMode>();
-  readonly language = input.required<LanguageCode>();
   readonly mobileLayout = input.required<boolean>();
   readonly overlayLibraryLayout = input.required<boolean>();
   readonly viewportWidth = input.required<number>();
@@ -62,12 +63,10 @@ export class EditorTopbarComponent {
   readonly defaultToolbarTools = input.required<readonly TopbarTool[]>();
   readonly pinnedToolbarTools = input.required<readonly TopbarTool[]>();
   readonly iconMap = input.required<Record<string, string>>();
-  readonly translate = input.required<(key: string) => string>();
   readonly shareLinkCopyValue = input.required<CopyButtonValueResolver>();
 
   readonly sceneNameChange = output<string>();
   readonly activeToolChange = output<string>();
-  readonly languageChange = output<LanguageCode>();
   readonly themeToggle = output<void>();
   readonly newScene = output<void>();
   readonly shareLinkCopied = output<string>();
@@ -79,6 +78,7 @@ export class EditorTopbarComponent {
   readonly exportOpen = output<void>();
 
   readonly compactTopbarActions = signal(false);
+  readonly language = this.languageService.language;
   readonly languageOptions = languageOptions;
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(
@@ -115,7 +115,7 @@ export class EditorTopbarComponent {
   }
 
   t(key: string): string {
-    return this.translate()(key);
+    return this.languageService.t(key);
   }
 
   icon(key: string): string {
@@ -137,16 +137,9 @@ export class EditorTopbarComponent {
     this.sceneNameChange.emit((event.target as HTMLInputElement).value);
   }
 
-  onLanguageChange(event: Event, closeMenu: boolean = false): void {
-    this.languageChange.emit((event.target as HTMLSelectElement).value as LanguageCode);
-    if (closeMenu) {
-      this.fileMenuClose.emit();
-    }
-  }
-
   onLanguageSelect(value: string, closeMenu: boolean = false): void {
     if (isLanguageCode(value)) {
-      this.languageChange.emit(value);
+      this.languageService.setLanguage(value);
     }
     if (closeMenu) {
       this.fileMenuClose.emit();
@@ -154,7 +147,7 @@ export class EditorTopbarComponent {
   }
 
   selectLanguageOption(language: LanguageCode, dropdown: ShoelaceDropdownElement): void {
-    this.languageChange.emit(language);
+    this.languageService.setLanguage(language);
     dropdown.hide?.();
   }
 

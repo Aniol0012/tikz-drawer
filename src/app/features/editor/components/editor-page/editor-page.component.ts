@@ -147,18 +147,8 @@ import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
-import {
-  categoryOrder,
-  categoryTranslationKey,
-  detectLanguage,
-  isLanguageCode,
-  type LanguageCode,
-  localizedShapeKind as localizedShapeKindForLanguage,
-  restoreLanguage as restoreLanguageFromI18n,
-  type SharedScenePayload,
-  translate,
-  translateOrFallback
-} from '../../i18n/editor-page.i18n';
+import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
+import { EditorLanguageService } from '../../i18n/editor-language.service';
 import {
   decodeSharePayload,
   encodeSharePayload,
@@ -385,7 +375,6 @@ export class EditorPageComponent {
   private static readonly notificationDurationMs = 2400;
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
-  private readonly languageStorageKey = EDITOR_STORAGE_KEYS.language;
   private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
   private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
@@ -397,6 +386,7 @@ export class EditorPageComponent {
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly editorStorage = inject(EditorLocalStorageService);
+  private readonly languageService = inject(EditorLanguageService);
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
@@ -420,7 +410,7 @@ export class EditorPageComponent {
   readonly canUndo = this.store.canUndo;
   readonly canRedo = this.store.canRedo;
 
-  readonly language = signal<LanguageCode>(this.restoreLanguage());
+  readonly language = this.languageService.language;
   readonly inspectorTab = signal<InspectorTab>('properties');
   readonly activeTool = signal<ToolId>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
@@ -510,7 +500,6 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
-  readonly topbarTranslate = (key: string): string => this.t(key);
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
@@ -1264,15 +1253,15 @@ export class EditorPageComponent {
   }
 
   t(key: string): string {
-    return translate(this.language(), key);
+    return this.languageService.t(key);
   }
 
   tOrFallback(key: string, fallback: string): string {
-    return translateOrFallback(this.language(), key, fallback);
+    return this.languageService.tOrFallback(key, fallback);
   }
 
   localizedShapeKind(kind: CanvasShape['kind']): string {
-    return localizedShapeKindForLanguage(this.language(), kind);
+    return this.languageService.localizedShapeKind(kind);
   }
 
   openFigureSearch(): void {
@@ -1386,11 +1375,6 @@ export class EditorPageComponent {
       case 'concepts':
         return 'hub';
     }
-  }
-
-  setLanguage(language: LanguageCode): void {
-    this.language.set(language);
-    this.editorStorage.setString(this.languageStorageKey, language);
   }
 
   isSectionCollapsed(sectionId: string): boolean {
@@ -5610,11 +5594,6 @@ export class EditorPageComponent {
 
   private handleStorageEvent(event: StorageEvent): void {
     const { key, newValue } = event;
-    if (key === this.languageStorageKey && newValue) {
-      this.applyStoredLanguage(newValue);
-      return;
-    }
-
     if (key === this.editorStateStorageKey && newValue) {
       this.applyStoredEditorState(newValue);
       return;
@@ -5637,12 +5616,6 @@ export class EditorPageComponent {
 
     if (key === this.sidebarSizesStorageKey) {
       this.applyStoredSidebarSizes(newValue);
-    }
-  }
-
-  private applyStoredLanguage(value: string): void {
-    if (isLanguageCode(value)) {
-      this.language.set(value);
     }
   }
 
@@ -6660,11 +6633,6 @@ export class EditorPageComponent {
 
   private persistSavedTemplates(): void {
     this.editorStorage.setJson(this.savedTemplatesStorageKey, this.savedTemplates());
-  }
-
-  private restoreLanguage(): LanguageCode {
-    const saved = this.editorStorage.getString(this.languageStorageKey);
-    return restoreLanguageFromI18n(saved, detectLanguage);
   }
 
   private restoreCodeHighlightTheme(): CodeHighlightTheme {
