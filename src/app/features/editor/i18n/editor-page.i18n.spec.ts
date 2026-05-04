@@ -40,11 +40,7 @@ describe('editor-page i18n', () => {
   it('requires every language to define translations for all language names', () => {
     for (const targetLanguage of languages) {
       for (const namedLanguage of languages) {
-        const translation = translateOrFallback(
-          targetLanguage.code,
-          namedLanguage.longLabelKey,
-          '__missing__'
-        );
+        const translation = translateOrFallback(targetLanguage.code, namedLanguage.longLabelKey, '__missing__');
         expect(translation).not.toBe('__missing__');
         expect(translation).not.toBe(namedLanguage.longLabelKey);
       }
