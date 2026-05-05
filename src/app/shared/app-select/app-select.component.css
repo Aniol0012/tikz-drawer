@@ -150,7 +150,8 @@
 
 :host-context([data-theme='dark']) .app-select::part(listbox) {
   border-color: var(--tool-border-strong);
-  background: #111827;
+  background: color-mix(in srgb, var(--panel-background) 92%, #0b0b0b 8%);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
 }
 
 :host-context([data-theme='dark']) .app-select sl-option::part(base) {
@@ -158,12 +159,12 @@
 }
 
 :host-context([data-theme='dark']) .app-select sl-option::part(base):hover {
-  background: color-mix(in srgb, var(--accent) 7%, #111827);
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel-background));
 }
 
 :host-context([data-theme='dark']) .app-select sl-option[aria-selected='true']::part(base),
 :host-context([data-theme='dark']) .app-select sl-option[current]::part(base) {
-  background: color-mix(in srgb, var(--accent) 10%, #111827);
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-background));
   color: #f8fafc;
 }
 

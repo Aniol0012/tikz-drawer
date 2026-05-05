@@ -313,6 +313,16 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+:host-context([data-theme='dark']) .graph-dialog__toggle input {
+  background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
+  border-color: color-mix(in srgb, var(--app-foreground) 22%, var(--tool-border-strong));
+}
+
+:host-context([data-theme='dark']) .graph-dialog__toggle input::before {
+  background: color-mix(in srgb, var(--app-foreground) 86%, var(--panel-background));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
 @media (max-width: 640px) {
   .graph-dialog-backdrop {
     padding: 16px;

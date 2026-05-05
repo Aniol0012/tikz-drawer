@@ -751,6 +751,16 @@
     }
   }
 
+  & .toggle-field input[type='checkbox'] {
+    background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
+    border-color: color-mix(in srgb, var(--app-foreground) 22%, var(--tool-border-strong));
+  }
+
+  & .toggle-field input[type='checkbox']::before {
+    background: color-mix(in srgb, var(--app-foreground) 86%, var(--panel-background));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  }
+
   & .export-settings-note {
     border-color: color-mix(in srgb, white 14%, var(--tool-border));
     background: color-mix(in srgb, var(--tool-surface) 78%, #1a1a1a 22%);
