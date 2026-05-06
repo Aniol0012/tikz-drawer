@@ -1,6 +1,6 @@
-import en from './en.json';
-import ca from './ca.json';
-import es from './es.json';
+import en from './locales/en.json';
+import ca from './locales/ca.json';
+import es from './locales/es.json';
 import type { CanvasShape, PersistedEditorState, Point, PresetCategory } from '../models/tikz.models';
 
 export type TranslationDictionary = Record<string, string>;

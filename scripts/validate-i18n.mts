@@ -16,7 +16,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const BASE_LOCALE = 'en';
-const LOCALES_DIR = 'src/app/features/editor/i18n';
+const LOCALES_DIR = 'src/app/features/editor/i18n/locales';
 const CODE_EXTENSIONS = new Set(['.html', '.ts']);
 
 type FlatDictionary = Map<string, unknown>;
