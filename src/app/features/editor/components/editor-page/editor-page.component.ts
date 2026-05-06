@@ -312,7 +312,8 @@ interface LineAttachmentCandidate {
     '(window:keyup)': 'handleWindowKeyup($event)',
     '(window:blur)': 'handleWindowBlur()',
     '(window:pointermove)': 'handleWindowPointerMove($event)',
-    '(window:pointerup)': 'handleWindowPointerUp()'
+    '(window:pointerup)': 'handleWindowPointerUp()',
+    '(focusout)': 'handleFocusOut($event)'
   }
 })
 export class EditorPageComponent {
@@ -1009,6 +1010,7 @@ export class EditorPageComponent {
   private keyboardNavigationRafHandle: number | null = null;
   private keyboardNavigationLastTimestamp: number | null = null;
   private keyboardNavigationHistoryActive = false;
+  private inspectorEditHistoryActive = false;
   private syncChannel: BroadcastChannel | null = null;
   private syncBroadcastRafHandle: number | null = null;
   private syncRevision = 0;
@@ -1906,11 +1908,13 @@ export class EditorPageComponent {
 
   undo(): void {
     this.closeContextMenu();
+    this.finishInspectorEditHistory();
     this.store.undo();
   }
 
   redo(): void {
     this.closeContextMenu();
+    this.finishInspectorEditHistory();
     this.store.redo();
   }
 
@@ -2836,12 +2840,27 @@ export class EditorPageComponent {
   }
 
   private patchInspectorSelection(mutator: (shape: CanvasShape) => CanvasShape): void {
+    this.ensureInspectorEditHistoryCheckpoint();
+
     if (this.selectionCount() > 1) {
       this.store.patchSelectedShapes(mutator);
       return;
     }
 
     this.store.patchSelectedShape(mutator);
+  }
+
+  private ensureInspectorEditHistoryCheckpoint(): void {
+    if (this.inspectorEditHistoryActive) {
+      return;
+    }
+
+    this.store.recordHistoryCheckpoint();
+    this.inspectorEditHistoryActive = true;
+  }
+
+  private finishInspectorEditHistory(): void {
+    this.inspectorEditHistoryActive = false;
   }
 
   private multiEditSelectionKind(shapes: readonly CanvasShape[]): MultiEditSelectionInfo['kind'] {
@@ -4984,6 +5003,10 @@ export class EditorPageComponent {
     }
 
     if (this.isEditableTarget(event.target)) {
+      if (this.isShapeInspectorControlTarget(event.target) && this.handleUndoRedoShortcut(event)) {
+        return;
+      }
+
       return;
     }
 
@@ -5049,10 +5072,7 @@ export class EditorPageComponent {
   }
 
   private handleEditShortcut(event: KeyboardEvent): boolean {
-    if (this.handlePreventableShortcut(event, isRedoShortcut, () => this.redo())) {
-      return true;
-    }
-    if (this.handlePreventableShortcut(event, isUndoShortcut, () => this.undo())) {
+    if (this.handleUndoRedoShortcut(event)) {
       return true;
     }
     if (this.handlePreventableShortcut(event, isCopyShortcut, () => this.copySelected())) {
@@ -5062,6 +5082,13 @@ export class EditorPageComponent {
       return true;
     }
     return isPasteShortcut(event);
+  }
+
+  private handleUndoRedoShortcut(event: KeyboardEvent): boolean {
+    if (this.handlePreventableShortcut(event, isRedoShortcut, () => this.redo())) {
+      return true;
+    }
+    return this.handlePreventableShortcut(event, isUndoShortcut, () => this.undo());
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {
@@ -5250,6 +5277,7 @@ export class EditorPageComponent {
     this.sidebarResizeState.set(null);
     this.minimapPanPointerId.set(null);
     this.mobileLibraryPanelOpen.set(false);
+    this.finishInspectorEditHistory();
   }
 
   handleWindowPointerMove(event: PointerEvent): void {
@@ -5298,6 +5326,12 @@ export class EditorPageComponent {
     this.sidebarResizeMoved = false;
     this.sidebarResizeStartedFromToggle = false;
     this.minimapPanPointerId.set(null);
+  }
+
+  handleFocusOut(event: FocusEvent): void {
+    if (this.isShapeInspectorControlTarget(event.target)) {
+      this.finishInspectorEditHistory();
+    }
   }
 
   private showNotification(message: string, tone: NotificationTone = 'info'): void {
@@ -6823,6 +6857,15 @@ export class EditorPageComponent {
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
       (target instanceof HTMLElement && target.isContentEditable)
+    );
+  }
+
+  private isShapeInspectorControlTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof Element &&
+      this.selectionCount() > 0 &&
+      target.closest('app-editor-right-sidebar') !== null &&
+      target.closest('.field, .range-field, .color-chip-field, app-toggle-field') !== null
     );
   }
 
