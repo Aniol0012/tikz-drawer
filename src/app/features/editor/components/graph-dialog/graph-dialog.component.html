@@ -1,23 +1,12 @@
-<div
-  class="graph-dialog-backdrop"
-  tabindex="-1"
-  (click)="cancelDialog.emit()"
-  (keydown)="onBackdropKeydown($event)">
-  <section
-    class="graph-dialog"
-    (click)="$event.stopPropagation()"
-    (keydown)="onDialogKeydown($event)">
+<div class="graph-dialog-backdrop" tabindex="-1" (click)="cancelDialog.emit()" (keydown)="onBackdropKeydown($event)">
+  <section class="graph-dialog" (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
     <header class="graph-dialog__header">
       <div class="graph-dialog__copy">
         <p>{{ displayName() }}</p>
         <h2>{{ title() }}</h2>
         <span>{{ description() }}</span>
       </div>
-      <button
-        class="graph-dialog__close"
-        type="button"
-        (click)="cancelDialog.emit()"
-        [attr.aria-label]="cancelLabel()">
+      <button class="graph-dialog__close" type="button" (click)="cancelDialog.emit()" [attr.aria-label]="cancelLabel()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="closeIconPath"></path>
         </svg>
@@ -115,12 +104,7 @@
         @if (selected().kind === 'grid') {
           <label class="graph-dialog__field">
             <span>{{ rowsLabel() }}</span>
-            <input
-              type="number"
-              [min]="minVertices"
-              [max]="maxGridAxis"
-              [value]="selected().rows"
-              (input)="updateNumber('rows', $event)" />
+            <input type="number" [min]="minVertices" [max]="maxGridAxis" [value]="selected().rows" (input)="updateNumber('rows', $event)" />
           </label>
           <label class="graph-dialog__field">
             <span>{{ columnsLabel() }}</span>
@@ -157,12 +141,7 @@
         @if (isLayeredGraph(selected().kind)) {
           <label class="graph-dialog__field">
             <span>{{ layersLabel() }}</span>
-            <input
-              type="number"
-              [min]="minVertices"
-              [max]="maxGridAxis"
-              [value]="selected().rows"
-              (input)="updateNumber('rows', $event)" />
+            <input type="number" [min]="minVertices" [max]="maxGridAxis" [value]="selected().rows" (input)="updateNumber('rows', $event)" />
           </label>
           <label class="graph-dialog__field">
             <span>{{ nodesPerLayerLabel() }}</span>
@@ -207,36 +186,26 @@
           </label>
         }
 
-        <label class="graph-dialog__toggle" data-graph-toggle="directed">
-          <span>{{ directedLabel() }}</span>
-          <input
-            type="checkbox"
-            [checked]="selected().directed"
-            (change)="updateToggle('directed', $event)"
-            (keydown)="onToggleKeydown($event, 'directed')" />
-        </label>
-        <label class="graph-dialog__toggle" data-graph-toggle="showLabels">
-          <span>{{ labelsLabel() }}</span>
-          <input
-            type="checkbox"
-            [checked]="selected().showLabels"
-            (change)="updateToggle('showLabels', $event)"
-            (keydown)="onToggleKeydown($event, 'showLabels')" />
-        </label>
+        <app-toggle-field
+          class="graph-dialog__toggle"
+          data-graph-toggle="directed"
+          [checked]="selected().directed"
+          [label]="directedLabel()"
+          (checkedChange)="updateToggle('directed', $event)"></app-toggle-field>
+        <app-toggle-field
+          class="graph-dialog__toggle"
+          data-graph-toggle="showLabels"
+          [checked]="selected().showLabels"
+          [label]="labelsLabel()"
+          (checkedChange)="updateToggle('showLabels', $event)"></app-toggle-field>
       </div>
     </div>
 
     <footer class="graph-dialog__footer">
-      <button
-        class="graph-dialog__button graph-dialog__button--secondary"
-        type="button"
-        (click)="cancelDialog.emit()">
+      <button class="graph-dialog__button graph-dialog__button--secondary" type="button" (click)="cancelDialog.emit()">
         {{ cancelLabel() }}
       </button>
-      <button
-        class="graph-dialog__button graph-dialog__button--primary"
-        type="button"
-        (click)="submit()">
+      <button class="graph-dialog__button graph-dialog__button--primary" type="button" (click)="submit()">
         {{ confirmLabel() }}
       </button>
     </footer>

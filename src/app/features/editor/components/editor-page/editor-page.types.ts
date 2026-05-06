@@ -1,11 +1,4 @@
-import type {
-  ArrowTipKind,
-  CanvasShape,
-  ObjectPreset,
-  Point,
-  PresetCategory,
-  TextShape
-} from '../../models/tikz.models';
+import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory, TextShape } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene';
@@ -29,17 +22,7 @@ export type ImageTextKey = 'src' | 'latexSource';
 export type ImageDimensionKey = 'width' | 'height';
 export type TextTransformMode = 'uppercase' | 'lowercase' | 'titlecase';
 export type LineBooleanKey = 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound';
-export type ContextAction =
-  | 'copy'
-  | 'cut'
-  | 'paste'
-  | 'duplicate'
-  | 'delete'
-  | 'front'
-  | 'back'
-  | 'group'
-  | 'ungroup'
-  | 'png';
+export type ContextAction = 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png';
 export type LineEndpoint = 'from' | 'to';
 export type ArrowEndpoint = 'start' | 'end';
 export type ArrowScaleKind = 'length' | 'width';
@@ -133,9 +116,24 @@ export interface HandleDescriptor {
   readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control' | 'rotate' | 'corner-radius';
 }
 
-export interface HomogeneousSelectionInfo {
-  readonly kind: CanvasShape['kind'];
+export interface MultiEditCapabilities {
+  readonly stroke: boolean;
+  readonly fill: boolean;
+  readonly dimensions: boolean;
+  readonly cornerRadius: boolean;
+  readonly triangleApex: boolean;
+  readonly circleRadius: boolean;
+  readonly ellipseRadii: boolean;
+  readonly rotation: boolean;
+  readonly line: boolean;
+  readonly text: boolean;
+  readonly image: boolean;
+}
+
+export interface MultiEditSelectionInfo {
+  readonly kind: CanvasShape['kind'] | 'mixed';
   readonly shapes: readonly CanvasShape[];
+  readonly capabilities: MultiEditCapabilities;
 }
 
 export interface MoveInteractionState {

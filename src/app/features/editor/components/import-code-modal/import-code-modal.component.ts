@@ -1,13 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  ElementRef,
-  input,
-  output,
-  signal,
-  viewChild
-} from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal, viewChild } from '@angular/core';
 import { getIconPath } from '../../config/editor-icons';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';

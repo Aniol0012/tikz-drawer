@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, OnChanges, output, signal } from '@angular/core';
+import type { OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { getIconPath } from '../../config/editor-icons';
 import {
   DEFAULT_GRAPH_DIMENSIONS,
@@ -11,14 +13,7 @@ import {
   type GraphDimensions,
   type GraphPresetKind
 } from '../../models/graph.models';
-import {
-  buildGraphLayout,
-  graphDisplayName,
-  graphEdgeCount,
-  graphVertexCount,
-  insetGraphEdge,
-  normalizeGraphDimensions
-} from '../../utils/graph.utils';
+import { buildGraphLayout, graphDisplayName, graphEdgeCount, graphVertexCount, insetGraphEdge, normalizeGraphDimensions } from '../../utils/graph.utils';
 import type { Point } from '../../models/tikz.models';
 
 const PREVIEW_NODE_RADIUS = 7;
@@ -44,6 +39,7 @@ interface GraphPreviewEdge {
 
 @Component({
   selector: 'app-graph-dialog',
+  imports: [ToggleFieldComponent],
   templateUrl: './graph-dialog.component.html',
   styleUrl: './graph-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -81,58 +77,32 @@ export class GraphDialogComponent implements OnChanges {
   readonly vertexCount = computed(() => graphVertexCount(this.selected()));
   readonly edgeCount = computed(() => graphEdgeCount(this.selected()));
   readonly preview = computed(() => this.buildPreview(this.selected()));
-  readonly maxColumnsForSelectedKind = computed(() =>
-    this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_COLUMNS : this.maxGridAxis
-  );
-  readonly maxLevelsForSelectedKind = computed(() =>
-    this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : this.maxTreeLevels
-  );
+  readonly maxColumnsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_COLUMNS : this.maxGridAxis));
+  readonly maxLevelsForSelectedKind = computed(() => (this.selected().kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : this.maxTreeLevels));
 
   ngOnChanges(): void {
     this.selected.set(normalizeGraphDimensions(this.initialDimensions()));
   }
 
   isSimpleVertexGraph(kind: GraphPresetKind): boolean {
-    return (
-      kind === 'complete' ||
-      kind === 'cycle' ||
-      kind === 'path' ||
-      kind === 'independent' ||
-      kind === 'star' ||
-      kind === 'wheel' ||
-      kind === 'prism'
-    );
+    return kind === 'complete' || kind === 'cycle' || kind === 'path' || kind === 'independent' || kind === 'star' || kind === 'wheel' || kind === 'prism';
   }
 
   isLayeredGraph(kind: GraphPresetKind): boolean {
     return kind === 'layered-dag' || kind === 'flow-network' || kind === 'neural-network';
   }
 
-  updateNumber(
-    key: keyof Pick<GraphDimensions, 'vertices' | 'leftVertices' | 'rightVertices' | 'rows' | 'columns' | 'levels'>,
-    event: Event
-  ): void {
+  updateNumber(key: keyof Pick<GraphDimensions, 'vertices' | 'leftVertices' | 'rightVertices' | 'rows' | 'columns' | 'levels'>, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: value }));
   }
 
-  updateToggle(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
+  updateToggle(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>, checked: boolean): void {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: checked }));
   }
 
   toggleBoolean(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: !dimensions[key] }));
-  }
-
-  onToggleKeydown(event: KeyboardEvent, key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    this.toggleBoolean(key);
   }
 
   onBackdropKeydown(event: KeyboardEvent): void {
@@ -166,9 +136,7 @@ export class GraphDialogComponent implements OnChanges {
     this.confirm.emit(this.selected());
   }
 
-  private toggleKeyFromEventTarget(
-    target: EventTarget | null
-  ): keyof Pick<GraphDimensions, 'directed' | 'showLabels'> | null {
+  private toggleKeyFromEventTarget(target: EventTarget | null): keyof Pick<GraphDimensions, 'directed' | 'showLabels'> | null {
     if (!(target instanceof HTMLElement)) {
       return null;
     }

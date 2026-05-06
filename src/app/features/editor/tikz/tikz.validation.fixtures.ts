@@ -18,28 +18,17 @@ export const latexValidationFixtures: readonly LatexValidationFixture[] = sceneP
 
 const uniqueImports = (lines: readonly string[]): readonly string[] => Array.from(new Set(lines.filter(Boolean)));
 
-export const buildLatexValidationDocument = (
-  fixtures: readonly LatexValidationFixture[] = latexValidationFixtures
-): string => {
+export const buildLatexValidationDocument = (fixtures: readonly LatexValidationFixture[] = latexValidationFixtures): string => {
   const bundles = fixtures.map((fixture) => ({
     ...fixture,
     bundle: sceneToTikzBundle(fixture.scene)
   }));
   const imports = uniqueImports(bundles.flatMap(({ bundle }) => bundle.imports.split('\n').filter(Boolean)));
-  const body = bundles.map(({ id, title, bundle }) =>
-    [`% Fixture: ${id} (${title})`, String.raw`\par\noindent`, bundle.code].join('\n')
-  ).join(String.raw`
+  const body = bundles.map(({ id, title, bundle }) => [`% Fixture: ${id} (${title})`, String.raw`\par\noindent`, bundle.code].join('\n')).join(String.raw`
 
 \bigskip
 
 `);
 
-  return [
-    String.raw`\documentclass[tikz]{standalone}`,
-    ...imports,
-    String.raw`\begin{document}`,
-    body,
-    String.raw`\end{document}`,
-    ''
-  ].join('\n');
+  return [String.raw`\documentclass[tikz]{standalone}`, ...imports, String.raw`\begin{document}`, body, String.raw`\end{document}`, ''].join('\n');
 };

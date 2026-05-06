@@ -52,8 +52,7 @@ export const textLines = (value: string): readonly string[] => value.split('\n')
 export const renderDisplayText = (value: string): string =>
   DISPLAY_TEXT_REPLACEMENTS.reduce((current, [source, replacement]) => current.replaceAll(source, replacement), value);
 
-export const displayTextLines = (value: string): readonly string[] =>
-  textLines(value).map((line) => renderDisplayText(line));
+export const displayTextLines = (value: string): readonly string[] => textLines(value).map((line) => renderDisplayText(line));
 
 export const wrapTextLine = (line: string, maxChars: number): readonly string[] => {
   if (line.length <= maxChars) {
@@ -85,10 +84,7 @@ export const wrapTextLine = (line: string, maxChars: number): readonly string[] 
 };
 
 export const textBoxMaxCharacters = (shape: TextShape): number =>
-  Math.max(
-    Math.floor(shape.boxWidth / Math.max(shape.fontSize * TEXT_WRAP_CHAR_WIDTH_FACTOR, TEXT_WRAP_MIN_CHAR_WIDTH)),
-    TEXT_WRAP_MIN_CHARACTERS
-  );
+  Math.max(Math.floor(shape.boxWidth / Math.max(shape.fontSize * TEXT_WRAP_CHAR_WIDTH_FACTOR, TEXT_WRAP_MIN_CHAR_WIDTH)), TEXT_WRAP_MIN_CHARACTERS);
 
 export const displayTextLinesForShape = (shape: TextShape): readonly string[] => {
   const sourceLines = displayTextLines(shape.text);
@@ -122,12 +118,7 @@ export const estimateTextWidth = (
   }
 
   return Math.max(
-    ...lines.map((line) =>
-      Math.max(
-        line.length * shape.fontSize * TEXT_WRAP_CHAR_WIDTH_FACTOR * scale,
-        shape.fontSize * minimumWidthFactor * scale
-      )
-    )
+    ...lines.map((line) => Math.max(line.length * shape.fontSize * TEXT_WRAP_CHAR_WIDTH_FACTOR * scale, shape.fontSize * minimumWidthFactor * scale))
   );
 };
 
@@ -139,11 +130,7 @@ export const estimateTextHeight = (
   minimumHeight = shape.fontSize * scale * TEXT_MIN_HEIGHT_FACTOR
 ): number => Math.max(lineCount * shape.fontSize * lineHeightFactor * scale, minimumHeight);
 
-export const estimateTextVerticalBounds = (
-  shape: TextShape,
-  lineCount: number,
-  scale = 1
-): { readonly topOffset: number; readonly bottomOffset: number } => {
+export const estimateTextVerticalBounds = (shape: TextShape, lineCount: number, scale = 1): { readonly topOffset: number; readonly bottomOffset: number } => {
   const fontSize = shape.fontSize * scale;
   const safeLineCount = Math.max(lineCount, 1);
   const halfLineHeight = (fontSize * TEXT_RENDER_LINE_HEIGHT_FACTOR) / 2;

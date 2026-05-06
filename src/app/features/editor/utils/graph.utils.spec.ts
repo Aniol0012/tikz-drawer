@@ -52,9 +52,7 @@ describe('graph utils', () => {
       cx: 0,
       cy: 0
     });
-    const lines = shapes.filter(
-      (shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line'
-    );
+    const lines = shapes.filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line');
 
     expect(lines).toHaveLength(3);
     expect(lines.every((line) => line.arrowEnd)).toBe(true);
@@ -71,9 +69,7 @@ describe('graph utils', () => {
       cy: 0
     });
     const shapeIds = new Set(shapes.map((shape) => shape.id));
-    const lines = shapes.filter(
-      (shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line'
-    );
+    const lines = shapes.filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line');
 
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) {
@@ -95,13 +91,9 @@ describe('graph utils', () => {
       cy: 0
     });
     const nodesById = new Map(
-      shapes
-        .filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'circle' }> => shape.kind === 'circle')
-        .map((shape) => [shape.id, shape])
+      shapes.filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'circle' }> => shape.kind === 'circle').map((shape) => [shape.id, shape])
     );
-    const lines = shapes.filter(
-      (shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line'
-    );
+    const lines = shapes.filter((shape): shape is Extract<(typeof shapes)[number], { kind: 'line' }> => shape.kind === 'line');
 
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) {

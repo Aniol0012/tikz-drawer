@@ -50,14 +50,8 @@ export const transformCanvasShape = (shape: CanvasShape, options: TransformCanva
     id: options.id ?? shape.id
   };
   const scalePoint = (point: Point): Point => ({
-    x:
-      (point.x - normalizedOptions.originX) * normalizedOptions.scaleX +
-      normalizedOptions.originX +
-      normalizedOptions.deltaX,
-    y:
-      (point.y - normalizedOptions.originY) * normalizedOptions.scaleY +
-      normalizedOptions.originY +
-      normalizedOptions.deltaY
+    x: (point.x - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
+    y: (point.y - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY
   });
 
   switch (shape.kind) {
@@ -76,31 +70,16 @@ export const transformCanvasShape = (shape: CanvasShape, options: TransformCanva
       return {
         ...shape,
         id: normalizedOptions.id,
-        cx:
-          (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX +
-          normalizedOptions.originX +
-          normalizedOptions.deltaX,
-        cy:
-          (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY +
-          normalizedOptions.originY +
-          normalizedOptions.deltaY,
-        r: Math.max(
-          shape.r * Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_SHAPE_DIMENSION),
-          MIN_CIRCLE_RADIUS
-        )
+        cx: (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
+        cy: (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY,
+        r: Math.max(shape.r * Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_SHAPE_DIMENSION), MIN_CIRCLE_RADIUS)
       };
     case 'ellipse':
       return {
         ...shape,
         id: normalizedOptions.id,
-        cx:
-          (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX +
-          normalizedOptions.originX +
-          normalizedOptions.deltaX,
-        cy:
-          (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY +
-          normalizedOptions.originY +
-          normalizedOptions.deltaY,
+        cx: (shape.cx - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
+        cy: (shape.cy - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY,
         rx: Math.max(shape.rx * normalizedOptions.scaleX, MIN_ELLIPSE_RADIUS),
         ry: Math.max(shape.ry * normalizedOptions.scaleY, MIN_ELLIPSE_RADIUS)
       };
@@ -108,35 +87,17 @@ export const transformCanvasShape = (shape: CanvasShape, options: TransformCanva
       return {
         ...shape,
         id: normalizedOptions.id,
-        x:
-          (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX +
-          normalizedOptions.originX +
-          normalizedOptions.deltaX,
-        y:
-          (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY +
-          normalizedOptions.originY +
-          normalizedOptions.deltaY,
-        boxWidth: shape.textBox
-          ? Math.max(shape.boxWidth * normalizedOptions.scaleX, MIN_TEXT_BOX_WIDTH)
-          : shape.boxWidth,
-        fontSize: Math.max(
-          shape.fontSize *
-            Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_TEXT_SCALE_FACTOR),
-          MIN_TEXT_FONT_SIZE
-        )
+        x: (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
+        y: (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY,
+        boxWidth: shape.textBox ? Math.max(shape.boxWidth * normalizedOptions.scaleX, MIN_TEXT_BOX_WIDTH) : shape.boxWidth,
+        fontSize: Math.max(shape.fontSize * Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_TEXT_SCALE_FACTOR), MIN_TEXT_FONT_SIZE)
       };
     case 'image':
       return {
         ...shape,
         id: normalizedOptions.id,
-        x:
-          (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX +
-          normalizedOptions.originX +
-          normalizedOptions.deltaX,
-        y:
-          (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY +
-          normalizedOptions.originY +
-          normalizedOptions.deltaY,
+        x: (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
+        y: (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY,
         width: Math.max(shape.width * normalizedOptions.scaleX, MIN_IMAGE_DIMENSION),
         height: Math.max(shape.height * normalizedOptions.scaleY, MIN_IMAGE_DIMENSION)
       };
@@ -257,12 +218,7 @@ export const formatValue = (value: number): string => {
 };
 
 const escapeHtml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
 export const highlightLatex = (source: string): string =>
   source
@@ -310,8 +266,7 @@ const base64UrlToBytes = (value: string): Uint8Array => {
   return Uint8Array.from(binary, (character) => character.codePointAt(0) ?? 0);
 };
 
-const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
-  bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
 
 const readCompressedBytes = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
   const buffer = await new Response(stream).arrayBuffer();
@@ -345,9 +300,7 @@ export const encodeSharePayload = async (payload: SharedScenePayload): Promise<s
     return `b:${bytesToBase64Url(encoder.encode(compactPayload))}`;
   }
 
-  const compressed = await readCompressedBytes(
-    new Blob([toArrayBuffer(encoder.encode(compactPayload))]).stream().pipeThrough(new CompressionStream('gzip'))
-  );
+  const compressed = await readCompressedBytes(new Blob([toArrayBuffer(encoder.encode(compactPayload))]).stream().pipeThrough(new CompressionStream('gzip')));
   return `gz:${bytesToBase64Url(compressed)}`;
 };
 

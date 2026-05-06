@@ -1,15 +1,9 @@
 @if (showSidebarContent()) {
   <div class="sidebar-tabs">
-    <button
-      type="button"
-      [class.is-active]="editor().inspectorTab() === 'properties'"
-      (click)="editor().setInspectorTab('properties')">
+    <button type="button" [class.is-active]="editor().inspectorTab() === 'properties'" (click)="editor().setInspectorTab('properties')">
       {{ editor().t('properties') }}
     </button>
-    <button
-      type="button"
-      [class.is-active]="editor().inspectorTab() === 'scene'"
-      (click)="editor().openSceneLayers()">
+    <button type="button" [class.is-active]="editor().inspectorTab() === 'scene'" (click)="editor().openSceneLayers()">
       {{ editor().t('sceneTab') }}
     </button>
   </div>

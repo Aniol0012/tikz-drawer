@@ -146,14 +146,7 @@ export interface ImageShape extends CanvasShapeBase {
   readonly rotation?: number;
 }
 
-export type CanvasShape =
-  | LineShape
-  | RectangleShape
-  | TriangleShape
-  | CircleShape
-  | EllipseShape
-  | TextShape
-  | ImageShape;
+export type CanvasShape = LineShape | RectangleShape | TriangleShape | CircleShape | EllipseShape | TextShape | ImageShape;
 
 export interface SceneBounds {
   readonly width: number;

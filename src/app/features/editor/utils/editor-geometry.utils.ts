@@ -1,16 +1,7 @@
-import type {
-  RectangleCanvasShape,
-  ResizeHandle,
-  TriangleCanvasShape
-} from '../components/editor-page/editor-page.types';
+import type { RectangleCanvasShape, ResizeHandle, TriangleCanvasShape } from '../components/editor-page/editor-page.types';
 import type { CanvasShape, LineShape, Point } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
-import {
-  displayTextLinesForShape,
-  estimateTextVerticalBounds,
-  estimateTextWidth,
-  textLeftForWidth
-} from './text.utils';
+import { displayTextLinesForShape, estimateTextVerticalBounds, estimateTextWidth, textLeftForWidth } from './text.utils';
 
 const GEOMETRY_EPSILON = 1e-6;
 const ROUNDED_CORNER_CURVE_SAMPLE_COUNT = 16;
@@ -195,16 +186,14 @@ export const buildTrianglePath = (
 export const maxTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
   Math.max(polygonMaxCornerRadius(trianglePoints(shape)) * POLYGON_CORNER_RADIUS_MAX_FACTOR, 0);
 
-export const maxRectangleCornerRadius = (
-  shape: Extract<CanvasShape, { readonly height: number; readonly width: number }>
-): number => Math.max(Math.min(shape.width, shape.height) * RECTANGLE_CORNER_RADIUS_MAX_FACTOR, 0);
+export const maxRectangleCornerRadius = (shape: Extract<CanvasShape, { readonly height: number; readonly width: number }>): number =>
+  Math.max(Math.min(shape.width, shape.height) * RECTANGLE_CORNER_RADIUS_MAX_FACTOR, 0);
 
 export const effectiveRectangleCornerRadius = (
   shape: Extract<CanvasShape, { readonly cornerRadius: number; readonly height: number; readonly width: number }>
 ): number => Math.min(Math.max(shape.cornerRadius, 0), maxRectangleCornerRadius(shape));
 
-export const effectiveTriangleCornerRadius = (shape: TriangleCanvasShape): number =>
-  Math.min(Math.max(shape.cornerRadius, 0), maxTriangleCornerRadius(shape));
+export const effectiveTriangleCornerRadius = (shape: TriangleCanvasShape): number => Math.min(Math.max(shape.cornerRadius, 0), maxTriangleCornerRadius(shape));
 
 export const triangleCornerAttachmentPoints = (shape: TriangleCanvasShape): readonly [Point, Point, Point] => {
   const corners = trianglePoints(shape);
@@ -229,16 +218,11 @@ export const triangleCornerAttachmentPoints = (shape: TriangleCanvasShape): read
 const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
   const points = roundedPolygonOutlinePoints(trianglePoints(shape), effectiveTriangleCornerRadius(shape));
   const rotation = shape.rotation ?? 0;
-  const rotatedPoints = rotation
-    ? points.map((point) => rotatePointAround(point, shapeCenter(shape), -rotation))
-    : points;
+  const rotatedPoints = rotation ? points.map((point) => rotatePointAround(point, shapeCenter(shape), -rotation)) : points;
   return boundsFromPoints(rotatedPoints) as SelectionBounds;
 };
 
-export const buildLinePath = (
-  shape: LineShape,
-  projectPoint: (point: Point) => { readonly x: number; readonly y: number }
-): string => {
+export const buildLinePath = (shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string => {
   const points = linePoints(shape).map(projectPoint);
   if (points.length < 2) {
     return '';
@@ -313,13 +297,7 @@ export const boundsFromPoints = (points: readonly Point[]): SelectionBounds | nu
   );
 };
 
-export const rotatedRectangleBounds = (
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  rotationDegrees: number
-): SelectionBounds => {
+export const rotatedRectangleBounds = (x: number, y: number, width: number, height: number, rotationDegrees: number): SelectionBounds => {
   const corners: readonly Point[] = [
     { x, y },
     { x: x + width, y },
@@ -330,18 +308,10 @@ export const rotatedRectangleBounds = (
     return boundsFromPoints(corners) as SelectionBounds;
   }
   const pivot = { x: x + width / 2, y: y + height / 2 };
-  return boundsFromPoints(
-    corners.map((corner) => rotatePointAround(corner, pivot, rotationDegrees))
-  ) as SelectionBounds;
+  return boundsFromPoints(corners.map((corner) => rotatePointAround(corner, pivot, rotationDegrees))) as SelectionBounds;
 };
 
-export const rotatedEllipseBounds = (
-  cx: number,
-  cy: number,
-  rx: number,
-  ry: number,
-  rotationDegrees: number
-): SelectionBounds => {
+export const rotatedEllipseBounds = (cx: number, cy: number, rx: number, ry: number, rotationDegrees: number): SelectionBounds => {
   if (!rotationDegrees) {
     return { left: cx - rx, right: cx + rx, bottom: cy - ry, top: cy + ry };
   }
@@ -442,9 +412,7 @@ export const shapeBounds = (shape: CanvasShape): SelectionBounds | null => {
         { x: left + width, y: shape.y + verticalBounds.topOffset },
         { x: left, y: shape.y + verticalBounds.topOffset }
       ];
-      const rotatedCorners = shape.rotation
-        ? baseCorners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
-        : baseCorners;
+      const rotatedCorners = shape.rotation ? baseCorners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation)) : baseCorners;
       return boundsFromPoints(rotatedCorners);
     }
     case 'image':
@@ -474,11 +442,7 @@ export const computeBounds = (shapes: readonly CanvasShape[]): SelectionBounds |
   }, null);
 };
 
-export const cornerRadiusFromPointer = (
-  shape: RoundedCornerCanvasShape,
-  handle: ResizeHandle,
-  pointer: Point
-): number => {
+export const cornerRadiusFromPointer = (shape: RoundedCornerCanvasShape, handle: ResizeHandle, pointer: Point): number => {
   if (shape.kind === 'triangle') {
     const cornerIndex = triangleCornerIndexFromHandle(handle);
     if (cornerIndex === null) {

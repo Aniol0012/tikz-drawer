@@ -78,21 +78,9 @@ export const normalizeGraphDimensions = (dimensions: Partial<GraphDimensions>): 
   const maximumLevels = kind === 'kary-tree' ? GRAPH_KARY_TREE_MAX_LEVELS : GRAPH_MAX_TREE_LEVELS;
   return {
     kind,
-    vertices: clampInteger(
-      dimensions.vertices ?? DEFAULT_GRAPH_DIMENSIONS.vertices,
-      minimumVertices,
-      GRAPH_MAX_VERTICES
-    ),
-    leftVertices: clampInteger(
-      dimensions.leftVertices ?? DEFAULT_GRAPH_DIMENSIONS.leftVertices,
-      GRAPH_MIN_VERTICES,
-      GRAPH_MAX_VERTICES
-    ),
-    rightVertices: clampInteger(
-      dimensions.rightVertices ?? DEFAULT_GRAPH_DIMENSIONS.rightVertices,
-      GRAPH_MIN_VERTICES,
-      GRAPH_MAX_VERTICES
-    ),
+    vertices: clampInteger(dimensions.vertices ?? DEFAULT_GRAPH_DIMENSIONS.vertices, minimumVertices, GRAPH_MAX_VERTICES),
+    leftVertices: clampInteger(dimensions.leftVertices ?? DEFAULT_GRAPH_DIMENSIONS.leftVertices, GRAPH_MIN_VERTICES, GRAPH_MAX_VERTICES),
+    rightVertices: clampInteger(dimensions.rightVertices ?? DEFAULT_GRAPH_DIMENSIONS.rightVertices, GRAPH_MIN_VERTICES, GRAPH_MAX_VERTICES),
     rows: clampInteger(dimensions.rows ?? DEFAULT_GRAPH_DIMENSIONS.rows, GRAPH_MIN_VERTICES, GRAPH_MAX_GRID_AXIS),
     columns: clampInteger(dimensions.columns ?? DEFAULT_GRAPH_DIMENSIONS.columns, GRAPH_MIN_VERTICES, maximumColumns),
     levels: clampInteger(dimensions.levels ?? DEFAULT_GRAPH_DIMENSIONS.levels, 1, maximumLevels),
@@ -326,11 +314,7 @@ export const buildGraphShapes = (options: BuildGraphShapesOptions): readonly Gra
   return [...edges, ...nodes, ...labels];
 };
 
-export const insetGraphEdge = (
-  from: Point,
-  to: Point,
-  nodeRadius: number
-): { readonly from: Point; readonly to: Point } => {
+export const insetGraphEdge = (from: Point, to: Point, nodeRadius: number): { readonly from: Point; readonly to: Point } => {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   const length = Math.hypot(dx, dy);
@@ -411,16 +395,7 @@ interface BuildLineOptions {
   readonly targetAnchor: Point;
 }
 
-const buildLine = ({
-  name,
-  from,
-  to,
-  directed,
-  sourceShapeId,
-  targetShapeId,
-  sourceAnchor,
-  targetAnchor
-}: BuildLineOptions): LineShape => ({
+const buildLine = ({ name, from, to, directed, sourceShapeId, targetShapeId, sourceAnchor, targetAnchor }: BuildLineOptions): LineShape => ({
   id: crypto.randomUUID(),
   name,
   kind: 'line',
@@ -570,8 +545,7 @@ const buildBipartiteLayout = (leftVertices: number, rightVertices: number): Grap
 };
 
 const verticalNodes = (prefix: string, count: number, x: number): readonly GraphNodeLayout[] => {
-  const spacing =
-    count <= VERTICAL_NODE_COMPACT_THRESHOLD ? VERTICAL_NODE_SPACING_REGULAR : VERTICAL_NODE_SPACING_COMPACT;
+  const spacing = count <= VERTICAL_NODE_COMPACT_THRESHOLD ? VERTICAL_NODE_SPACING_REGULAR : VERTICAL_NODE_SPACING_COMPACT;
   const top = (spacing * (count - 1)) / GRAPH_LAYOUT_HALF_FACTOR;
   return Array.from({ length: count }, (_, index): GraphNodeLayout => {
     const label = `${prefix}${index + 1}`;
@@ -701,10 +675,7 @@ const buildKaryTreeLayout = (branchingFactor: number, levels: number): GraphLayo
   const nodes: GraphNodeLayout[] = [];
   const edges: GraphEdgeLayout[] = [];
   const verticalGap = TREE_KARY_VERTICAL_GAP;
-  const horizontalGap =
-    branchingFactor <= TREE_KARY_NARROW_BRANCHING_THRESHOLD
-      ? VERTICAL_NODE_SPACING_REGULAR
-      : VERTICAL_NODE_SPACING_COMPACT;
+  const horizontalGap = branchingFactor <= TREE_KARY_NARROW_BRANCHING_THRESHOLD ? VERTICAL_NODE_SPACING_REGULAR : VERTICAL_NODE_SPACING_COMPACT;
   let currentLevel: readonly string[] = [];
   let nextIndex = 1;
 
@@ -791,8 +762,7 @@ const buildFlowNetworkLayout = (layers: number, nodesPerLayer: number): GraphLay
   return { nodes: [source, ...layeredNodes, sink], edges };
 };
 
-const buildNeuralNetworkLayout = (layers: number, nodesPerLayer: number): GraphLayout =>
-  buildLayeredDagLayout(layers, nodesPerLayer);
+const buildNeuralNetworkLayout = (layers: number, nodesPerLayer: number): GraphLayout => buildLayeredDagLayout(layers, nodesPerLayer);
 
 const buildPetersenLayout = (): GraphLayout => {
   const outer = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map(

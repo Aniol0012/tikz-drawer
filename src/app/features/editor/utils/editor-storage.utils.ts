@@ -2,8 +2,7 @@ import type { CodeHighlightTheme, LatexExportConfig, SavedTemplate } from '../co
 import { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../components/editor-page/editor-page.types';
 import { CODE_HIGHLIGHT_THEMES } from '../config/latex-export.config';
 
-const isOneOf = <const T extends readonly string[]>(value: unknown, options: T): value is T[number] =>
-  typeof value === 'string' && options.includes(value);
+const isOneOf = <const T extends readonly string[]>(value: unknown, options: T): value is T[number] => typeof value === 'string' && options.includes(value);
 
 const clampNumber = (value: unknown, min: number, max: number, fallback: number): number => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -26,10 +25,7 @@ export const parseSavedTemplatesFromStorage = (raw: string | null | undefined): 
   }
 };
 
-export const parsePinnedToolIdsFromStorage = (
-  raw: string | null | undefined,
-  templates: readonly SavedTemplate[]
-): readonly string[] => {
+export const parsePinnedToolIdsFromStorage = (raw: string | null | undefined, templates: readonly SavedTemplate[]): readonly string[] => {
   const templatePinnedIds = templates.filter((template) => template.pinned).map((template) => template.id);
   if (!raw) {
     return templatePinnedIds;
@@ -44,10 +40,8 @@ export const parsePinnedToolIdsFromStorage = (
   }
 };
 
-export const restoreCodeHighlightThemeFromStorage = (
-  raw: string | null | undefined,
-  fallback: CodeHighlightTheme = 'aurora'
-): CodeHighlightTheme => (isOneOf(raw, CODE_HIGHLIGHT_THEMES) ? raw : fallback);
+export const restoreCodeHighlightThemeFromStorage = (raw: string | null | undefined, fallback: CodeHighlightTheme = 'aurora'): CodeHighlightTheme =>
+  isOneOf(raw, CODE_HIGHLIGHT_THEMES) ? raw : fallback;
 
 export const serializableLatexExportConfig = (config: LatexExportConfig): Partial<LatexExportConfig> => ({
   ...config,
@@ -61,9 +55,7 @@ export const normalizeLatexExportConfig = (
   preserveFreeText: boolean = true
 ): LatexExportConfig => {
   const figurePlacement =
-    typeof config?.figurePlacement === 'string' && config.figurePlacement.trim()
-      ? config.figurePlacement.trim()
-      : defaultConfig.figurePlacement;
+    typeof config?.figurePlacement === 'string' && config.figurePlacement.trim() ? config.figurePlacement.trim() : defaultConfig.figurePlacement;
 
   return {
     ...defaultConfig,
@@ -83,10 +75,7 @@ export const normalizeLatexExportConfig = (
   };
 };
 
-export const parseStoredLatexExportConfig = (
-  raw: string | null | undefined,
-  defaultConfig: LatexExportConfig
-): LatexExportConfig => {
+export const parseStoredLatexExportConfig = (raw: string | null | undefined, defaultConfig: LatexExportConfig): LatexExportConfig => {
   if (!raw) {
     return { ...defaultConfig };
   }

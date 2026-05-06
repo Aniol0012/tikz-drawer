@@ -71,10 +71,7 @@ describe('editor-storage utils', () => {
     expect(normalized.label).toBe('fig:test');
     expect(normalized.colorMode).toBe(defaultLatexExportConfig.colorMode);
 
-    const parsed = parseStoredLatexExportConfig(
-      JSON.stringify({ maxWidthPercent: 55, caption: 'x', label: 'y' }),
-      defaultLatexExportConfig
-    );
+    const parsed = parseStoredLatexExportConfig(JSON.stringify({ maxWidthPercent: 55, caption: 'x', label: 'y' }), defaultLatexExportConfig);
     expect(parsed.maxWidthPercent).toBe(55);
     expect(parsed.caption).toBe('');
     expect(parsed.label).toBe('');

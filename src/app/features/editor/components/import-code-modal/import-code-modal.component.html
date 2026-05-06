@@ -4,11 +4,7 @@
       <div class="import-code-modal__copy">
         <h2>{{ title() }}</h2>
       </div>
-      <button
-        class="import-code-modal__close"
-        type="button"
-        [attr.aria-label]="closeLabel()"
-        (click)="closeDialog.emit()">
+      <button class="import-code-modal__close" type="button" [attr.aria-label]="closeLabel()" (click)="closeDialog.emit()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="closeIconPath"></path>
         </svg>
@@ -16,10 +12,7 @@
     </header>
 
     <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
-      <div
-        class="code-editor"
-        [class.is-invalid]="hasSyntaxIssue()"
-        [class.is-focused]="codeInputFocused()">
+      <div class="code-editor" [class.is-invalid]="hasSyntaxIssue()" [class.is-focused]="codeInputFocused()">
         <pre
           #importCodePreview
           class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
@@ -37,10 +30,7 @@
           (scroll)="syncScroll()"></textarea>
       </div>
       <div class="import-code-modal__actions">
-        <button
-          class="primary-button secondary-button--compact"
-          type="button"
-          (click)="importCode.emit()">
+        <button class="primary-button secondary-button--compact" type="button" (click)="importCode.emit()">
           {{ actionLabel() }}
         </button>
       </div>

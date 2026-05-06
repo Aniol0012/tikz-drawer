@@ -65,11 +65,7 @@
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    var(--accent),
-    color-mix(in srgb, var(--accent) 72%, black 18%)
-  );
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 72%, black 18%));
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
   transform: translateY(-50%);
 }
@@ -80,11 +76,7 @@
 }
 
 .toast--warning::before {
-  background: linear-gradient(
-    180deg,
-    var(--warning),
-    color-mix(in srgb, var(--warning) 72%, black 18%)
-  );
+  background: linear-gradient(180deg, var(--warning), color-mix(in srgb, var(--warning) 72%, black 18%));
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--warning) 16%, transparent);
 }
 
@@ -284,10 +276,7 @@
   height: calc(100dvh - var(--topbar-height));
   display: grid;
   grid-template-columns:
-    minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(
-      0,
-      1fr
-    )
+    minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr)
     10px minmax(var(--right-sidebar-min-width, 280px), var(--right-sidebar-width, 340px));
   overflow: hidden;
 }
@@ -422,8 +411,7 @@
 .mode-switch button,
 .sidebar-tabs button,
 .zoom-chip,
-.canvas-chip,
-.toggle-field {
+.canvas-chip {
   border: 1px solid var(--tool-border);
   border-radius: 8px;
   background: var(--tool-surface);
@@ -1684,8 +1672,7 @@ kbd {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.sidebar-section > .form-grid > .field,
-.sidebar-section > .form-grid > .toggle-field {
+.sidebar-section > .form-grid > .field {
   padding: 12px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
@@ -1745,23 +1732,6 @@ kbd {
   background: var(--accent);
 }
 
-.toggle-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--tool-border);
-  border-radius: 8px;
-  background: var(--input-background);
-  cursor: pointer;
-}
-
-.toggle-field select {
-  width: 100%;
-}
-
 .property-group .toggle-field,
 .property-group .field > select,
 .property-group .field > app-select {
@@ -1810,79 +1780,6 @@ kbd {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-}
-
-.toggle-field > span {
-  grid-column: 1;
-  grid-row: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.toggle-field input[type='checkbox'] {
-  position: relative;
-  grid-column: 2;
-  grid-row: 1;
-  width: 36px;
-  height: 20px;
-  margin: 0;
-  flex: 0 0 auto;
-  appearance: none;
-  border: 1px solid var(--tool-border-strong);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease;
-}
-
-.toggle-field input[type='checkbox']::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--panel-background);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
-  transition: transform 160ms ease;
-}
-
-.toggle-field input[type='checkbox']:checked {
-  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
-  background: var(--accent);
-}
-
-.toggle-field input[type='checkbox']:checked::before {
-  transform: translateX(16px);
-}
-
-.toggle-field input[type='checkbox']:focus-visible {
-  outline: none;
-}
-
-.toggle-field:hover {
-  border-color: var(--tool-border-strong);
-}
-
-.toggle-field:focus-within {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
-}
-
-.toggle-field input[type='checkbox'] {
-  background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
-  border-color: color-mix(in srgb, var(--app-foreground) 22%, var(--tool-border-strong));
-}
-
-:host([data-theme='dark']) .toggle-field input[type='checkbox']::before {
-  background: color-mix(in srgb, var(--app-foreground) 86%, var(--panel-background));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-}
-
-.toggle-field input:not([type='checkbox']) {
-  margin: 0;
 }
 
 .object-row {
@@ -2266,11 +2163,7 @@ kbd {
   padding: 6px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 88%, transparent);
   border-radius: 12px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel-background) 96%, white 4%),
-    var(--panel-background)
-  );
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
@@ -2622,17 +2515,6 @@ kbd {
   align-items: start;
 }
 
-.toggle-field--checkbox {
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 48px;
-  padding-inline: 12px;
-  align-content: center;
-}
-
-.toggle-field--checkbox span {
-  overflow-wrap: anywhere;
-}
-
 .arrow-style-grid .color-chip-field {
   min-width: 0;
   grid-column: 1 / -1;
@@ -2657,11 +2539,6 @@ kbd {
   min-height: 44px;
 }
 
-.property-group--arrow .toggle-field:not(.toggle-field--checkbox) {
-  grid-template-columns: minmax(0, 1fr) minmax(96px, 112px);
-}
-
-.property-group--arrow .toggle-field span,
 .property-group--arrow .field span {
   line-height: 1.25;
 }
@@ -2824,11 +2701,7 @@ kbd {
 }
 
 :host([data-theme='dark']) .export-settings-modal {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--panel-background) 98%, #202020 2%),
-    var(--panel-background)
-  );
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 98%, #202020 2%), var(--panel-background));
   border-color: color-mix(in srgb, white 16%, var(--tool-border-strong));
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.34),
@@ -2941,7 +2814,6 @@ kbd {
 .sidebar-tabs button,
 .zoom-chip,
 .canvas-chip,
-.toggle-field,
 .export-option-card,
 .context-menu button,
 .text-symbol-button {
@@ -3092,10 +2964,7 @@ button:disabled {
     grid-template-rows:
       minmax(420px, 1fr)
       18px
-      minmax(
-        var(--mobile-right-sidebar-min-height, 260px),
-        var(--mobile-right-sidebar-height, 320px)
-      );
+      minmax(var(--mobile-right-sidebar-min-height, 260px), var(--mobile-right-sidebar-height, 320px));
   }
 
   .canvas-panel {
@@ -3311,10 +3180,7 @@ button:disabled {
     grid-template-rows:
       minmax(300px, 1fr)
       18px
-      minmax(
-        var(--mobile-right-sidebar-min-height, 150px),
-        var(--mobile-right-sidebar-height, 360px)
-      );
+      minmax(var(--mobile-right-sidebar-min-height, 150px), var(--mobile-right-sidebar-height, 360px));
   }
 
   .form-grid,
@@ -3887,11 +3753,6 @@ button:disabled {
     grid-template-columns: minmax(0, max-content) 30px;
     min-height: 38px;
     gap: 7px;
-  }
-
-  .toggle-field {
-    gap: 7px;
-    padding: 0 7px;
   }
 
   .right-sidebar .field--stroke-width {

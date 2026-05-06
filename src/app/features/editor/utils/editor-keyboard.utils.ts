@@ -42,14 +42,11 @@ export const pressedModifierFromKey = (key: string): ModifierKey | null => {
   }
 };
 
-const isPrimaryModifierPressed = (event: Pick<KeyboardEvent, 'ctrlKey' | 'metaKey'>): boolean =>
-  event.ctrlKey || event.metaKey;
+const isPrimaryModifierPressed = (event: Pick<KeyboardEvent, 'ctrlKey' | 'metaKey'>): boolean => event.ctrlKey || event.metaKey;
 
-export const isSelectionModifierPressed = (event: SelectionModifierEvent): boolean =>
-  event.shiftKey || event.ctrlKey || event.metaKey;
+export const isSelectionModifierPressed = (event: SelectionModifierEvent): boolean => event.shiftKey || event.ctrlKey || event.metaKey;
 
-export const isSelectAllShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'a';
+export const isSelectAllShortcut = (event: KeyboardShortcutEvent): boolean => isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'a';
 
 export const isRedoShortcut = (event: KeyboardShortcutEvent): boolean => {
   const key = normalizeKeyboardKey(event.key);
@@ -59,23 +56,18 @@ export const isRedoShortcut = (event: KeyboardShortcutEvent): boolean => {
 export const isUndoShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'z' && !event.shiftKey;
 
-export const isCopyShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'c';
+export const isCopyShortcut = (event: KeyboardShortcutEvent): boolean => isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'c';
 
-export const isCutShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'x';
+export const isCutShortcut = (event: KeyboardShortcutEvent): boolean => isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'x';
 
-export const isPasteShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'v';
+export const isPasteShortcut = (event: KeyboardShortcutEvent): boolean => isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'v';
 
-export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isFindShortcut(event);
+export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean => isFindShortcut(event);
 
 export const isFindShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && !event.shiftKey && normalizeKeyboardKey(event.key) === 'f';
 
-export const toolIdFromShortcutKey = (key: string): ToolId | null =>
-  TOOL_ID_BY_SHORTCUT_KEY[normalizeKeyboardKey(key)] ?? null;
+export const toolIdFromShortcutKey = (key: string): ToolId | null => TOOL_ID_BY_SHORTCUT_KEY[normalizeKeyboardKey(key)] ?? null;
 
 export const isDeleteShortcutKey = (key: string): boolean => {
   const normalized = normalizeKeyboardKey(key);

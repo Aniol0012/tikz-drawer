@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, OnInit, output, signal } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { getIconPath } from '../../config/editor-icons';
 import type { TableDimensions } from '../../models/table.models';
 import { normalizeTableDimensions, tableSizeLabel } from '../../utils/table.utils';

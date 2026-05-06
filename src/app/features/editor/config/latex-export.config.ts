@@ -9,12 +9,7 @@ export type LatexFontSize = (typeof LATEX_FONT_SIZES)[number];
 export const LATEX_COLOR_MODES = ['direct-rgb', 'define-colors'] as const satisfies readonly LatexColorMode[];
 export type LatexExportTextKey = 'figurePlacement' | 'caption' | 'label';
 export type LatexExportNumberKey = 'maxWidthPercent' | 'standaloneBorderMm';
-export type LatexExportBooleanKey =
-  | 'wrapInFigure'
-  | 'scaleToWidth'
-  | 'includeFrame'
-  | 'includeCaption'
-  | 'includeLabel';
+export type LatexExportBooleanKey = 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel';
 
 export interface LatexExportConfig {
   readonly colorMode: LatexColorMode;

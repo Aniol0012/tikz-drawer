@@ -3,14 +3,7 @@ import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import type { CanvasShape } from '../models/tikz.models';
 import { EditorLocalStorageService } from '../state/editor-local-storage.service';
-import {
-  type LanguageCode,
-  isLanguageCode,
-  localizedShapeKind,
-  restoreLanguage,
-  translate,
-  translateOrFallback
-} from './editor-page.i18n';
+import { type LanguageCode, isLanguageCode, localizedShapeKind, restoreLanguage, translate, translateOrFallback } from './editor-page.i18n';
 
 @Injectable({ providedIn: 'root' })
 export class EditorLanguageService {

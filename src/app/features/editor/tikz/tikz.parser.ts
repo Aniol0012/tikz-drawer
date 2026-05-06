@@ -10,12 +10,7 @@ import type {
   TriangleShape,
   TikzScene
 } from '../models/tikz.models';
-import {
-  DEFAULT_ARROW_TIP_LENGTH,
-  DEFAULT_ARROW_TIP_WIDTH,
-  DEFAULT_TEXT_BOX_WIDTH,
-  DEFAULT_TEXT_FONT_SIZE
-} from '../constants/editor.constants';
+import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH, DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
 
 const defaultSceneBounds = {
   width: 960,
@@ -28,10 +23,8 @@ const HEX_COLOR_PATTERN = /^#?([0-9a-fA-F]{6})$/;
 const ARROW_DRAW_PATTERN = /draw=({[^}]+}|[^,\]]+)/i;
 const ARROW_OPACITY_PATTERN = /opacity=([^,\]]+)/i;
 const ARROW_SCALE_PATTERN = /scale=([^,\]}]+)/i;
-const TRIANGLE_PATTERN =
-  /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/;
-const SMOOTH_LINE_PATTERN =
-  /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/;
+const TRIANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/;
+const SMOOTH_LINE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/;
 const RECTANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/;
 const IMAGE_NODE_PATTERN =
   /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/;
@@ -290,11 +283,9 @@ const parseArrowOpacity = (styles: Record<string, string>): number => {
   return styleOpacity(styles, 'opacity');
 };
 
-const parseArrowOpen = (styles: Record<string, string>): boolean =>
-  /[[,]\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+const parseArrowOpen = (styles: Record<string, string>): boolean => /[[,]\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
 
-const parseArrowRound = (styles: Record<string, string>): boolean =>
-  /[[,]\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+const parseArrowRound = (styles: Record<string, string>): boolean => /[[,]\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
 
 const parseArrowScale = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
@@ -303,11 +294,7 @@ const parseArrowScale = (styles: Record<string, string>): number => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 };
 
-const parseArrowDimensionScale = (
-  styles: Record<string, string>,
-  key: 'length' | 'width',
-  defaultValue: number
-): number => {
+const parseArrowDimensionScale = (styles: Record<string, string>, key: 'length' | 'width', defaultValue: number): number => {
   const raw = styles['arrow meta'] ?? '';
   const match = new RegExp(`${key}=([^,\\]}]+)`, 'i').exec(raw);
   const parsed = Number.parseFloat((match?.[1] ?? '').replaceAll(/(?:pt|cm|mm|ex|em)/g, '').trim());
@@ -513,10 +500,7 @@ const parseTriangle = (line: string): CanvasShape | null => {
 };
 
 const parseCircle = (line: string): CanvasShape | null => {
-  const match =
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
-      line
-    );
+  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -547,10 +531,9 @@ const parseCircle = (line: string): CanvasShape | null => {
 };
 
 const parseEllipse = (line: string): CanvasShape | null => {
-  const match =
-    /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
-      line
-    );
+  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
+    line
+  );
 
   if (!match?.groups) {
     return null;
@@ -670,9 +653,7 @@ const parseNode = (line: string): CanvasShape | null => {
     y: point.y,
     text: match.groups['text'].trim(),
     textBox: /text width=/.test(match.groups['styles'] ?? ''),
-    boxWidth:
-      Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replaceAll('cm', '').trim()) ||
-      DEFAULT_TEXT_BOX_WIDTH,
+    boxWidth: Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replaceAll('cm', '').trim()) || DEFAULT_TEXT_BOX_WIDTH,
     fontSize: DEFAULT_TEXT_FONT_SIZE * scale,
     color: normalizeTikzColor(styles['text'], '#0f172a'),
     colorOpacity: styleOpacity(styles, 'text opacity'),
@@ -739,11 +720,7 @@ interface TikzBodyExtractionState {
   readonly tikzDepth: number;
 }
 
-const startTikzBodyIfNeeded = (
-  line: string,
-  state: TikzBodyExtractionState,
-  outsideLines: string[]
-): TikzBodyExtractionState => {
+const startTikzBodyIfNeeded = (line: string, state: TikzBodyExtractionState, outsideLines: string[]): TikzBodyExtractionState => {
   if (tikzBeginPattern.test(line)) {
     return { insideTikz: true, tikzDepth: 1 };
   }
@@ -752,11 +729,7 @@ const startTikzBodyIfNeeded = (
   return state;
 };
 
-const collectTikzBodyLine = (
-  line: string,
-  state: TikzBodyExtractionState,
-  bodyLines: string[]
-): TikzBodyExtractionState => {
+const collectTikzBodyLine = (line: string, state: TikzBodyExtractionState, bodyLines: string[]): TikzBodyExtractionState => {
   let tikzDepth = state.tikzDepth + (tikzBeginPattern.test(line) ? 1 : 0);
   if (tikzEndPattern.test(line)) {
     tikzDepth -= 1;
@@ -773,9 +746,7 @@ const extractTikzBodyLines = (lines: readonly string[]): readonly string[] => {
   let state: TikzBodyExtractionState = { insideTikz: false, tikzDepth: 0 };
 
   for (const line of lines) {
-    state = state.insideTikz
-      ? collectTikzBodyLine(line, state, bodyLines)
-      : startTikzBodyIfNeeded(line, state, outsideLines);
+    state = state.insideTikz ? collectTikzBodyLine(line, state, bodyLines) : startTikzBodyIfNeeded(line, state, outsideLines);
   }
 
   return bodyLines.length > 0 ? bodyLines : outsideLines;

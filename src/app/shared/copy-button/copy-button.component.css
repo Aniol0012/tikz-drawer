@@ -99,10 +99,7 @@
 }
 
 .copy-button--dropdown:hover {
-  background: var(
-    --tool-surface-hover,
-    color-mix(in srgb, var(--tool-surface) 86%, var(--accent) 14%)
-  );
+  background: var(--tool-surface-hover, color-mix(in srgb, var(--tool-surface) 86%, var(--accent) 14%));
 }
 
 .copy-button__icon-stack {

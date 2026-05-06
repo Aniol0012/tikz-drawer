@@ -1,5 +1,5 @@
 {
-  "printWidth": 120,
+  "printWidth": 160,
   "tabWidth": 2,
   "useTabs": false,
   "semi": true,
@@ -22,27 +22,19 @@
     {
       "files": "*.html",
       "options": {
-        "printWidth": 100
+        "printWidth": 140
       }
     },
     {
-      "files": [
-        "*.scss",
-        "*.css"
-      ],
+      "files": ["*.scss", "*.css"],
       "options": {
-        "printWidth": 100
+        "printWidth": 140
       }
     },
     {
-      "files": [
-        "*.ts",
-        "*.tsx",
-        "*.js",
-        "*.jsx"
-      ],
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "options": {
-        "printWidth": 120
+        "printWidth": 160
       }
     }
   ]

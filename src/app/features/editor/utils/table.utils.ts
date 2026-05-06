@@ -23,11 +23,7 @@ export const normalizeTableDimensions = (dimensions: TableDimensions): TableDime
   columns: clampInteger(dimensions.columns, DEFAULT_TABLE_AXIS)
 });
 
-const buildTableMetadata = (
-  tableId: string,
-  role: TableShapeMetadata['role'],
-  dimensions: TableDimensions
-): TableShapeMetadata => ({
+const buildTableMetadata = (tableId: string, role: TableShapeMetadata['role'], dimensions: TableDimensions): TableShapeMetadata => ({
   id: tableId,
   role,
   rows: dimensions.rows,
@@ -173,31 +169,17 @@ export const getTableSelectionInfo = (shapes: readonly CanvasShape[]): TableSele
     return null;
   }
 
-  if (
-    tableShapes.some(
-      (shape) =>
-        shape.table?.id !== firstTable.id ||
-        shape.table?.rows !== firstTable.rows ||
-        shape.table?.columns !== firstTable.columns
-    )
-  ) {
+  if (tableShapes.some((shape) => shape.table?.id !== firstTable.id || shape.table?.rows !== firstTable.rows || shape.table?.columns !== firstTable.columns)) {
     return null;
   }
 
-  const frame = tableShapes.find(
-    (shape): shape is Extract<CanvasShape, { kind: 'rectangle' }> =>
-      shape.kind === 'rectangle' && shape.table?.role === 'frame'
-  );
+  const frame = tableShapes.find((shape): shape is Extract<CanvasShape, { kind: 'rectangle' }> => shape.kind === 'rectangle' && shape.table?.role === 'frame');
   if (!frame) {
     return null;
   }
 
-  const rowDividerCount = tableShapes.filter(
-    (shape) => shape.kind === 'line' && shape.table?.role === 'row-divider'
-  ).length;
-  const columnDividerCount = tableShapes.filter(
-    (shape) => shape.kind === 'line' && shape.table?.role === 'column-divider'
-  ).length;
+  const rowDividerCount = tableShapes.filter((shape) => shape.kind === 'line' && shape.table?.role === 'row-divider').length;
+  const columnDividerCount = tableShapes.filter((shape) => shape.kind === 'line' && shape.table?.role === 'column-divider').length;
 
   if (rowDividerCount !== firstTable.rows - 1 || columnDividerCount !== firstTable.columns - 1) {
     return null;

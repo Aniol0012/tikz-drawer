@@ -1,15 +1,5 @@
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  ElementRef,
-  input,
-  output,
-  signal,
-  viewChild,
-  viewChildren
-} from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, input, output, signal, viewChild, viewChildren } from '@angular/core';
 import type { ObjectPreset } from '../../models/tikz.models';
 
 @Component({
@@ -44,13 +34,7 @@ export class FigureSearchOverlayComponent {
     }
 
     return sourcePresets.filter((preset) => {
-      const haystack = [
-        this.titleForPreset()(preset),
-        this.descriptionForPreset()(preset),
-        preset.title,
-        preset.description,
-        ...(preset.searchTerms ?? [])
-      ]
+      const haystack = [this.titleForPreset()(preset), this.descriptionForPreset()(preset), preset.title, preset.description, ...(preset.searchTerms ?? [])]
         .join(' ')
         .toLowerCase();
       return haystack.includes(query);
