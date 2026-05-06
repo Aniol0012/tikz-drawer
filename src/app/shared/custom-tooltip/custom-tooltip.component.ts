@@ -204,6 +204,10 @@ export class CustomTooltipComponent {
       return null;
     }
 
+    if (target.closest('[data-tooltip-disabled]')) {
+      return null;
+    }
+
     if (this.isNativeControlEventTarget(target) || this.isShoelaceDropdownTarget(target)) {
       return null;
     }

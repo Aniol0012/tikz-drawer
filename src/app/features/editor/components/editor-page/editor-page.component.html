@@ -244,6 +244,7 @@
         class="canvas-viewport"
         role="application"
         tabindex="0"
+        data-tooltip-disabled
         [attr.aria-label]="'canvas' | translate"
         [class.is-panning]="interactionState()?.kind === 'pan' || interactionState()?.kind === 'pending-pan'"
         [class.is-insert]="activeTool() !== 'select'"
