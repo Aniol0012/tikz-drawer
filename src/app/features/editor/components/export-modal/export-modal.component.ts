@@ -23,6 +23,7 @@ import {
   type CopyButtonValueResolver
 } from '../../../../shared/copy-button/copy-button.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
+import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 
 type LabelKeyOption = {
   readonly value: string;
@@ -31,7 +32,7 @@ type LabelKeyOption = {
 
 @Component({
   selector: 'app-export-modal',
-  imports: [CopyButtonComponent, AppSelectComponent],
+  imports: [CopyButtonComponent, AppSelectComponent, ToggleFieldComponent],
   templateUrl: './export-modal.component.html',
   styleUrl: './export-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,9 +108,9 @@ export class ExportModalComponent {
     } as Partial<LatexExportConfig>);
   }
 
-  updateLatexExportBoolean(key: LatexExportBooleanKey, event: Event): void {
+  updateLatexExportBoolean(key: LatexExportBooleanKey, checked: boolean): void {
     this.latexConfigPatch.emit({
-      [key]: (event.target as HTMLInputElement).checked
+      [key]: checked
     } as Partial<LatexExportConfig>);
   }
 

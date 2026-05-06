@@ -207,22 +207,18 @@
           </label>
         }
 
-        <label class="graph-dialog__toggle" data-graph-toggle="directed">
-          <span>{{ directedLabel() }}</span>
-          <input
-            type="checkbox"
-            [checked]="selected().directed"
-            (change)="updateToggle('directed', $event)"
-            (keydown)="onToggleKeydown($event, 'directed')" />
-        </label>
-        <label class="graph-dialog__toggle" data-graph-toggle="showLabels">
-          <span>{{ labelsLabel() }}</span>
-          <input
-            type="checkbox"
-            [checked]="selected().showLabels"
-            (change)="updateToggle('showLabels', $event)"
-            (keydown)="onToggleKeydown($event, 'showLabels')" />
-        </label>
+        <app-toggle-field
+          class="graph-dialog__toggle"
+          data-graph-toggle="directed"
+          [checked]="selected().directed"
+          [label]="directedLabel()"
+          (checkedChange)="updateToggle('directed', $event)"></app-toggle-field>
+        <app-toggle-field
+          class="graph-dialog__toggle"
+          data-graph-toggle="showLabels"
+          [checked]="selected().showLabels"
+          [label]="labelsLabel()"
+          (checkedChange)="updateToggle('showLabels', $event)"></app-toggle-field>
       </div>
     </div>
 

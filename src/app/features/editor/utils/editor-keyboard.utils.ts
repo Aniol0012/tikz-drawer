@@ -68,8 +68,7 @@ export const isCutShortcut = (event: KeyboardShortcutEvent): boolean =>
 export const isPasteShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && normalizeKeyboardKey(event.key) === 'v';
 
-export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean =>
-  isFindShortcut(event);
+export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean => isFindShortcut(event);
 
 export const isFindShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && !event.shiftKey && normalizeKeyboardKey(event.key) === 'f';

@@ -147,6 +147,7 @@ import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
+import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import {
@@ -181,7 +182,6 @@ import {
   isDeleteShortcutKey,
   isEscapeShortcutKey,
   isFigureSearchShortcut,
-  isFindShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectAllShortcut,
@@ -296,7 +296,8 @@ interface LineAttachmentCandidate {
     RegularPolygonDialogComponent,
     GraphDialogComponent,
     FigureSearchOverlayComponent,
-    AppSelectComponent
+    AppSelectComponent,
+    ToggleFieldComponent
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
@@ -1860,8 +1861,8 @@ export class EditorPageComponent {
     this.templateIconInput.set(icon);
   }
 
-  updateTemplateUseCurrentSelection(event: Event): void {
-    this.templateUseCurrentSelection.set((event.target as HTMLInputElement).checked);
+  updateTemplateUseCurrentSelection(checked: boolean): void {
+    this.templateUseCurrentSelection.set(checked);
   }
 
   saveTemplate(): void {
@@ -2551,23 +2552,8 @@ export class EditorPageComponent {
     this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
   }
 
-  onBooleanPreferenceChange(key: PreferenceBooleanKey, event: Event): void {
-    this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).checked } as Partial<EditorPreferences>);
-  }
-
-  onToggleFieldKeydown(event: KeyboardEvent): void {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox' || target.disabled) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    target.click();
+  onBooleanPreferenceChange(key: PreferenceBooleanKey, checked: boolean): void {
+    this.store.patchPreferences({ [key]: checked } as Partial<EditorPreferences>);
   }
 
   onSceneNameInputValue(value: string): void {
@@ -2972,8 +2958,7 @@ export class EditorPageComponent {
     );
   }
 
-  setTextBoxEnabled(event: Event): void {
-    const value = (event.target as HTMLInputElement).checked;
+  setTextBoxEnabled(value: boolean): void {
     this.patchInspectorSelection((shape) => {
       if (shape.kind !== 'text') {
         return shape;

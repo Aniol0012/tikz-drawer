@@ -216,51 +216,9 @@
 .graph-dialog__toggle {
   min-height: 42px;
   align-self: end;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 12px;
-  border: 1px solid var(--tool-border);
   border-radius: 10px;
   background: var(--tool-surface);
   font-weight: 700;
-}
-
-.graph-dialog__toggle input {
-  position: relative;
-  width: 36px;
-  height: 20px;
-  flex: 0 0 auto;
-  appearance: none;
-  border: 1px solid var(--tool-border-strong);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease;
-}
-
-.graph-dialog__toggle input::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--panel-background);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
-  transition: transform 160ms ease;
-}
-
-.graph-dialog__toggle input:checked {
-  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
-  background: var(--accent);
-}
-
-.graph-dialog__toggle input:checked::before {
-  transform: translateX(16px);
 }
 
 .graph-dialog__footer {
@@ -311,16 +269,6 @@
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
-:host-context([data-theme='dark']) .graph-dialog__toggle input {
-  background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
-  border-color: color-mix(in srgb, var(--app-foreground) 22%, var(--tool-border-strong));
-}
-
-:host-context([data-theme='dark']) .graph-dialog__toggle input::before {
-  background: color-mix(in srgb, var(--app-foreground) 86%, var(--panel-background));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 @media (max-width: 640px) {

@@ -1,0 +1,9 @@
+<label>
+  <span>{{ label() }}</span>
+  <input
+    type="checkbox"
+    [checked]="checked()"
+    [disabled]="disabled()"
+    (change)="onChange($event)"
+    (keydown.enter)="onEnterKeydown($event)" />
+</label>

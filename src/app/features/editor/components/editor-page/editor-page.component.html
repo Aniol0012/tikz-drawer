@@ -8,8 +8,7 @@
   [style.--mobile-left-sidebar-height.px]="effectiveMobileLeftSidebarHeight()"
   [style.--mobile-right-sidebar-min-height.px]="mobileRightSidebarMinHeight()"
   [style.--mobile-left-sidebar-min-height.px]="mobileLeftSidebarMinHeight()"
-  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()"
-  (keydown)="onToggleFieldKeydown($event)">
+  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <app-editor-topbar
     [appVersion]="appVersion"
     [sceneName]="scene().name"
@@ -2728,13 +2727,11 @@
                           [value]="shape.text"
                           (input)="updateShapeText('text', $event)"></textarea>
                       </label>
-                      <label class="toggle-field field--full">
-                        <input
-                          type="checkbox"
-                          [checked]="shape.textBox"
-                          (change)="setTextBoxEnabled($event)" />
-                        <span>{{ t('textContent') }}</span>
-                      </label>
+                      <app-toggle-field
+                        class="field--full"
+                        [checked]="shape.textBox"
+                        [label]="t('textContent')"
+                        (checkedChange)="setTextBoxEnabled($event)"></app-toggle-field>
                       @if (shape.textBox) {
                         <label class="field field--full"
                           ><span>{{ t('width') }}</span>
@@ -3202,30 +3199,21 @@
                     [value]="preferences().defaultArrowScale"
                     (input)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)" /></div
               ></label>
-              <label class="toggle-field"
-                ><input
-                  type="checkbox"
-                  [checked]="preferences().showGrid"
-                  (change)="onBooleanPreferenceChange('showGrid', $event)" /><span>{{
-                  t('showGrid')
-                }}</span></label
-              >
-              <label class="toggle-field"
-                ><input
-                  type="checkbox"
-                  [checked]="preferences().showAxes"
-                  (change)="onBooleanPreferenceChange('showAxes', $event)" /><span>{{
-                  t('showAxes')
-                }}</span></label
-              >
-              <label class="toggle-field field--full"
-                ><input
-                  type="checkbox"
-                  [checked]="preferences().snapToGrid"
-                  (change)="onBooleanPreferenceChange('snapToGrid', $event)" /><span>{{
-                  t('snapToGrid')
-                }}</span></label
-              >
+              <app-toggle-field
+                [checked]="preferences().showGrid"
+                [label]="t('showGrid')"
+                (checkedChange)="onBooleanPreferenceChange('showGrid', $event)"></app-toggle-field>
+              <app-toggle-field
+                [checked]="preferences().showAxes"
+                [label]="t('showAxes')"
+                (checkedChange)="onBooleanPreferenceChange('showAxes', $event)"></app-toggle-field>
+              <app-toggle-field
+                class="field--full"
+                [checked]="preferences().snapToGrid"
+                [label]="t('snapToGrid')"
+                (checkedChange)="
+                  onBooleanPreferenceChange('snapToGrid', $event)
+                "></app-toggle-field>
             </div>
           }
         </section>
@@ -3409,13 +3397,11 @@
             </div>
           </div>
           @if (templateDialogMode() === 'edit' && selectionCount() > 0) {
-            <label class="toggle-field field--full">
-              <input
-                type="checkbox"
-                [checked]="templateUseCurrentSelection()"
-                (change)="updateTemplateUseCurrentSelection($event)" />
-              <span>{{ t('replaceTemplateWithSelection') }}</span>
-            </label>
+            <app-toggle-field
+              class="field--full"
+              [checked]="templateUseCurrentSelection()"
+              [label]="t('replaceTemplateWithSelection')"
+              (checkedChange)="updateTemplateUseCurrentSelection($event)"></app-toggle-field>
           }
         </div>
         <div class="inline-actions">

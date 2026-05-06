@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, OnChanges, output, signal } from '@angular/core';
+import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { getIconPath } from '../../config/editor-icons';
 import {
   DEFAULT_GRAPH_DIMENSIONS,
@@ -44,6 +45,7 @@ interface GraphPreviewEdge {
 
 @Component({
   selector: 'app-graph-dialog',
+  imports: [ToggleFieldComponent],
   templateUrl: './graph-dialog.component.html',
   styleUrl: './graph-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -116,23 +118,12 @@ export class GraphDialogComponent implements OnChanges {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: value }));
   }
 
-  updateToggle(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
+  updateToggle(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>, checked: boolean): void {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: checked }));
   }
 
   toggleBoolean(key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
     this.selected.update((dimensions) => normalizeGraphDimensions({ ...dimensions, [key]: !dimensions[key] }));
-  }
-
-  onToggleKeydown(event: KeyboardEvent, key: keyof Pick<GraphDimensions, 'directed' | 'showLabels'>): void {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    this.toggleBoolean(key);
   }
 
   onBackdropKeydown(event: KeyboardEvent): void {

@@ -82,7 +82,6 @@
 .primary-button,
 .secondary-button,
 .mode-switch button,
-.toggle-field,
 .export-option-card,
 .code-block,
 .field input:not([type='range']),
@@ -100,7 +99,6 @@
 .secondary-button,
 .mode-switch,
 .mode-switch button,
-.toggle-field,
 .export-option-card {
   border: 1px solid var(--tool-border);
   border-radius: 8px;
@@ -289,75 +287,6 @@
   grid-column: 1 / -1;
 }
 
-.toggle-field {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 0 10px;
-
-  & span {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-    color: var(--app-foreground);
-    font-size: 0.82rem;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-
-  & input[type='checkbox'] {
-    position: relative;
-    grid-column: 2;
-    grid-row: 1;
-    width: 36px;
-    height: 20px;
-    margin: 0;
-    flex: 0 0 auto;
-    appearance: none;
-    border: 1px solid var(--tool-border-strong);
-    border-radius: 999px;
-    background: var(--input-background);
-    cursor: pointer;
-  }
-
-  & input[type='checkbox']::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--panel-background);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-    transition: transform 160ms ease;
-  }
-
-  & input[type='checkbox']:checked {
-    border-color: color-mix(in srgb, var(--accent) 72%, transparent);
-    background: var(--accent);
-  }
-
-  & input[type='checkbox']:checked::before {
-    transform: translateX(16px);
-  }
-
-  & input[type='checkbox']:focus-visible {
-    outline: none;
-  }
-
-  &:hover {
-    border-color: var(--tool-border-strong);
-  }
-
-  &:focus-within {
-    outline: none;
-    border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
-  }
-}
-
 .range-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 88px;
@@ -526,17 +455,9 @@
     background: color-mix(in srgb, var(--input-background) 92%, var(--tool-surface));
   }
 
-  & .field span,
-  & .toggle-field span {
+  & .field span {
     font-size: 0.75rem;
     letter-spacing: 0;
-  }
-
-  & .toggle-field {
-    min-height: 50px;
-    padding: 0 14px;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--input-background) 92%, var(--tool-surface));
   }
 }
 
@@ -737,28 +658,16 @@
       }
     }
 
-    & .field,
-    & .toggle-field {
+    & .field {
       border-color: color-mix(in srgb, white 12%, var(--tool-border));
       background: color-mix(in srgb, var(--input-background) 82%, #202020 18%);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
     }
 
     & .field span,
-    & .toggle-field span,
     & .export-settings-note {
       color: color-mix(in srgb, white 74%, var(--muted-foreground));
     }
-  }
-
-  & .toggle-field input[type='checkbox'] {
-    background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
-    border-color: color-mix(in srgb, var(--app-foreground) 22%, var(--tool-border-strong));
-  }
-
-  & .toggle-field input[type='checkbox']::before {
-    background: color-mix(in srgb, var(--app-foreground) 86%, var(--panel-background));
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
   }
 
   & .export-settings-note {
@@ -873,12 +782,6 @@
     & .field {
       gap: 5px;
       padding: 8px;
-      border-radius: 9px;
-    }
-
-    & .toggle-field {
-      min-height: 34px;
-      padding: 0 8px;
       border-radius: 9px;
     }
   }

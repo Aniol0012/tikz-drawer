@@ -155,14 +155,11 @@
             <span>{{ t('latexEnvironment') }}</span>
           </div>
           <div class="form-grid export-settings-form-grid">
-            <label class="toggle-field field--full"
-              ><input
-                type="checkbox"
-                [checked]="latexExportConfig().wrapInFigure"
-                (change)="updateLatexExportBoolean('wrapInFigure', $event)" /><span>{{
-                t('latexWrapFigure')
-              }}</span></label
-            >
+            <app-toggle-field
+              class="field--full"
+              [checked]="latexExportConfig().wrapInFigure"
+              [label]="t('latexWrapFigure')"
+              (checkedChange)="updateLatexExportBoolean('wrapInFigure', $event)"></app-toggle-field>
             @if (latexExportConfig().wrapInFigure) {
               <label class="field">
                 <span>{{ t('latexFigurePlacement') }}</span>
@@ -203,22 +200,16 @@
                 }
               </div>
             </div>
-            <label class="toggle-field field--full"
-              ><input
-                type="checkbox"
-                [checked]="latexExportConfig().scaleToWidth"
-                (change)="updateLatexExportBoolean('scaleToWidth', $event)" /><span>{{
-                t('latexScaleToWidth')
-              }}</span></label
-            >
-            <label class="toggle-field field--full"
-              ><input
-                type="checkbox"
-                [checked]="latexExportConfig().includeFrame"
-                (change)="updateLatexExportBoolean('includeFrame', $event)" /><span>{{
-                t('latexIncludeFrame')
-              }}</span></label
-            >
+            <app-toggle-field
+              class="field--full"
+              [checked]="latexExportConfig().scaleToWidth"
+              [label]="t('latexScaleToWidth')"
+              (checkedChange)="updateLatexExportBoolean('scaleToWidth', $event)"></app-toggle-field>
+            <app-toggle-field
+              class="field--full"
+              [checked]="latexExportConfig().includeFrame"
+              [label]="t('latexIncludeFrame')"
+              (checkedChange)="updateLatexExportBoolean('includeFrame', $event)"></app-toggle-field>
             @if (latexExportConfig().scaleToWidth) {
               <label class="field field--full">
                 <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
@@ -306,14 +297,13 @@
             </button>
           </div>
           <div class="form-grid export-settings-form-grid">
-            <label class="toggle-field field--full"
-              ><input
-                type="checkbox"
-                [checked]="latexExportConfig().includeCaption"
-                (change)="updateLatexExportBoolean('includeCaption', $event)" /><span>{{
-                t('latexIncludeCaption')
-              }}</span></label
-            >
+            <app-toggle-field
+              class="field--full"
+              [checked]="latexExportConfig().includeCaption"
+              [label]="t('latexIncludeCaption')"
+              (checkedChange)="
+                updateLatexExportBoolean('includeCaption', $event)
+              "></app-toggle-field>
             @if (latexExportConfig().includeCaption) {
               <label class="field field--full">
                 <span>{{ t('latexCaption') }}</span>
@@ -324,14 +314,11 @@
                   (input)="updateLatexExportText('caption', $event)" />
               </label>
             }
-            <label class="toggle-field field--full"
-              ><input
-                type="checkbox"
-                [checked]="latexExportConfig().includeLabel"
-                (change)="updateLatexExportBoolean('includeLabel', $event)" /><span>{{
-                t('latexIncludeLabel')
-              }}</span></label
-            >
+            <app-toggle-field
+              class="field--full"
+              [checked]="latexExportConfig().includeLabel"
+              [label]="t('latexIncludeLabel')"
+              (checkedChange)="updateLatexExportBoolean('includeLabel', $event)"></app-toggle-field>
             @if (latexExportConfig().includeLabel) {
               <label class="field field--full">
                 <span>{{ t('latexLabel') }}</span>
