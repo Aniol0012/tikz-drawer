@@ -100,7 +100,7 @@ jobs:
           TAG="v${VERSION}"
           REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
           RELEASE_URL="${REPO_URL}/releases/tag/${TAG}"
-          APP_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/?version=${VERSION}"
+          APP_URL="https://tikzdrawer.com/?version=${VERSION}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "repo_url=${REPO_URL}" >> "$GITHUB_OUTPUT"

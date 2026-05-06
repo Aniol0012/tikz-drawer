@@ -4,7 +4,7 @@
   <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
 
 [![Version](https://img.shields.io/badge/version-1.2.11-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
-[![Website Status](https://img.shields.io/website?url=https%3A%2F%2Faniol0012.github.io%2Ftikz-drawer%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://aniol0012.github.io/tikz-drawer/)
+[![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftikzdrawer.com%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://tikzdrawer.com/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
 [![Tests Status](https://img.shields.io/github/actions/workflow/status/Aniol0012/tikz-drawer/tests.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
 
@@ -20,7 +20,7 @@
 
 ## Description
 
-[`tikz-drawer`](https://github.com/Aniol0012/tikz-drawer) is an [Angular](https://angular.dev/) app for visually building diagrams for the [TikZ](https://tikz.dev/) package. This application supports multiple features to make it easier to create and edit diagrams. Instead of reading this long and boring description, just check it out [here](https://aniol0012.github.io/tikz-drawer/).
+[`tikz-drawer`](https://github.com/Aniol0012/tikz-drawer) is an [Angular](https://angular.dev/) app for visually building diagrams for the [TikZ](https://tikz.dev/) package. This application supports multiple features to make it easier to create and edit diagrams. Instead of reading this long and boring description, just check it out [here](https://tikzdrawer.com/).
 
 > [!NOTE]
 > If you want to enhance the app, feel free to open a pull request or contact me via [email](mailto:aniol0012@gmail.com).
@@ -31,7 +31,7 @@
 > v1.2.0
 
 > [!TIP]
-> You can use the app [here](https://aniol0012.github.io/tikz-drawer/).
+> You can use the app [here](https://tikzdrawer.com/).
 
 ## Run it
 

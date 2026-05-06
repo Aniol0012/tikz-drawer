@@ -121,7 +121,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build app for GitHub Pages
-        run: pnpm ng build --configuration production --base-href /tikz-drawer/
+        run: pnpm ng build --configuration production --base-href /
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
