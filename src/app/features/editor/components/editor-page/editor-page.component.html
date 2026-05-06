@@ -774,7 +774,12 @@
                 <path [attr.d]="iconMap.redo"></path>
               </svg>
             </button>
-            <button class="icon-button" type="button" [title]="'centerView' | translate" (click)="resetViewport()">
+            <button
+              class="icon-button"
+              type="button"
+              [title]="'centerView' | translate"
+              [disabled]="isViewportCentered()"
+              (click)="resetViewport()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.scene"></path>
               </svg>
@@ -2022,776 +2027,885 @@
               <div class="empty-panel">
                 {{ 'tableRecognizedHint' | translate }}
               </div>
-            } @else if (multiEditShape(); as shape) {
-              <div class="selection-title">
-                <strong>{{ selectionCount() }} {{ ('objects' | translate).toLowerCase() }}</strong>
-                <span>{{ localizedShapeKind(shape.kind) }}</span>
-              </div>
-              <div class="property-group property-group--actions">
-                <div class="inline-actions">
-                  <button
-                    class="secondary-button"
-                    type="button"
-                    [title]="'duplicate' | translate"
-                    [attr.aria-label]="'duplicate' | translate"
-                    (click)="duplicateSelected()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.copy"></path></svg
-                    ><span>{{ 'duplicate' | translate }}</span>
-                  </button>
-                  <button
-                    class="secondary-button"
-                    type="button"
-                    [title]="'bringToFront' | translate"
-                    [attr.aria-label]="'bringToFront' | translate"
-                    (click)="bringSelectedToFront()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.front"></path></svg
-                    ><span>{{ 'bringToFront' | translate }}</span>
-                  </button>
-                  <button
-                    class="secondary-button"
-                    type="button"
-                    [title]="'sendToBack' | translate"
-                    [attr.aria-label]="'sendToBack' | translate"
-                    (click)="sendSelectedToBack()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.back"></path></svg
-                    ><span>{{ 'sendToBack' | translate }}</span>
-                  </button>
-                  <button
-                    class="secondary-button"
-                    type="button"
-                    [title]="'saveAsTemplate' | translate"
-                    [attr.aria-label]="'saveAsTemplate' | translate"
-                    (click)="openSaveTemplateDialog()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.library"></path></svg
-                    ><span>{{ 'saveAsTemplate' | translate }}</span>
-                  </button>
-                  @if (canGroupSelection()) {
-                    <button
-                      class="secondary-button mobile-only-action"
-                      type="button"
-                      [title]="'groupFigures' | translate"
-                      [attr.aria-label]="'groupFigures' | translate"
-                      (click)="mergeSelected()">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="iconMap.layers"></path></svg
-                      ><span>{{ 'groupFigures' | translate }}</span>
-                    </button>
-                  }
-                  @if (canUngroupSelection()) {
-                    <button
-                      class="secondary-button mobile-only-action"
-                      type="button"
-                      [title]="'ungroupFigures' | translate"
-                      [attr.aria-label]="'ungroupFigures' | translate"
-                      (click)="ungroupSelected()">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="iconMap.ungroup"></path></svg
-                      ><span>{{ 'ungroupFigures' | translate }}</span>
-                    </button>
-                  }
-                  <button
-                    class="secondary-button mobile-only-action"
-                    type="button"
-                    [title]="'downloadPng' | translate"
-                    [attr.aria-label]="'downloadPng' | translate"
-                    (click)="runContextAction('png')">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.download"></path></svg
-                    ><span>{{ 'downloadPng' | translate }}</span>
-                  </button>
-                  <button
-                    class="secondary-button secondary-button--danger mobile-only-action"
-                    type="button"
-                    [title]="'delete' | translate"
-                    [attr.aria-label]="'delete' | translate"
-                    (click)="removeSelected()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="iconMap.trash"></path></svg
-                    ><span>{{ 'delete' | translate }}</span>
-                  </button>
+            } @else if (multiEditSelection(); as multiEdit) {
+              @if (multiEditShape(); as shape) {
+                <div class="selection-title">
+                  <strong>{{ selectionCount() }} {{ ('objects' | translate).toLowerCase() }}</strong>
+                  <span>{{ localizedMultiEditKind(multiEdit) }}</span>
                 </div>
-              </div>
-              @if (shape.kind !== 'text') {
-                <div class="property-group">
-                  <div class="property-group__title">{{ 'appearance' | translate }}</div>
-                  <div class="color-pair-controls">
-                    <label class="color-chip-field">
-                      <small>{{ 'stroke' | translate }}</small>
-                      <input
-                        class="color-swatch"
-                        type="color"
-                        [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
-                        (input)="updateShapeText('stroke', $event)" />
-                      <input
-                        class="color-opacity-input"
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        [value]="shape.strokeOpacity"
-                        (input)="updateShapeOpacity('strokeOpacity', $event)" />
-                      <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.strokeOpacity) }}%</small>
-                    </label>
-                    @if (shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse') {
+                <div class="property-group property-group--actions">
+                  <div class="inline-actions">
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      [title]="'duplicate' | translate"
+                      [attr.aria-label]="'duplicate' | translate"
+                      (click)="duplicateSelected()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.copy"></path></svg
+                      ><span>{{ 'duplicate' | translate }}</span>
+                    </button>
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      [title]="'bringToFront' | translate"
+                      [attr.aria-label]="'bringToFront' | translate"
+                      (click)="bringSelectedToFront()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.front"></path></svg
+                      ><span>{{ 'bringToFront' | translate }}</span>
+                    </button>
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      [title]="'sendToBack' | translate"
+                      [attr.aria-label]="'sendToBack' | translate"
+                      (click)="sendSelectedToBack()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.back"></path></svg
+                      ><span>{{ 'sendToBack' | translate }}</span>
+                    </button>
+                    <button
+                      class="secondary-button"
+                      type="button"
+                      [title]="'saveAsTemplate' | translate"
+                      [attr.aria-label]="'saveAsTemplate' | translate"
+                      (click)="openSaveTemplateDialog()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.library"></path></svg
+                      ><span>{{ 'saveAsTemplate' | translate }}</span>
+                    </button>
+                    @if (canGroupSelection()) {
+                      <button
+                        class="secondary-button mobile-only-action"
+                        type="button"
+                        [title]="'groupFigures' | translate"
+                        [attr.aria-label]="'groupFigures' | translate"
+                        (click)="mergeSelected()">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path [attr.d]="iconMap.layers"></path></svg
+                        ><span>{{ 'groupFigures' | translate }}</span>
+                      </button>
+                    }
+                    @if (canUngroupSelection()) {
+                      <button
+                        class="secondary-button mobile-only-action"
+                        type="button"
+                        [title]="'ungroupFigures' | translate"
+                        [attr.aria-label]="'ungroupFigures' | translate"
+                        (click)="ungroupSelected()">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path [attr.d]="iconMap.ungroup"></path></svg
+                        ><span>{{ 'ungroupFigures' | translate }}</span>
+                      </button>
+                    }
+                    <button
+                      class="secondary-button mobile-only-action"
+                      type="button"
+                      [title]="'downloadPng' | translate"
+                      [attr.aria-label]="'downloadPng' | translate"
+                      (click)="runContextAction('png')">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.download"></path></svg
+                      ><span>{{ 'downloadPng' | translate }}</span>
+                    </button>
+                    <button
+                      class="secondary-button secondary-button--danger mobile-only-action"
+                      type="button"
+                      [title]="'delete' | translate"
+                      [attr.aria-label]="'delete' | translate"
+                      (click)="removeSelected()">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="iconMap.trash"></path></svg
+                      ><span>{{ 'delete' | translate }}</span>
+                    </button>
+                  </div>
+                </div>
+                @if (multiEdit.capabilities.stroke) {
+                  <div class="property-group">
+                    <div class="property-group__title">{{ 'appearance' | translate }}</div>
+                    <div class="color-pair-controls">
                       <label class="color-chip-field">
-                        <small>{{ 'fill' | translate }}</small>
+                        <small>{{ 'stroke' | translate }}</small>
                         <input
                           class="color-swatch"
                           type="color"
-                          [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                          (input)="updateShapeText('fill', $event)" />
+                          [value]="
+                            multiEditTextValue(multiEdit, 'stroke', '#1f1f1f') === 'none'
+                              ? '#1f1f1f'
+                              : multiEditTextValue(multiEdit, 'stroke', '#1f1f1f')
+                          "
+                          (input)="updateShapeText('stroke', $event)" />
                         <input
                           class="color-opacity-input"
                           type="range"
                           min="0"
                           max="1"
                           step="0.01"
-                          [value]="shape.fillOpacity"
-                          (input)="updateShapeOpacity('fillOpacity', $event)" />
-                        <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.fillOpacity) }}%</small>
+                          [value]="multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)"
+                          (input)="updateShapeOpacity('strokeOpacity', $event)" />
+                        <small
+                          >{{ 'opacity' | translate }}
+                          {{ opacityPercent(multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)) }}%</small
+                        >
                       </label>
-                    }
+                      @if (multiEdit.capabilities.fill) {
+                        <label class="color-chip-field">
+                          <small>{{ 'fill' | translate }}</small>
+                          <input
+                            class="color-swatch"
+                            type="color"
+                            [value]="
+                              multiEditTextValue(multiEdit, 'fill', '#f3f3f3') === 'none'
+                                ? '#f3f3f3'
+                                : multiEditTextValue(multiEdit, 'fill', '#f3f3f3')
+                            "
+                            (input)="updateShapeText('fill', $event)" />
+                          <input
+                            class="color-opacity-input"
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            [value]="multiEditNumberValue(multiEdit, 'fillOpacity', 1)"
+                            (input)="updateShapeOpacity('fillOpacity', $event)" />
+                          <small
+                            >{{ 'opacity' | translate }} {{ opacityPercent(multiEditNumberValue(multiEdit, 'fillOpacity', 1)) }}%</small
+                          >
+                        </label>
+                      }
+                    </div>
+                    <label class="field field--full field--stroke-width">
+                      <span>{{ 'strokeWidth' | translate }}</span>
+                      <div class="range-field">
+                        <input
+                          type="range"
+                          min="0.02"
+                          max="8"
+                          step="0.02"
+                          [value]="multiEditNumberValue(multiEdit, 'strokeWidth', shape.strokeWidth)"
+                          (input)="updateShapeNumber('strokeWidth', $event)" />
+                        <input
+                          class="color-metric-input"
+                          type="number"
+                          min="0.02"
+                          max="8"
+                          step="0.02"
+                          [value]="multiEditNumberValue(multiEdit, 'strokeWidth', shape.strokeWidth)"
+                          (input)="updateShapeNumber('strokeWidth', $event)" />
+                      </div>
+                    </label>
                   </div>
-                  <label class="field field--full field--stroke-width">
-                    <span>{{ 'strokeWidth' | translate }}</span>
-                    <div class="range-field">
-                      <input
-                        type="range"
-                        min="0.02"
-                        max="8"
-                        step="0.02"
-                        [value]="shape.strokeWidth"
-                        (input)="updateShapeNumber('strokeWidth', $event)" />
-                      <input
-                        class="color-metric-input"
-                        type="number"
-                        min="0.02"
-                        max="8"
-                        step="0.02"
-                        [value]="shape.strokeWidth"
-                        (input)="updateShapeNumber('strokeWidth', $event)" />
+                }
+                @if (multiEdit.kind === 'mixed') {
+                  @if (multiEdit.capabilities.dimensions || multiEdit.capabilities.cornerRadius || multiEdit.capabilities.rotation) {
+                    <div class="property-group field--full">
+                      <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                      <div class="form-grid form-grid--section">
+                        @if (multiEdit.capabilities.dimensions) {
+                          <label class="field"
+                            ><span>{{ 'width' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="multiEditNumberValue(multiEdit, 'width')"
+                                (input)="updateCommonDimension('width', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="multiEditNumberValue(multiEdit, 'width')"
+                                (input)="updateCommonDimension('width', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'height' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="multiEditNumberValue(multiEdit, 'height')"
+                                (input)="updateCommonDimension('height', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="multiEditNumberValue(multiEdit, 'height')"
+                                (input)="updateCommonDimension('height', $event)" /></div
+                          ></label>
+                        }
+                        @if (multiEdit.capabilities.cornerRadius) {
+                          <label class="field field--full"
+                            ><span>{{ 'cornerRadius' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0"
+                                max="5"
+                                step="0.02"
+                                [value]="multiEditNumberValue(multiEdit, 'cornerRadius')"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /><input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.02"
+                                [value]="multiEditNumberValue(multiEdit, 'cornerRadius')"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                          ></label>
+                        }
+                        @if (multiEdit.capabilities.rotation) {
+                          <label class="field field--full"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="multiEditNumberValue(multiEdit, 'rotation')"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="multiEditNumberValue(multiEdit, 'rotation')"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                        }
+                      </div>
                     </div>
-                  </label>
-                </div>
-              }
-              @switch (shape.kind) {
-                @case ('line') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'arrow' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field field--full"
-                        ><span>{{ 'arrowDirection' | translate }}</span
-                        ><app-select
-                          [value]="lineArrowDirection(shape)"
-                          [options]="[
-                            { value: 'none', label: ('arrowDirectionNone' | translate) },
-                            { value: 'forward', label: ('arrowDirectionForward' | translate) },
-                            { value: 'backward', label: ('arrowDirectionBackward' | translate) },
-                            { value: 'both', label: ('arrowDirectionBoth' | translate) }
-                          ]"
-                          (valueChange)="setLineArrowDirection($any($event))"></app-select
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'lineMode' | translate }}</span
-                        ><app-select
-                          [value]="shape.lineMode"
-                          [options]="[
-                            { value: 'straight', label: ('lineModeStraight' | translate) },
-                            { value: 'curved', label: ('lineModeCurved' | translate) }
-                          ]"
-                          (valueChange)="setLineMode($event)"></app-select
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'lineStrokeStyle' | translate }}</span
-                        ><app-select
-                          [value]="shape.strokeStyle ?? 'solid'"
-                          [options]="[
-                            { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
-                            { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
-                            { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
-                            { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
-                            { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
-                          ]"
-                          (valueChange)="setLineStrokeStyle($event)"></app-select
-                      ></label>
-                    </div>
-                    @if (shape.arrowStart || shape.arrowEnd) {
-                      <div class="field field--full">
-                        <span>{{ 'arrowType' | translate }}</span>
-                        <div class="arrow-tip-grid">
-                          @for (arrowType of arrowTipOptions; track arrowType.id) {
-                            <button
-                              class="arrow-tip-button"
-                              type="button"
-                              [class.is-active]="shape.arrowType === arrowType.id"
-                              [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
-                              [title]="arrowTipLabel(arrowType.id)"
-                              [attr.aria-label]="arrowTipLabel(arrowType.id)"
-                              (click)="setLineArrowType(arrowType.id)">
-                              <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
-                              </svg>
-                            </button>
+                  }
+                } @else {
+                  @switch (shape.kind) {
+                    @case ('line') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'arrow' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field field--full"
+                            ><span>{{ 'arrowDirection' | translate }}</span
+                            ><app-select
+                              [value]="lineArrowDirection(shape)"
+                              [options]="[
+                                { value: 'none', label: ('arrowDirectionNone' | translate) },
+                                { value: 'forward', label: ('arrowDirectionForward' | translate) },
+                                { value: 'backward', label: ('arrowDirectionBackward' | translate) },
+                                { value: 'both', label: ('arrowDirectionBoth' | translate) }
+                              ]"
+                              (valueChange)="setLineArrowDirection($any($event))"></app-select
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'lineMode' | translate }}</span
+                            ><app-select
+                              [value]="shape.lineMode"
+                              [options]="[
+                                { value: 'straight', label: ('lineModeStraight' | translate) },
+                                { value: 'curved', label: ('lineModeCurved' | translate) }
+                              ]"
+                              (valueChange)="setLineMode($event)"></app-select
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'lineStrokeStyle' | translate }}</span
+                            ><app-select
+                              [value]="shape.strokeStyle ?? 'solid'"
+                              [options]="[
+                                { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
+                                { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
+                                { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
+                                { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
+                                { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
+                              ]"
+                              (valueChange)="setLineStrokeStyle($event)"></app-select
+                          ></label>
+                        </div>
+                        @if (shape.arrowStart || shape.arrowEnd) {
+                          <div class="field field--full">
+                            <span>{{ 'arrowType' | translate }}</span>
+                            <div class="arrow-tip-grid">
+                              @for (arrowType of arrowTipOptions; track arrowType.id) {
+                                <button
+                                  class="arrow-tip-button"
+                                  type="button"
+                                  [class.is-active]="shape.arrowType === arrowType.id"
+                                  [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
+                                  [title]="arrowTipLabel(arrowType.id)"
+                                  [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                                  (click)="setLineArrowType(arrowType.id)">
+                                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
+                                  </svg>
+                                </button>
+                              }
+                            </div>
+                          </div>
+                          <div class="field field--full">
+                            <span>{{ 'arrowAppearance' | translate }}</span>
+                            <div class="arrow-style-grid">
+                              <label class="color-chip-field">
+                                <small>{{ 'arrowColor' | translate }}</small>
+                                <input
+                                  class="color-swatch"
+                                  type="color"
+                                  [value]="shape.arrowColor"
+                                  (input)="updateShapeText('arrowColor', $event)" />
+                                <input
+                                  class="color-opacity-input"
+                                  type="range"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  [value]="shape.arrowOpacity"
+                                  (input)="updateShapeOpacity('arrowOpacity', $event)" />
+                                <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.arrowOpacity) }}%</small>
+                              </label>
+                            </div>
+                          </div>
+                          <div class="form-grid form-grid--section">
+                            <label class="field"
+                              ><span>{{ 'arrowScale' | translate }}</span>
+                              <div class="range-field">
+                                <input
+                                  type="range"
+                                  min="0.4"
+                                  max="4.5"
+                                  step="0.1"
+                                  [value]="shape.arrowScale"
+                                  (input)="updateLineArrowScale($event)" />
+                                <input
+                                  type="number"
+                                  min="0.4"
+                                  max="4.5"
+                                  step="0.1"
+                                  [value]="shape.arrowScale"
+                                  (input)="updateLineArrowScale($event)" /></div
+                            ></label>
+                            <label class="field"
+                              ><span>{{ 'arrowBendMode' | translate }}</span
+                              ><app-select
+                                [value]="shape.arrowBendMode"
+                                [options]="[
+                                  { value: 'none', label: ('arrowBendNone' | translate) },
+                                  { value: 'flex', label: ('arrowBendFlex' | translate) },
+                                  { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
+                                  { value: 'bend', label: ('arrowBendBend' | translate) }
+                                ]"
+                                (valueChange)="setLineArrowBendMode($event)"></app-select
+                            ></label>
+                          </div>
+                        }
+                      </div>
+                    }
+                    @case ('rectangle') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field"
+                            ><span>{{ 'width' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateShapeNumber('width', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateShapeNumber('width', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'height' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateShapeNumber('height', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateShapeNumber('height', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'cornerRadius' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0"
+                                max="4"
+                                step="0.1"
+                                [value]="shape.cornerRadius"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /><input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                [value]="shape.cornerRadius"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                        </div>
+                      </div>
+                    }
+                    @case ('triangle') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field"
+                            ><span>{{ 'width' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateShapeNumber('width', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateShapeNumber('width', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'height' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="20"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateShapeNumber('height', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateShapeNumber('height', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'cornerRadius' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0"
+                                max="5"
+                                step="0.02"
+                                [value]="shape.cornerRadius"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /><input
+                                type="number"
+                                min="0"
+                                max="5"
+                                step="0.02"
+                                [value]="shape.cornerRadius"
+                                (input)="updateShapeNumber('cornerRadius', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'triangleApex' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                [value]="shape.apexOffset"
+                                (input)="updateTriangleApex($event)" /><input
+                                type="number"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                [value]="shape.apexOffset"
+                                (input)="updateTriangleApex($event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                        </div>
+                      </div>
+                    }
+                    @case ('circle') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field field--full"
+                            ><span>{{ 'radius' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="12"
+                                step="0.1"
+                                [value]="shape.r"
+                                (input)="updateShapeNumber('r', $event)" /><input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                [value]="shape.r"
+                                (input)="updateShapeNumber('r', $event)" /></div
+                          ></label>
+                        </div>
+                      </div>
+                    }
+                    @case ('ellipse') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field"
+                            ><span>{{ 'rx' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="12"
+                                step="0.1"
+                                [value]="shape.rx"
+                                (input)="updateShapeNumber('rx', $event)" /><input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                [value]="shape.rx"
+                                (input)="updateShapeNumber('rx', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'ry' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.1"
+                                max="12"
+                                step="0.1"
+                                [value]="shape.ry"
+                                (input)="updateShapeNumber('ry', $event)" /><input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                [value]="shape.ry"
+                                (input)="updateShapeNumber('ry', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                        </div>
+                      </div>
+                    }
+                    @case ('text') {
+                      <div class="property-group">
+                        <div class="property-group__title">{{ 'general' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field field--full"
+                            ><span>{{ 'text' | translate }}</span
+                            ><textarea rows="3" [value]="shape.text" (input)="updateShapeText('text', $event)"></textarea>
+                          </label>
+                          <app-toggle-field
+                            class="field--full"
+                            [checked]="shape.textBox"
+                            [label]="'textContent' | translate"
+                            (checkedChange)="setTextBoxEnabled($event)"></app-toggle-field>
+                          @if (shape.textBox) {
+                            <label class="field field--full"
+                              ><span>{{ 'width' | translate }}</span>
+                              <div class="range-field">
+                                <input
+                                  type="range"
+                                  min="0.4"
+                                  max="12"
+                                  step="0.1"
+                                  [value]="shape.boxWidth"
+                                  (input)="updateShapeNumber('boxWidth', $event)" /><input
+                                  type="number"
+                                  min="0.4"
+                                  step="0.1"
+                                  [value]="shape.boxWidth"
+                                  (input)="updateShapeNumber('boxWidth', $event)" /></div
+                            ></label>
                           }
                         </div>
                       </div>
-                      <div class="field field--full">
-                        <span>{{ 'arrowAppearance' | translate }}</span>
-                        <div class="arrow-style-grid">
-                          <label class="color-chip-field">
-                            <small>{{ 'arrowColor' | translate }}</small>
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'textStyleSection' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <div class="field field--full">
+                            <span>{{ 'textFormatting' | translate }}</span>
+                            <div class="text-style-toolbar">
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textStyleBold' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'fontWeight', 'bold')"
+                                (click)="toggleTextStyle('fontWeight')">
+                                <span class="text-style-glyph text-style-glyph--bold">B</span>
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textStyleItalic' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'fontStyle', 'italic')"
+                                (click)="toggleTextStyle('fontStyle')">
+                                <span class="text-style-glyph text-style-glyph--italic">I</span>
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textStyleUnderline' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'textDecoration', 'underline')"
+                                (click)="toggleTextStyle('textDecoration')">
+                                <span class="text-style-glyph text-style-glyph--underline">U</span>
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textAlignLeft' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'textAlign', 'left')"
+                                (click)="setTextStyle('textAlign', 'left')">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path [attr.d]="iconMap.textAlignLeft"></path>
+                                </svg>
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textAlignCenter' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'textAlign', 'center')"
+                                (click)="setTextStyle('textAlign', 'center')">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path [attr.d]="iconMap.textAlignCenter"></path>
+                                </svg>
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                [title]="'textAlignRight' | translate"
+                                [class.is-active]="isTextStyleActive(shape, 'textAlign', 'right')"
+                                (click)="setTextStyle('textAlign', 'right')">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path [attr.d]="iconMap.textAlignRight"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="field field--full">
+                            <span>{{ 'fontSize' | translate }}</span>
+                            <div class="chip-row">
+                              <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.42)">
+                                S
+                              </button>
+                              <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.72)">
+                                M
+                              </button>
+                              <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(1.08)">
+                                L
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                (click)="transformSelectedText('uppercase')">
+                                AA
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                (click)="transformSelectedText('lowercase')">
+                                aa
+                              </button>
+                              <button
+                                class="secondary-button secondary-button--compact"
+                                type="button"
+                                (click)="transformSelectedText('titlecase')">
+                                Aa
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'transform' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field"
+                            ><span>{{ 'fontSize' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.2"
+                                max="2"
+                                step="0.05"
+                                [value]="shape.fontSize"
+                                (input)="updateShapeNumber('fontSize', $event)" /><input
+                                type="number"
+                                min="0.2"
+                                step="0.05"
+                                [value]="shape.fontSize"
+                                (input)="updateShapeNumber('fontSize', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                        </div>
+                        <div class="field field--full">
+                          <span>{{ 'rotationPresets' | translate }}</span>
+                          <div class="chip-row">
+                            <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-90)">
+                              -90
+                            </button>
+                            <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-45)">
+                              -45
+                            </button>
+                            <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(0)">0</button>
+                            <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(45)">
+                              45
+                            </button>
+                            <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(90)">
+                              90
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'appearance' | translate }}</div>
+                        <label class="field"
+                          ><span>{{ 'color' | translate }}</span>
+                          <div class="color-inline-field">
                             <input
                               class="color-swatch"
                               type="color"
-                              [value]="shape.arrowColor"
-                              (input)="updateShapeText('arrowColor', $event)" />
-                            <input
+                              [value]="shape.color"
+                              (input)="updateShapeText('color', $event)" /><input
                               class="color-opacity-input"
                               type="range"
                               min="0"
                               max="1"
                               step="0.01"
-                              [value]="shape.arrowOpacity"
-                              (input)="updateShapeOpacity('arrowOpacity', $event)" />
-                            <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.arrowOpacity) }}%</small>
+                              [value]="shape.colorOpacity"
+                              (input)="updateShapeOpacity('colorOpacity', $event)" /><small
+                              >{{ 'opacity' | translate }} {{ opacityPercent(shape.colorOpacity) }}%</small
+                            >
+                          </div></label
+                        >
+                      </div>
+                    }
+                    @case ('image') {
+                      <div class="property-group field--full">
+                        <div class="property-group__title">{{ 'geometry' | translate }}</div>
+                        <div class="form-grid form-grid--section">
+                          <label class="field"
+                            ><span>{{ 'width' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.4"
+                                max="16"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateImageDimension('width', $event)" /><input
+                                type="number"
+                                min="0.4"
+                                step="0.1"
+                                [value]="shape.width"
+                                (input)="updateImageDimension('width', $event)" /></div
+                          ></label>
+                          <label class="field"
+                            ><span>{{ 'height' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="0.4"
+                                max="16"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateImageDimension('height', $event)" /><input
+                                type="number"
+                                min="0.4"
+                                step="0.1"
+                                [value]="shape.height"
+                                (input)="updateImageDimension('height', $event)" /></div
+                          ></label>
+                          <label class="field field--full"
+                            ><span>{{ 'rotation' | translate }}</span>
+                            <div class="range-field">
+                              <input
+                                type="range"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /><input
+                                type="number"
+                                min="-180"
+                                max="180"
+                                step="1"
+                                [value]="shape.rotation ?? 0"
+                                (input)="updateShapeNumber('rotation', $event)" /></div
+                          ></label>
+                          <label class="field field--full">
+                            <span>{{ 'latexImageSource' | translate }}</span>
+                            <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
                           </label>
                         </div>
                       </div>
-                      <div class="form-grid form-grid--section">
-                        <label class="field"
-                          ><span>{{ 'arrowScale' | translate }}</span>
-                          <div class="range-field">
-                            <input
-                              type="range"
-                              min="0.4"
-                              max="4.5"
-                              step="0.1"
-                              [value]="shape.arrowScale"
-                              (input)="updateLineArrowScale($event)" />
-                            <input
-                              type="number"
-                              min="0.4"
-                              max="4.5"
-                              step="0.1"
-                              [value]="shape.arrowScale"
-                              (input)="updateLineArrowScale($event)" /></div
-                        ></label>
-                        <label class="field"
-                          ><span>{{ 'arrowBendMode' | translate }}</span
-                          ><app-select
-                            [value]="shape.arrowBendMode"
-                            [options]="[
-                              { value: 'none', label: ('arrowBendNone' | translate) },
-                              { value: 'flex', label: ('arrowBendFlex' | translate) },
-                              { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
-                              { value: 'bend', label: ('arrowBendBend' | translate) }
-                            ]"
-                            (valueChange)="setLineArrowBendMode($event)"></app-select
-                        ></label>
-                      </div>
                     }
-                  </div>
-                }
-                @case ('rectangle') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'geometry' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ 'width' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.2"
-                            max="20"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateShapeNumber('width', $event)" /><input
-                            type="number"
-                            min="0.2"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateShapeNumber('width', $event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ 'height' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.2"
-                            max="20"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateShapeNumber('height', $event)" /><input
-                            type="number"
-                            min="0.2"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateShapeNumber('height', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'cornerRadius' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0"
-                            max="4"
-                            step="0.1"
-                            [value]="shape.cornerRadius"
-                            (input)="updateShapeNumber('cornerRadius', $event)" /><input
-                            type="number"
-                            min="0"
-                            step="0.1"
-                            [value]="shape.cornerRadius"
-                            (input)="updateShapeNumber('cornerRadius', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'rotation' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
-                      ></label>
-                    </div>
-                  </div>
-                }
-                @case ('triangle') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'geometry' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ 'width' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.2"
-                            max="20"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateShapeNumber('width', $event)" /><input
-                            type="number"
-                            min="0.2"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateShapeNumber('width', $event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ 'height' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.2"
-                            max="20"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateShapeNumber('height', $event)" /><input
-                            type="number"
-                            min="0.2"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateShapeNumber('height', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'cornerRadius' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0"
-                            max="5"
-                            step="0.02"
-                            [value]="shape.cornerRadius"
-                            (input)="updateShapeNumber('cornerRadius', $event)" /><input
-                            type="number"
-                            min="0"
-                            max="5"
-                            step="0.02"
-                            [value]="shape.cornerRadius"
-                            (input)="updateShapeNumber('cornerRadius', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'triangleApex' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            [value]="shape.apexOffset"
-                            (input)="updateTriangleApex($event)" /><input
-                            type="number"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            [value]="shape.apexOffset"
-                            (input)="updateTriangleApex($event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'rotation' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
-                      ></label>
-                    </div>
-                  </div>
-                }
-                @case ('circle') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'geometry' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field field--full"
-                        ><span>{{ 'radius' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="12"
-                            step="0.1"
-                            [value]="shape.r"
-                            (input)="updateShapeNumber('r', $event)" /><input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            [value]="shape.r"
-                            (input)="updateShapeNumber('r', $event)" /></div
-                      ></label>
-                    </div>
-                  </div>
-                }
-                @case ('ellipse') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'geometry' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ 'rx' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="12"
-                            step="0.1"
-                            [value]="shape.rx"
-                            (input)="updateShapeNumber('rx', $event)" /><input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            [value]="shape.rx"
-                            (input)="updateShapeNumber('rx', $event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ 'ry' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="12"
-                            step="0.1"
-                            [value]="shape.ry"
-                            (input)="updateShapeNumber('ry', $event)" /><input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            [value]="shape.ry"
-                            (input)="updateShapeNumber('ry', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'rotation' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
-                      ></label>
-                    </div>
-                  </div>
-                }
-                @case ('text') {
-                  <div class="property-group">
-                    <div class="property-group__title">{{ 'general' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field field--full"
-                        ><span>{{ 'text' | translate }}</span
-                        ><textarea rows="3" [value]="shape.text" (input)="updateShapeText('text', $event)"></textarea>
-                      </label>
-                      <app-toggle-field
-                        class="field--full"
-                        [checked]="shape.textBox"
-                        [label]="'textContent' | translate"
-                        (checkedChange)="setTextBoxEnabled($event)"></app-toggle-field>
-                      @if (shape.textBox) {
-                        <label class="field field--full"
-                          ><span>{{ 'width' | translate }}</span>
-                          <div class="range-field">
-                            <input
-                              type="range"
-                              min="0.4"
-                              max="12"
-                              step="0.1"
-                              [value]="shape.boxWidth"
-                              (input)="updateShapeNumber('boxWidth', $event)" /><input
-                              type="number"
-                              min="0.4"
-                              step="0.1"
-                              [value]="shape.boxWidth"
-                              (input)="updateShapeNumber('boxWidth', $event)" /></div
-                        ></label>
-                      }
-                    </div>
-                  </div>
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'textStyleSection' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <div class="field field--full">
-                        <span>{{ 'textFormatting' | translate }}</span>
-                        <div class="text-style-toolbar">
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textStyleBold' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'fontWeight', 'bold')"
-                            (click)="toggleTextStyle('fontWeight')">
-                            <span class="text-style-glyph text-style-glyph--bold">B</span>
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textStyleItalic' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'fontStyle', 'italic')"
-                            (click)="toggleTextStyle('fontStyle')">
-                            <span class="text-style-glyph text-style-glyph--italic">I</span>
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textStyleUnderline' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'textDecoration', 'underline')"
-                            (click)="toggleTextStyle('textDecoration')">
-                            <span class="text-style-glyph text-style-glyph--underline">U</span>
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textAlignLeft' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'textAlign', 'left')"
-                            (click)="setTextStyle('textAlign', 'left')">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path [attr.d]="iconMap.textAlignLeft"></path>
-                            </svg>
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textAlignCenter' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'textAlign', 'center')"
-                            (click)="setTextStyle('textAlign', 'center')">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path [attr.d]="iconMap.textAlignCenter"></path>
-                            </svg>
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            [title]="'textAlignRight' | translate"
-                            [class.is-active]="isTextStyleActive(shape, 'textAlign', 'right')"
-                            (click)="setTextStyle('textAlign', 'right')">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path [attr.d]="iconMap.textAlignRight"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="field field--full">
-                        <span>{{ 'fontSize' | translate }}</span>
-                        <div class="chip-row">
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.42)">
-                            S
-                          </button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(0.72)">
-                            M
-                          </button>
-                          <button class="secondary-button secondary-button--compact" type="button" (click)="setTextPresetSize(1.08)">
-                            L
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            (click)="transformSelectedText('uppercase')">
-                            AA
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            (click)="transformSelectedText('lowercase')">
-                            aa
-                          </button>
-                          <button
-                            class="secondary-button secondary-button--compact"
-                            type="button"
-                            (click)="transformSelectedText('titlecase')">
-                            Aa
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'transform' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ 'fontSize' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.2"
-                            max="2"
-                            step="0.05"
-                            [value]="shape.fontSize"
-                            (input)="updateShapeNumber('fontSize', $event)" /><input
-                            type="number"
-                            min="0.2"
-                            step="0.05"
-                            [value]="shape.fontSize"
-                            (input)="updateShapeNumber('fontSize', $event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ 'rotation' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
-                      ></label>
-                    </div>
-                    <div class="field field--full">
-                      <span>{{ 'rotationPresets' | translate }}</span>
-                      <div class="chip-row">
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-90)">-90</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(-45)">-45</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(0)">0</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(45)">45</button>
-                        <button class="secondary-button secondary-button--compact" type="button" (click)="setTextRotation(90)">90</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'appearance' | translate }}</div>
-                    <label class="field"
-                      ><span>{{ 'color' | translate }}</span>
-                      <div class="color-inline-field">
-                        <input class="color-swatch" type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" /><input
-                          class="color-opacity-input"
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          [value]="shape.colorOpacity"
-                          (input)="updateShapeOpacity('colorOpacity', $event)" /><small
-                          >{{ 'opacity' | translate }} {{ opacityPercent(shape.colorOpacity) }}%</small
-                        >
-                      </div></label
-                    >
-                  </div>
-                }
-                @case ('image') {
-                  <div class="property-group field--full">
-                    <div class="property-group__title">{{ 'geometry' | translate }}</div>
-                    <div class="form-grid form-grid--section">
-                      <label class="field"
-                        ><span>{{ 'width' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.4"
-                            max="16"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateImageDimension('width', $event)" /><input
-                            type="number"
-                            min="0.4"
-                            step="0.1"
-                            [value]="shape.width"
-                            (input)="updateImageDimension('width', $event)" /></div
-                      ></label>
-                      <label class="field"
-                        ><span>{{ 'height' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="0.4"
-                            max="16"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateImageDimension('height', $event)" /><input
-                            type="number"
-                            min="0.4"
-                            step="0.1"
-                            [value]="shape.height"
-                            (input)="updateImageDimension('height', $event)" /></div
-                      ></label>
-                      <label class="field field--full"
-                        ><span>{{ 'rotation' | translate }}</span>
-                        <div class="range-field">
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /><input
-                            type="number"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            [value]="shape.rotation ?? 0"
-                            (input)="updateShapeNumber('rotation', $event)" /></div
-                      ></label>
-                      <label class="field field--full">
-                        <span>{{ 'latexImageSource' | translate }}</span>
-                        <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
-                      </label>
-                    </div>
-                  </div>
+                  }
                 }
               }
             } @else {

@@ -116,9 +116,24 @@ export interface HandleDescriptor {
   readonly variant?: 'endpoint' | 'anchor' | 'ghost-anchor' | 'arrow-control' | 'rotate' | 'corner-radius';
 }
 
-export interface HomogeneousSelectionInfo {
-  readonly kind: CanvasShape['kind'];
+export interface MultiEditCapabilities {
+  readonly stroke: boolean;
+  readonly fill: boolean;
+  readonly dimensions: boolean;
+  readonly cornerRadius: boolean;
+  readonly triangleApex: boolean;
+  readonly circleRadius: boolean;
+  readonly ellipseRadii: boolean;
+  readonly rotation: boolean;
+  readonly line: boolean;
+  readonly text: boolean;
+  readonly image: boolean;
+}
+
+export interface MultiEditSelectionInfo {
+  readonly kind: CanvasShape['kind'] | 'mixed';
   readonly shapes: readonly CanvasShape[];
+  readonly capabilities: MultiEditCapabilities;
 }
 
 export interface MoveInteractionState {

@@ -59,6 +59,7 @@ import {
   EDITOR_TEXT_SYMBOL_POPOVER_METRICS,
   EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT,
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
+  EDITOR_VIEWPORT_CENTER_EPSILON,
   EDITOR_VIEWPORT_FALLBACK_WIDTH,
   EDITOR_WHEEL_LINE_HEIGHT_PX,
   EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK,
@@ -106,7 +107,6 @@ import {
   type ExportMode,
   type ExportSvgDocument,
   type HandleDescriptor,
-  type HomogeneousSelectionInfo,
   type ImageDimensionKey,
   type ImageTextKey,
   type InlineTextEditorState,
@@ -122,6 +122,7 @@ import {
   type MinimapOverview,
   type MinimapRect,
   type MinimapShape,
+  type MultiEditSelectionInfo,
   type NotificationTone,
   type PinchZoomState,
   type PreferenceBooleanKey,
@@ -552,23 +553,28 @@ export class EditorPageComponent {
   });
   readonly selectionModifierPressed = computed(() => this.shiftPressed() || this.controlPressed() || this.metaPressed());
   readonly selectedTable = computed<TableSelectionInfo | null>(() => getTableSelectionInfo(this.selectedShapes()));
-  readonly multiEditSelection = computed<HomogeneousSelectionInfo | null>(() => {
+  readonly multiEditSelection = computed<MultiEditSelectionInfo | null>(() => {
     if (this.selectionCount() < 2 || this.selectedTable()) {
       return null;
     }
 
     const shapes = this.selectedShapes();
     const firstShape = shapes[0];
-    if (!firstShape || shapes.some((shape) => shape.kind !== firstShape.kind)) {
+    if (!firstShape) {
       return null;
     }
 
     return {
-      kind: firstShape.kind,
-      shapes
+      kind: this.multiEditSelectionKind(shapes),
+      shapes,
+      capabilities: this.multiEditCapabilities(shapes)
     };
   });
   readonly multiEditShape = computed<CanvasShape | null>(() => this.multiEditSelection()?.shapes[0] ?? null);
+  readonly isViewportCentered = computed(() => {
+    const viewportCenter = this.viewportCenter();
+    return Math.abs(viewportCenter.x) <= EDITOR_VIEWPORT_CENTER_EPSILON && Math.abs(viewportCenter.y) <= EDITOR_VIEWPORT_CENTER_EPSILON;
+  });
   readonly selectedMergeIds = computed(() =>
     Array.from(
       new Set(
@@ -1148,6 +1154,20 @@ export class EditorPageComponent {
 
   localizedShapeKind(kind: CanvasShape['kind']): string {
     return this.languageService.localizedShapeKind(kind);
+  }
+
+  localizedMultiEditKind(selection: MultiEditSelectionInfo): string {
+    return selection.kind === 'mixed' ? this.t('mixedSelection') : this.localizedShapeKind(selection.kind);
+  }
+
+  multiEditTextValue(selection: MultiEditSelectionInfo, key: string, fallback: string = ''): string {
+    const value = this.multiEditValue(selection, key);
+    return typeof value === 'string' ? value : fallback;
+  }
+
+  multiEditNumberValue(selection: MultiEditSelectionInfo, key: string, fallback: number = 0): number {
+    const value = this.multiEditValue(selection, key);
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
   }
 
   openFigureSearch(): void {
@@ -2613,6 +2633,36 @@ export class EditorPageComponent {
     });
   }
 
+  updateCommonDimension(key: ImageDimensionKey, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+
+    this.patchInspectorSelection((shape) => {
+      if (shape.kind === 'image') {
+        const aspectRatio = shape.aspectRatio || (shape.height !== 0 ? shape.width / shape.height : 1);
+        return key === 'width'
+          ? ({
+              ...shape,
+              width: value,
+              height: Math.max(value / Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
+            } as CanvasShape)
+          : ({
+              ...shape,
+              height: value,
+              width: Math.max(value * Math.max(aspectRatio, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
+            } as CanvasShape);
+      }
+
+      if (shape.kind === 'rectangle' || shape.kind === 'triangle') {
+        return { ...shape, [key]: value } as CanvasShape;
+      }
+
+      return shape;
+    });
+  }
+
   async onImageFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -2792,6 +2842,41 @@ export class EditorPageComponent {
     }
 
     this.store.patchSelectedShape(mutator);
+  }
+
+  private multiEditSelectionKind(shapes: readonly CanvasShape[]): MultiEditSelectionInfo['kind'] {
+    const firstShape = shapes[0];
+    return firstShape && shapes.every((shape) => shape.kind === firstShape.kind) ? firstShape.kind : 'mixed';
+  }
+
+  private multiEditCapabilities(shapes: readonly CanvasShape[]): MultiEditSelectionInfo['capabilities'] {
+    const allNonText = shapes.every((shape) => shape.kind !== 'text');
+    const allFillable = shapes.every((shape) => shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse');
+    const allDimensioned = shapes.every((shape) => shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'image');
+    const allRounded = shapes.every((shape) => shape.kind === 'rectangle' || shape.kind === 'triangle');
+    const allRotatable = shapes.every((shape) => shape.kind !== 'line' && shape.kind !== 'circle');
+    const allLines = shapes.every((shape) => shape.kind === 'line');
+    const allText = shapes.every((shape) => shape.kind === 'text');
+    const allImages = shapes.every((shape) => shape.kind === 'image');
+
+    return {
+      stroke: allNonText,
+      fill: allFillable,
+      dimensions: allDimensioned,
+      cornerRadius: allRounded,
+      triangleApex: shapes.every((shape) => shape.kind === 'triangle'),
+      circleRadius: shapes.every((shape) => shape.kind === 'circle'),
+      ellipseRadii: shapes.every((shape) => shape.kind === 'ellipse'),
+      rotation: allRotatable,
+      line: allLines,
+      text: allText,
+      image: allImages
+    };
+  }
+
+  private multiEditValue(selection: MultiEditSelectionInfo, key: string): unknown {
+    const shape = selection.shapes.find((entry) => key in entry);
+    return shape ? (shape as unknown as Record<string, unknown>)[key] : null;
   }
 
   private textBoxAnchorX(shape: TextCanvasShape, textBoxEnabled: boolean): number {
