@@ -69,10 +69,7 @@ const INLINE_MATH_COMMANDS = [
   'e'
 ] as const;
 const INLINE_MATH_COMMAND_BY_NAME = new Map<string, string>(
-  INLINE_MATH_COMMANDS.map((command) => [
-    command,
-    command === 'e' ? String.raw`\ensuremath{\mathrm{e}}` : `\\ensuremath{\\${command}}`
-  ])
+  INLINE_MATH_COMMANDS.map((command) => [command, command === 'e' ? String.raw`\ensuremath{\mathrm{e}}` : `\\ensuremath{\\${command}}`])
 );
 const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})`, 'g');
 
@@ -81,21 +78,16 @@ const formatNumber = (value: number): string => {
   return rounded.toString();
 };
 
-const formatPoint = (point: { readonly x: number; readonly y: number }): string =>
-  `(${formatNumber(point.x)}, ${formatNumber(point.y)})`;
+const formatPoint = (point: { readonly x: number; readonly y: number }): string => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`;
 
 const ptPerCm = 28.45274;
 
-const renderedStrokeWidth = (strokeWidth: number): number =>
-  Math.max(strokeWidth * DEFAULT_EDITOR_SCALE * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+const renderedStrokeWidth = (strokeWidth: number): number => Math.max(strokeWidth * DEFAULT_EDITOR_SCALE * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
 
 const arrowDimensionPt = (base: number, shape: LineShape, dimensionScale: number): number =>
   (base * renderedStrokeWidth(shape.strokeWidth) * shape.arrowScale * dimensionScale * ptPerCm) / DEFAULT_EDITOR_SCALE;
 
-const rotateAroundOption = (
-  rotation: number | undefined,
-  center: { readonly x: number; readonly y: number }
-): string | null => {
+const rotateAroundOption = (rotation: number | undefined, center: { readonly x: number; readonly y: number }): string | null => {
   const normalizedRotation = rotation ?? 0;
   return normalizedRotation === 0 ? null : `rotate around={${formatNumber(normalizedRotation)}:${formatPoint(center)}}`;
 };
@@ -111,12 +103,7 @@ const wrapInlineMathCommands = (text: string): string => {
       return;
     }
 
-    result += inMathMode
-      ? buffer
-      : buffer.replaceAll(
-          INLINE_MATH_COMMAND_REGEX,
-          (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command
-        );
+    result += inMathMode ? buffer : buffer.replaceAll(INLINE_MATH_COMMAND_REGEX, (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command);
     buffer = '';
   };
 
@@ -298,11 +285,7 @@ const isStrokedArrowTip = (shape: LineShape): boolean =>
   shape.arrowType === 'straight-barb';
 
 const transparentArrowEntries = (shape: LineShape): string[] => {
-  const entries = [
-    `draw=${shape.arrowColor}`,
-    `line width=${formatNumber(shape.strokeWidth)}pt`,
-    `fill opacity=${formatNumber(shape.arrowOpacity)}`
-  ];
+  const entries = [`draw=${shape.arrowColor}`, `line width=${formatNumber(shape.strokeWidth)}pt`, `fill opacity=${formatNumber(shape.arrowOpacity)}`];
 
   if (isStrokedArrowTip(shape)) {
     entries.push(`draw opacity=${formatNumber(shape.arrowOpacity)}`);
@@ -437,10 +420,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
     nodeOptions.push(`rotate=${formatNumber(shape.rotation)}`);
   }
 
-  const fontTokens = [
-    shape.fontWeight === 'bold' ? String.raw`\bfseries` : '',
-    shape.fontStyle === 'italic' ? String.raw`\itshape` : ''
-  ].filter(Boolean);
+  const fontTokens = [shape.fontWeight === 'bold' ? String.raw`\bfseries` : '', shape.fontStyle === 'italic' ? String.raw`\itshape` : ''].filter(Boolean);
 
   const normalizedText = wrapInlineMathCommands(shape.text);
   const baseText = shape.textDecoration === 'underline' ? String.raw`\underline{${normalizedText}}` : normalizedText;
@@ -470,9 +450,7 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
       `line width=${formatNumber(shape.strokeWidth)}pt`
     ];
     if ((shape.rotation ?? 0) !== 0) {
-      drawOptions.push(
-        `rotate around={${formatNumber(shape.rotation ?? 0)}:(${formatNumber(centerX)}, ${formatNumber(centerY)})}`
-      );
+      drawOptions.push(`rotate around={${formatNumber(shape.rotation ?? 0)}:(${formatNumber(centerX)}, ${formatNumber(centerY)})}`);
     }
     lines.push(
       String.raw`\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`
@@ -506,12 +484,8 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
   const imports = [
     String.raw`\usepackage{tikz}`,
-    ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd))
-      ? [String.raw`\usetikzlibrary{arrows.meta}`]
-      : []),
-    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none')
-      ? [String.raw`\usetikzlibrary{bending}`]
-      : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? [String.raw`\usetikzlibrary{arrows.meta}`] : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none') ? [String.raw`\usetikzlibrary{bending}`] : []),
     ...(scene.shapes.some((shape) => shape.kind === 'image') ? [String.raw`\usepackage{graphicx}`] : []),
     ...(context.colorMode === 'define-colors'
       ? Array.from(context.colorMap.entries()).map(([hex, name]) => String.raw`\definecolor{${name}}{HTML}{${hex}}`)
@@ -520,23 +494,14 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
 
   return {
     imports: imports.join('\n'),
-    code: [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join(
-      '\n'
-    )
+    code: [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join('\n')
   };
 };
 
-export const sceneToTikz = (scene: TikzScene, options: TikzExportOptions = {}): string =>
-  sceneToTikzBundle(scene, options).code;
+export const sceneToTikz = (scene: TikzScene, options: TikzExportOptions = {}): string => sceneToTikzBundle(scene, options).code;
 
 export const sceneToStandaloneDocument = (scene: TikzScene, options: TikzExportOptions = {}): string =>
   (() => {
     const bundle = sceneToTikzBundle(scene, options);
-    return [
-      String.raw`\documentclass[tikz]{standalone}`,
-      bundle.imports,
-      String.raw`\begin{document}`,
-      bundle.code,
-      String.raw`\end{document}`
-    ].join('\n');
+    return [String.raw`\documentclass[tikz]{standalone}`, bundle.imports, String.raw`\begin{document}`, bundle.code, String.raw`\end{document}`].join('\n');
   })();

@@ -1,23 +1,12 @@
-<div
-  class="regular-polygon-dialog-backdrop"
-  tabindex="-1"
-  (click)="cancelDialog.emit()"
-  (keydown)="onBackdropKeydown($event)">
-  <section
-    class="regular-polygon-dialog"
-    (click)="$event.stopPropagation()"
-    (keydown)="onDialogKeydown($event)">
+<div class="regular-polygon-dialog-backdrop" tabindex="-1" (click)="cancelDialog.emit()" (keydown)="onBackdropKeydown($event)">
+  <section class="regular-polygon-dialog" (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
     <header class="regular-polygon-dialog__header">
       <div class="regular-polygon-dialog__copy">
         <p>{{ quickPickerLabel() }}</p>
         <h2>{{ title() }}</h2>
         <span>{{ description() }}</span>
       </div>
-      <button
-        class="regular-polygon-dialog__close"
-        type="button"
-        (click)="cancelDialog.emit()"
-        [attr.aria-label]="cancelLabel()">
+      <button class="regular-polygon-dialog__close" type="button" (click)="cancelDialog.emit()" [attr.aria-label]="cancelLabel()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="closeIconPath"></path>
         </svg>
@@ -49,35 +38,19 @@
 
       <label class="regular-polygon-dialog__field">
         <span>{{ sidesLabel() }}</span>
-        <input
-          type="range"
-          [min]="minSides()"
-          [max]="maxSides()"
-          [value]="selectedSides()"
-          (input)="updateSides($event)" />
+        <input type="range" [min]="minSides()" [max]="maxSides()" [value]="selectedSides()" (input)="updateSides($event)" />
       </label>
       <label class="regular-polygon-dialog__field">
         <span>{{ sidesLabel() }}</span>
-        <input
-          type="number"
-          [min]="minSides()"
-          [max]="maxSides()"
-          [value]="selectedSides()"
-          (input)="updateSides($event)" />
+        <input type="number" [min]="minSides()" [max]="maxSides()" [value]="selectedSides()" (input)="updateSides($event)" />
       </label>
     </div>
 
     <footer class="regular-polygon-dialog__footer">
-      <button
-        class="regular-polygon-dialog__button regular-polygon-dialog__button--secondary"
-        type="button"
-        (click)="cancelDialog.emit()">
+      <button class="regular-polygon-dialog__button regular-polygon-dialog__button--secondary" type="button" (click)="cancelDialog.emit()">
         {{ cancelLabel() }}
       </button>
-      <button
-        class="regular-polygon-dialog__button regular-polygon-dialog__button--primary"
-        type="button"
-        (click)="submit()">
+      <button class="regular-polygon-dialog__button regular-polygon-dialog__button--primary" type="button" (click)="submit()">
         {{ confirmLabel() }}
       </button>
     </footer>

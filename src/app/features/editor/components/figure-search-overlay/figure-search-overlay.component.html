@@ -1,22 +1,10 @@
-<div
-  class="figure-search-backdrop"
-  tabindex="-1"
-  (click)="closeSearch.emit()"
-  (keydown)="onBackdropKeydown($event)">
-  <section
-    class="figure-search-panel"
-    (click)="$event.stopPropagation()"
-    (keydown)="onKeydown($event)">
+<div class="figure-search-backdrop" tabindex="-1" (click)="closeSearch.emit()" (keydown)="onBackdropKeydown($event)">
+  <section class="figure-search-panel" (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
     <label class="figure-search-field">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconPath('search')"></path>
       </svg>
-      <input
-        #searchInput
-        type="search"
-        [value]="query()"
-        [placeholder]="placeholder()"
-        (input)="updateQuery($any($event.target).value)" />
+      <input #searchInput type="search" [value]="query()" [placeholder]="placeholder()" (input)="updateQuery($any($event.target).value)" />
       <kbd>{{ shortcutLabel() }}</kbd>
     </label>
 

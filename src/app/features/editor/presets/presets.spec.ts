@@ -41,9 +41,7 @@ describe('presets', () => {
       })
     );
 
-    const texts = localized
-      .filter((shape): shape is Extract<(typeof localized)[number], { kind: 'text' }> => shape.kind === 'text')
-      .map((shape) => shape.text);
+    const texts = localized.filter((shape): shape is Extract<(typeof localized)[number], { kind: 'text' }> => shape.kind === 'text').map((shape) => shape.text);
 
     expect(texts).toEqual(['Pendiente', 'En curso', 'Hecho']);
   });
@@ -57,38 +55,13 @@ describe('presets', () => {
     const stickyNotePreset = objectPresets.find((preset) => preset.id === 'sticky-note');
     const documentPreset = objectPresets.find((preset) => preset.id === 'document');
 
-    expect(browserPreset?.shapes.map((shape) => shape.kind)).toEqual([
-      'rectangle',
-      'line',
-      'circle',
-      'circle',
-      'circle',
-      'rectangle'
-    ]);
+    expect(browserPreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'circle', 'circle', 'circle', 'rectangle']);
     expect(phonePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'rectangle', 'rectangle', 'line']);
     expect(folderPreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'rectangle', 'text']);
     expect(messagePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'line', 'text']);
-    expect(kanbanPreset?.shapes.map((shape) => shape.kind)).toEqual([
-      'rectangle',
-      'line',
-      'line',
-      'line',
-      'text',
-      'text',
-      'text'
-    ]);
+    expect(kanbanPreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'line', 'line', 'text', 'text', 'text']);
     expect(stickyNotePreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'line', 'text']);
-    expect(documentPreset?.shapes.map((shape) => shape.kind)).toEqual([
-      'rectangle',
-      'rectangle',
-      'line',
-      'line',
-      'line',
-      'line',
-      'line',
-      'line',
-      'line'
-    ]);
+    expect(documentPreset?.shapes.map((shape) => shape.kind)).toEqual(['rectangle', 'rectangle', 'line', 'line', 'line', 'line', 'line', 'line', 'line']);
 
     const folderLabel = folderPreset?.shapes.find((shape) => shape.kind === 'text');
     expect(folderLabel?.kind).toBe('text');
@@ -101,9 +74,7 @@ describe('presets', () => {
       expect(folderLabel.y).toBeGreaterThan(-1.3);
     }
 
-    const browserAddressBar = browserPreset?.shapes.find(
-      (shape) => shape.kind === 'rectangle' && shape.name === 'Browser address bar'
-    );
+    const browserAddressBar = browserPreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Browser address bar');
     expect(browserAddressBar?.kind).toBe('rectangle');
     if (browserAddressBar?.kind === 'rectangle') {
       expect(browserAddressBar.width).toBe(4);
@@ -121,14 +92,10 @@ describe('presets', () => {
     const phoneNotch = phonePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Phone notch');
     expect(phoneNotch?.kind).toBeUndefined();
 
-    const phoneIsland = phonePreset?.shapes.find(
-      (shape) => shape.kind === 'rectangle' && shape.name === 'Phone island'
-    );
+    const phoneIsland = phonePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Phone island');
     expect(phoneIsland?.kind).toBe('rectangle');
 
-    const stickyNoteLabel = stickyNotePreset?.shapes.find(
-      (shape) => shape.kind === 'text' && shape.name === 'Note label'
-    );
+    const stickyNoteLabel = stickyNotePreset?.shapes.find((shape) => shape.kind === 'text' && shape.name === 'Note label');
     expect(stickyNoteLabel?.kind).toBe('text');
     if (stickyNoteLabel?.kind === 'text') {
       expect(stickyNoteLabel.textBox).toBe(true);
@@ -145,9 +112,7 @@ describe('presets', () => {
       expect(messageLabel.x).toBe(-1.45);
     }
 
-    const documentFold = documentPreset?.shapes.find(
-      (shape) => shape.kind === 'rectangle' && shape.name === 'Document fold'
-    );
+    const documentFold = documentPreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Document fold');
     expect(documentFold?.kind).toBe('rectangle');
   });
 
@@ -166,9 +131,7 @@ describe('presets', () => {
       expect(tableFrame.table?.columns).toBe(3);
     }
 
-    const swimlaneFrame = swimlanePreset?.shapes.find(
-      (shape) => shape.kind === 'rectangle' && shape.name === 'Swimlane frame'
-    );
+    const swimlaneFrame = swimlanePreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Swimlane frame');
     expect(swimlaneFrame?.kind).toBe('rectangle');
     if (swimlaneFrame?.kind === 'rectangle') {
       expect(swimlaneFrame.x).toBe(-3.8);

@@ -1,16 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  ElementRef,
-  inject,
-  signal,
-  viewChild
-} from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
 import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
@@ -19,37 +9,62 @@ import {
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_FONT_SIZE,
+  EDITOR_COARSE_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
+  EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_CANVAS_DEFAULT_HEIGHT,
   EDITOR_CANVAS_MIN_HEIGHT,
   EDITOR_CANVAS_MIN_WIDTH,
+  EDITOR_COLLAPSED_SIDEBAR_SIZE,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
+  EDITOR_CONTEXT_MENU_VIEWPORT_PADDING,
+  EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR,
+  EDITOR_DEFAULT_SLIDER_RANGE,
   EDITOR_IMAGE_ASPECT_RATIO_EPSILON,
   EDITOR_IMAGE_INSERT_MAX_RENDERED_LONG_EDGE_PX,
   EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX,
   EDITOR_IMAGE_INSERT_VIEWPORT_RATIO,
+  EDITOR_INLINE_TEXT_EDITOR_METRICS,
+  EDITOR_KEYBOARD_NAVIGATION_BASE_SPEED,
+  EDITOR_KEYBOARD_NAVIGATION_FAST_MULTIPLIER,
+  EDITOR_KEYBOARD_NAVIGATION_SNAP_SPEED_MULTIPLIER,
+  EDITOR_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
+  EDITOR_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_LEFT_SIDEBAR_MIN_WIDTH,
   EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT,
+  EDITOR_LINE_HIT_STROKE_EXTRA_PX,
+  EDITOR_LINE_HIT_STROKE_MIN_PX,
   EDITOR_LINE_ANCHOR_DECIMALS,
   EDITOR_LINE_ARROW_SCALE_MAX,
   EDITOR_LINE_ARROW_SCALE_MIN,
+  EDITOR_LINE_MARQUEE_TOLERANCE_PX,
   EDITOR_MOBILE_BREAKPOINT_PX,
   EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
+  EDITOR_NOTIFICATION_DURATION_MS,
   EDITOR_PASTE_OFFSET_STEP,
   EDITOR_PNG_EXPORT_SCALE,
   EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
   EDITOR_RIGHT_SIDEBAR_DESKTOP_STACKED_MIN_HEIGHT,
   EDITOR_RIGHT_SIDEBAR_MIN_WIDTH,
   EDITOR_RIGHT_SIDEBAR_MOBILE_MIN_HEIGHT,
+  EDITOR_ROTATION_SNAP_STEP_DEGREES,
   EDITOR_SCALE_DECIMAL_FACTOR,
   EDITOR_SCALE_MAX,
   EDITOR_SCALE_MIN,
+  EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER,
+  EDITOR_SELECTION_ROTATE_HANDLE_DISTANCE_FACTOR,
+  EDITOR_SELECTION_ROTATE_HANDLE_MIN_DISTANCE,
+  EDITOR_SIDEBAR_RESIZE_LIMITS,
   EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX,
   EDITOR_STORAGE_KEYS,
+  EDITOR_TEXT_SYMBOL_POPOVER_METRICS,
   EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT,
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   EDITOR_VIEWPORT_FALLBACK_WIDTH,
   EDITOR_WHEEL_LINE_HEIGHT_PX,
   EDITOR_WHEEL_PAGE_HEIGHT_FALLBACK,
+  EDITOR_WHEEL_ROTATION_MAX_STEP_DEGREES,
+  EDITOR_WHEEL_ROTATION_MIN_STEP_DEGREES,
+  EDITOR_WHEEL_ROTATION_SCALE,
   EDITOR_WHEEL_ZOOM_SENSITIVITY,
   EDITOR_ZOOM_STEP,
   FREEHAND_POINT_MIN_DISTANCE,
@@ -76,13 +91,13 @@ import {
   TEXT_MIN_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
+import type { Axis } from './editor-page.types';
 import {
   type ArrowControlHandle,
   type ArrowDirection,
   type ArrowEndpoint,
   type ArrowScaleKind,
   type ArrowTipOption,
-  Axis,
   type ClipboardShapeSet,
   type CodeHighlightTheme,
   type ContextAction,
@@ -150,6 +165,7 @@ import { AppSelectComponent } from '../../../../shared/app-select/app-select.com
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
+import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import {
   decodeSharePayload,
   encodeSharePayload,
@@ -193,19 +209,11 @@ import {
   pressedModifierFromKey,
   toolIdFromShortcutKey
 } from '../../utils/editor-keyboard.utils';
-import {
-  buildTablePresetShapes,
-  localizePresetCanvasShapes as localizePresetTemplateShapes
-} from '../../presets/presets';
+import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets/presets';
 import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
-import {
-  DEFAULT_TABLE_DIMENSIONS,
-  type TableDialogState,
-  type TableDimensions,
-  type TableSelectionInfo
-} from '../../models/table.models';
+import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
   REGULAR_POLYGON_MAX_SIDES,
@@ -226,13 +234,7 @@ import {
 } from '../../models/graph.models';
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG } from '../../config/latex-export.config';
-import {
-  buildTableShapes,
-  getTableSelectionInfo,
-  normalizeTableDimensions,
-  remapStructuralShapeIds,
-  tableSizeLabel
-} from '../../utils/table.utils';
+import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
 import type {
   ArrowMarkerGeometry,
   ArrowTipKind,
@@ -264,8 +266,6 @@ import {
   maxRectangleCornerRadius as maxRectangleCornerRadiusUtil,
   maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
-  rotatedEllipseBounds as rotatedEllipseBoundsUtil,
-  rotatedRectangleBounds as rotatedRectangleBoundsUtil,
   rotatePointAround as rotatePointAroundUtil,
   rotateShapeAround as rotateShapeAroundUtil,
   shapeBounds as shapeBoundsUtil,
@@ -297,7 +297,8 @@ interface LineAttachmentCandidate {
     GraphDialogComponent,
     FigureSearchOverlayComponent,
     AppSelectComponent,
-    ToggleFieldComponent
+    ToggleFieldComponent,
+    EditorTranslatePipe
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
@@ -314,66 +315,6 @@ interface LineAttachmentCandidate {
   }
 })
 export class EditorPageComponent {
-  private static readonly themeToggleCooldownMs = EDITOR_THEME_TOGGLE_COOLDOWN_MS;
-  private static readonly inlineTextEditorMetrics = {
-    minFontSize: 14,
-    minPaddingX: 6,
-    minPaddingY: 4,
-    minBoxWidth: 56,
-    minLineWidth: 36,
-    characterWidthFactor: 0.56,
-    minLineWidthFactor: 1.4,
-    lineHeightFactor: 1.08
-  } as const;
-  private static readonly textSymbolPopoverMetrics = {
-    viewportWidthFallback: 1280,
-    viewportHeightFallback: 800,
-    maxWidth: 420,
-    minWidth: 280,
-    preferredHeight: 420,
-    minHeight: 220,
-    edgePadding: 12,
-    offset: 8,
-    openUpwardThreshold: 260
-  } as const;
-  private static readonly selectionHandleSizeByPointer = {
-    coarse: 18,
-    fine: 10
-  } as const;
-  private static readonly cornerRadiusHandleInsetFactor = 1.65;
-  private static readonly contextMenuViewportPadding = 8;
-  private static readonly selectionRotateHandleDistanceFactor = 3.2;
-  private static readonly selectionRotateHandleMinDistance = 0.65;
-  private static readonly rotationSnapStepDegrees = 15;
-  private static readonly keyboardNavigationBaseSpeed = 100;
-  private static readonly keyboardNavigationSnapSpeedMultiplier = 200;
-  private static readonly keyboardNavigationFastMultiplier = 4;
-  private static readonly wheelRotationScale = 0.04;
-  private static readonly wheelRotationMinStepDegrees = 3;
-  private static readonly wheelRotationMaxStepDegrees = 18;
-  private static readonly lineHitStrokeExtraPx = 10;
-  private static readonly lineHitStrokeMinPx = 14;
-  private static readonly lineAttachmentSnapRadiusPx = 14;
-  private static readonly coarseLineAttachmentSnapRadiusPx = 28;
-  private static readonly lineAttachmentPreviewRadiusPx = 44;
-  private static readonly coarseLineAttachmentPreviewRadiusPx = 72;
-  private static readonly lineMarqueeTolerancePx = 6;
-  private static readonly sidebarResizeLimits = {
-    mobileMaxHeight: 640,
-    leftMinWidth: 220,
-    leftMaxWidth: 420,
-    rightMinWidth: 260,
-    rightMaxWidth: 460
-  } as const;
-  private static readonly collapsedSidebarSize = {
-    desktopWidth: 0,
-    mobileHeight: 56
-  } as const;
-  private static readonly defaultSliderRange = {
-    min: -20,
-    max: 20
-  } as const;
-  private static readonly notificationDurationMs = 2400;
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
   private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
@@ -609,9 +550,7 @@ export class EditorPageComponent {
     }
     return `${this.selectionCount()} ${this.t('objects').toLowerCase()}`;
   });
-  readonly selectionModifierPressed = computed(
-    () => this.shiftPressed() || this.controlPressed() || this.metaPressed()
-  );
+  readonly selectionModifierPressed = computed(() => this.shiftPressed() || this.controlPressed() || this.metaPressed());
   readonly selectedTable = computed<TableSelectionInfo | null>(() => getTableSelectionInfo(this.selectedShapes()));
   readonly multiEditSelection = computed<HomogeneousSelectionInfo | null>(() => {
     if (this.selectionCount() < 2 || this.selectedTable()) {
@@ -640,12 +579,8 @@ export class EditorPageComponent {
     )
   );
   readonly canGroupSelection = computed(() => this.selectionCount() > 1 && this.selectedMergeIds().length === 0);
-  readonly canUngroupSelection = computed(
-    () => this.selectedMergeIds().length > 0 || this.selectedShapes().some((shape) => !!shape.table)
-  );
-  readonly activePreset = computed(
-    () => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null
-  );
+  readonly canUngroupSelection = computed(() => this.selectedMergeIds().length > 0 || this.selectedShapes().some((shape) => !!shape.table));
+  readonly activePreset = computed(() => this.allInsertablePresets().find((preset) => preset.id === this.activeTool()) ?? null);
   readonly visibleWorldBounds = computed(() => {
     const scale = this.preferences().scale;
     const halfWidth = this.canvasWidth() / 2 / scale;
@@ -759,7 +694,7 @@ export class EditorPageComponent {
       return null;
     }
 
-    const metrics = EditorPageComponent.inlineTextEditorMetrics;
+    const metrics = EDITOR_INLINE_TEXT_EDITOR_METRICS;
     const fontSize = Math.max(shape.fontSize * this.preferences().scale, metrics.minFontSize);
     const lines = this.displayTextLinesForShape({ ...shape, text: editor.value });
     const paddingX = Math.max(metrics.minPaddingX, fontSize * 0.08);
@@ -767,13 +702,7 @@ export class EditorPageComponent {
     const width = shape.textBox
       ? Math.max(shape.boxWidth * this.preferences().scale, metrics.minBoxWidth)
       : Math.max(
-          ...lines.map((line) =>
-            Math.max(
-              line.length * fontSize * metrics.characterWidthFactor,
-              fontSize * metrics.minLineWidthFactor,
-              metrics.minLineWidth
-            )
-          )
+          ...lines.map((line) => Math.max(line.length * fontSize * metrics.characterWidthFactor, fontSize * metrics.minLineWidthFactor, metrics.minLineWidth))
         );
     const height = Math.max(lines.length * fontSize * metrics.lineHeightFactor + paddingY * 2, fontSize + paddingY * 2);
     const anchorX = this.toSvgX(shape.x);
@@ -790,21 +719,10 @@ export class EditorPageComponent {
     };
   });
   readonly defaultToolbarTools = computed<readonly ToolDescriptor[]>(() => {
-    const quickPresetOrder: readonly string[] = [
-      'segment',
-      'arrow',
-      'box',
-      'triangle',
-      'circle',
-      'ellipse',
-      'label',
-      'image'
-    ];
+    const quickPresetOrder: readonly string[] = ['segment', 'arrow', 'box', 'triangle', 'circle', 'ellipse', 'label', 'image'];
     const quickPresets = this.allInsertablePresets().filter((preset) => preset.quickAccess && preset.id !== 'note');
     const orderedQuickPresets = [
-      ...quickPresetOrder
-        .map((id) => quickPresets.find((preset) => preset.id === id))
-        .filter((preset): preset is ObjectPreset => !!preset),
+      ...quickPresetOrder.map((id) => quickPresets.find((preset) => preset.id === id)).filter((preset): preset is ObjectPreset => !!preset),
       ...quickPresets.filter((preset) => !quickPresetOrder.includes(preset.id))
     ];
 
@@ -859,13 +777,7 @@ export class EditorPageComponent {
           if (!query) {
             return true;
           }
-          const haystack = [
-            this.presetTitle(preset),
-            this.presetDescription(preset),
-            preset.title,
-            preset.description,
-            ...(preset.searchTerms ?? [])
-          ]
+          const haystack = [this.presetTitle(preset), this.presetDescription(preset), preset.title, preset.description, ...(preset.searchTerms ?? [])]
             .join(' ')
             .toLowerCase();
           return haystack.includes(query);
@@ -900,10 +812,7 @@ export class EditorPageComponent {
       return [];
     }
     const selectionBounds = this.selectionBounds();
-    const rotateHandle =
-      selectionBounds && this.selectionCanRotate(selectedShapes)
-        ? this.rotationHandleFromBounds(selectionBounds)
-        : null;
+    const rotateHandle = selectionBounds && this.selectionCanRotate(selectedShapes) ? this.rotationHandleFromBounds(selectionBounds) : null;
     if (singleSelectedShape?.kind === 'line') {
       const points = this.linePoints(singleSelectedShape);
       const fromAdjacentPoint = points[1] ?? singleSelectedShape.to;
@@ -975,9 +884,7 @@ export class EditorPageComponent {
   readonly lineAttachmentPreviewHandles = computed<readonly LineAttachmentPreviewDescriptor[]>(() => {
     const interactionState = this.interactionState();
     if (interactionState?.kind === 'insert' && !this.altPressed()) {
-      const previewLine = this.insertionPreviewShapes().find(
-        (shape): shape is LineCanvasShape => shape.kind === 'line'
-      );
+      const previewLine = this.insertionPreviewShapes().find((shape): shape is LineCanvasShape => shape.kind === 'line');
       if (!previewLine) {
         return [];
       }
@@ -1050,11 +957,7 @@ export class EditorPageComponent {
       return [];
     }
 
-    return this.buildInsertionPreviewShapes(
-      interactionState.toolId,
-      interactionState.startWorldPoint,
-      interactionState.currentWorldPoint
-    );
+    return this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint);
   });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
@@ -1062,20 +965,14 @@ export class EditorPageComponent {
   readonly baseTikzExportBundle = computed(() => sceneToTikzBundle(this.scene(), this.exportOptions()));
   readonly snippetExport = computed(() => this.buildSnippetExport());
   readonly standaloneDocument = computed(() => this.buildStandaloneDocument());
-  readonly displayedExportCode = computed(() =>
-    this.exportMode() === 'snippet' ? this.snippetExport().code : this.standaloneDocument()
-  );
-  readonly displayedExportImports = computed(() =>
-    this.exportMode() === 'snippet' ? this.snippetExport().imports : ''
-  );
+  readonly displayedExportCode = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().code : this.standaloneDocument()));
+  readonly displayedExportImports = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().imports : ''));
   readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
   readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
   readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
   readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
   readonly selectionHandleSize = computed(() =>
-    this.coarsePointer()
-      ? EditorPageComponent.selectionHandleSizeByPointer.coarse
-      : EditorPageComponent.selectionHandleSizeByPointer.fine
+    this.coarsePointer() ? EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.coarse : EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.fine
   );
   readonly interactionCursor = computed<string | null>(() => {
     const interactionState = this.interactionState();
@@ -1148,10 +1045,8 @@ export class EditorPageComponent {
 
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
-      const mobileLayoutQuery =
-        this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_MOBILE_BREAKPOINT_PX}px)`) ?? null;
-      const sidebarsOverlayLayoutQuery =
-        this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX}px)`) ?? null;
+      const mobileLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_MOBILE_BREAKPOINT_PX}px)`) ?? null;
+      const sidebarsOverlayLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX}px)`) ?? null;
       const updateCanvasSize = () => {
         this.canvasViewportWidth.set(Math.round(viewport.clientWidth));
         this.canvasWidth.set(Math.max(EDITOR_CANVAS_MIN_WIDTH, Math.round(viewport.clientWidth)));
@@ -1163,21 +1058,16 @@ export class EditorPageComponent {
       });
       const coarsePointerQuery = this.document.defaultView?.matchMedia?.('(pointer: coarse)') ?? null;
       const updateCoarsePointer = () => {
-        this.coarsePointer.set(
-          coarsePointerQuery?.matches ?? (this.document.defaultView?.navigator.maxTouchPoints ?? 0) > 0
-        );
+        this.coarsePointer.set(coarsePointerQuery?.matches ?? (this.document.defaultView?.navigator.maxTouchPoints ?? 0) > 0);
       };
       const updateMobileLayout = () => {
-        const isMobile =
-          mobileLayoutQuery?.matches ??
-          (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <= EDITOR_MOBILE_BREAKPOINT_PX;
+        const isMobile = mobileLayoutQuery?.matches ?? (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <= EDITOR_MOBILE_BREAKPOINT_PX;
         this.mobileLayout.set(isMobile);
       };
       const updateSidebarsOverlayLayout = () => {
         const useOverlayLayout =
           sidebarsOverlayLayoutQuery?.matches ??
-          (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <=
-            EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX;
+          (this.document.defaultView?.innerWidth ?? EDITOR_VIEWPORT_FALLBACK_WIDTH) <= EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX;
         this.sidebarsOverlayLayout.set(useOverlayLayout);
         if (!useOverlayLayout) {
           this.mobileLibraryPanelOpen.set(false);
@@ -1202,9 +1092,7 @@ export class EditorPageComponent {
       this.destroyRef.onDestroy(() => this.document.defaultView?.removeEventListener('storage', handleStorage));
       this.destroyRef.onDestroy(() => coarsePointerQuery?.removeEventListener?.('change', updateCoarsePointer));
       this.destroyRef.onDestroy(() => mobileLayoutQuery?.removeEventListener?.('change', updateMobileLayout));
-      this.destroyRef.onDestroy(() =>
-        sidebarsOverlayLayoutQuery?.removeEventListener?.('change', updateSidebarsOverlayLayout)
-      );
+      this.destroyRef.onDestroy(() => sidebarsOverlayLayoutQuery?.removeEventListener?.('change', updateSidebarsOverlayLayout));
       this.destroyRef.onDestroy(() => resizeObserver.disconnect());
     });
 
@@ -1234,10 +1122,7 @@ export class EditorPageComponent {
       this.editorStorage.setString(this.codeThemeStorageKey, this.codeHighlightTheme());
     });
     effect(() => {
-      this.editorStorage.setJson(
-        this.latexExportConfigStorageKey,
-        this.serializableLatexExportConfig(this.latexExportConfig())
-      );
+      this.editorStorage.setJson(this.latexExportConfigStorageKey, this.serializableLatexExportConfig(this.latexExportConfig()));
     });
     effect(() => {
       this.editorStorage.setJson(this.sidebarSizesStorageKey, {
@@ -1457,13 +1342,13 @@ export class EditorPageComponent {
   private desktopSidebarWidth(side: SidebarSide): number {
     if (side === 'left') {
       if (this.leftSidebarCollapsed()) {
-        return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+        return EDITOR_COLLAPSED_SIDEBAR_SIZE.desktopWidth;
       }
       return this.leftSidebarWidth();
     }
 
     if (this.rightSidebarCollapsed()) {
-      return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+      return EDITOR_COLLAPSED_SIDEBAR_SIZE.desktopWidth;
     }
 
     return this.rightSidebarWidth();
@@ -1472,13 +1357,13 @@ export class EditorPageComponent {
   private desktopSidebarMinWidth(side: SidebarSide): number {
     if (side === 'left') {
       if (this.leftSidebarCollapsed()) {
-        return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+        return EDITOR_COLLAPSED_SIDEBAR_SIZE.desktopWidth;
       }
       return EDITOR_LEFT_SIDEBAR_MIN_WIDTH;
     }
 
     if (this.rightSidebarCollapsed()) {
-      return EditorPageComponent.collapsedSidebarSize.desktopWidth;
+      return EDITOR_COLLAPSED_SIDEBAR_SIZE.desktopWidth;
     }
 
     return EDITOR_RIGHT_SIDEBAR_MIN_WIDTH;
@@ -1493,12 +1378,12 @@ export class EditorPageComponent {
       return 0;
     }
 
-    return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+    return EDITOR_COLLAPSED_SIDEBAR_SIZE.mobileHeight;
   }
 
   private leftSidebarHeight(): number {
     if (this.leftSidebarCollapsed()) {
-      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+      return EDITOR_COLLAPSED_SIDEBAR_SIZE.mobileHeight;
     }
 
     return this.mobileLeftSidebarHeight();
@@ -1509,7 +1394,7 @@ export class EditorPageComponent {
       if (this.sidebarsOverlayLayout()) {
         return 0;
       }
-      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+      return EDITOR_COLLAPSED_SIDEBAR_SIZE.mobileHeight;
     }
 
     if (this.mobileLayout()) {
@@ -1521,14 +1406,14 @@ export class EditorPageComponent {
 
   private leftSidebarMinHeightValue(): number {
     if (this.leftSidebarCollapsed()) {
-      return EditorPageComponent.collapsedSidebarSize.mobileHeight;
+      return EDITOR_COLLAPSED_SIDEBAR_SIZE.mobileHeight;
     }
 
     return EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT;
   }
 
   private clampSidebarSize(side: SidebarResizeTarget, value: number): number {
-    const limits = EditorPageComponent.sidebarResizeLimits;
+    const limits = EDITOR_SIDEBAR_RESIZE_LIMITS;
     switch (side) {
       case 'mobile-left':
         return Math.min(limits.mobileMaxHeight, Math.max(EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT, value));
@@ -1554,7 +1439,7 @@ export class EditorPageComponent {
     this.themeToggleCooldownHandle = setTimeout(() => {
       this.themeToggleLocked = false;
       this.themeToggleCooldownHandle = null;
-    }, EditorPageComponent.themeToggleCooldownMs);
+    }, EDITOR_THEME_TOGGLE_COOLDOWN_MS);
   }
 
   toggleTheme(): void {
@@ -1873,10 +1758,7 @@ export class EditorPageComponent {
 
     const mode = this.templateDialogMode();
     const existing = this.savedTemplates().find((template) => template.id === this.editingTemplateId());
-    const sourceShapes =
-      mode === 'edit' && !this.templateUseCurrentSelection()
-        ? (existing?.shapes ?? [])
-        : structuredClone(this.selectedShapes());
+    const sourceShapes = mode === 'edit' && !this.templateUseCurrentSelection() ? (existing?.shapes ?? []) : structuredClone(this.selectedShapes());
 
     if (!sourceShapes.length) {
       return;
@@ -1892,9 +1774,7 @@ export class EditorPageComponent {
     };
 
     this.savedTemplates.update((templates) =>
-      mode === 'edit' && existing
-        ? templates.map((entry) => (entry.id === existing.id ? template : entry))
-        : [template, ...templates]
+      mode === 'edit' && existing ? templates.map((entry) => (entry.id === existing.id ? template : entry)) : [template, ...templates]
     );
     this.persistSavedTemplates();
     this.closeTemplateDialog();
@@ -2117,10 +1997,7 @@ export class EditorPageComponent {
     return canvas;
   }
 
-  private async withSvgExportImage<T>(
-    svgMarkup: string,
-    useImage: (image: HTMLImageElement) => T | Promise<T>
-  ): Promise<T> {
+  private async withSvgExportImage<T>(svgMarkup: string, useImage: (image: HTMLImageElement) => T | Promise<T>): Promise<T> {
     const svgBlob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
 
@@ -2142,10 +2019,7 @@ export class EditorPageComponent {
     });
   }
 
-  private async drawExportVectorLayer(
-    context: CanvasRenderingContext2D,
-    exportDocument: ExportSvgDocument
-  ): Promise<void> {
+  private async drawExportVectorLayer(context: CanvasRenderingContext2D, exportDocument: ExportSvgDocument): Promise<void> {
     try {
       await this.withSvgExportImage(exportDocument.markup, (vectorImage) => {
         context.drawImage(vectorImage, 0, 0, exportDocument.width, exportDocument.height);
@@ -2162,11 +2036,7 @@ export class EditorPageComponent {
     context.restore();
   }
 
-  private async drawExportImages(
-    context: CanvasRenderingContext2D,
-    exportDocument: ExportSvgDocument,
-    shapes: readonly CanvasShape[]
-  ): Promise<void> {
+  private async drawExportImages(context: CanvasRenderingContext2D, exportDocument: ExportSvgDocument, shapes: readonly CanvasShape[]): Promise<void> {
     const projection = exportDocument.projection;
     if (!projection) {
       return;
@@ -2436,12 +2306,7 @@ export class EditorPageComponent {
 
   private copySingleSelectedImageToSystemClipboard(shapes: readonly CanvasShape[]): void {
     const [shape] = shapes;
-    if (
-      shapes.length !== 1 ||
-      shape?.kind !== 'image' ||
-      !navigator.clipboard?.write ||
-      typeof ClipboardItem === 'undefined'
-    ) {
+    if (shapes.length !== 1 || shape?.kind !== 'image' || !navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
       return;
     }
 
@@ -2541,10 +2406,7 @@ export class EditorPageComponent {
 
   updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
     const rawValue = Number((event.target as HTMLInputElement).value);
-    const clampedValue =
-      maximumValue === undefined
-        ? Math.max(minimumValue, rawValue)
-        : Math.min(maximumValue, Math.max(minimumValue, rawValue));
+    const clampedValue = maximumValue === undefined ? Math.max(minimumValue, rawValue) : Math.min(maximumValue, Math.max(minimumValue, rawValue));
     this.store.patchPreferences({ [key]: clampedValue } as Partial<EditorPreferences>);
   }
 
@@ -2575,15 +2437,11 @@ export class EditorPageComponent {
     key: TextStylePropertyKey,
     value: TextShape['fontWeight'] | TextShape['fontStyle'] | TextShape['textDecoration'] | TextShape['textAlign']
   ): void {
-    this.patchInspectorSelection((shape) =>
-      shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape
-    );
+    this.patchInspectorSelection((shape) => (shape.kind === 'text' ? ({ ...shape, [key]: value } as CanvasShape) : shape));
   }
 
   setTextRotation(value: number): void {
-    this.patchInspectorSelection((shape) =>
-      shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape
-    );
+    this.patchInspectorSelection((shape) => (shape.kind === 'text' ? ({ ...shape, rotation: value } as CanvasShape) : shape));
   }
 
   setShapeRotation(value: number): void {
@@ -2628,9 +2486,7 @@ export class EditorPageComponent {
     }
 
     this.insertTextAtCursor(inspectorInput, symbol, (nextValue) => {
-      this.store.patchSelectedShape((shape) =>
-        shape.kind === 'text' ? ({ ...shape, text: nextValue } as CanvasShape) : shape
-      );
+      this.store.patchSelectedShape((shape) => (shape.kind === 'text' ? ({ ...shape, text: nextValue } as CanvasShape) : shape));
     });
   }
 
@@ -2694,22 +2550,16 @@ export class EditorPageComponent {
   }
 
   private computeTextSymbolPalettePosition(trigger: HTMLElement): TextSymbolPalettePosition {
-    const metrics = EditorPageComponent.textSymbolPopoverMetrics;
+    const metrics = EDITOR_TEXT_SYMBOL_POPOVER_METRICS;
     const rect = trigger.getBoundingClientRect();
     const viewportWidth = this.document.defaultView?.innerWidth ?? metrics.viewportWidthFallback;
     const viewportHeight = this.document.defaultView?.innerHeight ?? metrics.viewportHeightFallback;
-    const popoverWidth = Math.min(
-      metrics.maxWidth,
-      Math.max(viewportWidth - metrics.edgePadding * 2, metrics.minWidth)
-    );
+    const popoverWidth = Math.min(metrics.maxWidth, Math.max(viewportWidth - metrics.edgePadding * 2, metrics.minWidth));
     const spaceBelow = viewportHeight - rect.bottom - metrics.edgePadding;
     const spaceAbove = rect.top - metrics.edgePadding;
     const maxHeight = Math.max(metrics.minHeight, Math.min(metrics.preferredHeight, Math.max(spaceBelow, spaceAbove)));
     const top = this.computeTextSymbolPaletteTop(rect, viewportHeight, maxHeight, spaceBelow, spaceAbove);
-    const left = Math.max(
-      metrics.edgePadding,
-      Math.min(rect.right - popoverWidth, viewportWidth - popoverWidth - metrics.edgePadding)
-    );
+    const left = Math.max(metrics.edgePadding, Math.min(rect.right - popoverWidth, viewportWidth - popoverWidth - metrics.edgePadding));
 
     return {
       top,
@@ -2718,14 +2568,8 @@ export class EditorPageComponent {
     };
   }
 
-  private computeTextSymbolPaletteTop(
-    rect: DOMRect,
-    viewportHeight: number,
-    maxHeight: number,
-    spaceBelow: number,
-    spaceAbove: number
-  ): number {
-    const metrics = EditorPageComponent.textSymbolPopoverMetrics;
+  private computeTextSymbolPaletteTop(rect: DOMRect, viewportHeight: number, maxHeight: number, spaceBelow: number, spaceAbove: number): number {
+    const metrics = EDITOR_TEXT_SYMBOL_POPOVER_METRICS;
     const renderedHeight = Math.min(metrics.preferredHeight, maxHeight);
     const openUpward = spaceBelow < metrics.openUpwardThreshold && spaceAbove > spaceBelow;
 
@@ -2733,17 +2577,12 @@ export class EditorPageComponent {
       return Math.max(metrics.edgePadding, rect.top - renderedHeight - metrics.offset);
     }
 
-    return Math.max(
-      metrics.edgePadding,
-      Math.min(rect.bottom + metrics.offset, viewportHeight - maxHeight - metrics.edgePadding)
-    );
+    return Math.max(metrics.edgePadding, Math.min(rect.bottom + metrics.offset, viewportHeight - maxHeight - metrics.edgePadding));
   }
 
   updateImageText(key: ImageTextKey, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.patchInspectorSelection((shape) =>
-      shape.kind === 'image' ? ({ ...shape, [key]: value } as CanvasShape) : shape
-    );
+    this.patchInspectorSelection((shape) => (shape.kind === 'image' ? ({ ...shape, [key]: value } as CanvasShape) : shape));
   }
 
   updateImageDimension(key: ImageDimensionKey, event: Event): void {
@@ -2793,10 +2632,7 @@ export class EditorPageComponent {
             ...(dimensions
               ? {
                   aspectRatio: dimensions.width / dimensions.height,
-                  height: Math.max(
-                    shape.width / Math.max(dimensions.width / dimensions.height, EDITOR_IMAGE_ASPECT_RATIO_EPSILON),
-                    MIN_SHAPE_DIMENSION
-                  )
+                  height: Math.max(shape.width / Math.max(dimensions.width / dimensions.height, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
                 }
               : {}),
             latexSource: shape.latexSource || file.name
@@ -2826,21 +2662,7 @@ export class EditorPageComponent {
   }
 
   updateShapeNumber(
-    key:
-      | 'strokeWidth'
-      | 'x'
-      | 'y'
-      | 'width'
-      | 'height'
-      | 'cornerRadius'
-      | 'cx'
-      | 'cy'
-      | 'r'
-      | 'rx'
-      | 'ry'
-      | 'boxWidth'
-      | 'fontSize'
-      | 'rotation',
+    key: 'strokeWidth' | 'x' | 'y' | 'width' | 'height' | 'cornerRadius' | 'cx' | 'cy' | 'r' | 'rx' | 'ry' | 'boxWidth' | 'fontSize' | 'rotation',
     event: Event
   ): void {
     const value = Number((event.target as HTMLInputElement).value);
@@ -2850,8 +2672,7 @@ export class EditorPageComponent {
     }
     this.patchInspectorSelection((shape) => {
       if (key === 'cornerRadius' && (shape.kind === 'rectangle' || shape.kind === 'triangle')) {
-        const maxRadius =
-          shape.kind === 'rectangle' ? maxRectangleCornerRadiusUtil(shape) : maxTriangleCornerRadiusUtil(shape);
+        const maxRadius = shape.kind === 'rectangle' ? maxRectangleCornerRadiusUtil(shape) : maxTriangleCornerRadiusUtil(shape);
         return { ...shape, cornerRadius: Math.max(0, Math.min(maxRadius, value)) } as CanvasShape;
       }
 
@@ -2865,9 +2686,7 @@ export class EditorPageComponent {
       return;
     }
     const apexOffset = Math.max(0, Math.min(1, value));
-    this.patchInspectorSelection((shape) =>
-      shape.kind === 'triangle' ? ({ ...shape, apexOffset } as CanvasShape) : shape
-    );
+    this.patchInspectorSelection((shape) => (shape.kind === 'triangle' ? ({ ...shape, apexOffset } as CanvasShape) : shape));
   }
 
   updateShapeBoolean(key: LineBooleanKey, event: Event): void {
@@ -2881,9 +2700,7 @@ export class EditorPageComponent {
       shape.kind === 'line'
         ? ({
             ...shape,
-            arrowScale: Number.isFinite(value)
-              ? Math.min(EDITOR_LINE_ARROW_SCALE_MAX, Math.max(EDITOR_LINE_ARROW_SCALE_MIN, value))
-              : shape.arrowScale
+            arrowScale: Number.isFinite(value) ? Math.min(EDITOR_LINE_ARROW_SCALE_MAX, Math.max(EDITOR_LINE_ARROW_SCALE_MIN, value)) : shape.arrowScale
           } as LineShape)
         : shape
     );
@@ -2926,9 +2743,7 @@ export class EditorPageComponent {
 
   setLineArrowType(value: string): void {
     this.patchInspectorSelection((shape) =>
-      shape.kind === 'line'
-        ? ({ ...shape, arrowType: value as ArrowTipKind, arrowOpen: false, arrowRound: false } as LineShape)
-        : shape
+      shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind, arrowOpen: false, arrowRound: false } as LineShape) : shape
     );
   }
 
@@ -2939,9 +2754,7 @@ export class EditorPageComponent {
             ...shape,
             lineMode: value,
             anchors:
-              value === 'curved' && shape.anchors.length === 0
-                ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }]
-                : shape.anchors
+              value === 'curved' && shape.anchors.length === 0 ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }] : shape.anchors
           } as LineShape)
         : shape
     );
@@ -2953,9 +2766,7 @@ export class EditorPageComponent {
       return;
     }
 
-    this.patchInspectorSelection((shape) =>
-      shape.kind === 'line' ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as LineShape) : shape
-    );
+    this.patchInspectorSelection((shape) => (shape.kind === 'line' ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as LineShape) : shape));
   }
 
   setTextBoxEnabled(value: boolean): void {
@@ -3023,9 +2834,7 @@ export class EditorPageComponent {
 
       return {
         ...shape,
-        anchors: shape.anchors.map((anchor, anchorIndex) =>
-          anchorIndex === index ? { ...anchor, [axis]: value } : anchor
-        )
+        anchors: shape.anchors.map((anchor, anchorIndex) => (anchorIndex === index ? { ...anchor, [axis]: value } : anchor))
       } as LineShape;
     });
   }
@@ -3072,13 +2881,10 @@ export class EditorPageComponent {
   sliderRange(axis: Axis): { readonly min: number; readonly max: number } {
     const bounds = this.sceneContentBounds();
     if (!bounds) {
-      return EditorPageComponent.defaultSliderRange;
+      return EDITOR_DEFAULT_SLIDER_RANGE;
     }
 
-    const maxAbs =
-      axis === 'x'
-        ? Math.max(Math.abs(bounds.left), Math.abs(bounds.right), 1)
-        : Math.max(Math.abs(bounds.bottom), Math.abs(bounds.top), 1);
+    const maxAbs = axis === 'x' ? Math.max(Math.abs(bounds.left), Math.abs(bounds.right), 1) : Math.max(Math.abs(bounds.bottom), Math.abs(bounds.top), 1);
 
     return {
       min: Number((-maxAbs).toFixed(SLIDER_DECIMAL_PLACES)),
@@ -3193,7 +2999,7 @@ export class EditorPageComponent {
     if (!view) {
       return;
     }
-    const padding = EditorPageComponent.contextMenuViewportPadding;
+    const padding = EDITOR_CONTEXT_MENU_VIEWPORT_PADDING;
     const viewportWidth = view.innerWidth;
     const viewportHeight = view.innerHeight;
     const bounds = panel.getBoundingClientRect();
@@ -3313,9 +3119,7 @@ export class EditorPageComponent {
   }
 
   onCanvasDragOver(event: DragEvent): void {
-    const hasImageFile = Array.from(event.dataTransfer?.items ?? []).some(
-      (item) => item.kind === 'file' && item.type.startsWith('image/')
-    );
+    const hasImageFile = Array.from(event.dataTransfer?.items ?? []).some((item) => item.kind === 'file' && item.type.startsWith('image/'));
     if (!hasImageFile) {
       return;
     }
@@ -3420,12 +3224,7 @@ export class EditorPageComponent {
     return false;
   }
 
-  private beginMoveInteraction(
-    event: PointerEvent,
-    shape: CanvasShape,
-    plainPrimaryGesture: boolean,
-    isSingleSelectedShape: boolean
-  ): void {
+  private beginMoveInteraction(event: PointerEvent, shape: CanvasShape, plainPrimaryGesture: boolean, isSingleSelectedShape: boolean): void {
     this.store.recordHistoryCheckpoint();
     this.interactionState.set({
       kind: 'move',
@@ -3576,10 +3375,7 @@ export class EditorPageComponent {
     }
   }
 
-  private handlePendingPanPointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'pending-pan' }>
-  ): void {
+  private handlePendingPanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pending-pan' }>): void {
     const deltaClientX = event.clientX - interactionState.startClientPoint.x;
     const deltaClientY = event.clientY - interactionState.startClientPoint.y;
     const distance = Math.hypot(deltaClientX, deltaClientY);
@@ -3602,10 +3398,7 @@ export class EditorPageComponent {
     });
   }
 
-  private handleMovePointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'move' }>
-  ): void {
+  private handleMovePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'move' }>): void {
     const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
@@ -3614,7 +3407,7 @@ export class EditorPageComponent {
     const nextShapes = event.altKey
       ? translatedShapes.map((shape) => this.withLineAttachmentsDetached(shape))
       : translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
-    this.store.replaceShapes(this.withAttachedLinesMoved(interactionState.initialShapes, nextShapes));
+    this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
   }
 
   private lineAttachmentShapeMap(movedShapes: readonly CanvasShape[]): ReadonlyMap<string, CanvasShape> {
@@ -3635,10 +3428,7 @@ export class EditorPageComponent {
     } as LineShape;
   }
 
-  private withMovedLineAttachmentsSynced(
-    shape: CanvasShape,
-    attachmentShapeById: ReadonlyMap<string, CanvasShape>
-  ): CanvasShape {
+  private withMovedLineAttachmentsSynced(shape: CanvasShape, attachmentShapeById: ReadonlyMap<string, CanvasShape>): CanvasShape {
     if (shape.kind !== 'line') {
       return shape;
     }
@@ -3656,11 +3446,7 @@ export class EditorPageComponent {
     } as LineShape;
   }
 
-  private movedLineEndpoint(
-    currentPoint: Point,
-    attachment: LineEndpointAttachment | undefined,
-    attachmentShapeById: ReadonlyMap<string, CanvasShape>
-  ): Point {
+  private movedLineEndpoint(currentPoint: Point, attachment: LineEndpointAttachment | undefined, attachmentShapeById: ReadonlyMap<string, CanvasShape>): Point {
     if (!attachment) {
       return currentPoint;
     }
@@ -3673,10 +3459,7 @@ export class EditorPageComponent {
     return this.lineAttachmentPoint(attachedShape, attachment, currentPoint);
   }
 
-  private withAttachedLinesMoved(
-    initialMovedShapes: readonly CanvasShape[],
-    nextMovedShapes: readonly CanvasShape[]
-  ): readonly CanvasShape[] {
+  private withAttachedLinesMoved(nextMovedShapes: readonly CanvasShape[]): readonly CanvasShape[] {
     const movedShapeIds = new Set(nextMovedShapes.map((shape) => shape.id));
     const movedShapeById = new Map(nextMovedShapes.map((shape) => [shape.id, shape]));
 
@@ -3694,10 +3477,7 @@ export class EditorPageComponent {
       return [
         {
           ...shape,
-          from:
-            fromShape && shape.fromAttachment
-              ? this.lineAttachmentPoint(fromShape, shape.fromAttachment, shape.from)
-              : shape.from,
+          from: fromShape && shape.fromAttachment ? this.lineAttachmentPoint(fromShape, shape.fromAttachment, shape.from) : shape.from,
           to: toShape && shape.toAttachment ? this.lineAttachmentPoint(toShape, shape.toAttachment, shape.to) : shape.to
         }
       ];
@@ -3706,10 +3486,7 @@ export class EditorPageComponent {
     return [...nextMovedShapes, ...attachedLines];
   }
 
-  private handlePanPointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'pan' }>
-  ): void {
+  private handlePanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
     const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
     const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
     const scale = this.preferences().scale;
@@ -3720,30 +3497,21 @@ export class EditorPageComponent {
     this.interactionState.set({ ...interactionState, lastClientPoint: { x: event.clientX, y: event.clientY } });
   }
 
-  private handleMarqueePointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'marquee' }>
-  ): void {
+  private handleMarqueePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'marquee' }>): void {
     this.interactionState.set({
       ...interactionState,
       currentWorldPoint: this.toScenePoint(event.clientX, event.clientY)
     });
   }
 
-  private handleInsertPointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'insert' }>
-  ): void {
+  private handleInsertPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
     this.interactionState.set({
       ...interactionState,
       currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
     });
   }
 
-  private handleFreehandPointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'freehand' }>
-  ): void {
+  private handleFreehandPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'freehand' }>): void {
     const nextPoint = this.toScenePoint(event.clientX, event.clientY);
     const lastPoint = interactionState.points.at(-1);
     if (!lastPoint) {
@@ -3762,10 +3530,7 @@ export class EditorPageComponent {
     });
   }
 
-  private handleResizePointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'resize' }>
-  ): void {
+  private handleResizePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'resize' }>): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
     const adjustedPointerPoint = {
       x: pointerPoint.x + interactionState.pointerOffset.x,
@@ -3775,15 +3540,9 @@ export class EditorPageComponent {
       (interactionState.initialShape?.kind === 'rectangle' || interactionState.initialShape?.kind === 'triangle') &&
       interactionState.handle.startsWith('corner-radius-')
     ) {
-      const nextCornerRadius = this.cornerRadiusFromPointer(
-        interactionState.initialShape,
-        interactionState.handle,
-        adjustedPointerPoint
-      );
+      const nextCornerRadius = this.cornerRadiusFromPointer(interactionState.initialShape, interactionState.handle, adjustedPointerPoint);
       this.store.patchSelectedShape((shape) =>
-        shape.kind === 'rectangle' || shape.kind === 'triangle'
-          ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape)
-          : shape
+        shape.kind === 'rectangle' || shape.kind === 'triangle' ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape) : shape
       );
       return;
     }
@@ -3806,37 +3565,21 @@ export class EditorPageComponent {
       return;
     }
 
-    this.store.replaceShapes(
-      this.resizeShapeSelection(
-        interactionState.initialShapes,
-        interactionState.initialBounds,
-        interactionState.handle,
-        nextPoint
-      )
-    );
+    this.store.replaceShapes(this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint));
   }
 
-  private withLineEndpointAttachment(
-    shape: CanvasShape,
-    handle: ResizeHandle,
-    point: Point,
-    forceDetach = false
-  ): CanvasShape {
+  private withLineEndpointAttachment(shape: CanvasShape, handle: ResizeHandle, point: Point, forceDetach = false): CanvasShape {
     if (shape.kind !== 'line' || (handle !== 'from' && handle !== 'to')) {
       return shape;
     }
 
     if (forceDetach || this.altPressed()) {
-      return handle === 'from'
-        ? ({ ...shape, fromAttachment: undefined } as LineShape)
-        : ({ ...shape, toAttachment: undefined } as LineShape);
+      return handle === 'from' ? ({ ...shape, fromAttachment: undefined } as LineShape) : ({ ...shape, toAttachment: undefined } as LineShape);
     }
 
     const attachment = this.findLineEndpointAttachment(shape, handle, point);
     if (!attachment) {
-      return handle === 'from'
-        ? ({ ...shape, fromAttachment: undefined } as LineShape)
-        : ({ ...shape, toAttachment: undefined } as LineShape);
+      return handle === 'from' ? ({ ...shape, fromAttachment: undefined } as LineShape) : ({ ...shape, toAttachment: undefined } as LineShape);
     }
 
     return handle === 'from'
@@ -3852,11 +3595,7 @@ export class EditorPageComponent {
         } as LineShape);
   }
 
-  private findLineEndpointAttachment(
-    line: LineShape,
-    endpoint: LineEndpoint,
-    point: Point
-  ): LineAttachmentCandidate | null {
+  private findLineEndpointAttachment(line: LineShape, endpoint: LineEndpoint, point: Point): LineAttachmentCandidate | null {
     const preview = this.lineAttachmentPreview(line, endpoint, point);
     if (!preview) {
       return null;
@@ -3866,11 +3605,7 @@ export class EditorPageComponent {
     return preview.active.distance <= threshold ? preview.active : null;
   }
 
-  private lineAttachmentPreviewHandlesFor(
-    line: LineShape,
-    endpoint: LineEndpoint,
-    point: Point
-  ): readonly LineAttachmentPreviewDescriptor[] {
+  private lineAttachmentPreviewHandlesFor(line: LineShape, endpoint: LineEndpoint, point: Point): readonly LineAttachmentPreviewDescriptor[] {
     const preview = this.lineAttachmentPreview(line, endpoint, point);
     if (!preview) {
       return [];
@@ -3898,9 +3633,7 @@ export class EditorPageComponent {
         shapeDistance: this.distanceToAttachableShape(point, shape),
         anchors: this.lineAttachmentCandidatesForShape(shape, point)
       }))
-      .filter(
-        (entry) => entry.shapeDistance <= previewRadius || entry.anchors.some((anchor) => anchor.distance <= threshold)
-      )
+      .filter((entry) => entry.shapeDistance <= previewRadius || entry.anchors.some((anchor) => anchor.distance <= threshold))
       .sort((a, b) => {
         const aDistance = Math.min(a.shapeDistance, ...a.anchors.map((anchor) => anchor.distance));
         const bDistance = Math.min(b.shapeDistance, ...b.anchors.map((anchor) => anchor.distance));
@@ -3927,18 +3660,12 @@ export class EditorPageComponent {
   }
 
   private lineAttachmentSnapRadiusWorld(): number {
-    const radiusPx =
-      this.coarsePointer() || this.mobileLayout()
-        ? EditorPageComponent.coarseLineAttachmentSnapRadiusPx
-        : EditorPageComponent.lineAttachmentSnapRadiusPx;
+    const radiusPx = this.coarsePointer() || this.mobileLayout() ? EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX : EDITOR_LINE_ATTACHMENT_SNAP_RADIUS_PX;
     return radiusPx / this.preferences().scale;
   }
 
   private lineAttachmentPreviewRadiusWorld(): number {
-    const radiusPx =
-      this.coarsePointer() || this.mobileLayout()
-        ? EditorPageComponent.coarseLineAttachmentPreviewRadiusPx
-        : EditorPageComponent.lineAttachmentPreviewRadiusPx;
+    const radiusPx = this.coarsePointer() || this.mobileLayout() ? EDITOR_COARSE_LINE_ATTACHMENT_PREVIEW_RADIUS_PX : EDITOR_LINE_ATTACHMENT_PREVIEW_RADIUS_PX;
     return radiusPx / this.preferences().scale;
   }
 
@@ -4025,11 +3752,7 @@ export class EditorPageComponent {
     return Math.abs(first.x - second.x) < 0.001 && Math.abs(first.y - second.y) < 0.001;
   }
 
-  private lineAttachmentPoint(
-    shape: CanvasShape,
-    attachment: { readonly anchor?: Point },
-    fallbackPoint?: Point
-  ): Point {
+  private lineAttachmentPoint(shape: CanvasShape, attachment: { readonly anchor?: Point }, fallbackPoint?: Point): Point {
     const center = this.shapeCenter(shape);
     const anchor = attachment.anchor ?? this.fallbackAttachmentAnchor(shape, center, fallbackPoint);
     if (!anchor) {
@@ -4052,8 +3775,7 @@ export class EditorPageComponent {
     }
 
     if (shape.kind === 'ellipse') {
-      const scale =
-        1 / Math.sqrt((unit.x * unit.x) / (shape.rx * shape.rx) + (unit.y * unit.y) / (shape.ry * shape.ry));
+      const scale = 1 / Math.sqrt((unit.x * unit.x) / (shape.rx * shape.rx) + (unit.y * unit.y) / (shape.ry * shape.ry));
       const point = {
         x: shape.cx + unit.x * scale,
         y: shape.cy + unit.y * scale
@@ -4095,25 +3817,15 @@ export class EditorPageComponent {
     };
   }
 
-  private handleRotatePointerMove(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'rotate' }>
-  ): void {
+  private handleRotatePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'rotate' }>): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
-    const angleRadians = Math.atan2(
-      pointerPoint.y - interactionState.pivot.y,
-      pointerPoint.x - interactionState.pivot.x
-    );
+    const angleRadians = Math.atan2(pointerPoint.y - interactionState.pivot.y, pointerPoint.x - interactionState.pivot.x);
     let rotationDeltaDegrees = ((interactionState.startAngleRadians - angleRadians) * 180) / Math.PI;
     if (this.shiftPressed()) {
-      rotationDeltaDegrees =
-        Math.round(rotationDeltaDegrees / EditorPageComponent.rotationSnapStepDegrees) *
-        EditorPageComponent.rotationSnapStepDegrees;
+      rotationDeltaDegrees = Math.round(rotationDeltaDegrees / EDITOR_ROTATION_SNAP_STEP_DEGREES) * EDITOR_ROTATION_SNAP_STEP_DEGREES;
     }
-    const rotatedShapes = interactionState.initialShapes.map((shape) =>
-      this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees)
-    );
-    this.store.replaceShapes(this.withAttachedLinesMoved(interactionState.initialShapes, rotatedShapes));
+    const rotatedShapes = interactionState.initialShapes.map((shape) => this.rotateShapeAround(shape, interactionState.pivot, rotationDeltaDegrees));
+    this.store.replaceShapes(this.withAttachedLinesMoved(rotatedShapes));
   }
 
   endInteraction(event: PointerEvent): void {
@@ -4163,19 +3875,11 @@ export class EditorPageComponent {
       bottom: Math.min(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y),
       top: Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y)
     });
-    this.store.setSelectedShapes(
-      interactionState.additive
-        ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds]
-        : marqueeShapeIds
-    );
+    this.store.setSelectedShapes(interactionState.additive ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds] : marqueeShapeIds);
   }
 
   private finishInsertInteraction(interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
-    const previewShapes = this.buildInsertionPreviewShapes(
-      interactionState.toolId,
-      interactionState.startWorldPoint,
-      interactionState.currentWorldPoint
-    );
+    const previewShapes = this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint);
     if (!previewShapes.length) {
       return;
     }
@@ -4201,10 +3905,7 @@ export class EditorPageComponent {
     });
   }
 
-  private finishMoveInteraction(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'move' }>
-  ): void {
+  private finishMoveInteraction(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'move' }>): void {
     const tapShapeId = this.resolveMoveTapShapeId(event, interactionState);
     if (!tapShapeId) {
       this.recentSelectedShapeTap.set(null);
@@ -4219,19 +3920,13 @@ export class EditorPageComponent {
     this.recentSelectedShapeTap.set({ shapeId: tapShapeId, timestamp: Date.now() });
   }
 
-  private resolveMoveTapShapeId(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'move' }>
-  ): string | null {
+  private resolveMoveTapShapeId(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'move' }>): string | null {
     const tapShapeId = interactionState.tapEligibleShapeId;
     if (!tapShapeId) {
       return null;
     }
 
-    const tapDistance = Math.hypot(
-      event.clientX - interactionState.startClientPoint.x,
-      event.clientY - interactionState.startClientPoint.y
-    );
+    const tapDistance = Math.hypot(event.clientX - interactionState.startClientPoint.x, event.clientY - interactionState.startClientPoint.y);
     return tapDistance < EDITOR_POINTER_TAP_MAX_DISTANCE_PX ? tapShapeId : null;
   }
 
@@ -4247,14 +3942,8 @@ export class EditorPageComponent {
     }
   }
 
-  private finishPanInteraction(
-    event: PointerEvent,
-    interactionState: Extract<InteractionState, { kind: 'pan' }>
-  ): void {
-    const tapDistance = Math.hypot(
-      event.clientX - interactionState.startClientPoint.x,
-      event.clientY - interactionState.startClientPoint.y
-    );
+  private finishPanInteraction(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
+    const tapDistance = Math.hypot(event.clientX - interactionState.startClientPoint.x, event.clientY - interactionState.startClientPoint.y);
     if (
       event.pointerType === 'touch' &&
       interactionState.sourceButton === 0 &&
@@ -4291,11 +3980,8 @@ export class EditorPageComponent {
       const axisDelta = Math.abs(delta.y) >= Math.abs(delta.x) ? delta.y : delta.x;
       if (axisDelta !== 0) {
         const magnitude = Math.max(
-          EditorPageComponent.wheelRotationMinStepDegrees,
-          Math.min(
-            EditorPageComponent.wheelRotationMaxStepDegrees,
-            Math.abs(axisDelta) * EditorPageComponent.wheelRotationScale
-          )
+          EDITOR_WHEEL_ROTATION_MIN_STEP_DEGREES,
+          Math.min(EDITOR_WHEEL_ROTATION_MAX_STEP_DEGREES, Math.abs(axisDelta) * EDITOR_WHEEL_ROTATION_SCALE)
         );
         const rotationDelta = axisDelta > 0 ? -magnitude : magnitude;
         this.rotateCurrentSelectionBy(rotationDelta);
@@ -4441,8 +4127,7 @@ export class EditorPageComponent {
   }
 
   private strokeDashArray(strokeStyle: LineStrokeStyle, strokeWidth: number): string | null {
-    const dashArray = (pattern: readonly number[]): string =>
-      pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
+    const dashArray = (pattern: readonly number[]): string => pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
     switch (strokeStyle) {
       case 'solid':
         return null;
@@ -4458,10 +4143,7 @@ export class EditorPageComponent {
   }
 
   lineHitStrokeWidth(strokeWidth: number): number {
-    return Math.max(
-      this.scaledStrokeWidth(strokeWidth) + EditorPageComponent.lineHitStrokeExtraPx,
-      EditorPageComponent.lineHitStrokeMinPx
-    );
+    return Math.max(this.scaledStrokeWidth(strokeWidth) + EDITOR_LINE_HIT_STROKE_EXTRA_PX, EDITOR_LINE_HIT_STROKE_MIN_PX);
   }
 
   selectionHandleOffset(): number {
@@ -4558,13 +4240,7 @@ export class EditorPageComponent {
   }
 
   arrowTipIconFilled(arrowType: ArrowTipKind): boolean {
-    return (
-      arrowType === 'triangle' ||
-      arrowType === 'stealth' ||
-      arrowType === 'circle' ||
-      arrowType === 'kite' ||
-      arrowType === 'square'
-    );
+    return arrowType === 'triangle' || arrowType === 'stealth' || arrowType === 'circle' || arrowType === 'kite' || arrowType === 'square';
   }
 
   arrowTipLabel(arrowType: ArrowTipKind): string {
@@ -4632,8 +4308,8 @@ export class EditorPageComponent {
 
   private rotationHandleFromBounds(bounds: SelectionBounds): HandleDescriptor {
     const distance = Math.max(
-      EditorPageComponent.selectionRotateHandleMinDistance,
-      (this.selectionHandleSize() * EditorPageComponent.selectionRotateHandleDistanceFactor) / this.preferences().scale
+      EDITOR_SELECTION_ROTATE_HANDLE_MIN_DISTANCE,
+      (this.selectionHandleSize() * EDITOR_SELECTION_ROTATE_HANDLE_DISTANCE_FACTOR) / this.preferences().scale
     );
     const handleY = this.toSvgY(bounds.top + distance);
     return {
@@ -4702,8 +4378,8 @@ export class EditorPageComponent {
     const length = Math.hypot(deltaX, deltaY) || 1;
     const unit = { x: deltaX / length, y: deltaY / length };
     const distancePx = Math.max(
-      EditorPageComponent.selectionRotateHandleMinDistance * this.preferences().scale,
-      this.selectionHandleSize() * EditorPageComponent.selectionRotateHandleDistanceFactor
+      EDITOR_SELECTION_ROTATE_HANDLE_MIN_DISTANCE * this.preferences().scale,
+      this.selectionHandleSize() * EDITOR_SELECTION_ROTATE_HANDLE_DISTANCE_FACTOR
     );
 
     return {
@@ -4759,9 +4435,7 @@ export class EditorPageComponent {
   }
 
   private cornerRadiusHandles(shape: RectangleCanvasShape | TriangleCanvasShape): readonly HandleDescriptor[] {
-    return shape.kind === 'rectangle'
-      ? this.rectangleCornerRadiusHandles(shape)
-      : this.triangleCornerRadiusHandles(shape);
+    return shape.kind === 'rectangle' ? this.rectangleCornerRadiusHandles(shape) : this.triangleCornerRadiusHandles(shape);
   }
 
   private rectangleCornerRadiusHandles(shape: RectangleCanvasShape): readonly HandleDescriptor[] {
@@ -4769,8 +4443,7 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset =
-      (this.selectionHandleSize() * EditorPageComponent.cornerRadiusHandleInsetFactor) / this.preferences().scale;
+    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
     const corners: ReadonlyArray<{ readonly id: ResizeHandle; readonly corner: Point; readonly point: Point }> = [
       {
@@ -4816,8 +4489,7 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset =
-      (this.selectionHandleSize() * EditorPageComponent.cornerRadiusHandleInsetFactor) / this.preferences().scale;
+    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
     const corners = this.trianglePoints(shape);
     const center = this.shapeCenter(shape);
@@ -4884,9 +4556,7 @@ export class EditorPageComponent {
     }
 
     const from = shape.arrowStart ? this.insetLineSelectionEndpoint(shape, shape.from, points[1]) : shape.from;
-    const to = shape.arrowEnd
-      ? this.insetLineSelectionEndpoint(shape, shape.to, points.at(-2) ?? shape.from)
-      : shape.to;
+    const to = shape.arrowEnd ? this.insetLineSelectionEndpoint(shape, shape.to, points.at(-2) ?? shape.from) : shape.to;
 
     if (from === shape.from && to === shape.to) {
       return shape;
@@ -5273,10 +4943,7 @@ export class EditorPageComponent {
     }
 
     this.setModifierPressed(modifier, true);
-    if (
-      modifier === 'space' &&
-      !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-    ) {
+    if (modifier === 'space' && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) {
       event.preventDefault();
     }
   }
@@ -5329,9 +4996,9 @@ export class EditorPageComponent {
     const preferences = this.preferences();
     const baseSpeed =
       preferences.snapToGrid && !this.altPressed()
-        ? Math.max(preferences.snapStep, 0.01) * EditorPageComponent.keyboardNavigationSnapSpeedMultiplier
-        : EditorPageComponent.keyboardNavigationBaseSpeed;
-    return this.shiftPressed() ? baseSpeed * EditorPageComponent.keyboardNavigationFastMultiplier : baseSpeed;
+        ? Math.max(preferences.snapStep, 0.01) * EDITOR_KEYBOARD_NAVIGATION_SNAP_SPEED_MULTIPLIER
+        : EDITOR_KEYBOARD_NAVIGATION_BASE_SPEED;
+    return this.shiftPressed() ? baseSpeed * EDITOR_KEYBOARD_NAVIGATION_FAST_MULTIPLIER : baseSpeed;
   }
 
   private startKeyboardNavigationLoop(): void {
@@ -5344,9 +5011,7 @@ export class EditorPageComponent {
     if (!view) {
       return;
     }
-    this.keyboardNavigationRafHandle = view.requestAnimationFrame((timestamp) =>
-      this.handleKeyboardNavigationFrame(timestamp)
-    );
+    this.keyboardNavigationRafHandle = view.requestAnimationFrame((timestamp) => this.handleKeyboardNavigationFrame(timestamp));
   }
 
   private handleKeyboardNavigationFrame(timestamp: number): void {
@@ -5360,19 +5025,14 @@ export class EditorPageComponent {
     const deltaSeconds = Math.min(Math.max((timestamp - lastTimestamp) / 1000, 0), 0.05);
     this.keyboardNavigationLastTimestamp = timestamp;
 
-    const delta = arrowNavigationDeltaFromKeys(
-      this.pressedArrowNavigationKeys,
-      this.keyboardNavigationSpeed() * deltaSeconds
-    );
+    const delta = arrowNavigationDeltaFromKeys(this.pressedArrowNavigationKeys, this.keyboardNavigationSpeed() * deltaSeconds);
     if (delta) {
       this.applyKeyboardNavigationDelta(delta.x, delta.y);
     }
 
     const view = this.document.defaultView;
     if (view) {
-      this.keyboardNavigationRafHandle = view.requestAnimationFrame((nextTimestamp) =>
-        this.handleKeyboardNavigationFrame(nextTimestamp)
-      );
+      this.keyboardNavigationRafHandle = view.requestAnimationFrame((nextTimestamp) => this.handleKeyboardNavigationFrame(nextTimestamp));
     }
   }
 
@@ -5402,7 +5062,7 @@ export class EditorPageComponent {
     const translatedShapes = initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
     const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
     const nextShapes = translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
-    this.store.replaceShapes(this.withAttachedLinesMoved(initialShapes, nextShapes));
+    this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
   }
 
   private stopKeyboardNavigationLoop(): void {
@@ -5415,11 +5075,7 @@ export class EditorPageComponent {
     this.keyboardNavigationHistoryActive = false;
   }
 
-  private handlePreventableShortcut(
-    event: KeyboardEvent,
-    isMatch: (event: KeyboardEvent) => boolean,
-    action: () => void
-  ): boolean {
+  private handlePreventableShortcut(event: KeyboardEvent, isMatch: (event: KeyboardEvent) => boolean, action: () => void): boolean {
     if (!isMatch(event)) {
       return false;
     }
@@ -5564,7 +5220,7 @@ export class EditorPageComponent {
     this.notifications.update((notifications) => [...notifications, { id, message, tone }]);
     globalThis.setTimeout(() => {
       this.notifications.update((notifications) => notifications.filter((notification) => notification.id !== id));
-    }, EditorPageComponent.notificationDurationMs);
+    }, EDITOR_NOTIFICATION_DURATION_MS);
   }
 
   private showExportNotification(format: 'png' | 'svg'): void {
@@ -5890,22 +5546,11 @@ export class EditorPageComponent {
 
   private setScaleFromViewportCenter(nextScale: number): void {
     const viewportRect = this.canvasViewport().nativeElement.getBoundingClientRect();
-    this.setScaleAtClientPoint(
-      nextScale,
-      viewportRect.left + viewportRect.width / 2,
-      viewportRect.top + viewportRect.height / 2
-    );
+    this.setScaleAtClientPoint(nextScale, viewportRect.left + viewportRect.width / 2, viewportRect.top + viewportRect.height / 2);
   }
 
-  private setScaleAtClientPoint(
-    nextScale: number,
-    clientX: number,
-    clientY: number,
-    roundToInteger: boolean = true
-  ): void {
-    const normalizedScale = roundToInteger
-      ? Math.round(nextScale)
-      : Math.round(nextScale * EDITOR_SCALE_DECIMAL_FACTOR) / EDITOR_SCALE_DECIMAL_FACTOR;
+  private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number, roundToInteger: boolean = true): void {
+    const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * EDITOR_SCALE_DECIMAL_FACTOR) / EDITOR_SCALE_DECIMAL_FACTOR;
     const clampedScale = Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, normalizedScale));
     const currentScale = this.preferences().scale;
     if (clampedScale === currentScale) {
@@ -6061,8 +5706,7 @@ export class EditorPageComponent {
 
   private presetKeepsOwnStyle(toolId: ToolId): boolean {
     return (
-      this.savedTemplates().some((template) => template.id === toolId) ||
-      this.objectPresets.some((preset) => preset.id === toolId && preset.preserveStyle)
+      this.savedTemplates().some((template) => template.id === toolId) || this.objectPresets.some((preset) => preset.id === toolId && preset.preserveStyle)
     );
   }
 
@@ -6095,9 +5739,7 @@ export class EditorPageComponent {
           fill: preferences.defaultFill,
           strokeOpacity: 1,
           fillOpacity: 1,
-          ...(shape.kind === 'triangle'
-            ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 }
-            : {}),
+          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
@@ -6130,13 +5772,7 @@ export class EditorPageComponent {
       return [];
     }
 
-    const directLinePreview = this.buildDirectLineInsertionPreview(
-      preset,
-      startPoint,
-      currentPoint,
-      hasDrag,
-      keepOwnStyle
-    );
+    const directLinePreview = this.buildDirectLineInsertionPreview(preset, startPoint, currentPoint, hasDrag, keepOwnStyle);
     if (directLinePreview) {
       return directLinePreview;
     }
@@ -6284,11 +5920,7 @@ export class EditorPageComponent {
       keepOwnStyle
     ) as LineShape;
 
-    return this.localizeInsertedPresetShapes(
-      preset,
-      [this.withLineInsertionEndpointAttachments(nextLine)],
-      keepOwnStyle
-    );
+    return this.localizeInsertedPresetShapes(preset, [this.withLineInsertionEndpointAttachments(nextLine)], keepOwnStyle);
   }
 
   private withLineInsertionEndpointAttachments(line: LineShape): LineShape {
@@ -6342,11 +5974,7 @@ export class EditorPageComponent {
   }
 
   private isQuickLineInsertionPreset(preset: ObjectPreset): boolean {
-    return (
-      (preset.id === 'segment' || preset.id === 'arrow') &&
-      preset.shapes.length === 1 &&
-      preset.shapes[0]?.kind === 'line'
-    );
+    return (preset.id === 'segment' || preset.id === 'arrow') && preset.shapes.length === 1 && preset.shapes[0]?.kind === 'line';
   }
 
   private applyPresetStyle(shape: CanvasShape, keepOwnStyle: boolean): CanvasShape {
@@ -6386,19 +6014,10 @@ export class EditorPageComponent {
     return structuredClone(preset.shapes);
   }
 
-  private localizeInsertedPresetShapes(
-    preset: ObjectPreset,
-    shapes: readonly CanvasShape[],
-    keepOwnStyle: boolean
-  ): readonly CanvasShape[] {
+  private localizeInsertedPresetShapes(preset: ObjectPreset, shapes: readonly CanvasShape[], keepOwnStyle: boolean): readonly CanvasShape[] {
     const localizedShapes = keepOwnStyle ? shapes : this.localizePresetCanvasShapes(shapes);
 
-    if (
-      keepOwnStyle ||
-      preset.id === REGULAR_POLYGON_PRESET_ID ||
-      this.isGraphPresetId(preset.id) ||
-      localizedShapes.length !== 1
-    ) {
+    if (keepOwnStyle || preset.id === REGULAR_POLYGON_PRESET_ID || this.isGraphPresetId(preset.id) || localizedShapes.length !== 1) {
       return localizedShapes;
     }
 
@@ -6421,17 +6040,11 @@ export class EditorPageComponent {
     return transformCanvasShape(shape, options);
   }
 
-  private shapeIdMap(
-    shapes: readonly CanvasShape[],
-    nextId: (shape: CanvasShape, index: number) => string
-  ): ReadonlyMap<string, string> {
+  private shapeIdMap(shapes: readonly CanvasShape[], nextId: (shape: CanvasShape, index: number) => string): ReadonlyMap<string, string> {
     return new Map(shapes.map((shape, index) => [shape.id, nextId(shape, index)]));
   }
 
-  private remapShapeSetIds(
-    shapes: readonly CanvasShape[],
-    nextId: (shape: CanvasShape, index: number) => string
-  ): readonly CanvasShape[] {
+  private remapShapeSetIds(shapes: readonly CanvasShape[], nextId: (shape: CanvasShape, index: number) => string): readonly CanvasShape[] {
     const idMap = this.shapeIdMap(shapes, nextId);
     return this.remapShapeSetAttachments(
       shapes.map((shape) => ({ ...shape, id: idMap.get(shape.id) ?? shape.id }) as CanvasShape),
@@ -6439,10 +6052,7 @@ export class EditorPageComponent {
     );
   }
 
-  private remapShapeSetAttachments(
-    shapes: readonly CanvasShape[],
-    idMap: ReadonlyMap<string, string>
-  ): readonly CanvasShape[] {
+  private remapShapeSetAttachments(shapes: readonly CanvasShape[], idMap: ReadonlyMap<string, string>): readonly CanvasShape[] {
     return shapes.map((shape) => this.remapLineAttachments(shape, idMap));
   }
 
@@ -6458,10 +6068,7 @@ export class EditorPageComponent {
     } as LineShape;
   }
 
-  private remapLineAttachment(
-    attachment: LineEndpointAttachment | undefined,
-    idMap: ReadonlyMap<string, string>
-  ): LineEndpointAttachment | undefined {
+  private remapLineAttachment(attachment: LineEndpointAttachment | undefined, idMap: ReadonlyMap<string, string>): LineEndpointAttachment | undefined {
     if (!attachment) {
       return undefined;
     }
@@ -6489,11 +6096,7 @@ export class EditorPageComponent {
     } as LineShape;
   }
 
-  private syncedLineAttachmentPoint(
-    currentPoint: Point,
-    attachment: LineEndpointAttachment | undefined,
-    shapeById: ReadonlyMap<string, CanvasShape>
-  ): Point {
+  private syncedLineAttachmentPoint(currentPoint: Point, attachment: LineEndpointAttachment | undefined, shapeById: ReadonlyMap<string, CanvasShape>): Point {
     if (!attachment) {
       return currentPoint;
     }
@@ -6542,20 +6145,14 @@ export class EditorPageComponent {
       return;
     }
 
-    const frame = table.shapes.find(
-      (shape): shape is RectangleCanvasShape => shape.kind === 'rectangle' && shape.table?.role === 'frame'
-    );
+    const frame = table.shapes.find((shape): shape is RectangleCanvasShape => shape.kind === 'rectangle' && shape.table?.role === 'frame');
     if (!frame) {
       return;
     }
 
     const dividerPrototype =
-      table.shapes.find(
-        (shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'row-divider'
-      ) ??
-      table.shapes.find(
-        (shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'column-divider'
-      );
+      table.shapes.find((shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'row-divider') ??
+      table.shapes.find((shape): shape is LineCanvasShape => shape.kind === 'line' && shape.table?.role === 'column-divider');
 
     const nextShapes = buildTableShapes({
       ...normalizeTableDimensions(dimensions),
@@ -6666,10 +6263,7 @@ export class EditorPageComponent {
     return serializableLatexExportConfigUtil(config);
   }
 
-  private normalizeLatexExportConfig(
-    config: Partial<LatexExportConfig> | null | undefined,
-    preserveFreeText = true
-  ): LatexExportConfig {
+  private normalizeLatexExportConfig(config: Partial<LatexExportConfig> | null | undefined, preserveFreeText = true): LatexExportConfig {
     return normalizeLatexExportConfigUtil(config, DEFAULT_LATEX_EXPORT_CONFIG, preserveFreeText);
   }
 
@@ -6693,9 +6287,7 @@ export class EditorPageComponent {
     const contentLines = [
       this.latexAlignmentCommand(config.alignment),
       config.fontSize === 'normalsize' ? '' : `\\${config.fontSize}`,
-      ...(useAdjustbox
-        ? [String.raw`\begin{adjustbox}{${adjustboxOptions.join(',')}}`, baseBundle.code, String.raw`\end{adjustbox}`]
-        : [baseBundle.code])
+      ...(useAdjustbox ? [String.raw`\begin{adjustbox}{${adjustboxOptions.join(',')}}`, baseBundle.code, String.raw`\end{adjustbox}`] : [baseBundle.code])
     ].filter(Boolean);
 
     const code = config.wrapInFigure
@@ -6756,7 +6348,7 @@ export class EditorPageComponent {
   }
 
   private lineIntersectsMarqueeBounds(shape: LineShape, bounds: SelectionBounds): boolean {
-    const tolerance = EditorPageComponent.lineMarqueeTolerancePx / this.preferences().scale;
+    const tolerance = EDITOR_LINE_MARQUEE_TOLERANCE_PX / this.preferences().scale;
     const expandedBounds = {
       left: bounds.left - tolerance,
       right: bounds.right + tolerance,
@@ -6799,9 +6391,7 @@ export class EditorPageComponent {
       { x: bounds.right, y: bounds.top },
       { x: bounds.left, y: bounds.top }
     ];
-    return corners.some((corner, index) =>
-      this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] as Point)
-    );
+    return corners.some((corner, index) => this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] as Point));
   }
 
   private segmentsIntersect(firstStart: Point, firstEnd: Point, secondStart: Point, secondEnd: Point): boolean {
@@ -6830,37 +6420,23 @@ export class EditorPageComponent {
     return triangleCornerAttachmentPointsUtil(shape);
   }
 
-  private buildTrianglePath(
-    shape: TriangleCanvasShape,
-    projectPoint: (point: Point) => { readonly x: number; readonly y: number },
-    cornerRadius = 0
-  ): string {
+  private buildTrianglePath(shape: TriangleCanvasShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }, cornerRadius = 0): string {
     return buildTrianglePathUtil(shape, projectPoint, cornerRadius);
   }
 
-  private buildLinePath(
-    shape: LineShape,
-    projectPoint: (point: Point) => { readonly x: number; readonly y: number }
-  ): string {
+  private buildLinePath(shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string {
     return buildLinePathUtil(shape, projectPoint);
   }
 
-  private toMinimapShape(
-    shape: CanvasShape,
-    toMapX: (x: number) => number,
-    toMapY: (y: number) => number,
-    scale: number
-  ): MinimapShape {
-    const minimapStrokeWidth = (strokeWidth: number): number =>
-      Math.min(Math.max(strokeWidth * scale * 0.42, 0.16), 0.95);
+  private toMinimapShape(shape: CanvasShape, toMapX: (x: number) => number, toMapY: (y: number) => number, scale: number): MinimapShape {
+    const minimapStrokeWidth = (strokeWidth: number): number => Math.min(Math.max(strokeWidth * scale * 0.42, 0.16), 0.95);
     switch (shape.kind) {
       case 'line':
         return {
           kind: 'line',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          dashArray:
-            this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
+          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           path: this.buildLinePath(shape, (point) => ({
             x: toMapX(point.x),
             y: toMapY(point.y)
@@ -6952,35 +6528,11 @@ export class EditorPageComponent {
     return shapeBoundsUtil(shape);
   }
 
-  private rotatedRectangleBounds(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    rotationDegrees: number
-  ): SelectionBounds {
-    return rotatedRectangleBoundsUtil(x, y, width, height, rotationDegrees);
-  }
-
-  private rotatedEllipseBounds(
-    cx: number,
-    cy: number,
-    rx: number,
-    ry: number,
-    rotationDegrees: number
-  ): SelectionBounds {
-    return rotatedEllipseBoundsUtil(cx, cy, rx, ry, rotationDegrees);
-  }
-
   private boundsFromPoints(points: readonly Point[]): SelectionBounds | null {
     return boundsFromPointsUtil(points);
   }
 
-  private cornerRadiusFromPointer(
-    shape: RectangleCanvasShape | TriangleCanvasShape,
-    handle: ResizeHandle,
-    pointer: Point
-  ): number {
+  private cornerRadiusFromPointer(shape: RectangleCanvasShape | TriangleCanvasShape, handle: ResizeHandle, pointer: Point): number {
     return cornerRadiusFromPointerUtil(shape, handle, pointer);
   }
 
@@ -7015,10 +6567,8 @@ export class EditorPageComponent {
     }
     const selectionPivot = this.selectionRotationPivot(selectedShapes, bounds);
     this.store.recordHistoryCheckpoint();
-    const rotatedShapes = selectedShapes.map((shape) =>
-      this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees)
-    );
-    this.store.replaceShapes(this.withAttachedLinesMoved(selectedShapes, rotatedShapes));
+    const rotatedShapes = selectedShapes.map((shape) => this.rotateShapeAround(shape, selectionPivot, rotationDeltaDegrees));
+    this.store.replaceShapes(this.withAttachedLinesMoved(rotatedShapes));
   }
 
   private selectionRotationPivot(shapes: readonly CanvasShape[], bounds: SelectionBounds): Point {
@@ -7033,16 +6583,13 @@ export class EditorPageComponent {
 
   private selectionCanRotate(shapes: readonly CanvasShape[]): boolean {
     const firstShape = shapes[0] ?? null;
-    return (
-      shapes.length > 0 && !(shapes.length === 1 && (firstShape?.kind === 'line' || firstShape?.kind === 'circle'))
-    );
+    return shapes.length > 0 && !(shapes.length === 1 && (firstShape?.kind === 'line' || firstShape?.kind === 'circle'));
   }
 
   private resizeShape(shape: CanvasShape, handle: ResizeHandle, point: Point): CanvasShape {
     return resizeShapeUtil(shape, handle, point, {
       shapeBounds: (entry) => this.shapeBounds(entry),
-      lineArrowControlScale: (line, endpoint, targetPoint, kind) =>
-        this.lineArrowControlScale(line, endpoint, targetPoint, kind),
+      lineArrowControlScale: (line, endpoint, targetPoint, kind) => this.lineArrowControlScale(line, endpoint, targetPoint, kind),
       selectedShapeKind: this.selectedShape()?.kind ?? null,
       shiftPressed: this.shiftPressed(),
       minShapeDimension: MIN_SHAPE_DIMENSION,
@@ -7054,12 +6601,7 @@ export class EditorPageComponent {
     });
   }
 
-  private resizeShapeSelection(
-    shapes: readonly CanvasShape[],
-    selectionBounds: SelectionBounds,
-    handle: ResizeHandle,
-    point: Point
-  ): readonly CanvasShape[] {
+  private resizeShapeSelection(shapes: readonly CanvasShape[], selectionBounds: SelectionBounds, handle: ResizeHandle, point: Point): readonly CanvasShape[] {
     return resizeSelection(shapes, selectionBounds, handle, point, this.shiftPressed());
   }
 
@@ -7067,9 +6609,7 @@ export class EditorPageComponent {
     return new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
-        resolve(
-          image.naturalWidth && image.naturalHeight ? { width: image.naturalWidth, height: image.naturalHeight } : null
-        );
+        resolve(image.naturalWidth && image.naturalHeight ? { width: image.naturalWidth, height: image.naturalHeight } : null);
       };
       image.onerror = () => resolve(null);
       image.src = src;
@@ -7086,9 +6626,7 @@ export class EditorPageComponent {
   }
 
   private getImageFileFromTransfer(transfer: DataTransfer | null | undefined): File | null {
-    const imageItem = Array.from(transfer?.items ?? []).find(
-      (item) => item.kind === 'file' && item.type.startsWith('image/')
-    );
+    const imageItem = Array.from(transfer?.items ?? []).find((item) => item.kind === 'file' && item.type.startsWith('image/'));
     const itemFile = imageItem?.getAsFile();
     if (itemFile) {
       return itemFile;
@@ -7223,10 +6761,6 @@ export class EditorPageComponent {
 
   private focusCanvasViewport(): void {
     this.canvasViewport().nativeElement.focus({ preventScroll: true });
-  }
-
-  private isCanvasViewportFocused(): boolean {
-    return this.document.activeElement === this.canvasViewport().nativeElement;
   }
 
   private platformShortcutLabel(windowsLabel: string, macLabel: string): string {
@@ -7406,16 +6940,12 @@ export class EditorPageComponent {
 
   private isRepeatedTextTap(shapeId: string): boolean {
     const previousTap = this.recentTextTap();
-    return (
-      !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS
-    );
+    return !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS;
   }
 
   private isRepeatedSelectedShapeTap(shapeId: string): boolean {
     const previousTap = this.recentSelectedShapeTap();
-    return (
-      !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS
-    );
+    return !!previousTap && previousTap.shapeId === shapeId && Date.now() - previousTap.timestamp < TEXT_DOUBLE_TAP_WINDOW_MS;
   }
 
   private textRenderXAt(shape: TextShape, projectX: (value: number) => number, scale: number): number {

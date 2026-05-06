@@ -13,8 +13,7 @@ import { resizeGroupedShapes, type SelectionBounds, type SelectionResizeHandle }
 
 const selectionResizeHandles = new Set<SelectionResizeHandle>(['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']);
 
-const isSelectionResizeHandle = (handle: ResizeHandle): handle is SelectionResizeHandle =>
-  selectionResizeHandles.has(handle as SelectionResizeHandle);
+const isSelectionResizeHandle = (handle: ResizeHandle): handle is SelectionResizeHandle => selectionResizeHandles.has(handle as SelectionResizeHandle);
 
 interface ResizeBoundsOptions {
   readonly minimumWidth: number;
@@ -41,12 +40,7 @@ const rotatePointAround = (point: Point, pivot: Point, rotationDegrees: number):
 
 export interface ResizeShapeOptions {
   readonly shapeBounds: (shape: CanvasShape) => SelectionBounds | null;
-  readonly lineArrowControlScale: (
-    shape: LineCanvasShape,
-    endpoint: ArrowEndpoint,
-    point: Point,
-    kind: ArrowScaleKind
-  ) => number;
+  readonly lineArrowControlScale: (shape: LineCanvasShape, endpoint: ArrowEndpoint, point: Point, kind: ArrowScaleKind) => number;
   readonly selectedShapeKind: CanvasShape['kind'] | null;
   readonly shiftPressed: boolean;
   readonly minShapeDimension: number;
@@ -57,12 +51,7 @@ export interface ResizeShapeOptions {
   readonly textMinHeightFactor: number;
 }
 
-const resizeBounds = (
-  selectionBounds: SelectionBounds,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeBoundsOptions
-): SelectionBounds => {
+const resizeBounds = (selectionBounds: SelectionBounds, handle: ResizeHandle, point: Point, options: ResizeBoundsOptions): SelectionBounds => {
   let left = selectionBounds.left;
   let right = selectionBounds.right;
   let top = selectionBounds.top;
@@ -161,12 +150,7 @@ const keepOppositeHandleAnchored = (
   };
 };
 
-const resizeTextShape = (
-  shape: TextCanvasShape,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeShapeOptions
-): CanvasShape => {
+const resizeTextShape = (shape: TextCanvasShape, handle: ResizeHandle, point: Point, options: ResizeShapeOptions): CanvasShape => {
   const bounds = options.shapeBounds(shape);
   if (!bounds) {
     return shape;
@@ -204,12 +188,7 @@ const resizeTextShape = (
   };
 };
 
-const resizeRectangleShape = (
-  shape: RectangleOrImageCanvasShape,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeShapeOptions
-): CanvasShape => {
+const resizeRectangleShape = (shape: RectangleOrImageCanvasShape, handle: ResizeHandle, point: Point, options: ResizeShapeOptions): CanvasShape => {
   const rotation = shape.rotation ?? 0;
   const center = { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
   const localPointer = rotatePointAround(point, center, rotation);
@@ -250,11 +229,7 @@ const resizeCircleShape = (shape: CircleCanvasShape, handle: ResizeHandle, point
       aspectRatio: 1
     }
   );
-  const radius = Math.max(
-    (resizedBounds.right - resizedBounds.left) / 2,
-    (resizedBounds.top - resizedBounds.bottom) / 2,
-    0.1
-  );
+  const radius = Math.max((resizedBounds.right - resizedBounds.left) / 2, (resizedBounds.top - resizedBounds.bottom) / 2, 0.1);
   return {
     ...shape,
     cx: (resizedBounds.left + resizedBounds.right) / 2,
@@ -263,12 +238,7 @@ const resizeCircleShape = (shape: CircleCanvasShape, handle: ResizeHandle, point
   };
 };
 
-const resizeEllipseShape = (
-  shape: EllipseCanvasShape,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeShapeOptions
-): CanvasShape => {
+const resizeEllipseShape = (shape: EllipseCanvasShape, handle: ResizeHandle, point: Point, options: ResizeShapeOptions): CanvasShape => {
   const localPointer = rotatePointAround(point, { x: shape.cx, y: shape.cy }, shape.rotation ?? 0);
   const aspectRatio = shape.ry === 0 ? 1 : shape.rx / shape.ry;
   const initialBounds = {
@@ -294,12 +264,7 @@ const resizeEllipseShape = (
   };
 };
 
-const resizeLineShape = (
-  shape: LineCanvasShape,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeShapeOptions
-): CanvasShape => {
+const resizeLineShape = (shape: LineCanvasShape, handle: ResizeHandle, point: Point, options: ResizeShapeOptions): CanvasShape => {
   if (handle === 'from') {
     return { ...shape, from: point };
   }
@@ -339,12 +304,7 @@ const resizeLineShape = (
   return shape;
 };
 
-export const resizeShape = (
-  shape: CanvasShape,
-  handle: ResizeHandle,
-  point: Point,
-  options: ResizeShapeOptions
-): CanvasShape => {
+export const resizeShape = (shape: CanvasShape, handle: ResizeHandle, point: Point, options: ResizeShapeOptions): CanvasShape => {
   switch (shape.kind) {
     case 'rectangle':
     case 'triangle':

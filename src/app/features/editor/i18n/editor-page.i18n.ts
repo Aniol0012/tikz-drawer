@@ -95,8 +95,7 @@ export const languageByCode = languages.reduce(
   {} as Record<LanguageCode, Language>
 );
 
-export const isLanguageCode = (value: unknown): value is LanguageCode =>
-  typeof value === 'string' && languageCodes.includes(value as LanguageCode);
+export const isLanguageCode = (value: unknown): value is LanguageCode => typeof value === 'string' && languageCodes.includes(value as LanguageCode);
 
 export interface SharedScenePayload extends PersistedEditorState {
   readonly viewportCenter: Point;
@@ -117,15 +116,7 @@ export interface SharedScenePayload extends PersistedEditorState {
   };
 }
 
-export const categoryOrder: readonly PresetCategory[] = [
-  'essentials',
-  'flow',
-  'geometry',
-  'graphs',
-  'data',
-  'interface',
-  'concepts'
-];
+export const categoryOrder: readonly PresetCategory[] = ['essentials', 'flow', 'geometry', 'graphs', 'data', 'interface', 'concepts'];
 
 export const categoryTranslationKey: Record<PresetCategory, string> = {
   essentials: 'categoryEssentials',
@@ -141,22 +132,15 @@ export const fallbackLanguageCode: LanguageCode = 'en';
 
 export const detectLanguage = (): LanguageCode => {
   const browserLanguage: string = globalThis.navigator?.language?.toLowerCase() ?? 'en';
-  return (
-    languages.find((language) => language.browserPrefixes.some((prefix) => browserLanguage.startsWith(prefix)))?.code ??
-    fallbackLanguageCode
-  );
+  return languages.find((language) => language.browserPrefixes.some((prefix) => browserLanguage.startsWith(prefix)))?.code ?? fallbackLanguageCode;
 };
 
-export const restoreLanguage = (
-  raw: string | null | undefined,
-  detectLanguageFallback: () => LanguageCode = detectLanguage
-): LanguageCode => (isLanguageCode(raw) ? raw : detectLanguageFallback());
+export const restoreLanguage = (raw: string | null | undefined, detectLanguageFallback: () => LanguageCode = detectLanguage): LanguageCode =>
+  isLanguageCode(raw) ? raw : detectLanguageFallback();
 
-export const translate = (language: LanguageCode, key: string): string =>
-  languageByCode[language].translations[key] ?? key;
+export const translate = (language: LanguageCode, key: string): string => languageByCode[language].translations[key] ?? key;
 
-export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string =>
-  languageByCode[language].translations[key] ?? fallback;
+export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string => languageByCode[language].translations[key] ?? fallback;
 
 export const getLanguageOptions = (language: LanguageCode): readonly LanguageOption[] =>
   languages.map(({ code, label, flagSrc, longLabel, longLabelKey }) => ({
@@ -166,5 +150,4 @@ export const getLanguageOptions = (language: LanguageCode): readonly LanguageOpt
     longLabel: translateOrFallback(language, longLabelKey, longLabel)
   }));
 
-export const localizedShapeKind = (language: LanguageCode, kind: CanvasShape['kind']): string =>
-  languageByCode[language].shapeKinds[kind];
+export const localizedShapeKind = (language: LanguageCode, kind: CanvasShape['kind']): string => languageByCode[language].shapeKinds[kind];

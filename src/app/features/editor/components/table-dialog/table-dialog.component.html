@@ -1,22 +1,12 @@
-<div
-  class="table-dialog-backdrop"
-  (click)="cancelDialog.emit()"
-  (keydown.escape)="cancelDialog.emit()">
-  <section
-    class="table-dialog"
-    (click)="$event.stopPropagation()"
-    (keydown)="$event.stopPropagation()">
+<div class="table-dialog-backdrop" (click)="cancelDialog.emit()" (keydown.escape)="cancelDialog.emit()">
+  <section class="table-dialog" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
     <header class="table-dialog__header">
       <div class="table-dialog__copy">
         <p>{{ quickPickerLabel() }}</p>
         <h2>{{ title() }}</h2>
         <span>{{ description() }}</span>
       </div>
-      <button
-        class="table-dialog__close"
-        type="button"
-        (click)="cancelDialog.emit()"
-        [attr.aria-label]="cancelLabel()">
+      <button class="table-dialog__close" type="button" (click)="cancelDialog.emit()" [attr.aria-label]="cancelLabel()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="closeIconPath"></path>
         </svg>
@@ -25,10 +15,7 @@
 
     <div class="table-dialog__body">
       <div class="table-dialog__picker-shell">
-        <div
-          class="table-dialog__picker"
-          [style.--table-picker-columns]="maxPickerColumns()"
-          (mouseleave)="clearPreview()">
+        <div class="table-dialog__picker" [style.--table-picker-columns]="maxPickerColumns()" (mouseleave)="clearPreview()">
           @for (row of pickerRows(); track trackByIndex($index)) {
             @for (column of pickerColumns(); track trackByIndex($index)) {
               <button
@@ -48,36 +35,20 @@
       <div class="table-dialog__inputs">
         <label class="table-dialog__field">
           <span>{{ columnsLabel() }}</span>
-          <input
-            type="number"
-            min="1"
-            max="24"
-            [value]="selectedColumns()"
-            (input)="updateColumns($event)" />
+          <input type="number" min="1" max="24" [value]="selectedColumns()" (input)="updateColumns($event)" />
         </label>
         <label class="table-dialog__field">
           <span>{{ rowsLabel() }}</span>
-          <input
-            type="number"
-            min="1"
-            max="24"
-            [value]="selectedRows()"
-            (input)="updateRows($event)" />
+          <input type="number" min="1" max="24" [value]="selectedRows()" (input)="updateRows($event)" />
         </label>
       </div>
     </div>
 
     <footer class="table-dialog__footer">
-      <button
-        class="table-dialog__button table-dialog__button--secondary"
-        type="button"
-        (click)="cancelDialog.emit()">
+      <button class="table-dialog__button table-dialog__button--secondary" type="button" (click)="cancelDialog.emit()">
         {{ cancelLabel() }}
       </button>
-      <button
-        class="table-dialog__button table-dialog__button--primary"
-        type="button"
-        (click)="submit()">
+      <button class="table-dialog__button table-dialog__button--primary" type="button" (click)="submit()">
         {{ confirmLabel() }}
       </button>
     </footer>

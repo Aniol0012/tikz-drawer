@@ -6,20 +6,12 @@
     </div>
 
     <label class="scene-input" for="scene-name-input">
-      <input
-        id="scene-name-input"
-        type="text"
-        [value]="sceneName()"
-        (input)="onSceneNameInput($event)" />
+      <input id="scene-name-input" type="text" [value]="sceneName()" (input)="onSceneNameInput($event)" />
     </label>
 
     <div #topbarActions class="topbar-actions">
       @if (!compactTopbarActions()) {
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
-          [title]="t('newScene')"
-          (click)="newScene.emit()">
+        <button class="secondary-button secondary-button--toolbar" type="button" [title]="t('newScene')" (click)="newScene.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('plus')"></path></svg>
           <span>{{ t('newScene') }}</span>
         </button>
@@ -34,11 +26,7 @@
           [resolveValue]="shareLinkCopyValue()"
           (copied)="onShareLinkCopied($event)"
           (copyError)="copyError.emit($event)"></app-copy-button>
-        <button
-          class="secondary-button secondary-button--toolbar"
-          type="button"
-          [title]="t('importCode')"
-          (click)="importOpen.emit()">
+        <button class="secondary-button secondary-button--toolbar" type="button" [title]="t('importCode')" (click)="importOpen.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('open')"></path>
           </svg>
@@ -48,22 +36,13 @@
     </div>
 
     @if (compactTopbarActions() || mobileLayout()) {
-      <div
-        class="menu-cluster topbar-actions-menu"
-        (click)="$event.stopPropagation()"
-        (keydown)="$event.stopPropagation()">
-        <button
-          class="icon-button topbar-menu-button"
-          type="button"
-          [title]="t('moreActions')"
-          (click)="fileMenuToggle.emit()">
+      <div class="menu-cluster topbar-actions-menu" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+        <button class="icon-button topbar-menu-button" type="button" [title]="t('moreActions')" (click)="fileMenuToggle.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('menu')"></path></svg>
         </button>
 
         @if (fileMenuOpen()) {
-          <div
-            class="dropdown-menu dropdown-menu--topbar"
-            [class.dropdown-menu--topbar-mobile]="mobileLayout()">
+          <div class="dropdown-menu dropdown-menu--topbar" [class.dropdown-menu--topbar-mobile]="mobileLayout()">
             @if (compactTopbarActions()) {
               <button class="dropdown-row" type="button" (click)="newScene.emit()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -81,10 +60,7 @@
                 [resolveValue]="shareLinkCopyValue()"
                 (copied)="onShareLinkCopied($event, true)"
                 (copyError)="copyError.emit($event)"></app-copy-button>
-              <button
-                class="dropdown-row"
-                type="button"
-                (click)="importOpen.emit(); fileMenuClose.emit()">
+              <button class="dropdown-row" type="button" (click)="importOpen.emit(); fileMenuClose.emit()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="icon('open')"></path>
                 </svg>
@@ -135,21 +111,14 @@
                     </svg>
                   </a>
 
-                  <button
-                    class="icon-button"
-                    type="button"
-                    [title]="t('theme')"
-                    (click)="themeToggle.emit()">
+                  <button class="icon-button" type="button" [title]="t('theme')" (click)="themeToggle.emit()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
                     </svg>
                   </button>
                 </div>
 
-                <button
-                  class="primary-button primary-button--wide"
-                  type="button"
-                  (click)="exportOpen.emit()">
+                <button class="primary-button primary-button--wide" type="button" (click)="exportOpen.emit()">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path [attr.d]="icon('export')"></path>
                   </svg>
@@ -207,17 +176,8 @@
 
   @if (!mobileLayout()) {
     <div class="topbar__right">
-      <sl-dropdown
-        #languageDropdown
-        class="language-dropdown"
-        placement="bottom-end"
-        distance="6"
-        hoist>
-        <button
-          slot="trigger"
-          class="language-select language-select--shoelace"
-          type="button"
-          [attr.aria-label]="t('language')">
+      <sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
+        <button slot="trigger" class="language-select language-select--shoelace" type="button" [attr.aria-label]="t('language')">
           <span>{{ languageLabel() }}</span>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('chevronDown')"></path>
@@ -237,13 +197,7 @@
               [class.is-selected]="language() === option.value"
               [attr.aria-checked]="language() === option.value"
               (click)="selectLanguageOption(option.value, languageDropdown)">
-              <img
-                class="language-menu__flag"
-                ngSrc="{{ option.flagSrc }}"
-                width="16"
-                height="16"
-                alt=""
-                aria-hidden="true" />
+              <img class="language-menu__flag" ngSrc="{{ option.flagSrc }}" width="16" height="16" alt="" aria-hidden="true" />
               <span>{{ option.longLabel }}</span>
             </button>
           }

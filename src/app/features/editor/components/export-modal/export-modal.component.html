@@ -1,34 +1,27 @@
 <div class="modal-backdrop">
-  <section
-    class="export-modal"
-    (click)="$event.stopPropagation()"
-    (keydown)="$event.stopPropagation()">
+  <section class="export-modal" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
     <header class="export-modal__header">
       <div>
-        <p>{{ t('exportTitle') }}</p>
-        <h2>{{ t('export') }}</h2>
-        <span>{{ t('exportDescription') }}</span>
+        <p>{{ 'exportTitle' | translate }}</p>
+        <h2>{{ 'export' | translate }}</h2>
+        <span>{{ 'exportDescription' | translate }}</span>
       </div>
-      <button
-        class="icon-button"
-        type="button"
-        [attr.aria-label]="t('close')"
-        (click)="closeDialog.emit()">
+      <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeDialog.emit()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('close')"></path></svg>
       </button>
     </header>
 
     <div class="share-panel share-panel--top">
       <label class="field field--full">
-        <span>{{ t('shareLink') }}</span>
+        <span>{{ 'shareLink' | translate }}</span>
         <div class="share-field">
           <input type="text" readonly [value]="shareUrl()" />
           <app-copy-button
             appearance="secondary"
-            [text]="t('copyLink')"
-            [copyLabel]="t('copyLink')"
-            [successLabel]="t('copied')"
-            [errorLabel]="t('copyError')"
+            [text]="'copyLink' | translate"
+            [copyLabel]="'copyLink' | translate"
+            [successLabel]="'copied' | translate"
+            [errorLabel]="'copyError' | translate"
             [iconPath]="icon('link')"
             [resolveValue]="shareLinkCopyValue()"
             (copied)="shareLinkCopied.emit($event)"
@@ -36,7 +29,7 @@
           <a class="secondary-button" [href]="shareUrl()" target="_blank" rel="noopener"
             ><svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="icon('open')"></path></svg
-            ><span>{{ t('openSharedLink') }}</span></a
+            ><span>{{ 'openSharedLink' | translate }}</span></a
           >
         </div>
       </label>
@@ -45,17 +38,11 @@
     <div class="export-toolbar">
       <div class="export-toolbar__meta">
         <div class="mode-switch">
-          <button
-            type="button"
-            [class.is-active]="exportMode() === 'snippet'"
-            (click)="exportModeChange.emit('snippet')">
-            {{ t('snippet') }}
+          <button type="button" [class.is-active]="exportMode() === 'snippet'" (click)="exportModeChange.emit('snippet')">
+            {{ 'snippet' | translate }}
           </button>
-          <button
-            type="button"
-            [class.is-active]="exportMode() === 'standalone'"
-            (click)="exportModeChange.emit('standalone')">
-            {{ t('standalone') }}
+          <button type="button" [class.is-active]="exportMode() === 'standalone'" (click)="exportModeChange.emit('standalone')">
+            {{ 'standalone' | translate }}
           </button>
         </div>
       </div>
@@ -63,22 +50,22 @@
         <button class="secondary-button export-btn" type="button" (click)="downloadPng.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('download')"></path></svg
-          ><span>{{ t('downloadPng') }}</span>
+          ><span>{{ 'downloadPng' | translate }}</span>
         </button>
         <button class="secondary-button export-btn" type="button" (click)="downloadSvg.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('download')"></path></svg
-          ><span>{{ t('downloadSvg') }}</span>
+          ><span>{{ 'downloadSvg' | translate }}</span>
         </button>
         <button class="secondary-button export-btn" type="button" (click)="openSettings.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('settings')"></path></svg
-          ><span>{{ t('latexSettings') }}</span>
+          ><span>{{ 'latexSettings' | translate }}</span>
         </button>
         <button class="secondary-button export-btn" type="button" (click)="downloadTex.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('download')"></path></svg
-          ><span>{{ t('downloadTex') }}</span>
+          ><span>{{ 'downloadTex' | translate }}</span>
         </button>
       </div>
     </div>
@@ -86,20 +73,19 @@
     @if (exportMode() === 'snippet') {
       <section class="export-section">
         <div class="code-panel__header">
-          <h3>{{ t('latexImports') }}</h3>
+          <h3>{{ 'latexImports' | translate }}</h3>
         </div>
         <div class="code-panel">
           <div class="code-block-shell">
             <app-copy-button
               class="code-copy-button"
               [value]="exportImports()"
-              [copyLabel]="t('copy')"
-              [successLabel]="t('copied')"
-              [errorLabel]="t('copyError')"
+              [copyLabel]="'copy' | translate"
+              [successLabel]="'copied' | translate"
+              [errorLabel]="'copyError' | translate"
               [iconPath]="icon('copy')"
               (copyError)="copyError.emit($event)"></app-copy-button>
-            <pre
-              class="code-block code-block--modal code-block--imports"><code [innerHTML]="highlightedExportImports()"></code></pre>
+            <pre class="code-block code-block--modal code-block--imports"><code [innerHTML]="highlightedExportImports()"></code></pre>
           </div>
         </div>
       </section>
@@ -107,20 +93,19 @@
 
     <section class="export-section">
       <div class="code-panel__header">
-        <h3>{{ exportMode() === 'snippet' ? t('latexCode') : t('standalone') }}</h3>
+        <h3>{{ exportMode() === 'snippet' ? ('latexCode' | translate) : ('standalone' | translate) }}</h3>
       </div>
       <div class="code-panel">
         <div class="code-block-shell">
           <app-copy-button
             class="code-copy-button"
             [value]="exportCode()"
-            [copyLabel]="t('copy')"
-            [successLabel]="t('copied')"
-            [errorLabel]="t('copyError')"
+            [copyLabel]="'copy' | translate"
+            [successLabel]="'copied' | translate"
+            [errorLabel]="'copyError' | translate"
             [iconPath]="icon('copy')"
             (copyError)="copyError.emit($event)"></app-copy-button>
-          <pre
-            class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
+          <pre class="code-block code-block--modal"><code [innerHTML]="highlightedExportCode()"></code></pre>
         </div>
       </div>
     </section>
@@ -129,40 +114,32 @@
 
 @if (settingsOpen()) {
   <div class="modal-backdrop modal-backdrop--settings">
-    <section
-      class="export-settings-modal"
-      (click)="$event.stopPropagation()"
-      (keydown)="$event.stopPropagation()">
+    <section class="export-settings-modal" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
       <header class="export-modal__header">
         <div>
-          <p>{{ t('latexSettings') }}</p>
-          <h2>{{ t('latexSettingsTitle') }}</h2>
-          <span>{{ t('latexSettingsDescription') }}</span>
+          <p>{{ 'latexSettings' | translate }}</p>
+          <h2>{{ 'latexSettingsTitle' | translate }}</h2>
+          <span>{{ 'latexSettingsDescription' | translate }}</span>
         </div>
-        <button
-          class="icon-button"
-          type="button"
-          [attr.aria-label]="t('close')"
-          (click)="closeSettings.emit()">
+        <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeSettings.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('close')"></path></svg>
         </button>
       </header>
 
       <div class="export-settings-layout">
-        <section
-          class="sidebar-section export-settings-section export-settings-section--environment">
+        <section class="sidebar-section export-settings-section export-settings-section--environment">
           <div class="section-header section-header--static">
-            <span>{{ t('latexEnvironment') }}</span>
+            <span>{{ 'latexEnvironment' | translate }}</span>
           </div>
           <div class="form-grid export-settings-form-grid">
             <app-toggle-field
               class="field--full"
               [checked]="latexExportConfig().wrapInFigure"
-              [label]="t('latexWrapFigure')"
+              [label]="'latexWrapFigure' | translate"
               (checkedChange)="updateLatexExportBoolean('wrapInFigure', $event)"></app-toggle-field>
             @if (latexExportConfig().wrapInFigure) {
               <label class="field">
-                <span>{{ t('latexFigurePlacement') }}</span>
+                <span>{{ 'latexFigurePlacement' | translate }}</span>
                 <app-select
                   [value]="latexExportConfig().figurePlacement"
                   [options]="translatedSelectOptions(placementOptions)"
@@ -170,25 +147,25 @@
               </label>
             }
             <label class="field">
-              <span>{{ t('latexFontSize') }}</span>
+              <span>{{ 'latexFontSize' | translate }}</span>
               <app-select
                 [value]="latexExportConfig().fontSize"
                 [options]="fontSizeSelectOptions()"
                 (valueChange)="setLatexFontSize($event)"></app-select>
             </label>
             @if (!latexExportConfig().wrapInFigure) {
-              <p class="export-settings-note field--full">{{ t('latexScopeGuard') }}</p>
+              <p class="export-settings-note field--full">{{ 'latexScopeGuard' | translate }}</p>
             }
           </div>
         </section>
 
         <section class="sidebar-section export-settings-section export-settings-section--layout">
           <div class="section-header section-header--static">
-            <span>{{ t('latexLayout') }}</span>
+            <span>{{ 'latexLayout' | translate }}</span>
           </div>
           <div class="form-grid export-settings-form-grid">
             <div class="field field--full">
-              <span>{{ t('latexAlignment') }}</span>
+              <span>{{ 'latexAlignment' | translate }}</span>
               <div class="mode-switch mode-switch--full">
                 @for (option of alignmentOptions; track option.value) {
                   <button
@@ -203,16 +180,16 @@
             <app-toggle-field
               class="field--full"
               [checked]="latexExportConfig().scaleToWidth"
-              [label]="t('latexScaleToWidth')"
+              [label]="'latexScaleToWidth' | translate"
               (checkedChange)="updateLatexExportBoolean('scaleToWidth', $event)"></app-toggle-field>
             <app-toggle-field
               class="field--full"
               [checked]="latexExportConfig().includeFrame"
-              [label]="t('latexIncludeFrame')"
+              [label]="'latexIncludeFrame' | translate"
               (checkedChange)="updateLatexExportBoolean('includeFrame', $event)"></app-toggle-field>
             @if (latexExportConfig().scaleToWidth) {
               <label class="field field--full">
-                <span>{{ t('latexMaxWidth') }} · {{ latexExportConfig().maxWidthPercent }}%</span>
+                <span>{{ 'latexMaxWidth' | translate }} · {{ latexExportConfig().maxWidthPercent }}%</span>
                 <div class="range-field">
                   <input
                     type="range"
@@ -234,17 +211,13 @@
           </div>
         </section>
 
-        <section
-          class="sidebar-section export-settings-section export-settings-section--standalone">
+        <section class="sidebar-section export-settings-section export-settings-section--standalone">
           <div class="section-header section-header--static">
-            <span>{{ t('latexStandalone') }}</span>
+            <span>{{ 'latexStandalone' | translate }}</span>
           </div>
           <div class="form-grid export-settings-form-grid">
             <label class="field field--full">
-              <span
-                >{{ t('latexStandaloneBorder') }} ·
-                {{ latexExportConfig().standaloneBorderMm }} mm</span
-              >
+              <span>{{ 'latexStandaloneBorder' | translate }} · {{ latexExportConfig().standaloneBorderMm }} mm</span>
               <div class="range-field">
                 <input
                   type="range"
@@ -265,14 +238,13 @@
           </div>
         </section>
 
-        <section
-          class="sidebar-section export-settings-section export-settings-section--code-theme">
+        <section class="sidebar-section export-settings-section export-settings-section--code-theme">
           <div class="section-header section-header--static">
-            <span>{{ t('codeTheme') }}</span>
+            <span>{{ 'codeTheme' | translate }}</span>
           </div>
           <div class="form-grid export-settings-form-grid">
             <label class="field field--full">
-              <span>{{ t('codeTheme') }}</span>
+              <span>{{ 'codeTheme' | translate }}</span>
               <app-select
                 [value]="codeTheme()"
                 [options]="translatedSelectOptions(codeThemeOptions)"
@@ -285,28 +257,22 @@
           </div>
         </section>
 
-        <section
-          class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--meta">
+        <section class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--meta">
           <div class="section-header section-header--static">
-            <span>{{ t('latexCaptionLabel') }}</span>
-            <button
-              class="secondary-button secondary-button--compact"
-              type="button"
-              (click)="applySuggestedCaptionAndLabel()">
-              {{ t('latexSuggest') }}
+            <span>{{ 'latexCaptionLabel' | translate }}</span>
+            <button class="secondary-button secondary-button--compact" type="button" (click)="applySuggestedCaptionAndLabel()">
+              {{ 'latexSuggest' | translate }}
             </button>
           </div>
           <div class="form-grid export-settings-form-grid">
             <app-toggle-field
               class="field--full"
               [checked]="latexExportConfig().includeCaption"
-              [label]="t('latexIncludeCaption')"
-              (checkedChange)="
-                updateLatexExportBoolean('includeCaption', $event)
-              "></app-toggle-field>
+              [label]="'latexIncludeCaption' | translate"
+              (checkedChange)="updateLatexExportBoolean('includeCaption', $event)"></app-toggle-field>
             @if (latexExportConfig().includeCaption) {
               <label class="field field--full">
-                <span>{{ t('latexCaption') }}</span>
+                <span>{{ 'latexCaption' | translate }}</span>
                 <input
                   type="text"
                   [value]="latexExportConfig().caption"
@@ -317,11 +283,11 @@
             <app-toggle-field
               class="field--full"
               [checked]="latexExportConfig().includeLabel"
-              [label]="t('latexIncludeLabel')"
+              [label]="'latexIncludeLabel' | translate"
               (checkedChange)="updateLatexExportBoolean('includeLabel', $event)"></app-toggle-field>
             @if (latexExportConfig().includeLabel) {
               <label class="field field--full">
-                <span>{{ t('latexLabel') }}</span>
+                <span>{{ 'latexLabel' | translate }}</span>
                 <input
                   type="text"
                   [value]="latexExportConfig().label"
@@ -332,10 +298,9 @@
           </div>
         </section>
 
-        <section
-          class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--colors">
+        <section class="sidebar-section export-settings-section export-settings-section--wide export-settings-section--colors">
           <div class="section-header section-header--static">
-            <span>{{ t('latexColors') }}</span>
+            <span>{{ 'latexColors' | translate }}</span>
           </div>
           <div class="export-config-grid">
             @for (option of colorModeOptions; track option.value) {

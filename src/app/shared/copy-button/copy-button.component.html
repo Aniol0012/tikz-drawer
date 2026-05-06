@@ -18,16 +18,10 @@
       [class.is-active]="state() === 'idle' || state() === 'copying'">
       <path [attr.d]="iconPath()"></path>
     </svg>
-    <svg
-      class="copy-button__icon copy-button__icon--success"
-      viewBox="0 0 24 24"
-      [class.is-active]="state() === 'success'">
+    <svg class="copy-button__icon copy-button__icon--success" viewBox="0 0 24 24" [class.is-active]="state() === 'success'">
       <path [attr.d]="successIconPath()"></path>
     </svg>
-    <svg
-      class="copy-button__icon copy-button__icon--error"
-      viewBox="0 0 24 24"
-      [class.is-active]="state() === 'error'">
+    <svg class="copy-button__icon copy-button__icon--error" viewBox="0 0 24 24" [class.is-active]="state() === 'error'">
       <path [attr.d]="errorIconPath()"></path>
     </svg>
   </span>

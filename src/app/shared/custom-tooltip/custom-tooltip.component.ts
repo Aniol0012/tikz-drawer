@@ -1,13 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  HostListener,
-  inject,
-  signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, inject, signal } from '@angular/core';
 
 interface TooltipState {
   readonly text: string;
@@ -242,19 +234,11 @@ export class CustomTooltipComponent {
   }
 
   private isShoelaceDropdownTarget(target: EventTarget | null): boolean {
-    return (
-      target instanceof Element && target.closest('sl-dropdown, sl-select, sl-menu, sl-menu-item, sl-option') !== null
-    );
+    return target instanceof Element && target.closest('sl-dropdown, sl-select, sl-menu, sl-menu-item, sl-option') !== null;
   }
 
   private tooltipText(target: HTMLElement): string {
-    return (
-      target.dataset['tooltip'] ||
-      target.dataset['nativeTitle'] ||
-      target.getAttribute('title') ||
-      target.getAttribute('aria-label') ||
-      ''
-    ).trim();
+    return (target.dataset['tooltip'] || target.dataset['nativeTitle'] || target.getAttribute('title') || target.getAttribute('aria-label') || '').trim();
   }
 
   private removeNativeTitle(target: HTMLElement): void {
@@ -283,10 +267,7 @@ export class CustomTooltipComponent {
     const estimatedWidth = Math.min(TOOLTIP_MAX_WIDTH_PX, Math.max(44, text.length * 6.4 + 20));
     const pointerX = this.lastPointerEvent?.clientX;
     const anchorX = pointerX && pointerX >= rect.left && pointerX <= rect.right ? pointerX : rect.left + rect.width / 2;
-    const left = Math.min(
-      viewportWidth - TOOLTIP_MARGIN_PX - estimatedWidth / 2,
-      Math.max(TOOLTIP_MARGIN_PX + estimatedWidth / 2, anchorX)
-    );
+    const left = Math.min(viewportWidth - TOOLTIP_MARGIN_PX - estimatedWidth / 2, Math.max(TOOLTIP_MARGIN_PX + estimatedWidth / 2, anchorX));
     const hasTopSpace = rect.top > 44;
     const placement = hasTopSpace ? 'top' : 'bottom';
     const top = hasTopSpace ? rect.top - TOOLTIP_OFFSET_PX : rect.bottom + TOOLTIP_OFFSET_PX;

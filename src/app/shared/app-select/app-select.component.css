@@ -136,11 +136,7 @@
 
 :host-context([data-theme='dark']) .app-select {
   --sl-input-background-color: var(--input-background);
-  --sl-input-background-color-hover: color-mix(
-    in srgb,
-    var(--input-background) 86%,
-    var(--toolbar-background-hover)
-  );
+  --sl-input-background-color-hover: color-mix(in srgb, var(--input-background) 86%, var(--toolbar-background-hover));
   --sl-input-background-color-focus: var(--input-background);
   --sl-input-border-color: var(--tool-border-strong);
   --sl-input-border-color-hover: color-mix(in srgb, white 30%, var(--tool-border-strong));

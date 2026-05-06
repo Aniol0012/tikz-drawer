@@ -17,11 +17,9 @@ import {
 import type { ThemeMode } from '../../models/tikz.models';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
+import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import type { CodeHighlightTheme, ExportMode } from '../editor-page/editor-page.types';
-import {
-  CopyButtonComponent,
-  type CopyButtonValueResolver
-} from '../../../../shared/copy-button/copy-button.component';
+import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../shared/copy-button/copy-button.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 
@@ -32,7 +30,7 @@ type LabelKeyOption = {
 
 @Component({
   selector: 'app-export-modal',
-  imports: [CopyButtonComponent, AppSelectComponent, ToggleFieldComponent],
+  imports: [CopyButtonComponent, AppSelectComponent, ToggleFieldComponent, EditorTranslatePipe],
   templateUrl: './export-modal.component.html',
   styleUrl: './export-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

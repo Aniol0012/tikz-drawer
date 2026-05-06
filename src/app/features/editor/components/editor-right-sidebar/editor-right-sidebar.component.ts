@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/core';
 import type { EditorPageComponent } from '../editor-page/editor-page.component';
 
 @Component({

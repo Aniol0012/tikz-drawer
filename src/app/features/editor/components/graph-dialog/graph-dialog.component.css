@@ -119,12 +119,7 @@
   border: 1px solid var(--tool-border);
   border-radius: 14px;
   background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--panel-background) 94%, white 6%),
-      var(--panel-background)
-    ),
-    var(--panel-background);
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 94%, white 6%), var(--panel-background)), var(--panel-background);
 }
 
 .graph-dialog__preview {

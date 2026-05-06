@@ -1,4 +1,5 @@
 import { DOCUMENT, NgOptimizedImage } from '@angular/common';
+import type { ElementRef } from '@angular/core';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -7,7 +8,6 @@ import {
   CUSTOM_ELEMENTS_SCHEMA,
   DestroyRef,
   effect,
-  ElementRef,
   inject,
   input,
   output,
@@ -18,10 +18,7 @@ import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { getLanguageOptions, isLanguageCode, languageByCode, type LanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
-import {
-  CopyButtonComponent,
-  type CopyButtonValueResolver
-} from '../../../../shared/copy-button/copy-button.component';
+import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../shared/copy-button/copy-button.component';
 import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import type { TopbarTool } from './editor-topbar.types';
 
@@ -82,9 +79,7 @@ export class EditorTopbarComponent {
   readonly language = this.languageService.language;
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
-  private readonly windowWidth = signal(
-    typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH
-  );
+  private readonly windowWidth = signal(typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH);
 
   constructor() {
     effect(() => {

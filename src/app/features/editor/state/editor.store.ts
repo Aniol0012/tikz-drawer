@@ -10,13 +10,7 @@ import {
 import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '../presets/presets';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { parseTikz } from '../tikz/tikz.parser';
-import type {
-  CanvasShape,
-  EditorPreferences,
-  ParsedTikzResult,
-  PersistedEditorState,
-  TikzScene
-} from '../models/tikz.models';
+import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
 import { remapStructuralShapeIds } from '../utils/table.utils';
 import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
@@ -70,9 +64,7 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
-        ...(shape.kind === 'triangle'
-          ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 }
-          : {}),
+        ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         rotation: shape.rotation ?? 0
       } as CanvasShape;
     case 'text':
@@ -185,9 +177,7 @@ const ellipseBounds = (
   };
 };
 
-const shapeBounds = (
-  shape: CanvasShape
-): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
+const shapeBounds = (shape: CanvasShape): { readonly left: number; readonly right: number; readonly top: number; readonly bottom: number } => {
   switch (shape.kind) {
     case 'rectangle':
       return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
@@ -223,21 +213,14 @@ const shapeBounds = (
         { x: left + width, y: shape.y + height / 2 },
         { x: left, y: shape.y + height / 2 }
       ] as const;
-      return boundsFromPoints(
-        shape.rotation
-          ? corners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation))
-          : corners
-      );
+      return boundsFromPoints(shape.rotation ? corners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation)) : corners);
     }
     case 'image':
       return rectangleBounds(shape.x, shape.y, shape.width, shape.height, shape.rotation ?? 0);
   }
 };
 
-const centerShapesOnPoint = (
-  shapes: readonly CanvasShape[],
-  point: { x: number; y: number }
-): readonly CanvasShape[] => {
+const centerShapesOnPoint = (shapes: readonly CanvasShape[], point: { x: number; y: number }): readonly CanvasShape[] => {
   if (!shapes.length) {
     return shapes;
   }
@@ -272,21 +255,13 @@ interface EditorSnapshot {
   readonly selectedShapeIds: readonly string[];
 }
 
-const translatePositionedShape = (
-  shape: Extract<CanvasShape, { x: number; y: number }>,
-  deltaX: number,
-  deltaY: number
-): CanvasShape => ({
+const translatePositionedShape = (shape: Extract<CanvasShape, { x: number; y: number }>, deltaX: number, deltaY: number): CanvasShape => ({
   ...shape,
   x: shape.x + deltaX,
   y: shape.y + deltaY
 });
 
-const translateCenteredShape = (
-  shape: Extract<CanvasShape, { cx: number; cy: number }>,
-  deltaX: number,
-  deltaY: number
-): CanvasShape => ({
+const translateCenteredShape = (shape: Extract<CanvasShape, { cx: number; cy: number }>, deltaX: number, deltaY: number): CanvasShape => ({
   ...shape,
   cx: shape.cx + deltaX,
   cy: shape.cy + deltaY
@@ -353,9 +328,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         fill: shape.fill,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
-        ...(shape.kind === 'triangle'
-          ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 }
-          : {}),
+        ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
         rotation: shape.rotation ?? 0
       };
@@ -383,9 +356,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
 
 const normalizePreferences = (preferences: Partial<EditorPreferences> | undefined): EditorPreferences => {
   const scale = Number(preferences?.scale);
-  const normalizedScale = Number.isFinite(scale)
-    ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale))
-    : DEFAULT_EDITOR_SCALE;
+  const normalizedScale = Number.isFinite(scale) ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale)) : DEFAULT_EDITOR_SCALE;
 
   return {
     ...defaultPreferences,
@@ -482,9 +453,7 @@ export class EditorStore {
 
   toggleShapeInSelection(shapeId: string): void {
     this.selectedShapeIds.update((selectedShapeIds) =>
-      selectedShapeIds.includes(shapeId)
-        ? selectedShapeIds.filter((selectedShapeId) => selectedShapeId !== shapeId)
-        : [...selectedShapeIds, shapeId]
+      selectedShapeIds.includes(shapeId) ? selectedShapeIds.filter((selectedShapeId) => selectedShapeId !== shapeId) : [...selectedShapeIds, shapeId]
     );
   }
 
@@ -677,16 +646,11 @@ export class EditorStore {
     this.scene.update((scene) => {
       const insertionIndex = scene.shapes.findIndex((shape) => removedShapeIdSet.has(shape.id));
       const remainingShapes = scene.shapes.filter((shape) => !removedShapeIdSet.has(shape.id));
-      const safeInsertionIndex =
-        insertionIndex >= 0 ? Math.min(insertionIndex, remainingShapes.length) : remainingShapes.length;
+      const safeInsertionIndex = insertionIndex >= 0 ? Math.min(insertionIndex, remainingShapes.length) : remainingShapes.length;
 
       return {
         ...scene,
-        shapes: [
-          ...remainingShapes.slice(0, safeInsertionIndex),
-          ...addedShapes,
-          ...remainingShapes.slice(safeInsertionIndex)
-        ]
+        shapes: [...remainingShapes.slice(0, safeInsertionIndex), ...addedShapes, ...remainingShapes.slice(safeInsertionIndex)]
       };
     });
     this.selectedShapeIds.set(addedShapes.map((shape) => shape.id));
@@ -701,9 +665,7 @@ export class EditorStore {
 
     this.scene.update((scene) => ({
       ...scene,
-      shapes: scene.shapes.map((shape) =>
-        selectedShapeIdSet.has(shape.id) ? translateShape(shape, deltaX, deltaY) : shape
-      )
+      shapes: scene.shapes.map((shape) => (selectedShapeIdSet.has(shape.id) ? translateShape(shape, deltaX, deltaY) : shape))
     }));
   }
 
@@ -717,10 +679,7 @@ export class EditorStore {
     this.scene.update((scene) => {
       return {
         ...scene,
-        shapes: [
-          ...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id)),
-          ...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id))
-        ]
+        shapes: [...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id)), ...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id))]
       };
     });
   }
@@ -771,10 +730,7 @@ export class EditorStore {
     this.scene.update((scene) => {
       return {
         ...scene,
-        shapes: [
-          ...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id)),
-          ...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id))
-        ]
+        shapes: [...scene.shapes.filter((shape) => selectedShapeIdSet.has(shape.id)), ...scene.shapes.filter((shape) => !selectedShapeIdSet.has(shape.id))]
       };
     });
   }

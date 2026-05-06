@@ -627,11 +627,7 @@
 :host([data-theme='dark']) {
   & .export-settings-modal {
     border-color: color-mix(in srgb, white 16%, var(--tool-border-strong));
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--panel-background) 98%, #202020 2%),
-      var(--panel-background)
-    );
+    background: linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 98%, #202020 2%), var(--panel-background));
     box-shadow:
       0 24px 48px rgba(0, 0, 0, 0.34),
       inset 0 1px 0 rgba(255, 255, 255, 0.04);

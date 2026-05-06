@@ -179,9 +179,7 @@ describe('sceneToTikzBundle', () => {
     const bundle = sceneToTikzBundle(scene);
 
     expect(bundle.code).toContain(String.raw`Hola\ensuremath{\times}`);
-    expect(bundle.code).toContain(
-      String.raw`\ensuremath{\int}\ensuremath{\gamma}\ensuremath{\delta}\ensuremath{\exists}`
-    );
+    expect(bundle.code).toContain(String.raw`\ensuremath{\int}\ensuremath{\gamma}\ensuremath{\delta}\ensuremath{\exists}`);
   });
 
   it('keeps generated math commands valid when followed immediately by text', () => {

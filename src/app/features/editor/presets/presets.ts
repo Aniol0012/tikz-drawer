@@ -187,10 +187,7 @@ const textTranslationKeyByShapeName: Readonly<Record<string, string>> = {
   'Growth note': 'sceneText.metrics-board.note'
 };
 
-export const localizePresetCanvasShapes = (
-  shapes: readonly CanvasShape[],
-  localize: PresetTextLocalizer
-): readonly CanvasShape[] =>
+export const localizePresetCanvasShapes = (shapes: readonly CanvasShape[], localize: PresetTextLocalizer): readonly CanvasShape[] =>
   shapes.map((shape) => {
     if (shape.kind === 'text') {
       const key = textTranslationKeyByShapeName[shape.name];
@@ -268,19 +265,14 @@ const createGraphPreset = (
     readonly iconStrokeWidth?: number;
   } = {}
 ): ObjectPreset =>
-  createPreset(
-    GRAPH_PRESET_ID_BY_KIND[kind],
-    'graphs',
-    icon,
-    title,
-    description,
-    buildGraphShapes({ ...DEFAULT_GRAPH_DIMENSIONS, kind, cx: 0, cy: 0 }),
-    { preserveStyle: true, searchTerms, iconWidth: 22, iconStrokeWidth: options.iconStrokeWidth ?? 1.35 }
-  );
+  createPreset(GRAPH_PRESET_ID_BY_KIND[kind], 'graphs', icon, title, description, buildGraphShapes({ ...DEFAULT_GRAPH_DIMENSIONS, kind, cx: 0, cy: 0 }), {
+    preserveStyle: true,
+    searchTerms,
+    iconWidth: 22,
+    iconStrokeWidth: options.iconStrokeWidth ?? 1.35
+  });
 
-export const buildTablePresetShapes = (
-  overrides: Partial<typeof DEFAULT_TABLE_GEOMETRY> = {}
-): readonly CanvasShape[] =>
+export const buildTablePresetShapes = (overrides: Partial<typeof DEFAULT_TABLE_GEOMETRY> = {}): readonly CanvasShape[] =>
   buildTableShapes({
     ...DEFAULT_TABLE_GEOMETRY,
     ...overrides
@@ -300,15 +292,10 @@ export const defaultPreferences: EditorPreferences = {
 };
 
 export const objectPresets: readonly ObjectPreset[] = [
-  createPreset(
-    'segment',
-    'essentials',
-    'segment',
-    'Line',
-    'Straight segment for geometry and diagrams.',
-    [createLine({ name: 'Line' })],
-    { quickAccess: true, searchTerms: ['line', 'segment', 'edge'] }
-  ),
+  createPreset('segment', 'essentials', 'segment', 'Line', 'Straight segment for geometry and diagrams.', [createLine({ name: 'Line' })], {
+    quickAccess: true,
+    searchTerms: ['line', 'segment', 'edge']
+  }),
   createPreset(
     'arrow',
     'essentials',
@@ -327,15 +314,10 @@ export const objectPresets: readonly ObjectPreset[] = [
     [createRectangle({ name: 'Rectangle', fill: '#f0f0f0' })],
     { quickAccess: true, searchTerms: ['rectangle', 'box', 'process'] }
   ),
-  createPreset(
-    'circle',
-    'essentials',
-    'circle',
-    'Circle',
-    'Circle for highlights and nodes.',
-    [createCircle({ name: 'Circle' })],
-    { quickAccess: true, searchTerms: ['circle', 'node', 'round'] }
-  ),
+  createPreset('circle', 'essentials', 'circle', 'Circle', 'Circle for highlights and nodes.', [createCircle({ name: 'Circle' })], {
+    quickAccess: true,
+    searchTerms: ['circle', 'node', 'round']
+  }),
   createPreset(
     'ellipse',
     'essentials',
@@ -354,24 +336,14 @@ export const objectPresets: readonly ObjectPreset[] = [
     [createText({ name: 'Note', text: 'Note', textBox: true, boxWidth: 4.8, textAlign: 'left' })],
     { searchTerms: ['note', 'text box', 'annotation', 'comment'] }
   ),
-  createPreset(
-    'label',
-    'essentials',
-    'text',
-    'Text',
-    'Simple text label positioned on the canvas.',
-    [createText({ name: 'Text', text: 'Text' })],
-    { quickAccess: true, searchTerms: ['label', 'text', 'annotation'] }
-  ),
-  createPreset(
-    'image',
-    'interface',
-    'image',
-    'Image',
-    'Place an image with editable preview source and LaTeX path.',
-    [createImage()],
-    { quickAccess: true, searchTerms: ['image', 'photo', 'picture', 'asset'] }
-  ),
+  createPreset('label', 'essentials', 'text', 'Text', 'Simple text label positioned on the canvas.', [createText({ name: 'Text', text: 'Text' })], {
+    quickAccess: true,
+    searchTerms: ['label', 'text', 'annotation']
+  }),
+  createPreset('image', 'interface', 'image', 'Image', 'Place an image with editable preview source and LaTeX path.', [createImage()], {
+    quickAccess: true,
+    searchTerms: ['image', 'photo', 'picture', 'asset']
+  }),
   createPreset(
     'decision',
     'flow',
@@ -393,10 +365,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'terminator',
     'Terminator',
     'Start/end shape for process diagrams.',
-    [
-      createEllipse({ name: 'Terminator', rx: 2.3, ry: 1.1, fill: '#f0f0f0' }),
-      createText({ name: 'Terminator label', text: 'Start' })
-    ],
+    [createEllipse({ name: 'Terminator', rx: 2.3, ry: 1.1, fill: '#f0f0f0' }), createText({ name: 'Terminator label', text: 'Start' })],
     { searchTerms: ['start', 'end', 'terminator', 'capsule'] }
   ),
   createPreset(
@@ -622,26 +591,9 @@ export const objectPresets: readonly ObjectPreset[] = [
     ['graph', 'complete', 'clique', 'k_n', 'network'],
     { iconStrokeWidth: 1.18 }
   ),
-  createGraphPreset('cycle', 'graphCycle', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', [
-    'graph',
-    'cycle',
-    'c_n',
-    'ring'
-  ]),
-  createGraphPreset(
-    'path',
-    'graphPath',
-    'Path graph',
-    'Path P_n for ordered vertex chains.',
-    ['graph', 'path', 'p_n', 'chain'],
-    { iconStrokeWidth: 1.25 }
-  ),
-  createGraphPreset('star', 'graphStar', 'Star graph', 'Central vertex connected to all leaves.', [
-    'graph',
-    'star',
-    'hub',
-    'tree'
-  ]),
+  createGraphPreset('cycle', 'graphCycle', 'Cycle graph', 'Cycle C_n with vertices arranged around a ring.', ['graph', 'cycle', 'c_n', 'ring']),
+  createGraphPreset('path', 'graphPath', 'Path graph', 'Path P_n for ordered vertex chains.', ['graph', 'path', 'p_n', 'chain'], { iconStrokeWidth: 1.25 }),
+  createGraphPreset('star', 'graphStar', 'Star graph', 'Central vertex connected to all leaves.', ['graph', 'star', 'hub', 'tree']),
   createGraphPreset('wheel', 'graphWheel', 'Wheel graph', 'Cycle with a central hub connected to every rim vertex.', [
     'graph',
     'wheel',
@@ -657,14 +609,9 @@ export const objectPresets: readonly ObjectPreset[] = [
     ['graph', 'bipartite', 'k_mn', 'matching'],
     { iconStrokeWidth: 1.08 }
   ),
-  createGraphPreset(
-    'grid',
-    'graphGrid',
-    'Grid graph',
-    'Rectangular lattice with horizontal and vertical edges.',
-    ['graph', 'grid', 'lattice', 'mesh'],
-    { iconStrokeWidth: 1.18 }
-  ),
+  createGraphPreset('grid', 'graphGrid', 'Grid graph', 'Rectangular lattice with horizontal and vertical edges.', ['graph', 'grid', 'lattice', 'mesh'], {
+    iconStrokeWidth: 1.18
+  }),
   createGraphPreset('ladder', 'graphLadder', 'Ladder graph', 'Two parallel paths connected by regular rungs.', [
     'graph',
     'ladder',
@@ -679,12 +626,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     'polyhedral',
     'matching'
   ]),
-  createGraphPreset('binary-tree', 'graphTree', 'Binary tree', 'Balanced binary tree with configurable levels.', [
-    'graph',
-    'tree',
-    'binary',
-    'hierarchy'
-  ]),
+  createGraphPreset('binary-tree', 'graphTree', 'Binary tree', 'Balanced binary tree with configurable levels.', ['graph', 'tree', 'binary', 'hierarchy']),
   createGraphPreset(
     'petersen',
     'graphPetersen',
@@ -693,13 +635,13 @@ export const objectPresets: readonly ObjectPreset[] = [
     ['graph', 'petersen', 'cubic', 'regular'],
     { iconStrokeWidth: 1.08 }
   ),
-  createGraphPreset(
-    'kary-tree',
-    'graphKaryTree',
-    'k-ary tree',
-    'Complete rooted tree with a configurable branching factor.',
-    ['graph', 'tree', 'k-ary', 'rooted', 'hierarchy']
-  ),
+  createGraphPreset('kary-tree', 'graphKaryTree', 'k-ary tree', 'Complete rooted tree with a configurable branching factor.', [
+    'graph',
+    'tree',
+    'k-ary',
+    'rooted',
+    'hierarchy'
+  ]),
   createGraphPreset(
     'layered-dag',
     'graphLayeredDag',
@@ -970,15 +912,9 @@ export const objectPresets: readonly ObjectPreset[] = [
     ],
     { searchTerms: ['hexagon', 'module', 'system'] }
   ),
-  createPreset(
-    'table',
-    'data',
-    'table',
-    'Table',
-    'Simple table block for data layouts and comparisons.',
-    buildTablePresetShapes(),
-    { searchTerms: ['table', 'grid', 'matrix', 'data'] }
-  ),
+  createPreset('table', 'data', 'table', 'Table', 'Simple table block for data layouts and comparisons.', buildTablePresetShapes(), {
+    searchTerms: ['table', 'grid', 'matrix', 'data']
+  }),
   createPreset(
     'sticky-note',
     'interface',

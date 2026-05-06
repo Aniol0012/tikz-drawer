@@ -212,11 +212,7 @@ describe('editor-resize utils', () => {
     const center = { x: rotatedEllipse.cx, y: rotatedEllipse.cy };
     const westLocal = { x: rotatedEllipse.cx - rotatedEllipse.rx, y: rotatedEllipse.cy };
     const westWorldBefore = rotatePointAround(westLocal, center, -(rotatedEllipse.rotation ?? 0));
-    const pointer = rotatePointAround(
-      { x: rotatedEllipse.cx + rotatedEllipse.rx + 0.8, y: rotatedEllipse.cy },
-      center,
-      -(rotatedEllipse.rotation ?? 0)
-    );
+    const pointer = rotatePointAround({ x: rotatedEllipse.cx + rotatedEllipse.rx + 0.8, y: rotatedEllipse.cy }, center, -(rotatedEllipse.rotation ?? 0));
 
     const resized = resizeShape(rotatedEllipse, 'e', pointer, resizeOptions());
     expect(resized.kind).toBe('ellipse');

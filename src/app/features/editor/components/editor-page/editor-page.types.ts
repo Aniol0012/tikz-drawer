@@ -1,11 +1,4 @@
-import type {
-  ArrowTipKind,
-  CanvasShape,
-  ObjectPreset,
-  Point,
-  PresetCategory,
-  TextShape
-} from '../../models/tikz.models';
+import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory, TextShape } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene';
@@ -29,17 +22,7 @@ export type ImageTextKey = 'src' | 'latexSource';
 export type ImageDimensionKey = 'width' | 'height';
 export type TextTransformMode = 'uppercase' | 'lowercase' | 'titlecase';
 export type LineBooleanKey = 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound';
-export type ContextAction =
-  | 'copy'
-  | 'cut'
-  | 'paste'
-  | 'duplicate'
-  | 'delete'
-  | 'front'
-  | 'back'
-  | 'group'
-  | 'ungroup'
-  | 'png';
+export type ContextAction = 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png';
 export type LineEndpoint = 'from' | 'to';
 export type ArrowEndpoint = 'start' | 'end';
 export type ArrowScaleKind = 'length' | 'width';

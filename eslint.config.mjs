@@ -11,7 +11,17 @@ export default tseslint.config(
     extends: [eslint.configs.recommended, ...tseslint.configs.recommended, ...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,
     rules: {
-      curly: ['error', 'all']
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ],
+      curly: ['error', 'all'],
+      'no-unused-private-class-members': 'error'
     }
   },
   {
@@ -19,4 +29,3 @@ export default tseslint.config(
     extends: [...angular.configs.templateRecommended]
   }
 );
-

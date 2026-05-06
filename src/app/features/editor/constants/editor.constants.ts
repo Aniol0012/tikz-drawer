@@ -105,3 +105,70 @@ export const EDITOR_SCALE_DECIMAL_FACTOR = 10;
 export const OPACITY_MIN = 0;
 export const OPACITY_MAX = 1;
 export const SLIDER_DECIMAL_PLACES = 2;
+
+export const EDITOR_INLINE_TEXT_EDITOR_METRICS = {
+  minFontSize: 14,
+  minPaddingX: 6,
+  minPaddingY: 4,
+  minBoxWidth: 56,
+  minLineWidth: 36,
+  characterWidthFactor: 0.56,
+  minLineWidthFactor: 1.4,
+  lineHeightFactor: 1.08
+} as const;
+
+export const EDITOR_TEXT_SYMBOL_POPOVER_METRICS = {
+  viewportWidthFallback: 1280,
+  viewportHeightFallback: 800,
+  maxWidth: 420,
+  minWidth: 280,
+  preferredHeight: 420,
+  minHeight: 220,
+  edgePadding: 12,
+  offset: 8,
+  openUpwardThreshold: 260
+} as const;
+
+export const EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER = {
+  coarse: 18,
+  fine: 10
+} as const;
+
+export const EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR = 1.65;
+export const EDITOR_CONTEXT_MENU_VIEWPORT_PADDING = 8;
+export const EDITOR_SELECTION_ROTATE_HANDLE_DISTANCE_FACTOR = 3.2;
+export const EDITOR_SELECTION_ROTATE_HANDLE_MIN_DISTANCE = 0.65;
+export const EDITOR_ROTATION_SNAP_STEP_DEGREES = 15;
+export const EDITOR_KEYBOARD_NAVIGATION_BASE_SPEED = 100;
+export const EDITOR_KEYBOARD_NAVIGATION_SNAP_SPEED_MULTIPLIER = 200;
+export const EDITOR_KEYBOARD_NAVIGATION_FAST_MULTIPLIER = 4;
+export const EDITOR_WHEEL_ROTATION_SCALE = 0.04;
+export const EDITOR_WHEEL_ROTATION_MIN_STEP_DEGREES = 3;
+export const EDITOR_WHEEL_ROTATION_MAX_STEP_DEGREES = 18;
+export const EDITOR_LINE_HIT_STROKE_EXTRA_PX = 10;
+export const EDITOR_LINE_HIT_STROKE_MIN_PX = 14;
+export const EDITOR_LINE_ATTACHMENT_SNAP_RADIUS_PX = 14;
+export const EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX = 28;
+export const EDITOR_LINE_ATTACHMENT_PREVIEW_RADIUS_PX = 44;
+export const EDITOR_COARSE_LINE_ATTACHMENT_PREVIEW_RADIUS_PX = 72;
+export const EDITOR_LINE_MARQUEE_TOLERANCE_PX = 6;
+
+export const EDITOR_SIDEBAR_RESIZE_LIMITS = {
+  mobileMaxHeight: 640,
+  leftMinWidth: 220,
+  leftMaxWidth: 420,
+  rightMinWidth: 260,
+  rightMaxWidth: 460
+} as const;
+
+export const EDITOR_COLLAPSED_SIDEBAR_SIZE = {
+  desktopWidth: 0,
+  mobileHeight: 56
+} as const;
+
+export const EDITOR_DEFAULT_SLIDER_RANGE = {
+  min: -20,
+  max: 20
+} as const;
+
+export const EDITOR_NOTIFICATION_DURATION_MS = 2400;

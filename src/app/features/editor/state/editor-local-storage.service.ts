@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
+import type { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 
 export type EditorStorageKey = (typeof EDITOR_STORAGE_KEYS)[keyof typeof EDITOR_STORAGE_KEYS];
 

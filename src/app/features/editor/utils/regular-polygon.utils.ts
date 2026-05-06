@@ -14,19 +14,13 @@ const REGULAR_POLYGON_START_ANGLE_RADIANS = Math.PI / 2;
 const REGULAR_POLYGON_FULL_TURN_RADIANS = Math.PI * 2;
 
 export const normalizeRegularPolygonDimensions = (dimensions: RegularPolygonDimensions): RegularPolygonDimensions => {
-  const roundedSides = Number.isFinite(dimensions.sides)
-    ? Math.round(dimensions.sides)
-    : DEFAULT_REGULAR_POLYGON_GEOMETRY.sides;
+  const roundedSides = Number.isFinite(dimensions.sides) ? Math.round(dimensions.sides) : DEFAULT_REGULAR_POLYGON_GEOMETRY.sides;
   return {
     sides: Math.min(REGULAR_POLYGON_MAX_SIDES, Math.max(REGULAR_POLYGON_MIN_SIDES, roundedSides))
   };
 };
 
-export const regularPolygonPoints = (
-  sides: number,
-  radius: number,
-  center: Point = DEFAULT_REGULAR_POLYGON_CENTER
-): readonly Point[] => {
+export const regularPolygonPoints = (sides: number, radius: number, center: Point = DEFAULT_REGULAR_POLYGON_CENTER): readonly Point[] => {
   const dimensions = normalizeRegularPolygonDimensions({ sides });
   const angleStep = REGULAR_POLYGON_FULL_TURN_RADIANS / dimensions.sides;
 
@@ -39,9 +33,7 @@ export const regularPolygonPoints = (
   });
 };
 
-export const buildRegularPolygonShapes = (
-  options: BuildRegularPolygonShapesOptions = DEFAULT_REGULAR_POLYGON_GEOMETRY
-): readonly RegularPolygonShape[] => {
+export const buildRegularPolygonShapes = (options: BuildRegularPolygonShapesOptions = DEFAULT_REGULAR_POLYGON_GEOMETRY): readonly RegularPolygonShape[] => {
   const dimensions = normalizeRegularPolygonDimensions(options);
   const points = regularPolygonPoints(dimensions.sides, options.radius, {
     x: options.cx,

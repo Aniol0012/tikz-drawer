@@ -10,11 +10,7 @@ import {
 import type { ArrowEndpoint, SvgTextAnchor, ExportSvgDocument } from '../components/editor-page/editor-page.types';
 import type { CanvasShape, LineShape, Point, TextShape, ThemeMode } from '../models/tikz.models';
 import type { SelectionBounds } from './editor-page.utils';
-import {
-  buildTrianglePath as buildTrianglePathUtil,
-  effectiveRectangleCornerRadius,
-  effectiveTriangleCornerRadius
-} from './editor-geometry.utils';
+import { buildTrianglePath as buildTrianglePathUtil, effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from './editor-geometry.utils';
 
 const XML_NAMESPACE = 'http://www.w3.org/2000/svg';
 const XML_LINK_NAMESPACE = 'http://www.w3.org/1999/xlink';
@@ -59,12 +55,7 @@ export interface BuildSvgExportOptions {
 }
 
 export const escapeXml = (value: string): string =>
-  value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;');
+  value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 
 const buildEmptyCanvasExportDocument = (background: string): ExportSvgDocument => ({
   width: DEFAULT_EMPTY_EXPORT_WIDTH,
@@ -85,13 +76,11 @@ interface SvgProjection {
 const rotationTransform = (rotation: number | undefined, centerX: number, centerY: number): string =>
   rotation ? ` transform="rotate(${rotation} ${centerX} ${centerY})"` : '';
 
-const scaledStrokeWidth = (strokeWidth: number, scale: number): number =>
-  Math.max(strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+const scaledStrokeWidth = (strokeWidth: number, scale: number): number => Math.max(strokeWidth * scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
 
 const lineStrokeDashArray = (shape: LineShape, scale: number): string => {
   const strokeWidth = scaledStrokeWidth(shape.strokeWidth, scale);
-  const dashArray = (pattern: readonly number[]): string =>
-    pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
+  const dashArray = (pattern: readonly number[]): string => pattern.map((multiplier) => strokeWidth * multiplier).join(' ');
   switch (shape.strokeStyle ?? 'solid') {
     case 'solid':
       return '';
@@ -108,9 +97,7 @@ const lineStrokeDashArray = (shape: LineShape, scale: number): string => {
 
 const renderLineShape = (shape: LineShape, projection: SvgProjection, helpers: SvgExportHelpers): string => {
   const { scale, projectX, projectY } = projection;
-  const markerStart = shape.arrowStart
-    ? ` marker-start="url(#${escapeXml(helpers.arrowMarkerId(shape, 'start'))})"`
-    : '';
+  const markerStart = shape.arrowStart ? ` marker-start="url(#${escapeXml(helpers.arrowMarkerId(shape, 'start'))})"` : '';
   const markerEnd = shape.arrowEnd ? ` marker-end="url(#${escapeXml(helpers.arrowMarkerId(shape, 'end'))})"` : '';
   return `<path d="${escapeXml(
     helpers.buildLinePath(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }))
@@ -124,24 +111,12 @@ const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helper
     case 'line':
       return renderLineShape(shape, projection, helpers);
     case 'rectangle': {
-      const rotate = rotationTransform(
-        shape.rotation,
-        projectX(shape.x + shape.width / 2),
-        projectY(shape.y + shape.height / 2)
-      );
+      const rotate = rotationTransform(shape.rotation, projectX(shape.x + shape.width / 2), projectY(shape.y + shape.height / 2));
       return `<rect x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" rx="${effectiveRectangleCornerRadius(shape) * scale}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
     }
     case 'triangle': {
-      const path = buildTrianglePathUtil(
-        shape,
-        (point) => ({ x: projectX(point.x), y: projectY(point.y) }),
-        effectiveTriangleCornerRadius(shape) * scale
-      );
-      const rotate = rotationTransform(
-        shape.rotation,
-        projectX(shape.x + shape.width / 2),
-        projectY(shape.y + shape.height / 2)
-      );
+      const path = buildTrianglePathUtil(shape, (point) => ({ x: projectX(point.x), y: projectY(point.y) }), effectiveTriangleCornerRadius(shape) * scale);
+      const rotate = rotationTransform(shape.rotation, projectX(shape.x + shape.width / 2), projectY(shape.y + shape.height / 2));
       return `<path d="${escapeXml(path)}" fill="${escapeXml(shape.fill)}" fill-opacity="${shape.fillOpacity}" stroke="${escapeXml(shape.stroke)}" stroke-opacity="${shape.strokeOpacity}" stroke-width="${scaledStrokeWidth(shape.strokeWidth, scale)}"${rotate} />`;
     }
     case 'circle': {
@@ -158,32 +133,19 @@ const renderExportShape = (shape: CanvasShape, projection: SvgProjection, helper
       const rotate = rotationTransform(shape.rotation, projectX(shape.x), projectY(shape.y));
       const lines = helpers
         .displayTextLinesForShape(shape)
-        .map(
-          (line, index) =>
-            `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${escapeXml(line)}</tspan>`
-        )
+        .map((line, index) => `<tspan x="${renderX}" dy="${index === 0 ? 0 : shape.fontSize * scale * TEXT_TSPAN_LINE_STEP_FACTOR}">${escapeXml(line)}</tspan>`)
         .join('');
       return `<text x="${renderX}" y="${projectY(shape.y)}" font-size="${shape.fontSize * scale}" font-weight="${shape.fontWeight}" font-style="${shape.fontStyle}" text-decoration="${shape.textDecoration}" text-anchor="${anchor}" fill="${escapeXml(shape.color)}" fill-opacity="${shape.colorOpacity}" font-family="${EXPORT_TEXT_FONT_FAMILY}" xml:space="preserve"${rotate}>${lines}</text>`;
     }
     case 'image': {
-      const rotate = rotationTransform(
-        shape.rotation,
-        projectX(shape.x + shape.width / 2),
-        projectY(shape.y + shape.height / 2)
-      );
+      const rotate = rotationTransform(shape.rotation, projectX(shape.x + shape.width / 2), projectY(shape.y + shape.height / 2));
       const source = escapeXml(shape.src);
       return `<image x="${projectX(shape.x)}" y="${projectY(shape.y + shape.height)}" width="${shape.width * scale}" height="${shape.height * scale}" opacity="${shape.strokeOpacity}" href="${source}" xlink:href="${source}" preserveAspectRatio="xMidYMid meet"${rotate} />`;
     }
   }
 };
 
-export const buildCanvasExportDocument = ({
-  selectedShapes,
-  sceneShapes,
-  theme,
-  helpers,
-  omitImages = false
-}: BuildSvgExportOptions): ExportSvgDocument => {
+export const buildCanvasExportDocument = ({ selectedShapes, sceneShapes, theme, helpers, omitImages = false }: BuildSvgExportOptions): ExportSvgDocument => {
   const shapes = selectedShapes.length ? selectedShapes : sceneShapes;
   const bounds = helpers.computeBounds(shapes);
   const background = theme === 'dark' ? DARK_BACKGROUND : LIGHT_BACKGROUND;

@@ -51,9 +51,7 @@ describe('editor-page i18n', () => {
     for (const targetLanguage of languages) {
       const options = getLanguageOptions(targetLanguage.code);
       for (const option of options) {
-        expect(option.longLabel).toBe(
-          translateOrFallback(targetLanguage.code, `languageName.${option.value}`, option.longLabel)
-        );
+        expect(option.longLabel).toBe(translateOrFallback(targetLanguage.code, `languageName.${option.value}`, option.longLabel));
       }
     }
   });
