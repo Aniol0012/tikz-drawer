@@ -24,7 +24,7 @@ export const languages = [
     label: 'En',
     longLabel: 'English',
     longLabelKey: 'languageName.en',
-    flagSrc: 'flags/GB.png',
+    flagSrc: 'flags-optimized/GB.webp',
     browserPrefixes: ['en'],
     translations: en,
     shapeKinds: {
@@ -42,7 +42,7 @@ export const languages = [
     label: 'Ca',
     longLabel: 'Català',
     longLabelKey: 'languageName.ca',
-    flagSrc: 'flags/EU-CA.png',
+    flagSrc: 'flags-optimized/EU-CA.webp',
     browserPrefixes: ['ca'],
     translations: ca,
     shapeKinds: {
@@ -60,7 +60,7 @@ export const languages = [
     label: 'Es',
     longLabel: 'Español',
     longLabelKey: 'languageName.es',
-    flagSrc: 'flags/ES.png',
+    flagSrc: 'flags-optimized/ES.webp',
     browserPrefixes: ['es'],
     translations: es,
     shapeKinds: {

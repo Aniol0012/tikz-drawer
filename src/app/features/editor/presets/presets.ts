@@ -1169,6 +1169,82 @@ const createScene = (name: string, shapes: readonly CanvasShape[]): TikzScene =>
   shapes
 });
 
+const objectPresetShapes = (id: string): readonly CanvasShape[] => {
+  const preset = objectPresets.find((candidate) => candidate.id === id);
+  if (!preset) {
+    throw new Error(`Object preset "${id}" not found.`);
+  }
+
+  return preset.shapes;
+};
+
+const clientServerDatabaseShape = (shape: CanvasShape): CanvasShape => {
+  switch (shape.kind) {
+    case 'rectangle':
+      return { ...shape, id: crypto.randomUUID(), x: 4.4, y: -1.3 };
+    case 'ellipse':
+      return { ...shape, id: crypto.randomUUID(), cx: shape.cx + 6.5, cy: shape.cy };
+    case 'text':
+      return { ...shape, id: crypto.randomUUID(), x: 6.5, y: 0, text: 'Database' };
+    default:
+      return shape;
+  }
+};
+
+const metricsBarChartShape = (shape: CanvasShape): CanvasShape => {
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        id: crypto.randomUUID(),
+        from: { x: shape.from.x - 4.5, y: shape.from.y - 0.6 },
+        to: { x: shape.to.x - 4.5, y: shape.to.y - 0.6 }
+      };
+    case 'rectangle':
+      return { ...shape, id: crypto.randomUUID(), x: shape.x - 4.5, y: shape.y - 0.6 };
+    default:
+      return shape;
+  }
+};
+
+const metricsTimelineShape = (shape: CanvasShape): CanvasShape => {
+  switch (shape.kind) {
+    case 'line':
+      return {
+        ...shape,
+        id: crypto.randomUUID(),
+        from: { x: shape.from.x + 2.6, y: shape.from.y + 2.4 },
+        to: { x: shape.to.x + 2.6, y: shape.to.y + 2.4 }
+      };
+    case 'circle':
+      return { ...shape, id: crypto.randomUUID(), cx: shape.cx + 2.6, cy: shape.cy + 2.4 };
+    case 'text':
+      return { ...shape, id: crypto.randomUUID(), x: shape.x + 2.6, y: shape.y + 2.4 };
+    default:
+      return shape;
+  }
+};
+
+const metricsCalloutShape = (shape: CanvasShape): CanvasShape => {
+  switch (shape.kind) {
+    case 'rectangle':
+      return { ...shape, id: crypto.randomUUID(), x: 1.8, y: -3.1 };
+    case 'line':
+      return {
+        ...shape,
+        id: crypto.randomUUID(),
+        from: { x: shape.from.x + 4.2, y: shape.from.y - 2.8 },
+        to: { x: shape.to.x + 4.2, y: shape.to.y - 2.8 }
+      };
+    case 'circle':
+      return { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 };
+    case 'text':
+      return { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' };
+    default:
+      return shape;
+  }
+};
+
 export const scenePresets: readonly ScenePreset[] = [
   {
     id: 'blank',
@@ -1244,17 +1320,7 @@ export const scenePresets: readonly ScenePreset[] = [
       createText({ name: 'Client label', x: -4.8, y: -2.5, text: 'Client' }),
       createRectangle({ name: 'API', x: -1.5, y: -1, width: 3, height: 2, fill: '#ececec' }),
       createText({ name: 'API label', text: 'API', x: 0, y: 0 }),
-      ...objectPresets
-        .find((preset) => preset.id === 'database')!
-        .shapes.map((shape) =>
-          shape.kind === 'rectangle'
-            ? { ...shape, id: crypto.randomUUID(), x: 4.4, y: -1.3 }
-            : shape.kind === 'ellipse'
-              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 6.5, cy: shape.cy }
-              : shape.kind === 'text'
-                ? { ...shape, id: crypto.randomUUID(), x: 6.5, y: 0, text: 'Database' }
-                : shape
-        ),
+      ...objectPresetShapes('database').map(clientServerDatabaseShape),
       createLine({ name: 'Client to API', from: { x: -2.2, y: 0 }, to: { x: -1.5, y: 0 }, arrowEnd: true }),
       createLine({ name: 'API to database', from: { x: 1.5, y: 0 }, to: { x: 4.4, y: 0 }, arrowEnd: true })
     ])
@@ -1265,54 +1331,9 @@ export const scenePresets: readonly ScenePreset[] = [
     title: 'Metrics board',
     description: 'Dashboard-like scene mixing charts and callouts.',
     scene: createScene('Metrics board', [
-      ...objectPresets
-        .find((preset) => preset.id === 'bar-chart')!
-        .shapes.map((shape) =>
-          shape.kind === 'line'
-            ? {
-                ...shape,
-                id: crypto.randomUUID(),
-                from: { x: shape.from.x - 4.5, y: shape.from.y - 0.6 },
-                to: { x: shape.to.x - 4.5, y: shape.to.y - 0.6 }
-              }
-            : shape.kind === 'rectangle'
-              ? { ...shape, id: crypto.randomUUID(), x: shape.x - 4.5, y: shape.y - 0.6 }
-              : shape
-        ),
-      ...objectPresets
-        .find((preset) => preset.id === 'timeline')!
-        .shapes.map((shape) =>
-          shape.kind === 'line'
-            ? {
-                ...shape,
-                id: crypto.randomUUID(),
-                from: { x: shape.from.x + 2.6, y: shape.from.y + 2.4 },
-                to: { x: shape.to.x + 2.6, y: shape.to.y + 2.4 }
-              }
-            : shape.kind === 'circle'
-              ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 2.6, cy: shape.cy + 2.4 }
-              : shape.kind === 'text'
-                ? { ...shape, id: crypto.randomUUID(), x: shape.x + 2.6, y: shape.y + 2.4 }
-                : shape
-        ),
-      ...objectPresets
-        .find((preset) => preset.id === 'callout')!
-        .shapes.map((shape) =>
-          shape.kind === 'rectangle'
-            ? { ...shape, id: crypto.randomUUID(), x: 1.8, y: -3.1 }
-            : shape.kind === 'line'
-              ? {
-                  ...shape,
-                  id: crypto.randomUUID(),
-                  from: { x: shape.from.x + 4.2, y: shape.from.y - 2.8 },
-                  to: { x: shape.to.x + 4.2, y: shape.to.y - 2.8 }
-                }
-              : shape.kind === 'circle'
-                ? { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 }
-                : shape.kind === 'text'
-                  ? { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' }
-                  : shape
-        )
+      ...objectPresetShapes('bar-chart').map(metricsBarChartShape),
+      ...objectPresetShapes('timeline').map(metricsTimelineShape),
+      ...objectPresetShapes('callout').map(metricsCalloutShape)
     ])
   }
 ];

@@ -125,10 +125,7 @@ const FALLBACK_DEFAULT_PREFERENCES: EditorPreferences = {
 function resolvePresetExport<T>(name: 'defaultPreferences' | 'objectPresets' | 'scenePresets', fallback?: T): T {
   const runtimeModule = presetsModule as RuntimePresetExports;
   const resolved =
-    runtimeModule[name] ??
-    runtimeModule.default?.[name] ??
-    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name] ??
-    fallback;
+    runtimeModule[name] ?? runtimeModule.default?.[name] ?? (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name] ?? fallback;
 
   if (resolved === undefined) {
     throw new Error(`release-screenshots: "${name}" was not found in presets module.`);
@@ -139,10 +136,7 @@ function resolvePresetExport<T>(name: 'defaultPreferences' | 'objectPresets' | '
 
 function resolveTikzCodegenExport<T>(name: 'sceneToTikz'): T {
   const runtimeModule = tikzCodegenModule as RuntimeTikzCodegenExports;
-  const resolved =
-    runtimeModule[name] ??
-    runtimeModule.default?.[name] ??
-    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
+  const resolved = runtimeModule[name] ?? runtimeModule.default?.[name] ?? (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
 
   if (resolved === undefined) {
     throw new Error(`release-screenshots: "${name}" was not found in tikz.codegen module.`);
@@ -153,10 +147,7 @@ function resolveTikzCodegenExport<T>(name: 'sceneToTikz'): T {
 
 function resolveEditorPageUtilsExport<T>(name: 'encodeSharePayload' | 'transformCanvasShape'): T {
   const runtimeModule = editorPageUtilsModule as RuntimeEditorPageUtilsExports;
-  const resolved =
-    runtimeModule[name] ??
-    runtimeModule.default?.[name] ??
-    (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
+  const resolved = runtimeModule[name] ?? runtimeModule.default?.[name] ?? (runtimeModule.default as Record<string, unknown> | undefined)?.default?.[name];
 
   if (resolved === undefined) {
     throw new Error(`release-screenshots: "${name}" was not found in editor-page.utils module.`);
@@ -169,12 +160,8 @@ const defaultPreferences = resolvePresetExport<EditorPreferences>('defaultPrefer
 const objectPresets = resolvePresetExport<readonly ObjectPreset[]>('objectPresets');
 const scenePresets = resolvePresetExport<readonly ScenePreset[]>('scenePresets');
 const sceneToTikz = resolveTikzCodegenExport<(scene: TikzScene) => string>('sceneToTikz');
-const encodeSharePayload =
-  resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
-const transformCanvasShape =
-  resolveEditorPageUtilsExport<(shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape>(
-    'transformCanvasShape'
-  );
+const encodeSharePayload = resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
+const transformCanvasShape = resolveEditorPageUtilsExport<(shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape>('transformCanvasShape');
 
 const PALETTES: readonly Palette[] = [
   {
@@ -256,7 +243,7 @@ class SeededRandom {
     const copy = [...items];
     for (let index = copy.length - 1; index > 0; index -= 1) {
       const swapIndex = this.int(0, index);
-      [copy[index], copy[swapIndex]] = [copy[swapIndex]!, copy[index]!];
+      [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
     }
     return copy;
   }
@@ -286,7 +273,7 @@ function resolveScreenshotSeed(): number {
     throw new Error(`Invalid SCREENSHOT_SEED value: "${rawSeed}"`);
   }
 
-  return (Date.now() ^ globalThis.crypto.getRandomValues(new Uint32Array(1))[0]!) >>> 0;
+  return (Date.now() ^ globalThis.crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0;
 }
 
 function findScenePreset(id: string): ScenePreset {
@@ -530,10 +517,7 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
           color: palette.text,
           colorOpacity: 1,
           fontWeight:
-            shape.fontWeight === 'normal' &&
-            (shape.text.length <= 18 || /label|title|todo|doing|done|stage/i.test(shape.name))
-              ? 'bold'
-              : shape.fontWeight
+            shape.fontWeight === 'normal' && (shape.text.length <= 18 || /label|title|todo|doing|done|stage/i.test(shape.name)) ? 'bold' : shape.fontWeight
         } satisfies TextShape;
       case 'image':
         return {
@@ -739,12 +723,7 @@ function workflowScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
   );
 
   const shapes = [
-    ...buildSceneModule('flow-starter', { x: -8.8, y: -3.6, width: 17.2, height: 8.2 }, rng, palette, {}, [
-      'Capture',
-      'Normalize',
-      'Review',
-      'Publish'
-    ]),
+    ...buildSceneModule('flow-starter', { x: -8.8, y: -3.6, width: 17.2, height: 8.2 }, rng, palette, {}, ['Capture', 'Normalize', 'Review', 'Publish']),
     ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
   ];
 
@@ -769,11 +748,7 @@ function planningScene(rng: SeededRandom, palette: Palette): GeneratedScreenshot
       rng.pick(['Doing', 'In progress']),
       rng.pick(['Done', 'Ready'])
     ]),
-    ...buildModule('timeline', { x: -14.1, y: -5.9, width: 11.8, height: 4.4 }, rng, palette, {}, [
-      'Kickoff',
-      'Review',
-      'Publish'
-    ]),
+    ...buildModule('timeline', { x: -14.1, y: -5.9, width: 11.8, height: 4.4 }, rng, palette, {}, ['Kickoff', 'Review', 'Publish']),
     ...buildModule('table', { x: 5, y: -5.8, width: 9.1, height: 4.4 }, rng, palette),
     ...buildModule('swimlane', { x: 5.2, y: 1, width: 9, height: 5.2 }, rng, palette, {}, ['Owner']),
     ...buildModule('sticky-note', { x: 8.9, y: -0.8, width: 5, height: 3 }, rng, palette, {}, [
@@ -893,9 +868,7 @@ async function run(): Promise<void> {
   const desktopPayload = createScenePayload(generated.scene, DESKTOP_VIEWPORT);
   const mobilePayload = createScenePayload(generated.scene, MOBILE_VIEWPORT);
 
-  console.log(
-    `[capture:release] seed=${seed} family=${generated.family} palette=${generated.paletteName} summary="${generated.summary}"`
-  );
+  console.log(`[capture:release] seed=${seed} family=${generated.family} palette=${generated.paletteName} summary="${generated.summary}"`);
 
   const server = createServer(async (req, res) => {
     try {
@@ -933,27 +906,17 @@ async function run(): Promise<void> {
 
   const baseUrl = `http://${HOST}:${address.port}`;
   await mkdir(OUTPUT_DIR, { recursive: true });
-  await Promise.all([
-    rm(join(OUTPUT_DIR, 'editor-light.png'), { force: true }),
-    rm(join(OUTPUT_DIR, 'editor-mobile-light.png'), { force: true })
-  ]);
+  await Promise.all([rm(join(OUTPUT_DIR, 'editor-light.png'), { force: true }), rm(join(OUTPUT_DIR, 'editor-mobile-light.png'), { force: true })]);
 
   const browser = await chromium.launch({ headless: true });
 
   try {
     await captureScreenshot(browser, baseUrl, desktopPayload, DESKTOP_VIEWPORT, join(OUTPUT_DIR, 'editor-light.png'));
-    await captureScreenshot(
-      browser,
-      baseUrl,
-      mobilePayload,
-      MOBILE_VIEWPORT,
-      join(OUTPUT_DIR, 'editor-mobile-light.png'),
-      {
-        isMobile: true,
-        hasTouch: true,
-        deviceScaleFactor: 2
-      }
-    );
+    await captureScreenshot(browser, baseUrl, mobilePayload, MOBILE_VIEWPORT, join(OUTPUT_DIR, 'editor-mobile-light.png'), {
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 2
+    });
   } finally {
     await browser.close();
     server.close();

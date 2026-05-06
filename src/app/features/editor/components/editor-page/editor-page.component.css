@@ -3402,10 +3402,6 @@ button:disabled {
     border-top: 1px solid var(--border);
   }
 
-  .sidebar-resizer--left {
-    display: none;
-  }
-
   .export-modal__header,
   .export-toolbar {
     grid-template-columns: 1fr;

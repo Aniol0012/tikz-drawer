@@ -26,12 +26,18 @@ const ARROW_SCALE_PATTERN = /scale=([^,\]}]+)/i;
 const TRIANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/;
 const SMOOTH_LINE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/;
 const RECTANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/;
+const ELLIPSE_PATTERN = new RegExp(
+  String.raw`^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>${TIKZ_NUMBER_PATTERN})\s*and\s*(?<ry>${TIKZ_NUMBER_PATTERN})\s*\)\s*;?$`
+);
 const IMAGE_NODE_PATTERN =
   /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/;
 const TEXT_NODE_PATTERN = /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{(?<text>.*)\}\s*;?$/;
 const IMAGE_WIDTH_PATTERN = /(?:^|,)\s*width\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
 const IMAGE_HEIGHT_PATTERN = /(?:^|,)\s*height\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
 const POINTS_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`, 'g');
+const ARROW_BEND_PATTERN = new RegExp(String.raw`[[,]\s*bend(?:\s*[,}\]])`, 'i');
+const ARROW_FLEX_PRIME_PATTERN = new RegExp(String.raw`flex'\s*(?:=|[,}\]])`, 'i');
+const ARROW_FLEX_PATTERN = new RegExp(String.raw`flex\s*(?:=|[,}\]])`, 'i');
 
 const createId = (): string => crypto.randomUUID();
 
@@ -306,13 +312,13 @@ const parseArrowDimensionScale = (styles: Record<string, string>, key: 'length' 
 
 const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
   const raw = styles['arrow meta'] ?? '';
-  if (/[[,]\s*bend(?:\s*[,}\]])/i.test(raw)) {
+  if (ARROW_BEND_PATTERN.test(raw)) {
     return 'bend';
   }
-  if (/flex'\s*(?:=|[,}\]])/i.test(raw)) {
+  if (ARROW_FLEX_PRIME_PATTERN.test(raw)) {
     return 'flex-prime';
   }
-  if (/flex\s*(?:=|[,}\]])/i.test(raw)) {
+  if (ARROW_FLEX_PATTERN.test(raw)) {
     return 'flex';
   }
   return 'none';
@@ -531,9 +537,7 @@ const parseCircle = (line: string): CanvasShape | null => {
 };
 
 const parseEllipse = (line: string): CanvasShape | null => {
-  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>-?\d+(?:\.\d+)?)\s*and\s*(?<ry>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(
-    line
-  );
+  const match = ELLIPSE_PATTERN.exec(line);
 
   if (!match?.groups) {
     return null;

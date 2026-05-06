@@ -242,7 +242,9 @@
       <div
         #canvasViewport
         class="canvas-viewport"
+        role="application"
         tabindex="0"
+        [attr.aria-label]="'canvas' | translate"
         [class.is-panning]="interactionState()?.kind === 'pan' || interactionState()?.kind === 'pending-pan'"
         [class.is-insert]="activeTool() !== 'select'"
         [style.cursor]="interactionCursor()"
@@ -1284,9 +1286,10 @@
                               [value]="shape.arrowScale"
                               (input)="updateLineArrowScale($event)" /></div
                         ></label>
-                        <label class="field"
-                          ><span>{{ 'arrowBendMode' | translate }}</span
+                        <div class="field">
+                          <span>{{ 'arrowBendMode' | translate }}</span
                           ><app-select
+                            [ariaLabel]="'arrowBendMode' | translate"
                             [value]="shape.arrowBendMode"
                             [options]="[
                               { value: 'none', label: ('arrowBendNone' | translate) },
@@ -1294,8 +1297,8 @@
                               { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
                               { value: 'bend', label: ('arrowBendBend' | translate) }
                             ]"
-                            (valueChange)="setLineArrowBendMode($event)"></app-select
-                        ></label>
+                            (valueChange)="setLineArrowBendMode($event)"></app-select>
+                        </div>
                       </div>
                     }
                   </div>
@@ -2380,9 +2383,10 @@
                                   [value]="shape.arrowScale"
                                   (input)="updateLineArrowScale($event)" /></div
                             ></label>
-                            <label class="field"
-                              ><span>{{ 'arrowBendMode' | translate }}</span
+                            <div class="field">
+                              <span>{{ 'arrowBendMode' | translate }}</span
                               ><app-select
+                                [ariaLabel]="'arrowBendMode' | translate"
                                 [value]="shape.arrowBendMode"
                                 [options]="[
                                   { value: 'none', label: ('arrowBendNone' | translate) },
@@ -2390,8 +2394,8 @@
                                   { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
                                   { value: 'bend', label: ('arrowBendBend' | translate) }
                                 ]"
-                                (valueChange)="setLineArrowBendMode($event)"></app-select
-                            ></label>
+                                (valueChange)="setLineArrowBendMode($event)"></app-select>
+                            </div>
                           </div>
                         }
                       </div>

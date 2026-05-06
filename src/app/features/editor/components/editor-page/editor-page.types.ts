@@ -4,7 +4,6 @@ import type { SelectionBounds } from '../../utils/editor-page.utils';
 export type InspectorTab = 'properties' | 'scene';
 export type ExportMode = 'snippet' | 'standalone';
 export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
-export type ToolId = string;
 export type NotificationTone = 'info' | 'warning';
 export type SidebarSide = 'left' | 'right';
 export type SidebarResizeTarget = SidebarSide | 'mobile-left' | 'mobile-right';
@@ -76,7 +75,7 @@ export type {
 } from '../../config/latex-export.config';
 
 export interface ToolDescriptor {
-  readonly id: ToolId;
+  readonly id: string;
   readonly label: string;
   readonly description: string;
   readonly iconPath: string;
@@ -106,6 +105,13 @@ export interface LineAttachmentPreviewDescriptor {
   readonly x: number;
   readonly y: number;
   readonly active: boolean;
+}
+
+export interface LineAttachmentCandidate {
+  readonly shape: CanvasShape;
+  readonly anchor: Point;
+  readonly point: Point;
+  readonly distance: number;
 }
 
 export interface HandleDescriptor {
@@ -191,7 +197,7 @@ export interface MarqueeInteractionState {
 export interface InsertInteractionState {
   readonly kind: 'insert';
   readonly pointerId: number;
-  readonly toolId: ToolId;
+  readonly toolId: string;
   readonly startWorldPoint: Point;
   readonly currentWorldPoint: Point;
 }

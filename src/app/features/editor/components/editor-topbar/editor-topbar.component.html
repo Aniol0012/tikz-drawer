@@ -6,7 +6,7 @@
     </div>
 
     <label class="scene-input" for="scene-name-input">
-      <input id="scene-name-input" type="text" [value]="sceneName()" (input)="onSceneNameInput($event)" />
+      <input id="scene-name-input" type="text" [attr.aria-label]="t('name')" [value]="sceneName()" (input)="onSceneNameInput($event)" />
     </label>
 
     <div #topbarActions class="topbar-actions">

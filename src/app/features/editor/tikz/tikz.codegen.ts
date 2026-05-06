@@ -264,8 +264,10 @@ const arrowTipSpec = (shape: LineShape): string => {
   if (shape.arrowRound) {
     options.push('round');
   }
-  options.push(`length=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_LENGTH, shape, shape.arrowLengthScale))}pt`);
-  options.push(`width=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_WIDTH, shape, shape.arrowWidthScale))}pt`);
+  options.push(
+    `length=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_LENGTH, shape, shape.arrowLengthScale))}pt`,
+    `width=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_WIDTH, shape, shape.arrowWidthScale))}pt`
+  );
   if (shape.arrowBendMode === 'flex') {
     options.push('flex');
   } else if (shape.arrowBendMode === 'flex-prime') {

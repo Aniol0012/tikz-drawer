@@ -9,11 +9,11 @@ import {
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_FONT_SIZE,
-  EDITOR_COARSE_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
-  EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_CANVAS_DEFAULT_HEIGHT,
   EDITOR_CANVAS_MIN_HEIGHT,
   EDITOR_CANVAS_MIN_WIDTH,
+  EDITOR_COARSE_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
+  EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_COLLAPSED_SIDEBAR_SIZE,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
   EDITOR_CONTEXT_MENU_VIEWPORT_PADDING,
@@ -27,15 +27,15 @@ import {
   EDITOR_KEYBOARD_NAVIGATION_BASE_SPEED,
   EDITOR_KEYBOARD_NAVIGATION_FAST_MULTIPLIER,
   EDITOR_KEYBOARD_NAVIGATION_SNAP_SPEED_MULTIPLIER,
-  EDITOR_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
-  EDITOR_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_LEFT_SIDEBAR_MIN_WIDTH,
   EDITOR_LEFT_SIDEBAR_MOBILE_MIN_HEIGHT,
-  EDITOR_LINE_HIT_STROKE_EXTRA_PX,
-  EDITOR_LINE_HIT_STROKE_MIN_PX,
   EDITOR_LINE_ANCHOR_DECIMALS,
   EDITOR_LINE_ARROW_SCALE_MAX,
   EDITOR_LINE_ARROW_SCALE_MIN,
+  EDITOR_LINE_ATTACHMENT_PREVIEW_RADIUS_PX,
+  EDITOR_LINE_ATTACHMENT_SNAP_RADIUS_PX,
+  EDITOR_LINE_HIT_STROKE_EXTRA_PX,
+  EDITOR_LINE_HIT_STROKE_MIN_PX,
   EDITOR_LINE_MARQUEE_TOLERANCE_PX,
   EDITOR_MOBILE_BREAKPOINT_PX,
   EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
@@ -53,11 +53,11 @@ import {
   EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER,
   EDITOR_SELECTION_ROTATE_HANDLE_DISTANCE_FACTOR,
   EDITOR_SELECTION_ROTATE_HANDLE_MIN_DISTANCE,
-  EDITOR_SIDEBAR_RESIZE_LIMITS,
   EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX,
+  EDITOR_SIDEBAR_RESIZE_LIMITS,
   EDITOR_STORAGE_KEYS,
-  EDITOR_TEXT_SYMBOL_POPOVER_METRICS,
   EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT,
+  EDITOR_TEXT_SYMBOL_POPOVER_METRICS,
   EDITOR_THEME_TOGGLE_COOLDOWN_MS,
   EDITOR_VIEWPORT_CENTER_EPSILON,
   EDITOR_VIEWPORT_FALLBACK_WIDTH,
@@ -92,7 +92,7 @@ import {
   TEXT_MIN_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
-import type { Axis } from './editor-page.types';
+import type { Axis, LineAttachmentCandidate } from './editor-page.types';
 import {
   type ArrowControlHandle,
   type ArrowDirection,
@@ -149,7 +149,6 @@ import {
   type TextTransformMode,
   type ToastNotification,
   type ToolDescriptor,
-  type ToolId,
   type TriangleCanvasShape
 } from './editor-page.types';
 import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
@@ -172,8 +171,8 @@ import {
   encodeSharePayload,
   highlightLatex,
   type SelectionBounds,
-  type TransformCanvasShapeOptions,
   transformCanvasShape,
+  type TransformCanvasShapeOptions,
   translateShapeBy
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
@@ -227,8 +226,8 @@ import { buildRegularPolygonShapes, normalizeRegularPolygonDimensions } from '..
 import {
   DEFAULT_GRAPH_DIMENSIONS,
   GRAPH_PRESET_ID_BY_KIND,
-  GRAPH_PRESET_KIND_BY_ID,
   GRAPH_PRESET_IDS,
+  GRAPH_PRESET_KIND_BY_ID,
   type GraphDialogState,
   type GraphDimensions,
   type GraphPresetId
@@ -276,13 +275,6 @@ import {
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
-
-interface LineAttachmentCandidate {
-  readonly shape: CanvasShape;
-  readonly anchor: Point;
-  readonly point: Point;
-  readonly distance: number;
-}
 
 @Component({
   selector: 'app-editor-page',
@@ -356,7 +348,7 @@ export class EditorPageComponent {
 
   readonly language = this.languageService.language;
   readonly inspectorTab = signal<InspectorTab>('properties');
-  readonly activeTool = signal<ToolId>('select');
+  readonly activeTool = signal<string>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
   readonly canvasWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly canvasHeight = signal(EDITOR_CANVAS_DEFAULT_HEIGHT);
@@ -1184,7 +1176,7 @@ export class EditorPageComponent {
     this.figureSearchOpen.set(false);
   }
 
-  selectFigureSearchPreset(toolId: ToolId): void {
+  selectFigureSearchPreset(toolId: string): void {
     this.closeFigureSearch();
     this.setActiveTool(toolId);
   }
@@ -1239,7 +1231,7 @@ export class EditorPageComponent {
     return this.tOrFallback(`scenePreset.${preset.id}.title`, preset.title);
   }
 
-  toolShortcut(toolId: ToolId): string | undefined {
+  toolShortcut(toolId: string): string | undefined {
     switch (toolId) {
       case 'select':
         return 'V';
@@ -1571,7 +1563,7 @@ export class EditorPageComponent {
     this.libraryQuery.set(value);
   }
 
-  setActiveTool(toolId: ToolId): void {
+  setActiveTool(toolId: string): void {
     if (toolId === 'table') {
       this.openTableDialog({
         mode: 'create',
@@ -2770,15 +2762,15 @@ export class EditorPageComponent {
 
   setLineArrowDirection(direction: ArrowDirection): void {
     this.patchInspectorSelection((shape) => {
-      if (shape.kind !== 'line') {
-        return shape;
+      if (shape.kind === 'line') {
+        return {
+          ...shape,
+          arrowStart: direction === 'backward' || direction === 'both',
+          arrowEnd: direction === 'forward' || direction === 'both'
+        } as LineShape;
       }
 
-      return {
-        ...shape,
-        arrowStart: direction === 'backward' || direction === 'both',
-        arrowEnd: direction === 'forward' || direction === 'both'
-      } as LineShape;
+      return shape;
     });
   }
 
@@ -5819,11 +5811,11 @@ export class EditorPageComponent {
     return String.raw`${normalized}\textwidth`;
   }
 
-  private canPreviewInsert(toolId: ToolId): boolean {
+  private canPreviewInsert(toolId: string): boolean {
     return this.allInsertablePresets().some((preset) => preset.id === toolId);
   }
 
-  private presetKeepsOwnStyle(toolId: ToolId): boolean {
+  private presetKeepsOwnStyle(toolId: string): boolean {
     return (
       this.savedTemplates().some((template) => template.id === toolId) || this.objectPresets.some((preset) => preset.id === toolId && preset.preserveStyle)
     );
@@ -5876,7 +5868,7 @@ export class EditorPageComponent {
     }
   }
 
-  private buildInsertionPreviewShapes(toolId: ToolId, startPoint: Point, currentPoint: Point): readonly CanvasShape[] {
+  private buildInsertionPreviewShapes(toolId: string, startPoint: Point, currentPoint: Point): readonly CanvasShape[] {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
       return [];
@@ -6047,7 +6039,7 @@ export class EditorPageComponent {
     return this.withLineEndpointAttachment(withFromAttachment, 'to', withFromAttachment.to) as LineShape;
   }
 
-  private insertPresetAt(toolId: ToolId, point: Point): void {
+  private insertPresetAt(toolId: string, point: Point): void {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
       return;
@@ -6100,7 +6092,7 @@ export class EditorPageComponent {
     return keepOwnStyle ? shape : this.applyInsertionDefaults(shape);
   }
 
-  private resolvePresetTemplateShapes(toolId: ToolId, preset: ObjectPreset): readonly CanvasShape[] {
+  private resolvePresetTemplateShapes(toolId: string, preset: ObjectPreset): readonly CanvasShape[] {
     if (toolId === 'table') {
       return buildTablePresetShapes(this.tablePresetDimensions());
     }

@@ -1,12 +1,10 @@
-import type { ToolId } from '../components/editor-page/editor-page.types';
-
 export type ModifierKey = 'space' | 'shift' | 'control' | 'meta' | 'alt';
 export type ArrowNavigationDelta = { readonly x: number; readonly y: number };
 
 type KeyboardShortcutEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 type SelectionModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>;
 
-const TOOL_ID_BY_SHORTCUT_KEY: Readonly<Record<PropertyKey, ToolId>> = {
+const TOOL_ID_BY_SHORTCUT_KEY: Readonly<Record<PropertyKey, string>> = {
   v: 'select',
   p: 'pencil',
   t: 'label',
@@ -67,7 +65,7 @@ export const isFigureSearchShortcut = (event: KeyboardShortcutEvent): boolean =>
 export const isFindShortcut = (event: KeyboardShortcutEvent): boolean =>
   isPrimaryModifierPressed(event) && !event.shiftKey && normalizeKeyboardKey(event.key) === 'f';
 
-export const toolIdFromShortcutKey = (key: string): ToolId | null => TOOL_ID_BY_SHORTCUT_KEY[normalizeKeyboardKey(key)] ?? null;
+export const toolIdFromShortcutKey = (key: string): string | null => TOOL_ID_BY_SHORTCUT_KEY[normalizeKeyboardKey(key)] ?? null;
 
 export const isDeleteShortcutKey = (key: string): boolean => {
   const normalized = normalizeKeyboardKey(key);

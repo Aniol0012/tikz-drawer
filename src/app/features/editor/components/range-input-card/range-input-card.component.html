@@ -6,6 +6,7 @@
     [attr.min]="rangeMin()"
     [attr.max]="rangeMax()"
     [attr.step]="rangeStep()"
+    [attr.aria-label]="label()"
     [value]="value()"
     [disabled]="disabled()"
     (input)="onInput($event)" />
@@ -15,6 +16,7 @@
     [attr.min]="resolvedNumberMin()"
     [attr.max]="resolvedNumberMax()"
     [attr.step]="resolvedNumberStep()"
+    [attr.aria-label]="label()"
     [value]="value()"
     [disabled]="disabled()"
     (input)="onInput($event)" />
