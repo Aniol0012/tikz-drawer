@@ -76,6 +76,7 @@
 .primary-button,
 .import-source-option,
 .file-drop,
+.file-clear-button,
 .import-input-panel,
 .code-editor,
 .csv-options input,
@@ -243,6 +244,13 @@
   font-size: 0.92rem;
 }
 
+.file-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .file-drop {
   position: relative;
   min-height: 68px;
@@ -256,6 +264,33 @@
   background: color-mix(in srgb, var(--tool-surface) 76%, transparent);
   color: var(--muted-foreground);
   cursor: pointer;
+}
+
+.file-clear-button {
+  width: 46px;
+  min-width: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: var(--tool-surface);
+  color: var(--muted-foreground);
+}
+
+.file-clear-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.file-clear-button:hover {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--danger) 7%, var(--tool-surface));
+  color: color-mix(in srgb, var(--danger) 78%, var(--app-foreground));
 }
 
 .file-drop__text {
@@ -626,6 +661,7 @@
 .primary-button:focus-visible,
 .import-source-option:focus-visible,
 .file-drop:focus-within,
+.file-clear-button:focus-visible,
 .csv-options input:focus-visible,
 .diagram-picker input:focus-visible,
 .warning-details-toggle:focus-visible {
@@ -794,6 +830,7 @@
   .primary-button,
   .import-source-option,
   .file-drop,
+  .file-clear-button,
   .code-editor,
   .csv-options input,
   .diagram-picker label,

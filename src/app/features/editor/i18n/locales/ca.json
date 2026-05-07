@@ -82,6 +82,7 @@
   "import.filePlaceholderCsv": "Escull un fitxer CSV",
   "import.filePlaceholderImage": "Escull una imatge PNG o JPG",
   "import.fileDropTooltip": "Selecciona un fitxer compatible amb la font d'importació activa.",
+  "import.clearFile": "Eliminar el fitxer seleccionat",
   "import.input.tikz.title": "Codi TikZ",
   "import.input.tikz.description": "Enganxa codi TikZ o carrega un fitxer .tikz. Les figures compatibles seran editables i les línies no suportades es conservaran com a TikZ sense processar.",
   "import.input.tex.title": "Document LaTeX",

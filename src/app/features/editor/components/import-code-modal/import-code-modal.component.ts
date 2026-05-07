@@ -97,6 +97,7 @@ export class ImportCodeModalComponent {
   private readonly languageService = inject(EditorLanguageService);
 
   readonly closeIconPath = getIconPath('close');
+  readonly trashIconPath = getIconPath('trash');
   readonly title = input.required<string>();
   readonly actionLabel = input.required<string>();
   readonly closeLabel = input.required<string>();
@@ -112,6 +113,7 @@ export class ImportCodeModalComponent {
 
   readonly importCodeInput = viewChild<ElementRef<HTMLTextAreaElement>>('importCodeInput');
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
+  readonly importFileInput = viewChild<ElementRef<HTMLInputElement>>('importFileInput');
 
   readonly highlightedCode = computed(() => highlightLatex(this.code() || ' '));
   readonly parsedInput = computed(() => parseTikz(this.code()));
@@ -253,7 +255,13 @@ export class ImportCodeModalComponent {
         return 'import.filePlaceholderImage';
     }
   });
-  readonly displayedWarnings = computed(() => (this.sourceKind() === 'tikz' ? this.parsedInput().warnings : this.warnings()));
+  readonly displayedWarnings = computed(() => {
+    if (this.sourceKind() === 'tikz') {
+      return this.parsedInput().warnings;
+    }
+
+    return this.fileName() ? this.warnings() : [];
+  });
   readonly warningViews = computed(() => this.displayedWarnings().map((warning) => this.describeWarning(warning)));
   readonly rawTikzWarningCount = computed(() => this.warningViews().filter((warning) => warning.isRawTikz).length);
   readonly warningSummaryText = computed(() => {
@@ -394,6 +402,24 @@ export class ImportCodeModalComponent {
 
   toggleWarningDetails(): void {
     this.warningDetailsExpanded.update((expanded) => !expanded);
+  }
+
+  clearSelectedFile(): void {
+    this.fileName.set('');
+    this.fileContent.set('');
+    this.imageDataUrl.set('');
+    this.fileError.set('');
+    this.texDiagrams.set([]);
+    this.selectedTexDiagramIndexes.set([]);
+    this.warningDetailsExpanded.set(false);
+    const fileInput = this.importFileInput()?.nativeElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    if (this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid') {
+      this.codeChange.emit('');
+    }
   }
 
   importSelectedSource(): void {

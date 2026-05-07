@@ -82,6 +82,7 @@
   "import.filePlaceholderCsv": "Choose a CSV file",
   "import.filePlaceholderImage": "Choose a PNG or JPG image",
   "import.fileDropTooltip": "Select a compatible file for the active import source.",
+  "import.clearFile": "Remove selected file",
   "import.input.tikz.title": "TikZ code",
   "import.input.tikz.description": "Paste TikZ code or load a .tikz file. Supported shapes become editable and unsupported lines are preserved as raw TikZ.",
   "import.input.tex.title": "LaTeX document",

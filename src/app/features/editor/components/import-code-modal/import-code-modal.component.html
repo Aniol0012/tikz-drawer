@@ -1,5 +1,11 @@
 <div class="import-code-modal-backdrop">
-  <section class="import-code-modal" role="dialog" aria-modal="true" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
+  <section
+    class="import-code-modal"
+    role="dialog"
+    aria-modal="true"
+    data-tooltip-disabled
+    [attr.aria-label]="title()"
+    (click)="$event.stopPropagation()">
     <header class="import-code-modal__header">
       <div class="import-code-modal__copy">
         <h2>{{ title() }}</h2>
@@ -50,22 +56,36 @@
           </div>
         </div>
 
-        <label class="file-drop">
-          <span class="file-drop__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path [attr.d]="sourceIconPath(selectedSourceOption())"></path>
-            </svg>
-          </span>
-          <span class="file-drop__text">
-            <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
-            <small>{{ selectedSourceOption().helperKey | translate }}</small>
-          </span>
-          <input
-            type="file"
-            [attr.accept]="selectedSourceOption().accept"
-            [attr.aria-label]="'import.chooseFileAria' | translate"
-            (change)="onFileSelected($event)" />
-        </label>
+        <div class="file-row">
+          <label class="file-drop">
+            <span class="file-drop__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path [attr.d]="sourceIconPath(selectedSourceOption())"></path>
+              </svg>
+            </span>
+            <span class="file-drop__text">
+              <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
+              <small>{{ selectedSourceOption().helperKey | translate }}</small>
+            </span>
+            <input
+              #importFileInput
+              type="file"
+              [attr.accept]="selectedSourceOption().accept"
+              [attr.aria-label]="'import.chooseFileAria' | translate"
+              (change)="onFileSelected($event)" />
+          </label>
+          @if (fileName()) {
+            <button
+              class="file-clear-button"
+              type="button"
+              [attr.aria-label]="'import.clearFile' | translate"
+              (click)="clearSelectedFile()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="trashIconPath"></path>
+              </svg>
+            </button>
+          }
+        </div>
 
         @if (sourceKind() === 'tex' && texDiagrams().length) {
           <section class="diagram-picker" [attr.aria-label]="'import.diagramPickerLabel' | translate">
@@ -153,16 +173,6 @@
             <div class="image-preview">
               <img [src]="imageDataUrl()" [alt]="fileName()" />
             </div>
-          } @else {
-            <div class="import-empty-state">
-              <span aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path [attr.d]="sourceIconPath(selectedSourceOption())"></path>
-                </svg>
-              </span>
-              <strong>{{ 'import.emptyStateTitle' | translate }}</strong>
-              <p>{{ 'import.emptyStateDescription' | translate }}</p>
-            </div>
           }
         </section>
       </section>
@@ -224,7 +234,11 @@
     </div>
 
     <footer class="import-code-modal__footer">
-      <span>{{ fileName() }}</span>
+      @if (fileName()) {
+        <span>{{ fileName() }}</span>
+      } @else {
+        <span></span>
+      }
       <button class="primary-button" type="button" [disabled]="!canImport()" (click)="importSelectedSource()">
         {{ actionLabel() }}
       </button>
