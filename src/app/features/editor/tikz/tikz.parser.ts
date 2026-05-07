@@ -788,6 +788,7 @@ const collapseMultilineCommands = (lines: readonly string[]): readonly string[] 
 export const parseTikz = (source: string): ParsedTikzResult => {
   const warnings: string[] = [];
   const shapes: CanvasShape[] = [];
+  const rawTikzLines: string[] = [];
   const normalizedLines = collapseMultilineCommands(extractTikzBodyLines(sourceLines(source)));
 
   for (const line of normalizedLines) {
@@ -802,13 +803,15 @@ export const parseTikz = (source: string): ParsedTikzResult => {
       continue;
     }
 
-    warnings.push(`Unsupported line skipped: ${line}`);
+    rawTikzLines.push(line);
+    warnings.push(`Unsupported line preserved as raw TikZ: ${line}`);
   }
 
   const scene: TikzScene = {
     name: 'Imported TikZ scene',
     bounds: defaultSceneBounds,
-    shapes
+    shapes,
+    rawTikzLines
   };
 
   return {

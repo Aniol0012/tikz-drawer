@@ -89,6 +89,11 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
   }
 };
 
+const unlockedShapeIds = (shapes: readonly CanvasShape[], shapeIds: readonly string[]): readonly string[] => {
+  const lockedShapeIds = new Set(shapes.filter((shape) => shape.locked).map((shape) => shape.id));
+  return shapeIds.filter((shapeId) => !lockedShapeIds.has(shapeId));
+};
+
 const normalizeScene = (scene: TikzScene): TikzScene => ({
   ...scene,
   shapes: scene.shapes.map((shape) => normalizeShape(shape))
@@ -444,14 +449,20 @@ export class EditorStore {
   }
 
   selectShape(shapeId: string | null): void {
-    this.selectedShapeIds.set(shapeId ? [shapeId] : []);
+    const shape = shapeId ? this.scene().shapes.find((entry) => entry.id === shapeId) : null;
+    this.selectedShapeIds.set(shape && !shape.locked ? [shape.id] : []);
   }
 
   setSelectedShapes(shapeIds: readonly string[]): void {
-    this.selectedShapeIds.set([...new Set(shapeIds)]);
+    this.selectedShapeIds.set([...new Set(unlockedShapeIds(this.scene().shapes, shapeIds))]);
   }
 
   toggleShapeInSelection(shapeId: string): void {
+    const shape = this.scene().shapes.find((entry) => entry.id === shapeId);
+    if (!shape || shape.locked) {
+      return;
+    }
+
     this.selectedShapeIds.update((selectedShapeIds) =>
       selectedShapeIds.includes(shapeId) ? selectedShapeIds.filter((selectedShapeId) => selectedShapeId !== shapeId) : [...selectedShapeIds, shapeId]
     );
@@ -740,11 +751,18 @@ export class EditorStore {
   }
 
   applyImportCode(): ParsedTikzResult {
-    const parsed = parseTikz(this.importCode());
+    const source = this.importCode();
+    const parsed = parseTikz(source);
     this.setScene(parsed.scene);
-    this.importCode.set(sceneToTikz(parsed.scene));
+    this.importCode.set(source);
     this.parserWarnings.set(parsed.warnings);
     return parsed;
+  }
+
+  applyImportedScene(scene: TikzScene, importCode: string, warnings: readonly string[]): void {
+    this.setScene(scene);
+    this.importCode.set(importCode || sceneToTikz(scene));
+    this.parserWarnings.set(warnings);
   }
 
   useExportedCodeAsImport(): void {
@@ -767,7 +785,12 @@ export class EditorStore {
     this.scene.set(nextScene);
     this.importCode.set(typeof importCode === 'string' ? importCode : sceneToTikz(nextScene));
     this.parserWarnings.set([]);
-    this.selectedShapeIds.update((shapeIds) => shapeIds.filter((shapeId) => nextShapeIds.has(shapeId)));
+    this.selectedShapeIds.update((shapeIds) =>
+      unlockedShapeIds(
+        nextScene.shapes,
+        shapeIds.filter((shapeId) => nextShapeIds.has(shapeId))
+      )
+    );
   }
 
   private restoreState(): void {
@@ -815,6 +838,7 @@ export class EditorStore {
   private setScene(scene: TikzScene): void {
     const normalizedScene = normalizeScene(scene);
     this.scene.set(cloneScene(normalizedScene));
-    this.selectedShapeIds.set(normalizedScene.shapes[0] ? [normalizedScene.shapes[0].id] : []);
+    const firstEditableShape = normalizedScene.shapes.find((shape) => !shape.locked);
+    this.selectedShapeIds.set(firstEditableShape ? [firstEditableShape.id] : []);
   }
 }

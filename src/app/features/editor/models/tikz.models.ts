@@ -26,6 +26,7 @@ export interface CanvasShapeBase {
   readonly stroke: string;
   readonly strokeOpacity: number;
   readonly strokeWidth: number;
+  readonly locked?: boolean;
   readonly mergeId?: string;
   readonly table?: TableShapeMetadata;
 }
@@ -157,6 +158,7 @@ export interface TikzScene {
   readonly name: string;
   readonly bounds: SceneBounds;
   readonly shapes: readonly CanvasShape[];
+  readonly rawTikzLines?: readonly string[];
 }
 
 export interface EditorPreferences {

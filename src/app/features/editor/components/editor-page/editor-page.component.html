@@ -3314,9 +3314,10 @@
       [code]="store.importCode()"
       [codeTheme]="codeHighlightTheme()"
       [warnings]="parserWarnings()"
+      [appVersion]="appVersion"
       (closeDialog)="closeImportModal()"
       (codeChange)="updateImportCode($event)"
-      (importCode)="applyImportCode()"></app-import-code-modal>
+      (importResult)="applyImportDialogResult($event)"></app-import-code-modal>
   }
 
   @if (exportModalOpen()) {

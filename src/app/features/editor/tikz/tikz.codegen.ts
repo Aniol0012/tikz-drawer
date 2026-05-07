@@ -483,7 +483,7 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
 
 export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions = {}): TikzExportBundle => {
   const context = createTikzGenerationContext(options);
-  const lines = scene.shapes.map((shape) => shapeToTikz(shape, context));
+  const lines = [...scene.shapes.map((shape) => shapeToTikz(shape, context)), ...(scene.rawTikzLines ?? [])];
   const imports = [
     String.raw`\usepackage{tikz}`,
     ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? [String.raw`\usetikzlibrary{arrows.meta}`] : []),

@@ -15,7 +15,7 @@
 }
 
 .import-code-modal {
-  width: min(940px, calc(100vw - 40px));
+  width: min(1040px, calc(100vw - 40px));
   max-height: min(880px, calc(100dvh - 48px));
   display: grid;
   gap: 14px;
@@ -43,6 +43,103 @@
   margin: 0;
   font-size: 1.18rem;
   line-height: 1.18;
+}
+
+.import-code-modal__copy p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.import-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.import-source-option {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--tool-surface);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+.import-source-option span {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.import-source-option.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
+}
+
+.file-drop {
+  position: relative;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--tool-border-strong);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tool-surface) 74%, transparent);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.file-drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.diagram-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagram-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--tool-surface);
+  font-size: 0.82rem;
+}
+
+.csv-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.csv-options label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--muted-foreground);
+}
+
+.csv-options input {
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--app-foreground);
 }
 
 .import-code-modal__close,
@@ -334,6 +431,36 @@
   background: color-mix(in srgb, var(--accent) 88%, black 8%);
 }
 
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.code-block--file-preview {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--input-background) 96%, transparent);
+  white-space: pre;
+}
+
+.image-preview {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--input-background) 96%, transparent);
+  overflow: hidden;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+}
+
 .import-code-modal__close:active,
 .primary-button:active {
   transform: scale(0.97);
@@ -354,6 +481,10 @@
   .import-code-modal {
     width: 100%;
     padding: 16px;
+  }
+
+  .csv-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .code-block--editor,

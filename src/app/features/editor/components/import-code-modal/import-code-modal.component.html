@@ -3,6 +3,7 @@
     <header class="import-code-modal__header">
       <div class="import-code-modal__copy">
         <h2>{{ title() }}</h2>
+        <p>{{ selectedSourceOption().note }}</p>
       </div>
       <button class="import-code-modal__close" type="button" [attr.aria-label]="closeLabel()" (click)="closeDialog.emit()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -11,32 +12,99 @@
       </button>
     </header>
 
-    <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
-      <div class="code-editor" [class.is-invalid]="hasSyntaxIssue()" [class.is-focused]="codeInputFocused()">
-        <pre
-          #importCodePreview
-          class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
-        <textarea
-          #importCodeInput
-          class="code-input code-input--overlay"
-          [attr.aria-invalid]="hasSyntaxIssue()"
-          [value]="code()"
-          wrap="off"
-          spellcheck="false"
-          (input)="onCodeInput($event)"
-          (keydown)="onCodeInputKeydown($event)"
-          (focus)="onCodeInputFocus()"
-          (blur)="onCodeInputBlur()"
-          (scroll)="syncScroll()"></textarea>
+    <div class="import-source-grid" role="tablist" aria-label="Import source">
+      @for (option of sourceOptions; track option.kind) {
+        <button
+          class="import-source-option"
+          type="button"
+          role="tab"
+          [class.is-selected]="sourceKind() === option.kind"
+          [attr.aria-selected]="sourceKind() === option.kind"
+          (click)="updateSourceKind(option.kind)">
+          <span>{{ option.label }}</span>
+        </button>
+      }
+    </div>
+
+    <label class="file-drop">
+      <span>{{
+        fileName() || (sourceKind() === 'tikz' || sourceKind() === 'mermaid' ? 'Choose a file or paste code below' : 'Choose a file')
+      }}</span>
+      <input type="file" [attr.accept]="selectedSourceOption().accept" (change)="onFileSelected($event)" />
+    </label>
+
+    @if (sourceKind() === 'tex' && texDiagrams().length) {
+      <div class="diagram-picker">
+        @for (diagram of texDiagrams(); track diagram.title; let index = $index) {
+          <label>
+            <input type="checkbox" [checked]="selectedTexDiagramIndexes().includes(index)" (change)="toggleTexDiagram(index, $event)" />
+            <span>{{ diagram.title }}</span>
+          </label>
+        }
       </div>
+    }
+
+    @if (sourceKind() === 'csv') {
+      <div class="csv-options">
+        <label>
+          <span>X column</span>
+          <input type="text" [value]="csvXColumn()" (input)="updateCsvColumn('x', $event)" />
+        </label>
+        <label>
+          <span>Y column</span>
+          <input type="text" [value]="csvYColumn()" (input)="updateCsvColumn('y', $event)" />
+        </label>
+        <label>
+          <span>Label column</span>
+          <input type="text" [value]="csvLabelColumn()" (input)="updateCsvColumn('label', $event)" />
+        </label>
+        <label>
+          <span>Group column</span>
+          <input type="text" [value]="csvGroupColumn()" (input)="updateCsvColumn('group', $event)" />
+        </label>
+      </div>
+    }
+
+    <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
+      @if (sourceKind() === 'tikz' || sourceKind() === 'mermaid') {
+        <div class="code-editor" [class.is-invalid]="sourceKind() === 'tikz' && hasSyntaxIssue()" [class.is-focused]="codeInputFocused()">
+          <pre
+            #importCodePreview
+            class="code-block code-block--editor code-editor__preview"><code [innerHTML]="sourceKind() === 'tikz' ? highlightedCode() : code()"></code></pre>
+          <textarea
+            #importCodeInput
+            class="code-input code-input--overlay"
+            [attr.aria-invalid]="sourceKind() === 'tikz' && hasSyntaxIssue()"
+            [value]="code()"
+            wrap="off"
+            spellcheck="false"
+            (input)="onCodeInput($event)"
+            (keydown)="onCodeInputKeydown($event)"
+            (focus)="onCodeInputFocus()"
+            (blur)="onCodeInputBlur()"
+            (scroll)="syncScroll()"></textarea>
+        </div>
+      } @else if (fileContent()) {
+        <pre class="code-block code-block--file-preview"><code>{{ fileContent() }}</code></pre>
+      } @else if (imageDataUrl()) {
+        <div class="image-preview">
+          <img [src]="imageDataUrl()" [alt]="fileName()" />
+        </div>
+      }
       <div class="import-code-modal__actions">
-        <button class="primary-button secondary-button--compact" type="button" (click)="importCode.emit()">
+        <button class="primary-button secondary-button--compact" type="button" [disabled]="!canImport()" (click)="importSelectedSource()">
           {{ actionLabel() }}
         </button>
       </div>
     </div>
 
-    @if (warnings().length) {
+    @if (fileError()) {
+      <div class="warning-box">
+        <p>{{ fileError() }}</p>
+      </div>
+    }
+
+    @if (warnings().length && sourceKind() === 'tikz') {
       <div class="warning-box">
         <p>{{ warningsLabel() }}</p>
         <ul>
