@@ -1,7 +1,8 @@
 import '@angular/compiler';
 import { Component, signal } from '@angular/core';
 import { ɵresolveComponentResources as resolveComponentResources } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
