@@ -753,14 +753,14 @@ export class EditorStore {
   applyImportCode(): ParsedTikzResult {
     const source = this.importCode();
     const parsed = parseTikz(source);
-    this.setScene(parsed.scene);
+    this.appendImportedScene(parsed.scene);
     this.importCode.set(source);
     this.parserWarnings.set(parsed.warnings);
     return parsed;
   }
 
   applyImportedScene(scene: TikzScene, importCode: string, warnings: readonly string[]): void {
-    this.setScene(scene);
+    this.appendImportedScene(scene);
     this.importCode.set(importCode || sceneToTikz(scene));
     this.parserWarnings.set(warnings);
   }
@@ -833,6 +833,19 @@ export class EditorStore {
     this.preferences.set(structuredClone(snapshot.preferences));
     this.importCode.set(snapshot.importCode);
     this.selectedShapeIds.set(snapshot.selectedShapeIds);
+  }
+
+  private appendImportedScene(scene: TikzScene): void {
+    const normalizedScene = normalizeScene(scene);
+    const importedScene = cloneScene(normalizedScene);
+    if (!importedScene.shapes.length) {
+      return;
+    }
+
+    this.scene.update((currentScene) => ({
+      ...currentScene,
+      shapes: [...currentScene.shapes, ...importedScene.shapes]
+    }));
   }
 
   private setScene(scene: TikzScene): void {

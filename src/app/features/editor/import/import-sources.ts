@@ -409,15 +409,14 @@ export const importCsvSource = (source: string, xColumn: string, yColumn: string
 };
 
 export const importImageSource = (dataUrl: string, fileName: string): ImportDialogResult => ({
-  scene: makeScene('Imported image background', [
+  scene: makeScene('Imported image', [
     {
       id: createId(),
-      name: 'Locked image background',
+      name: 'Imported image',
       kind: 'image',
       stroke: 'none',
       strokeOpacity: 1,
       strokeWidth: 0,
-      locked: true,
       x: -4,
       y: -3,
       width: 8,
@@ -429,7 +428,7 @@ export const importImageSource = (dataUrl: string, fileName: string): ImportDial
     }
   ]),
   importCode: '',
-  warnings: ['Imported as a non-vector reference image. Locking is represented as a background image layer in this import.']
+  warnings: []
 });
 
 const offsetShape = (shape: CanvasShape, deltaX: number, deltaY: number): CanvasShape => {
