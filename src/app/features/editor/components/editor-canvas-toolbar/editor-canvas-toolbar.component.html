@@ -1,0 +1,69 @@
+<div class="canvas-control-group">
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo()" [attr.data-tooltip]="undoLabel()">
+    <button class="icon-button" type="button" [disabled]="!canUndo()" [attr.aria-label]="undoLabel()" (click)="requestUndo()">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="icons().undo"></path>
+      </svg>
+    </button>
+  </span>
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo()" [attr.data-tooltip]="redoLabel()">
+    <button class="icon-button" type="button" [disabled]="!canRedo()" [attr.aria-label]="redoLabel()" (click)="requestRedo()">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="icons().redo"></path>
+      </svg>
+    </button>
+  </span>
+  <span class="canvas-tooltip-target" [class.is-disabled]="viewportCentered()" [attr.data-tooltip]="centerViewLabel()">
+    <button
+      class="icon-button"
+      type="button"
+      [attr.aria-label]="centerViewLabel()"
+      [disabled]="viewportCentered()"
+      (click)="requestCenter()">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="icons().centerView"></path>
+      </svg>
+    </button>
+  </span>
+</div>
+
+<div class="canvas-control-group canvas-control-group--zoom">
+  <button class="icon-button" type="button" [attr.data-tooltip]="zoomOutLabel()" (click)="zoomOut()">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="icons().zoomOut"></path>
+    </svg>
+  </button>
+  <input
+    type="range"
+    autocomplete="off"
+    [min]="minScale()"
+    [max]="maxScale()"
+    [step]="zoomStep()"
+    [value]="scale()"
+    (input)="setScaleFromInput($event)" />
+  <div class="zoom-menu-shell">
+    <button class="zoom-chip" type="button" [attr.aria-expanded]="zoomMenuOpen()" aria-haspopup="menu" (click)="toggleZoomMenu($event)">
+      {{ zoomPercent() }}%
+    </button>
+    @if (zoomMenuOpen()) {
+      <div class="zoom-preset-menu" role="menu">
+        @for (preset of zoomPresetPercents; track preset) {
+          <button
+            class="zoom-preset-menu__item"
+            type="button"
+            role="menuitemradio"
+            [class.is-active]="zoomPercent() === preset"
+            [attr.aria-checked]="zoomPercent() === preset"
+            (click)="setZoomPercent(preset)">
+            {{ preset }}%
+          </button>
+        }
+      </div>
+    }
+  </div>
+  <button class="icon-button" type="button" [attr.data-tooltip]="zoomInLabel()" (click)="zoomIn()">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="icons().zoomIn"></path>
+    </svg>
+  </button>
+</div>

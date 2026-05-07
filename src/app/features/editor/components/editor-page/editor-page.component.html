@@ -8,7 +8,7 @@
   [style.--mobile-left-sidebar-height.px]="effectiveMobileLeftSidebarHeight()"
   [style.--mobile-right-sidebar-min-height.px]="mobileRightSidebarMinHeight()"
   [style.--mobile-left-sidebar-min-height.px]="mobileLeftSidebarMinHeight()"
-  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette(); closeZoomMenu()">
+  (click)="closeContextMenu(); closeFileMenu(); closeTextSymbolPalette()">
   <app-editor-topbar
     [appVersion]="appVersion"
     [sceneName]="scene().name"
@@ -765,81 +765,25 @@
           </button>
         </div>
 
-        <div class="canvas-corner canvas-corner--bottom">
-          <div class="canvas-control-group" (pointerdown)="$event.stopPropagation()">
-            <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo()" [attr.data-tooltip]="'undo' | translate">
-              <button class="icon-button" type="button" [disabled]="!canUndo()" [attr.aria-label]="'undo' | translate" (click)="undo()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.undo"></path>
-                </svg>
-              </button>
-            </span>
-            <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo()" [attr.data-tooltip]="'redo' | translate">
-              <button class="icon-button" type="button" [disabled]="!canRedo()" [attr.aria-label]="'redo' | translate" (click)="redo()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.redo"></path>
-                </svg>
-              </button>
-            </span>
-            <span class="canvas-tooltip-target" [class.is-disabled]="isViewportCentered()" [attr.data-tooltip]="'centerView' | translate">
-              <button
-                class="icon-button"
-                type="button"
-                [attr.aria-label]="'centerView' | translate"
-                [disabled]="isViewportCentered()"
-                (click)="resetViewport()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="iconMap.scene"></path>
-                </svg>
-              </button>
-            </span>
-          </div>
-          <div class="canvas-control-group canvas-control-group--zoom" (pointerdown)="$event.stopPropagation()">
-            <button class="icon-button" type="button" [attr.data-tooltip]="'zoomOut' | translate" (click)="zoomOut()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.minus"></path>
-              </svg>
-            </button>
-            <input
-              type="range"
-              autocomplete="off"
-              min="12"
-              max="120"
-              step="4"
-              [value]="preferences().scale"
-              (input)="updatePreferenceNumber('scale', $event, 12, 120)" />
-            <div class="zoom-menu-shell" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-              <button
-                class="zoom-chip"
-                type="button"
-                [attr.aria-expanded]="zoomMenuOpen()"
-                aria-haspopup="menu"
-                (click)="toggleZoomMenu($event)">
-                {{ zoomPercent() }}%
-              </button>
-              @if (zoomMenuOpen()) {
-                <div class="zoom-preset-menu" role="menu">
-                  @for (preset of zoomPresetPercents; track preset) {
-                    <button
-                      class="zoom-preset-menu__item"
-                      type="button"
-                      role="menuitemradio"
-                      [class.is-active]="zoomPercent() === preset"
-                      [attr.aria-checked]="zoomPercent() === preset"
-                      (click)="setZoomPercent(preset)">
-                      {{ preset }}%
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-            <button class="icon-button" type="button" [attr.data-tooltip]="'zoomIn' | translate" (click)="zoomIn()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.plus"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <app-editor-canvas-toolbar
+          [canUndo]="canUndo()"
+          [canRedo]="canRedo()"
+          [viewportCentered]="isViewportCentered()"
+          [scale]="preferences().scale"
+          [minScale]="editorScaleMin"
+          [maxScale]="editorScaleMax"
+          [zoomStep]="editorZoomStep"
+          [defaultScale]="defaultScale"
+          [icons]="canvasToolbarIcons"
+          [undoLabel]="'undo' | translate"
+          [redoLabel]="'redo' | translate"
+          [centerViewLabel]="'centerView' | translate"
+          [zoomOutLabel]="'zoomOut' | translate"
+          [zoomInLabel]="'zoomIn' | translate"
+          (undoRequested)="undo()"
+          (redoRequested)="redo()"
+          (centerRequested)="resetViewport()"
+          (scaleRequested)="setCanvasToolbarScale($event)"></app-editor-canvas-toolbar>
 
         @if (showMinimap() && minimapOverview(); as minimap) {
           <div

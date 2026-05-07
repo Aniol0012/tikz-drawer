@@ -154,6 +154,7 @@ import {
 import { EditorTopbarComponent } from '../editor-topbar/editor-topbar.component';
 import { EditorLeftSidebarComponent } from '../editor-left-sidebar/editor-left-sidebar.component';
 import { EditorRightSidebarComponent } from '../editor-right-sidebar/editor-right-sidebar.component';
+import { EditorCanvasToolbarComponent } from '../editor-canvas-toolbar/editor-canvas-toolbar.component';
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { ExportModalComponent } from '../export-modal/export-modal.component';
@@ -282,6 +283,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     EditorTopbarComponent,
     EditorLeftSidebarComponent,
     EditorRightSidebarComponent,
+    EditorCanvasToolbarComponent,
     TableDialogComponent,
     ImportCodeModalComponent,
     ExportModalComponent,
@@ -317,7 +319,10 @@ export class EditorPageComponent {
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
-  private readonly defaultScale = DEFAULT_EDITOR_SCALE;
+  readonly defaultScale = DEFAULT_EDITOR_SCALE;
+  readonly editorScaleMin = EDITOR_SCALE_MIN;
+  readonly editorScaleMax = EDITOR_SCALE_MAX;
+  readonly editorZoomStep = EDITOR_ZOOM_STEP;
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -373,8 +378,6 @@ export class EditorPageComponent {
   readonly figureSearchOpen = signal(false);
   readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl + F', '⌘ F');
   readonly selectedImageFilename = signal('');
-  readonly zoomMenuOpen = signal(false);
-  readonly zoomPresetPercents = [50, 75, 100, 125, 150, 200, 300, 400, 500] as const;
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
   readonly editingTemplateId = signal<string | null>(null);
@@ -438,6 +441,13 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
+  readonly canvasToolbarIcons = {
+    undo: iconPaths.undo,
+    redo: iconPaths.redo,
+    centerView: iconPaths.scene,
+    zoomOut: iconPaths.minus,
+    zoomIn: iconPaths.plus
+  };
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
@@ -532,7 +542,6 @@ export class EditorPageComponent {
     'library'
   ] as const;
 
-  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / this.defaultScale) * 100));
   readonly allInsertablePresets = computed<readonly ObjectPreset[]>(() => [
     ...this.savedTemplates().map((template) => this.savedTemplateToPreset(template)),
     ...this.objectPresets
@@ -1913,12 +1922,10 @@ export class EditorPageComponent {
   }
 
   zoomIn(): void {
-    this.closeZoomMenu();
     this.setScaleFromViewportCenter(this.preferences().scale + EDITOR_ZOOM_STEP);
   }
 
   zoomOut(): void {
-    this.closeZoomMenu();
     this.setScaleFromViewportCenter(this.preferences().scale - EDITOR_ZOOM_STEP);
   }
 
@@ -1926,18 +1933,8 @@ export class EditorPageComponent {
     this.setScaleFromViewportCenter(this.defaultScale);
   }
 
-  toggleZoomMenu(event: MouseEvent): void {
-    event.stopPropagation();
-    this.zoomMenuOpen.update((open) => !open);
-  }
-
-  closeZoomMenu(): void {
-    this.zoomMenuOpen.set(false);
-  }
-
-  setZoomPercent(percent: number): void {
-    this.setScaleFromViewportCenter((this.defaultScale * percent) / 100);
-    this.closeZoomMenu();
+  setCanvasToolbarScale(scale: number): void {
+    this.setScaleFromViewportCenter(scale);
   }
 
   downloadStandaloneFile(): void {
@@ -3168,7 +3165,6 @@ export class EditorPageComponent {
     this.focusCanvasViewport();
     this.closeContextMenu();
     this.closeFileMenu();
-    this.closeZoomMenu();
     const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
 
     if (event.button === 2) {
@@ -5214,7 +5210,6 @@ export class EditorPageComponent {
 
     const closeHandlers: ReadonlyArray<{ readonly isOpen: () => boolean; readonly close: () => void }> = [
       { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
-      { isOpen: () => this.zoomMenuOpen(), close: () => this.closeZoomMenu() },
       { isOpen: () => this.figureSearchOpen(), close: () => this.closeFigureSearch() },
       { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
       { isOpen: () => !!this.regularPolygonDialogState(), close: () => this.closeRegularPolygonDialog() },
