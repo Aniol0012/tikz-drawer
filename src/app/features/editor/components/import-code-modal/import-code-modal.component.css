@@ -54,10 +54,10 @@
 
 .import-code-modal__body {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   min-height: 0;
   overflow: auto;
-  padding: 16px 20px 18px;
+  padding: 18px 20px 20px;
   scrollbar-gutter: stable;
 }
 
@@ -72,18 +72,11 @@
   line-height: 1.18;
 }
 
-.import-code-modal__copy p {
-  max-width: 760px;
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
-
 .import-code-modal__close,
 .primary-button,
 .import-source-option,
 .file-drop,
+.import-input-panel,
 .code-editor,
 .csv-options input,
 .diagram-picker label,
@@ -122,7 +115,8 @@
 .import-code-modal__close svg,
 .import-source-option svg,
 .file-drop svg,
-.import-empty-state svg {
+.import-empty-state svg,
+.import-input-panel__icon svg {
   width: 18px;
   height: 18px;
   display: block;
@@ -139,12 +133,13 @@
 
 .import-source-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: 10px;
 }
 
 .import-source-option {
-  min-height: 68px;
+  position: relative;
+  min-height: 62px;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
@@ -152,7 +147,7 @@
   padding: 10px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--tool-surface) 96%, white 4%), var(--tool-surface)), var(--tool-surface);
+  background: var(--tool-surface);
   color: inherit;
   text-align: left;
   font: inherit;
@@ -161,13 +156,14 @@
 
 .import-source-option__icon,
 .file-drop__icon,
-.import-empty-state span {
+.import-empty-state span,
+.import-input-panel__icon {
   width: 34px;
   height: 34px;
   display: grid;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--tool-border) 78%, transparent);
-  border-radius: 10px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--input-background) 78%, transparent);
   color: color-mix(in srgb, var(--app-foreground) 74%, var(--muted-foreground));
 }
@@ -200,7 +196,7 @@
 .file-drop:hover,
 .diagram-picker label:hover {
   border-color: color-mix(in srgb, var(--accent) 38%, var(--tool-border-strong));
-  background: color-mix(in srgb, var(--accent) 7%, var(--tool-surface));
+  background: color-mix(in srgb, var(--accent) 6%, var(--tool-surface));
 }
 
 .import-source-option:active,
@@ -212,7 +208,7 @@
 
 .import-source-option.is-selected {
   border-color: color-mix(in srgb, var(--accent) 62%, var(--tool-border-strong));
-  background: color-mix(in srgb, var(--accent) 13%, var(--tool-surface));
+  background: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
@@ -222,16 +218,41 @@
   color: color-mix(in srgb, var(--accent) 76%, var(--app-foreground));
 }
 
+.import-source-option--reference.is-selected {
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--warning) 8%, var(--tool-surface));
+}
+
+.import-input-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--tool-border) 86%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tool-surface) 42%, var(--panel-background));
+}
+
+.import-input-panel__header {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.import-input-panel__header strong {
+  font-size: 0.92rem;
+}
+
 .file-drop {
   position: relative;
-  min-height: 58px;
+  min-height: 68px;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: 12px;
+  padding: 12px;
   border: 1px dashed var(--tool-border-strong);
-  border-radius: 12px;
+  border-radius: 14px;
   background: color-mix(in srgb, var(--tool-surface) 76%, transparent);
   color: var(--muted-foreground);
   cursor: pointer;
@@ -411,14 +432,14 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 13%, transparent);
 }
 
-.code-editor.is-invalid,
-.code-editor.is-invalid:hover,
-.code-editor.is-invalid:focus-within,
-.code-editor.is-invalid:focus-within:hover,
-.code-editor.is-invalid.is-focused,
-.code-editor.is-invalid.is-focused:hover {
-  border-color: color-mix(in srgb, var(--danger) 72%, var(--tool-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 10%, transparent);
+.code-editor.has-warning,
+.code-editor.has-warning:hover,
+.code-editor.has-warning:focus-within,
+.code-editor.has-warning:focus-within:hover,
+.code-editor.has-warning.is-focused,
+.code-editor.has-warning.is-focused:hover {
+  border-color: color-mix(in srgb, var(--warning) 58%, var(--tool-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warning) 10%, transparent);
 }
 
 .code-block--file-preview {
@@ -456,40 +477,115 @@
 
 .import-message {
   display: grid;
-  gap: 9px;
-  max-height: 170px;
-  overflow: auto;
-  padding: 12px;
-  border-radius: 12px;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
 }
 
 .import-message__header {
   display: grid;
-  gap: 3px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
 }
 
 .import-message__header strong {
-  font-size: 0.86rem;
+  display: block;
+  font-size: 0.92rem;
 }
 
 .import-message__header span {
   color: var(--muted-foreground);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.35;
 }
 
-.import-message ul {
+.import-message__badge {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--warning) 16%, var(--tool-surface));
+  color: color-mix(in srgb, var(--warning) 82%, var(--app-foreground));
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.import-message__summary {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.warning-details-toggle {
+  justify-self: flex-start;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--tool-border));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--warning) 8%, var(--tool-surface));
+  color: var(--app-foreground);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.warning-details-toggle:hover {
+  background: color-mix(in srgb, var(--warning) 13%, var(--tool-surface));
+}
+
+.warning-detail-list {
+  display: grid;
+  gap: 8px;
+  max-height: 190px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.warning-detail-list li {
   display: grid;
   gap: 5px;
-  margin: 0;
-  padding-left: 18px;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--warning) 22%, var(--tool-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel-background) 76%, transparent);
+}
+
+.warning-detail-list code {
+  display: block;
+  overflow: auto;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--input-background) 92%, transparent);
+  color: var(--app-foreground);
+  font: 600 0.76rem/1.45 var(--font-mono);
+  white-space: pre;
+}
+
+.warning-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.warning-preview-list span {
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--warning) 24%, var(--tool-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warning) 7%, var(--tool-surface));
+  color: var(--app-foreground);
+  font-size: 0.76rem;
 }
 
 .import-message--warning {
   border: 1px solid color-mix(in srgb, var(--warning) 42%, var(--tool-border));
-  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  background: color-mix(in srgb, var(--warning) 7%, var(--panel-background));
 }
 
 .import-message--error {
@@ -531,7 +627,8 @@
 .import-source-option:focus-visible,
 .file-drop:focus-within,
 .csv-options input:focus-visible,
-.diagram-picker input:focus-visible {
+.diagram-picker input:focus-visible,
+.warning-details-toggle:focus-visible {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 64%, var(--tool-border-strong));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
@@ -658,13 +755,10 @@
 
   .import-source-option__icon,
   .file-drop__icon,
-  .import-empty-state span {
+  .import-empty-state span,
+  .import-input-panel__icon {
     width: 30px;
     height: 30px;
-  }
-
-  .import-source-option small {
-    display: none;
   }
 
   .csv-options {

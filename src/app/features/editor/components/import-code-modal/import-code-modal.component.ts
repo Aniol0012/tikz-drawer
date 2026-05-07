@@ -73,9 +73,17 @@ interface ImportSourceOption {
   readonly labelKey: string;
   readonly helperKey: string;
   readonly noteKey: string;
-  readonly tooltipKey: string;
+  readonly inputTitleKey: string;
+  readonly inputDescriptionKey: string;
   readonly iconKey: string;
   readonly accept: string;
+  readonly tone: 'editable' | 'reference';
+}
+
+interface ImportWarningView {
+  readonly summary: string;
+  readonly detail: string;
+  readonly isRawTikz: boolean;
 }
 
 @Component({
@@ -119,95 +127,156 @@ export class ImportCodeModalComponent {
   readonly csvYColumn = signal('y');
   readonly csvLabelColumn = signal('label');
   readonly csvGroupColumn = signal('group');
+  readonly warningDetailsExpanded = signal(false);
   readonly sourceOptions: readonly ImportSourceOption[] = [
     {
       kind: 'tikz',
       labelKey: 'import.source.tikz.label',
       helperKey: 'import.source.tikz.helper',
       noteKey: 'import.source.tikz.note',
-      tooltipKey: 'import.source.tikz.tooltip',
+      inputTitleKey: 'import.input.tikz.title',
+      inputDescriptionKey: 'import.input.tikz.description',
       iconKey: 'text',
-      accept: '.tikz,.tex,text/plain'
+      accept: '.tikz,.tex,text/plain',
+      tone: 'editable'
     },
     {
       kind: 'tex',
       labelKey: 'import.source.tex.label',
       helperKey: 'import.source.tex.helper',
       noteKey: 'import.source.tex.note',
-      tooltipKey: 'import.source.tex.tooltip',
-      iconKey: 'file',
-      accept: '.tex'
+      inputTitleKey: 'import.input.tex.title',
+      inputDescriptionKey: 'import.input.tex.description',
+      iconKey: 'document',
+      accept: '.tex',
+      tone: 'editable'
     },
     {
       kind: 'project-json',
       labelKey: 'import.source.projectJson.label',
       helperKey: 'import.source.projectJson.helper',
       noteKey: 'import.source.projectJson.note',
-      tooltipKey: 'import.source.projectJson.tooltip',
+      inputTitleKey: 'import.input.projectJson.title',
+      inputDescriptionKey: 'import.input.projectJson.description',
       iconKey: 'settings',
-      accept: '.json,application/json'
+      accept: '.json,application/json',
+      tone: 'editable'
     },
     {
       kind: 'drawio',
       labelKey: 'import.source.drawio.label',
       helperKey: 'import.source.drawio.helper',
       noteKey: 'import.source.drawio.note',
-      tooltipKey: 'import.source.drawio.tooltip',
+      inputTitleKey: 'import.input.drawio.title',
+      inputDescriptionKey: 'import.input.drawio.description',
       iconKey: 'flow',
-      accept: '.drawio,.xml,text/xml'
+      accept: '.drawio,.xml,text/xml',
+      tone: 'editable'
     },
     {
       kind: 'svg',
       labelKey: 'import.source.svg.label',
       helperKey: 'import.source.svg.helper',
       noteKey: 'import.source.svg.note',
-      tooltipKey: 'import.source.svg.tooltip',
+      inputTitleKey: 'import.input.svg.title',
+      inputDescriptionKey: 'import.input.svg.description',
       iconKey: 'image',
-      accept: '.svg,image/svg+xml'
+      accept: '.svg,image/svg+xml',
+      tone: 'editable'
     },
     {
       kind: 'mermaid',
       labelKey: 'import.source.mermaid.label',
       helperKey: 'import.source.mermaid.helper',
       noteKey: 'import.source.mermaid.note',
-      tooltipKey: 'import.source.mermaid.tooltip',
+      inputTitleKey: 'import.input.mermaid.title',
+      inputDescriptionKey: 'import.input.mermaid.description',
       iconKey: 'graph',
-      accept: '.mmd,.mermaid,text/plain'
+      accept: '.mmd,.mermaid,text/plain',
+      tone: 'editable'
     },
     {
       kind: 'dot',
       labelKey: 'import.source.dot.label',
       helperKey: 'import.source.dot.helper',
       noteKey: 'import.source.dot.note',
-      tooltipKey: 'import.source.dot.tooltip',
+      inputTitleKey: 'import.input.dot.title',
+      inputDescriptionKey: 'import.input.dot.description',
       iconKey: 'graphComplete',
-      accept: '.dot,text/plain'
+      accept: '.dot,text/plain',
+      tone: 'editable'
     },
     {
       kind: 'csv',
       labelKey: 'import.source.csv.label',
       helperKey: 'import.source.csv.helper',
       noteKey: 'import.source.csv.note',
-      tooltipKey: 'import.source.csv.tooltip',
-      iconKey: 'bars',
-      accept: '.csv,.tsv,text/csv,text/tab-separated-values'
+      inputTitleKey: 'import.input.csv.title',
+      inputDescriptionKey: 'import.input.csv.description',
+      iconKey: 'table',
+      accept: '.csv,.tsv,text/csv,text/tab-separated-values',
+      tone: 'editable'
     },
     {
       kind: 'image',
       labelKey: 'import.source.image.label',
       helperKey: 'import.source.image.helper',
       noteKey: 'import.source.image.note',
-      tooltipKey: 'import.source.image.tooltip',
+      inputTitleKey: 'import.input.image.title',
+      inputDescriptionKey: 'import.input.image.description',
       iconKey: 'image',
-      accept: '.png,.jpg,.jpeg,image/png,image/jpeg'
+      accept: '.png,.jpg,.jpeg,image/png,image/jpeg',
+      tone: 'reference'
     }
   ];
   readonly selectedSourceOption = computed(() => this.sourceOptions.find((option) => option.kind === this.sourceKind()) ?? this.sourceOptions[0]);
   readonly activeSourceText = computed(() => (this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid' ? this.code() : this.fileContent()));
-  readonly filePlaceholderKey = computed(() =>
-    this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid' ? 'import.filePlaceholderPaste' : 'import.filePlaceholder'
-  );
+  readonly filePlaceholderKey = computed(() => {
+    switch (this.sourceKind()) {
+      case 'tikz':
+        return 'import.filePlaceholderTikz';
+      case 'tex':
+        return 'import.filePlaceholderTex';
+      case 'project-json':
+        return 'import.filePlaceholderProjectJson';
+      case 'drawio':
+        return 'import.filePlaceholderDrawio';
+      case 'svg':
+        return 'import.filePlaceholderSvg';
+      case 'mermaid':
+        return 'import.filePlaceholderMermaid';
+      case 'dot':
+        return 'import.filePlaceholderDot';
+      case 'csv':
+        return 'import.filePlaceholderCsv';
+      case 'image':
+        return 'import.filePlaceholderImage';
+    }
+  });
   readonly displayedWarnings = computed(() => (this.sourceKind() === 'tikz' ? this.parsedInput().warnings : this.warnings()));
+  readonly warningViews = computed(() => this.displayedWarnings().map((warning) => this.describeWarning(warning)));
+  readonly rawTikzWarningCount = computed(() => this.warningViews().filter((warning) => warning.isRawTikz).length);
+  readonly warningSummaryText = computed(() => {
+    const warnings = this.warningViews();
+    const rawCount = this.rawTikzWarningCount();
+    if (!warnings.length) {
+      return '';
+    }
+
+    if (rawCount === warnings.length) {
+      return this.formatCount(rawCount, 'import.warningRawTikzSingular', 'import.warningRawTikzPlural');
+    }
+
+    if (rawCount > 0) {
+      return `${this.formatCount(warnings.length, 'import.warningCountSingular', 'import.warningCountPlural')} ${this.formatCount(
+        rawCount,
+        'import.warningRawTikzShortSingular',
+        'import.warningRawTikzShortPlural'
+      )}`;
+    }
+
+    return this.formatCount(warnings.length, 'import.warningCountSingular', 'import.warningCountPlural');
+  });
   readonly displayedErrors = computed(() => (this.fileError() ? [this.fileError()] : []));
   readonly canImport = computed(() => {
     if (this.fileError()) {
@@ -248,6 +317,7 @@ export class ImportCodeModalComponent {
 
   updateSourceKind(kind: ImportSourceKind): void {
     this.sourceKind.set(kind);
+    this.warningDetailsExpanded.set(false);
     this.fileError.set('');
     this.fileName.set('');
     this.fileContent.set('');
@@ -322,6 +392,10 @@ export class ImportCodeModalComponent {
     });
   }
 
+  toggleWarningDetails(): void {
+    this.warningDetailsExpanded.update((expanded) => !expanded);
+  }
+
   importSelectedSource(): void {
     try {
       const result = this.buildImportResult();
@@ -361,6 +435,75 @@ export class ImportCodeModalComponent {
 
   private isEscapeKey(event: KeyboardEvent): boolean {
     return event.key === 'Escape' || event.key === 'Esc' || event.code === 'Escape';
+  }
+
+  private describeWarning(warning: string): ImportWarningView {
+    const diagramRawTikzMatch = warning.match(/^(.*?): Unsupported line preserved as raw TikZ: (.*)$/);
+    if (diagramRawTikzMatch) {
+      const [, diagramTitle, line] = diagramRawTikzMatch;
+      return {
+        summary: this.format('import.warningRawTikzDiagramSummary', { diagram: diagramTitle }),
+        detail: line,
+        isRawTikz: true
+      };
+    }
+
+    const rawTikzMatch = warning.match(/^Unsupported line preserved as raw TikZ: (.*)$/);
+    if (rawTikzMatch) {
+      return {
+        summary: this.t('import.warningRawTikzLineSummary'),
+        detail: rawTikzMatch[1],
+        isRawTikz: true
+      };
+    }
+
+    const csvMatch = warning.match(/^Skipped CSV row with invalid coordinates: (.*)$/);
+    if (csvMatch) {
+      return {
+        summary: this.t('import.warningCsvRowSummary'),
+        detail: csvMatch[1],
+        isRawTikz: false
+      };
+    }
+
+    const svgPathMatch = warning.match(/^Unsupported SVG path preserved as warning: (.*)$/);
+    if (svgPathMatch) {
+      return {
+        summary: this.t('import.warningSvgPathSummary'),
+        detail: svgPathMatch[1],
+        isRawTikz: false
+      };
+    }
+
+    const translated = this.translateKnownWarning(warning);
+    return {
+      summary: translated,
+      detail: warning === translated ? '' : warning,
+      isRawTikz: false
+    };
+  }
+
+  private translateKnownWarning(warning: string): string {
+    switch (warning) {
+      case 'No tikzpicture environments were found in the LaTeX document.':
+        return this.t('import.warningNoTikzPictures');
+      case 'CSV import requires a header row and at least one data row.':
+        return this.t('import.warningCsvNeedsRows');
+      case 'Imported as a non-vector reference image. Locking is represented as a background image layer in this import.':
+        return this.t('import.warningImageReference');
+      case 'No graph edges were recognized.':
+        return this.t('import.warningNoGraphEdges');
+      default:
+        return warning;
+    }
+  }
+
+  private formatCount(count: number, singularKey: string, pluralKey: string): string {
+    return this.format(count === 1 ? singularKey : pluralKey, { count: String(count) });
+  }
+
+  private format(key: string, replacements: Record<string, string>): string {
+    return Object.entries(replacements).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), this.t(key));
   }
 
   private buildImportResult(): ImportDialogResult {
