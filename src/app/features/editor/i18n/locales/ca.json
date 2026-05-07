@@ -12,6 +12,7 @@
   "searchLibrary": "Cerca figures o diagrames",
   "search": "Cerca",
   "figureSearchPlaceholder": "Cerca una figura...",
+  "figureSearchClear": "Netejar cerca",
   "figureSearchNoResults": "No s'ha trobat cap figura.",
   "figureSearchSelect": "Enter",
   "scenePresets": "Escenes d'exemple",

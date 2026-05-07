@@ -27,11 +27,11 @@
 
 .figure-search-field {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr) 30px auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 54px;
-  padding: 0 14px;
+  padding: 0 10px 0 14px;
   border: 1px solid color-mix(in srgb, var(--tool-border) 80%, transparent);
   border-radius: 14px;
   background: color-mix(in srgb, var(--input-background) 84%, transparent);
@@ -55,6 +55,56 @@
   color: var(--app-foreground);
   font: inherit;
   font-size: 1rem;
+}
+
+.figure-search-field input::-webkit-search-cancel-button,
+.figure-search-field input::-webkit-search-decoration {
+  appearance: none;
+}
+
+.figure-search-field__clear {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  transition:
+    opacity 140ms var(--ease-out),
+    transform 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out);
+}
+
+.figure-search-field__clear.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.figure-search-field__clear svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+  color: currentColor;
+}
+
+.figure-search-field__clear:hover,
+.figure-search-field__clear:focus-visible {
+  border-color: color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+  background: color-mix(in srgb, var(--tool-surface) 88%, transparent);
+  color: var(--app-foreground);
+}
+
+.figure-search-field__clear:active {
+  transform: scale(0.96);
 }
 
 .figure-search-field kbd {
@@ -152,7 +202,7 @@
 
 @media (max-width: 560px) {
   .figure-search-field {
-    grid-template-columns: 22px minmax(0, 1fr);
+    grid-template-columns: 22px minmax(0, 1fr) 30px;
   }
 
   .figure-search-field kbd,

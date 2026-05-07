@@ -1,12 +1,28 @@
 <div class="figure-search-backdrop" tabindex="-1" (click)="closeSearch.emit()" (keydown)="onBackdropKeydown($event)">
   <section class="figure-search-panel" (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
-    <label class="figure-search-field">
+    <div class="figure-search-field">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconPath('search')"></path>
       </svg>
-      <input #searchInput type="search" [value]="query()" [placeholder]="placeholder()" (input)="updateQuery($any($event.target).value)" />
+      <input
+        #searchInput
+        type="search"
+        [attr.aria-label]="placeholder()"
+        [value]="query()"
+        [placeholder]="placeholder()"
+        (input)="updateQuery($any($event.target).value)" />
+      <button
+        class="figure-search-field__clear"
+        type="button"
+        [class.is-visible]="query()"
+        [attr.aria-label]="clearLabel()"
+        (click)="clearQuery($event)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconPath('close')"></path>
+        </svg>
+      </button>
       <kbd>{{ shortcutLabel() }}</kbd>
-    </label>
+    </div>
 
     <div class="figure-search-results">
       @if (filteredPresets().length) {

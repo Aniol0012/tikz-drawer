@@ -12,6 +12,7 @@
   "searchLibrary": "Search shapes or diagrams",
   "search": "Search",
   "figureSearchPlaceholder": "Search for a figure...",
+  "figureSearchClear": "Clear search",
   "figureSearchNoResults": "No figures found.",
   "figureSearchSelect": "Enter",
   "scenePresets": "Scene presets",

@@ -17,6 +17,7 @@ export class FigureSearchOverlayComponent {
   readonly titleForPreset = input.required<(preset: ObjectPreset) => string>();
   readonly descriptionForPreset = input.required<(preset: ObjectPreset) => string>();
   readonly placeholder = input.required<string>();
+  readonly clearLabel = input.required<string>();
   readonly noResultsLabel = input.required<string>();
   readonly shortcutLabel = input.required<string>();
   readonly selectLabel = input.required<string>();
@@ -53,6 +54,12 @@ export class FigureSearchOverlayComponent {
     this.query.set(value);
     this.activeIndex.set(0);
     this.scrollActiveResultIntoView();
+  }
+
+  clearQuery(event: MouseEvent): void {
+    event.preventDefault();
+    this.updateQuery('');
+    queueMicrotask(() => this.searchInput()?.nativeElement.focus({ preventScroll: true }));
   }
 
   iconPath(key: string): string {
