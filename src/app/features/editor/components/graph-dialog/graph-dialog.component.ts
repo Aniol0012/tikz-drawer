@@ -117,6 +117,7 @@ export class GraphDialogComponent implements OnChanges {
   onDialogKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       this.cancelDialog.emit();
       return;
     }

@@ -5197,6 +5197,8 @@ export class EditorPageComponent {
       { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
       { isOpen: () => this.figureSearchOpen(), close: () => this.closeFigureSearch() },
       { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
+      { isOpen: () => !!this.regularPolygonDialogState(), close: () => this.closeRegularPolygonDialog() },
+      { isOpen: () => !!this.graphDialogState(), close: () => this.closeGraphDialog() },
       { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
       { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
       { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },

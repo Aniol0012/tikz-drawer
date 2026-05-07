@@ -64,6 +64,7 @@ export class RegularPolygonDialogComponent implements OnInit {
   onDialogKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       this.cancelDialog.emit();
       return;
     }
