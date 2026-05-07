@@ -1,5 +1,6 @@
 @if (tooltip(); as currentTooltip) {
   <div
+    #tooltipElement
     class="custom-tooltip"
     role="tooltip"
     [class.custom-tooltip--bottom]="currentTooltip.placement === 'bottom'"

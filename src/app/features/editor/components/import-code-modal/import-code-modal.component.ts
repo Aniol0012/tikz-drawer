@@ -1,6 +1,8 @@
 import type { ElementRef } from '@angular/core';
-import { ChangeDetectionStrategy, Component, computed, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { getIconPath } from '../../config/editor-icons';
+import { EditorLanguageService } from '../../i18n/editor-language.service';
+import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';
 import {
@@ -66,13 +68,26 @@ const hasMismatchedEnvironment = (source: string, environment: string): boolean 
   return begin !== end;
 };
 
+interface ImportSourceOption {
+  readonly kind: ImportSourceKind;
+  readonly labelKey: string;
+  readonly helperKey: string;
+  readonly noteKey: string;
+  readonly tooltipKey: string;
+  readonly iconKey: string;
+  readonly accept: string;
+}
+
 @Component({
   selector: 'app-import-code-modal',
+  imports: [EditorTranslatePipe],
   templateUrl: './import-code-modal.component.html',
   styleUrl: './import-code-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImportCodeModalComponent {
+  private readonly languageService = inject(EditorLanguageService);
+
   readonly closeIconPath = getIconPath('close');
   readonly title = input.required<string>();
   readonly actionLabel = input.required<string>();
@@ -104,40 +119,110 @@ export class ImportCodeModalComponent {
   readonly csvYColumn = signal('y');
   readonly csvLabelColumn = signal('label');
   readonly csvGroupColumn = signal('group');
-  readonly sourceOptions: readonly { readonly kind: ImportSourceKind; readonly label: string; readonly note: string; readonly accept: string }[] = [
+  readonly sourceOptions: readonly ImportSourceOption[] = [
     {
       kind: 'tikz',
-      label: 'Paste TikZ code / .tikz',
-      note: 'Editable shapes where supported; unsupported TikZ is preserved in the import source with warnings.',
+      labelKey: 'import.source.tikz.label',
+      helperKey: 'import.source.tikz.helper',
+      noteKey: 'import.source.tikz.note',
+      tooltipKey: 'import.source.tikz.tooltip',
+      iconKey: 'text',
       accept: '.tikz,.tex,text/plain'
     },
-    { kind: 'tex', label: '.tex file', note: 'Extract one or more tikzpicture environments from a LaTeX document.', accept: '.tex' },
-    { kind: 'project-json', label: 'Project .json', note: 'Load a native Tikz Drawer project file with version validation.', accept: '.json,application/json' },
+    {
+      kind: 'tex',
+      labelKey: 'import.source.tex.label',
+      helperKey: 'import.source.tex.helper',
+      noteKey: 'import.source.tex.note',
+      tooltipKey: 'import.source.tex.tooltip',
+      iconKey: 'file',
+      accept: '.tex'
+    },
+    {
+      kind: 'project-json',
+      labelKey: 'import.source.projectJson.label',
+      helperKey: 'import.source.projectJson.helper',
+      noteKey: 'import.source.projectJson.note',
+      tooltipKey: 'import.source.projectJson.tooltip',
+      iconKey: 'settings',
+      accept: '.json,application/json'
+    },
     {
       kind: 'drawio',
-      label: '.drawio / .xml',
-      note: 'Map basic Draw.io rectangles, ellipses, text, connectors, arrows and colors.',
+      labelKey: 'import.source.drawio.label',
+      helperKey: 'import.source.drawio.helper',
+      noteKey: 'import.source.drawio.note',
+      tooltipKey: 'import.source.drawio.tooltip',
+      iconKey: 'flow',
       accept: '.drawio,.xml,text/xml'
     },
-    { kind: 'svg', label: '.svg', note: 'Map line, rect, circle, ellipse, simple path and text elements.', accept: '.svg,image/svg+xml' },
-    { kind: 'mermaid', label: 'Mermaid .mmd / code', note: 'Generate editable nodes and edges from flowcharts or graphs.', accept: '.mmd,.mermaid,text/plain' },
-    { kind: 'dot', label: 'Graphviz .dot', note: 'Generate editable nodes and edges from DOT graphs.', accept: '.dot,text/plain' },
+    {
+      kind: 'svg',
+      labelKey: 'import.source.svg.label',
+      helperKey: 'import.source.svg.helper',
+      noteKey: 'import.source.svg.note',
+      tooltipKey: 'import.source.svg.tooltip',
+      iconKey: 'image',
+      accept: '.svg,image/svg+xml'
+    },
+    {
+      kind: 'mermaid',
+      labelKey: 'import.source.mermaid.label',
+      helperKey: 'import.source.mermaid.helper',
+      noteKey: 'import.source.mermaid.note',
+      tooltipKey: 'import.source.mermaid.tooltip',
+      iconKey: 'graph',
+      accept: '.mmd,.mermaid,text/plain'
+    },
+    {
+      kind: 'dot',
+      labelKey: 'import.source.dot.label',
+      helperKey: 'import.source.dot.helper',
+      noteKey: 'import.source.dot.note',
+      tooltipKey: 'import.source.dot.tooltip',
+      iconKey: 'graphComplete',
+      accept: '.dot,text/plain'
+    },
     {
       kind: 'csv',
-      label: 'CSV coordinates',
-      note: 'Import points or polylines from tabular x/y data.',
+      labelKey: 'import.source.csv.label',
+      helperKey: 'import.source.csv.helper',
+      noteKey: 'import.source.csv.note',
+      tooltipKey: 'import.source.csv.tooltip',
+      iconKey: 'bars',
       accept: '.csv,.tsv,text/csv,text/tab-separated-values'
     },
-    { kind: 'image', label: 'Image background', note: 'Import PNG/JPG as a reference image layer for tracing.', accept: '.png,.jpg,.jpeg,image/png,image/jpeg' }
+    {
+      kind: 'image',
+      labelKey: 'import.source.image.label',
+      helperKey: 'import.source.image.helper',
+      noteKey: 'import.source.image.note',
+      tooltipKey: 'import.source.image.tooltip',
+      iconKey: 'image',
+      accept: '.png,.jpg,.jpeg,image/png,image/jpeg'
+    }
   ];
   readonly selectedSourceOption = computed(() => this.sourceOptions.find((option) => option.kind === this.sourceKind()) ?? this.sourceOptions[0]);
   readonly activeSourceText = computed(() => (this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid' ? this.code() : this.fileContent()));
+  readonly filePlaceholderKey = computed(() =>
+    this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid' ? 'import.filePlaceholderPaste' : 'import.filePlaceholder'
+  );
+  readonly displayedWarnings = computed(() => (this.sourceKind() === 'tikz' ? this.parsedInput().warnings : this.warnings()));
+  readonly displayedErrors = computed(() => (this.fileError() ? [this.fileError()] : []));
   readonly canImport = computed(() => {
     if (this.fileError()) {
       return false;
     }
     return this.sourceKind() === 'image' ? Boolean(this.imageDataUrl()) : Boolean(this.activeSourceText().trim());
   });
+
+  sourceIconPath(option: ImportSourceOption): string {
+    return getIconPath(option.iconKey);
+  }
+
+  t(key: string): string {
+    return this.languageService.t(key);
+  }
   readonly hasSyntaxIssue = computed(() => {
     const source = this.code().trim();
     if (!source) {
@@ -204,7 +289,7 @@ export class ImportCodeModalComponent {
 
     this.fileName.set(file.name);
     const reader = new FileReader();
-    reader.onerror = () => this.fileError.set(`Could not read ${file.name}.`);
+    reader.onerror = () => this.fileError.set(this.t('import.errorFileRead'));
 
     if (this.sourceKind() === 'image') {
       reader.onload = () => this.imageDataUrl.set(String(reader.result ?? ''));
@@ -241,8 +326,8 @@ export class ImportCodeModalComponent {
     try {
       const result = this.buildImportResult();
       this.importResult.emit(result);
-    } catch (error) {
-      this.fileError.set(error instanceof Error ? error.message : 'The selected source could not be imported.');
+    } catch {
+      this.fileError.set(this.t('import.errorImportFailed'));
     }
   }
 
@@ -297,7 +382,7 @@ export class ImportCodeModalComponent {
       case 'csv':
         return importCsvSource(this.fileContent(), this.csvXColumn(), this.csvYColumn(), this.csvLabelColumn(), this.csvGroupColumn());
       case 'image':
-        return importImageSource(this.imageDataUrl(), this.fileName() || 'background image');
+        return importImageSource(this.imageDataUrl(), this.fileName() || this.t('import.source.image.label'));
     }
   }
 }
