@@ -373,6 +373,8 @@ export class EditorPageComponent {
   readonly figureSearchOpen = signal(false);
   readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl + F', '⌘ F');
   readonly selectedImageFilename = signal('');
+  readonly zoomMenuOpen = signal(false);
+  readonly zoomPresetPercents = [50, 75, 100, 125, 150, 200, 300, 400, 500] as const;
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
   readonly editingTemplateId = signal<string | null>(null);
@@ -1911,15 +1913,31 @@ export class EditorPageComponent {
   }
 
   zoomIn(): void {
+    this.closeZoomMenu();
     this.setScaleFromViewportCenter(this.preferences().scale + EDITOR_ZOOM_STEP);
   }
 
   zoomOut(): void {
+    this.closeZoomMenu();
     this.setScaleFromViewportCenter(this.preferences().scale - EDITOR_ZOOM_STEP);
   }
 
   resetZoom(): void {
     this.setScaleFromViewportCenter(this.defaultScale);
+  }
+
+  toggleZoomMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.zoomMenuOpen.update((open) => !open);
+  }
+
+  closeZoomMenu(): void {
+    this.zoomMenuOpen.set(false);
+  }
+
+  setZoomPercent(percent: number): void {
+    this.setScaleFromViewportCenter((this.defaultScale * percent) / 100);
+    this.closeZoomMenu();
   }
 
   downloadStandaloneFile(): void {
@@ -3150,6 +3168,7 @@ export class EditorPageComponent {
     this.focusCanvasViewport();
     this.closeContextMenu();
     this.closeFileMenu();
+    this.closeZoomMenu();
     const touchSelectPan = event.pointerType === 'touch' && this.activeTool() === 'select';
 
     if (event.button === 2) {
@@ -5195,6 +5214,7 @@ export class EditorPageComponent {
 
     const closeHandlers: ReadonlyArray<{ readonly isOpen: () => boolean; readonly close: () => void }> = [
       { isOpen: () => !!this.templateDeleteTarget(), close: () => this.closeDeleteTemplateDialog() },
+      { isOpen: () => this.zoomMenuOpen(), close: () => this.closeZoomMenu() },
       { isOpen: () => this.figureSearchOpen(), close: () => this.closeFigureSearch() },
       { isOpen: () => !!this.tableDialogState(), close: () => this.closeTableDialog() },
       { isOpen: () => !!this.regularPolygonDialogState(), close: () => this.closeRegularPolygonDialog() },

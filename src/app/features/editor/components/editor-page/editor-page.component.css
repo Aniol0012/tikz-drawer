@@ -1306,6 +1306,15 @@ kbd {
   box-shadow: var(--floating-shadow);
 }
 
+.canvas-tooltip-target {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.canvas-tooltip-target.is-disabled .icon-button {
+  pointer-events: none;
+}
+
 .canvas-control-group--zoom {
   min-width: 232px;
 }
@@ -1389,6 +1398,48 @@ kbd {
   min-width: 62px;
   min-height: 34px;
   font-weight: 700;
+}
+
+.zoom-menu-shell {
+  position: relative;
+  display: inline-flex;
+}
+
+.zoom-preset-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 45;
+  width: max-content;
+  min-width: 78px;
+  display: grid;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-background) 98%, transparent);
+  box-shadow: var(--floating-shadow);
+}
+
+.zoom-preset-menu__item {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--app-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.zoom-preset-menu__item:hover,
+.zoom-preset-menu__item.is-active {
+  background: var(--toolbar-background-hover);
+}
+
+.zoom-preset-menu__item.is-active {
+  color: var(--accent-strong);
 }
 
 .selection-summary,
