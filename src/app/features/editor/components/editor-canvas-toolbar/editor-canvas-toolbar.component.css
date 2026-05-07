@@ -90,15 +90,30 @@
   width: 100%;
   appearance: none;
   height: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  outline: none;
+}
+
+.canvas-control-group input[type='range']::-webkit-slider-runnable-track {
+  height: 3px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--app-foreground) 14%, var(--input-background));
-  outline: none;
+}
+
+.canvas-control-group input[type='range']::-moz-range-track {
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-foreground) 14%, var(--input-background));
 }
 
 .canvas-control-group input[type='range']::-webkit-slider-thumb {
   appearance: none;
   width: 12px;
   height: 12px;
+  margin-top: -4.5px;
   border: 1.5px solid var(--panel-background);
   border-radius: 50%;
   background: var(--accent);

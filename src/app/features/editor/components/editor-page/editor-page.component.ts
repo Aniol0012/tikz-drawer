@@ -320,9 +320,6 @@ export class EditorPageComponent {
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
-  readonly editorScaleMin = EDITOR_SCALE_MIN;
-  readonly editorScaleMax = EDITOR_SCALE_MAX;
-  readonly editorZoomStep = EDITOR_ZOOM_STEP;
   readonly store = inject(EditorStore);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -441,13 +438,6 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
-  readonly canvasToolbarIcons = {
-    undo: iconPaths.undo,
-    redo: iconPaths.redo,
-    centerView: iconPaths.scene,
-    zoomOut: iconPaths.minus,
-    zoomIn: iconPaths.plus
-  };
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [

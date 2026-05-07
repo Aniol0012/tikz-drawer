@@ -1,15 +1,12 @@
-import { ChangeDetectionStrategy, Component, HostListener, computed, input, output, signal } from '@angular/core';
-
-interface CanvasToolbarIcons {
-  readonly undo: string;
-  readonly redo: string;
-  readonly centerView: string;
-  readonly zoomOut: string;
-  readonly zoomIn: string;
-}
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, signal } from '@angular/core';
+import { iconPaths } from '../../config/editor-icons';
+import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN, EDITOR_ZOOM_STEP } from '../../constants/editor.constants';
+import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 
 @Component({
   selector: 'app-editor-canvas-toolbar',
+  standalone: true,
+  imports: [EditorTranslatePipe],
   templateUrl: './editor-canvas-toolbar.component.html',
   styleUrl: './editor-canvas-toolbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,29 +17,33 @@ interface CanvasToolbarIcons {
   }
 })
 export class EditorCanvasToolbarComponent {
-  readonly canUndo = input.required<boolean>();
-  readonly canRedo = input.required<boolean>();
-  readonly viewportCentered = input.required<boolean>();
-  readonly scale = input.required<number>();
-  readonly minScale = input.required<number>();
-  readonly maxScale = input.required<number>();
-  readonly zoomStep = input.required<number>();
-  readonly defaultScale = input.required<number>();
-  readonly icons = input.required<CanvasToolbarIcons>();
-  readonly undoLabel = input.required<string>();
-  readonly redoLabel = input.required<string>();
-  readonly centerViewLabel = input.required<string>();
-  readonly zoomOutLabel = input.required<string>();
-  readonly zoomInLabel = input.required<string>();
+  @Input({ required: true }) canUndo = false;
+  @Input({ required: true }) canRedo = false;
+  @Input({ required: true }) viewportCentered = true;
+  @Input({ required: true }) scale = DEFAULT_EDITOR_SCALE;
 
-  readonly undoRequested = output<void>();
-  readonly redoRequested = output<void>();
-  readonly centerRequested = output<void>();
-  readonly scaleRequested = output<number>();
+  @Output() readonly undoRequested = new EventEmitter<void>();
+  @Output() readonly redoRequested = new EventEmitter<void>();
+  @Output() readonly centerRequested = new EventEmitter<void>();
+  @Output() readonly scaleRequested = new EventEmitter<number>();
 
+  readonly icons = {
+    undo: iconPaths.undo,
+    redo: iconPaths.redo,
+    centerView: iconPaths.scene,
+    zoomOut: iconPaths.minus,
+    zoomIn: iconPaths.plus
+  };
+  readonly minScale = EDITOR_SCALE_MIN;
+  readonly maxScale = EDITOR_SCALE_MAX;
+  readonly zoomStep = EDITOR_ZOOM_STEP;
+  readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly zoomMenuOpen = signal(false);
   readonly zoomPresetPercents = [50, 100, 150, 200, 300] as const;
-  readonly zoomPercent = computed(() => Math.round((this.scale() / this.defaultScale()) * 100));
+
+  zoomPercent(): number {
+    return Math.round((this.scale / this.defaultScale) * 100);
+  }
 
   @HostListener('document:click')
   closeZoomMenu(): void {
@@ -68,12 +69,12 @@ export class EditorCanvasToolbarComponent {
 
   zoomOut(): void {
     this.closeZoomMenu();
-    this.scaleRequested.emit(this.scale() - this.zoomStep());
+    this.scaleRequested.emit(this.scale - this.zoomStep);
   }
 
   zoomIn(): void {
     this.closeZoomMenu();
-    this.scaleRequested.emit(this.scale() + this.zoomStep());
+    this.scaleRequested.emit(this.scale + this.zoomStep);
   }
 
   setScaleFromInput(event: Event): void {
@@ -87,7 +88,7 @@ export class EditorCanvasToolbarComponent {
   }
 
   setZoomPercent(percent: number): void {
-    this.scaleRequested.emit((this.defaultScale() * percent) / 100);
+    this.scaleRequested.emit((this.defaultScale * percent) / 100);
     this.closeZoomMenu();
   }
 }

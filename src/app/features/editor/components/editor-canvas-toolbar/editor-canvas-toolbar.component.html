@@ -1,45 +1,50 @@
 <div class="canvas-control-group">
-  <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo()" [attr.data-tooltip]="undoLabel()">
-    <button class="icon-button" type="button" [disabled]="!canUndo()" [attr.aria-label]="undoLabel()" (click)="requestUndo()">
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo" [attr.data-tooltip]="'undo' | translate">
+    <button class="icon-button" type="button" [disabled]="!canUndo" [attr.aria-label]="'undo' | translate" (click)="requestUndo()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="icons().undo"></path>
+        <path [attr.d]="icons.undo"></path>
       </svg>
     </button>
   </span>
-  <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo()" [attr.data-tooltip]="redoLabel()">
-    <button class="icon-button" type="button" [disabled]="!canRedo()" [attr.aria-label]="redoLabel()" (click)="requestRedo()">
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo" [attr.data-tooltip]="'redo' | translate">
+    <button class="icon-button" type="button" [disabled]="!canRedo" [attr.aria-label]="'redo' | translate" (click)="requestRedo()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="icons().redo"></path>
+        <path [attr.d]="icons.redo"></path>
       </svg>
     </button>
   </span>
-  <span class="canvas-tooltip-target" [class.is-disabled]="viewportCentered()" [attr.data-tooltip]="centerViewLabel()">
+  <span class="canvas-tooltip-target" [class.is-disabled]="viewportCentered" [attr.data-tooltip]="'centerView' | translate">
     <button
       class="icon-button"
       type="button"
-      [attr.aria-label]="centerViewLabel()"
-      [disabled]="viewportCentered()"
+      [attr.aria-label]="'centerView' | translate"
+      [disabled]="viewportCentered"
       (click)="requestCenter()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="icons().centerView"></path>
+        <path [attr.d]="icons.centerView"></path>
       </svg>
     </button>
   </span>
 </div>
 
 <div class="canvas-control-group canvas-control-group--zoom">
-  <button class="icon-button" type="button" [attr.data-tooltip]="zoomOutLabel()" (click)="zoomOut()">
+  <button
+    class="icon-button"
+    type="button"
+    [attr.data-tooltip]="'zoomOut' | translate"
+    [attr.aria-label]="'zoomOut' | translate"
+    (click)="zoomOut()">
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path [attr.d]="icons().zoomOut"></path>
+      <path [attr.d]="icons.zoomOut"></path>
     </svg>
   </button>
   <input
     type="range"
     autocomplete="off"
-    [min]="minScale()"
-    [max]="maxScale()"
-    [step]="zoomStep()"
-    [value]="scale()"
+    [min]="minScale"
+    [max]="maxScale"
+    [step]="zoomStep"
+    [value]="scale"
     (input)="setScaleFromInput($event)" />
   <div class="zoom-menu-shell">
     <button class="zoom-chip" type="button" [attr.aria-expanded]="zoomMenuOpen()" aria-haspopup="menu" (click)="toggleZoomMenu($event)">
@@ -61,9 +66,14 @@
       </div>
     }
   </div>
-  <button class="icon-button" type="button" [attr.data-tooltip]="zoomInLabel()" (click)="zoomIn()">
+  <button
+    class="icon-button"
+    type="button"
+    [attr.data-tooltip]="'zoomIn' | translate"
+    [attr.aria-label]="'zoomIn' | translate"
+    (click)="zoomIn()">
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path [attr.d]="icons().zoomIn"></path>
+      <path [attr.d]="icons.zoomIn"></path>
     </svg>
   </button>
 </div>
