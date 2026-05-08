@@ -197,13 +197,17 @@
 }
 
 .search-field {
-  grid-template-columns: 24px minmax(0, 1fr) 30px;
+  grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   padding: 0 10px;
   border: 1px solid var(--tool-border);
   border-radius: 8px;
   background: var(--input-background);
+}
+
+.search-field:has(.search-field__clear.is-visible) {
+  grid-template-columns: 24px minmax(0, 1fr) 30px;
 }
 
 .search-field input {
@@ -234,7 +238,7 @@
 .search-field__clear {
   width: 28px;
   height: 28px;
-  display: grid;
+  display: none;
   place-items: center;
   padding: 0;
   border: 1px solid transparent;
@@ -253,6 +257,7 @@
 }
 
 .search-field__clear.is-visible {
+  display: grid;
   opacity: 1;
   pointer-events: auto;
   transform: scale(1);

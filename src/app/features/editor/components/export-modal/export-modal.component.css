@@ -193,9 +193,9 @@
 
 .export-toolbar {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 14px;
   border: 1px solid var(--tool-border);
   border-radius: 14px;
@@ -246,15 +246,64 @@
 
 .export-actions-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 7px;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .export-btn {
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 10px;
+  --export-btn-tone: var(--accent);
+  flex: 0 1 auto;
+  min-height: 36px;
+  padding: 0 11px;
+  gap: 6px;
+  border-color: color-mix(in srgb, var(--export-btn-tone) 20%, var(--tool-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--export-btn-tone) 5%, var(--tool-surface));
+  color: color-mix(in srgb, var(--export-btn-tone) 58%, var(--app-foreground));
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.export-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.export-btn span {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  border-color: color-mix(in srgb, var(--export-btn-tone) 34%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--export-btn-tone) 8%, var(--tool-surface));
+  color: color-mix(in srgb, var(--export-btn-tone) 68%, var(--app-foreground));
+}
+
+.export-btn:focus-visible {
+  border-color: color-mix(in srgb, var(--export-btn-tone) 52%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--export-btn-tone) 14%, transparent);
+}
+
+.export-btn--png {
+  --export-btn-tone: #2563eb;
+}
+
+.export-btn--svg {
+  --export-btn-tone: #0f9f6e;
+}
+
+.export-btn--json {
+  --export-btn-tone: #c47a00;
+}
+
+.export-btn--tex {
+  --export-btn-tone: #b83280;
 }
 
 .field {
@@ -625,6 +674,18 @@
 }
 
 :host([data-theme='dark']) {
+  & .export-btn {
+    border-color: color-mix(in srgb, var(--export-btn-tone) 28%, var(--tool-border));
+    background: color-mix(in srgb, var(--export-btn-tone) 10%, var(--tool-surface));
+    color: color-mix(in srgb, var(--export-btn-tone) 30%, white);
+  }
+
+  & .export-btn:hover {
+    border-color: color-mix(in srgb, var(--export-btn-tone) 46%, var(--tool-border-strong));
+    background: color-mix(in srgb, var(--export-btn-tone) 14%, var(--tool-surface));
+    color: color-mix(in srgb, var(--export-btn-tone) 20%, white);
+  }
+
   & .export-settings-modal {
     border-color: color-mix(in srgb, white 16%, var(--tool-border-strong));
     background: linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 98%, #202020 2%), var(--panel-background));

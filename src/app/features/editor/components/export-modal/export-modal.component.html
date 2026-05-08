@@ -47,29 +47,29 @@
         </div>
       </div>
       <div class="export-actions-grid">
-        <button class="secondary-button export-btn" type="button" (click)="downloadPng.emit()">
+        <button class="secondary-button export-btn export-btn--png" type="button" (click)="downloadPng.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('download')"></path></svg
+            <path [attr.d]="icon('exportPng')"></path></svg
           ><span>{{ 'downloadPng' | translate }}</span>
         </button>
-        <button class="secondary-button export-btn" type="button" (click)="downloadSvg.emit()">
+        <button class="secondary-button export-btn export-btn--svg" type="button" (click)="downloadSvg.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('download')"></path></svg
+            <path [attr.d]="icon('exportSvg')"></path></svg
           ><span>{{ 'downloadSvg' | translate }}</span>
         </button>
-        <button class="secondary-button export-btn" type="button" (click)="downloadProjectJson.emit()">
+        <button class="secondary-button export-btn export-btn--json" type="button" (click)="downloadProjectJson.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('download')"></path></svg
+            <path [attr.d]="icon('exportJson')"></path></svg
           ><span>{{ 'downloadProjectJson' | translate }}</span>
         </button>
         <button class="secondary-button export-btn" type="button" (click)="openSettings.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('settings')"></path></svg
+            <path [attr.d]="icon('sliders')"></path></svg
           ><span>{{ 'latexSettings' | translate }}</span>
         </button>
-        <button class="secondary-button export-btn" type="button" (click)="downloadTex.emit()">
+        <button class="secondary-button export-btn export-btn--tex" type="button" (click)="downloadTex.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('download')"></path></svg
+            <path [attr.d]="icon('exportTex')"></path></svg
           ><span>{{ 'downloadTex' | translate }}</span>
         </button>
       </div>
