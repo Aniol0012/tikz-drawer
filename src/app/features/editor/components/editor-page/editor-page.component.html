@@ -71,6 +71,16 @@
             [value]="libraryQuery()"
             [placeholder]="'searchLibrary' | translate"
             (input)="setLibraryQuery($any($event.target).value)" />
+          <button
+            class="search-field__clear"
+            type="button"
+            [class.is-visible]="libraryQuery()"
+            [attr.aria-label]="'figureSearchClear' | translate"
+            (click)="setLibraryQuery('')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.close"></path>
+            </svg>
+          </button>
         </div>
       </section>
 

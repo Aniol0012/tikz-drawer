@@ -197,8 +197,9 @@
 }
 
 .search-field {
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr) 30px;
   align-items: center;
+  gap: 8px;
   padding: 0 10px;
   border: 1px solid var(--tool-border);
   border-radius: 8px;
@@ -210,6 +211,11 @@
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+.search-field input::-webkit-search-cancel-button,
+.search-field input::-webkit-search-decoration {
+  appearance: none;
 }
 
 .search-field__button {
@@ -225,11 +231,57 @@
   cursor: pointer;
 }
 
+.search-field__clear {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.92);
+  transition:
+    opacity 140ms var(--ease-out),
+    transform 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out);
+}
+
+.search-field__clear.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+.search-field__clear svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.4;
+  color: currentColor;
+}
+
 .search-field__button:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
-.search-field__button:focus-visible {
+.search-field__clear:hover,
+.search-field__clear:focus-visible {
+  border-color: color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+  background: color-mix(in srgb, var(--tool-surface) 88%, transparent);
+  color: var(--app-foreground);
+}
+
+.search-field__clear:active {
+  transform: scale(0.96);
+}
+
+.search-field__button:focus-visible,
+.search-field__clear:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
 }
