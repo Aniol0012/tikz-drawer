@@ -5,6 +5,7 @@ import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';
+import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import {
   extractTikzDiagrams,
   importCsvSource,
@@ -88,7 +89,7 @@ interface ImportWarningView {
 
 @Component({
   selector: 'app-import-code-modal',
-  imports: [EditorTranslatePipe],
+  imports: [EditorTranslatePipe, ToggleFieldComponent],
   templateUrl: './import-code-modal.component.html',
   styleUrl: './import-code-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -106,6 +107,7 @@ export class ImportCodeModalComponent {
   readonly codeTheme = input.required<string>();
   readonly warnings = input<readonly string[]>([]);
   readonly appVersion = input<string>('unknown');
+  readonly sceneHasContent = input(false);
 
   readonly closeDialog = output<void>();
   readonly codeChange = output<string>();
@@ -130,6 +132,7 @@ export class ImportCodeModalComponent {
   readonly csvLabelColumn = signal('label');
   readonly csvGroupColumn = signal('group');
   readonly warningDetailsExpanded = signal(false);
+  readonly clearSceneBeforeImport = signal(false);
   readonly sourceOptions: readonly ImportSourceOption[] = [
     {
       kind: 'tikz',
@@ -334,6 +337,10 @@ export class ImportCodeModalComponent {
     this.selectedTexDiagramIndexes.set([]);
   }
 
+  setClearSceneBeforeImport(checked: boolean): void {
+    this.clearSceneBeforeImport.set(checked);
+  }
+
   updateCsvColumn(column: 'x' | 'y' | 'label' | 'group', event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     switch (column) {
@@ -533,25 +540,41 @@ export class ImportCodeModalComponent {
   }
 
   private buildImportResult(): ImportDialogResult {
+    let result: ImportDialogResult;
+
     switch (this.sourceKind()) {
       case 'tikz':
-        return importTikzSource(this.code());
+        result = importTikzSource(this.code());
+        break;
       case 'tex':
-        return importTexSource(this.fileContent(), this.selectedTexDiagramIndexes());
+        result = importTexSource(this.fileContent(), this.selectedTexDiagramIndexes());
+        break;
       case 'project-json':
-        return importProjectJson(this.fileContent(), this.appVersion());
+        result = importProjectJson(this.fileContent(), this.appVersion());
+        break;
       case 'drawio':
-        return importDrawioSource(this.fileContent());
+        result = importDrawioSource(this.fileContent());
+        break;
       case 'svg':
-        return importSvgSource(this.fileContent());
+        result = importSvgSource(this.fileContent());
+        break;
       case 'mermaid':
-        return importMermaidSource(this.code().trim() || this.fileContent());
+        result = importMermaidSource(this.code().trim() || this.fileContent());
+        break;
       case 'dot':
-        return importDotSource(this.fileContent());
+        result = importDotSource(this.fileContent());
+        break;
       case 'csv':
-        return importCsvSource(this.fileContent(), this.csvXColumn(), this.csvYColumn(), this.csvLabelColumn(), this.csvGroupColumn());
+        result = importCsvSource(this.fileContent(), this.csvXColumn(), this.csvYColumn(), this.csvLabelColumn(), this.csvGroupColumn());
+        break;
       case 'image':
-        return importImageSource(this.imageDataUrl(), this.fileName() || this.t('import.source.image.label'));
+        result = importImageSource(this.imageDataUrl(), this.fileName() || this.t('import.source.image.label'));
+        break;
     }
+
+    return {
+      ...result,
+      clearScene: this.sceneHasContent() && this.clearSceneBeforeImport()
+    };
   }
 }

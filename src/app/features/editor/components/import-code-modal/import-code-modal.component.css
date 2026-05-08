@@ -52,6 +52,23 @@
   line-height: 1.35;
 }
 
+.import-code-modal__footer-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.clear-scene-toggle {
+  min-width: 190px;
+  min-height: 36px;
+}
+
+.import-code-modal__footer-actions .primary-button {
+  flex: 0 0 auto;
+}
+
 .import-code-modal__body {
   display: grid;
   gap: 16px;
@@ -848,8 +865,18 @@
     flex-direction: column;
   }
 
+  .import-code-modal__footer-actions,
+  .clear-scene-toggle {
+    width: 100%;
+  }
+
   .primary-button {
     width: 100%;
+  }
+
+  .import-code-modal__footer-actions .primary-button {
+    width: auto;
+    flex: 1 1 auto;
   }
 }
 

@@ -8,6 +8,7 @@ export interface ImportDialogResult {
   readonly scene: TikzScene;
   readonly importCode: string;
   readonly warnings: readonly string[];
+  readonly clearScene?: boolean;
 }
 
 export interface ExtractedTikzDiagram {
@@ -49,6 +50,16 @@ const defaultLine = (
   arrowLengthScale: 1,
   arrowWidthScale: 1,
   arrowBendMode: 'none'
+});
+
+const withLineArrowStyle = (line: LineShape, style: string): LineShape => ({
+  ...line,
+  arrowStart: hasDrawioArrow(style, 'startArrow'),
+  arrowEnd: hasDrawioArrow(style, 'endArrow'),
+  arrowType: drawioArrowType(style),
+  stroke: styleValue(style, 'strokeColor', line.stroke),
+  arrowColor: styleValue(style, 'strokeColor', line.arrowColor),
+  strokeStyle: style.includes('dashed=1') ? 'dashed' : line.strokeStyle
 });
 
 const makeScene = (name: string, shapes: readonly CanvasShape[]): TikzScene => ({
@@ -294,7 +305,14 @@ export const importDrawioSource = (source: string): ImportDialogResult => {
     const value = decodeHtml(cell.getAttribute('value') ?? '');
     const stroke = styleValue(style, 'strokeColor', '#0f172a');
     const fill = styleValue(style, 'fillColor', 'none');
-    if (style.includes('ellipse')) {
+    if (isDrawioArrowVertex(style)) {
+      shapes.push(
+        withLineArrowStyle(
+          defaultLine({ x: bounds.x, y: bounds.y + bounds.height / 2 }, { x: bounds.x + bounds.width, y: bounds.y + bounds.height / 2 }, 'Imported arrow'),
+          style.includes('endArrow=') ? style : `${style};endArrow=classic`
+        )
+      );
+    } else if (style.includes('ellipse')) {
       shapes.push({
         id: createId(),
         name: 'Imported ellipse',
@@ -334,16 +352,19 @@ export const importDrawioSource = (source: string): ImportDialogResult => {
   }
 
   for (const cell of cells.filter((entry) => entry.getAttribute('edge') === '1')) {
+    const style = cell.getAttribute('style') ?? '';
+    const geometry = cell.querySelector('mxGeometry');
     const sourceBounds = geometryById.get(cell.getAttribute('source') ?? '');
     const targetBounds = geometryById.get(cell.getAttribute('target') ?? '');
-    if (!sourceBounds || !targetBounds) {
+    const points = geometry ? drawioEdgePoints(geometry) : [];
+    const from = sourceBounds ? { x: sourceBounds.x + sourceBounds.width / 2, y: sourceBounds.y + sourceBounds.height / 2 } : (points[0] ?? null);
+    const to = targetBounds ? { x: targetBounds.x + targetBounds.width / 2, y: targetBounds.y + targetBounds.height / 2 } : (points.at(-1) ?? null);
+
+    if (!from || !to) {
       continue;
     }
-    const line = defaultLine(
-      { x: sourceBounds.x + sourceBounds.width / 2, y: sourceBounds.y + sourceBounds.height / 2 },
-      { x: targetBounds.x + targetBounds.width / 2, y: targetBounds.y + targetBounds.height / 2 }
-    );
-    shapes.push({ ...line, arrowEnd: (cell.getAttribute('style') ?? '').includes('endArrow=') });
+    const anchors = points.slice(sourceBounds ? 0 : 1, targetBounds ? points.length : -1);
+    shapes.push({ ...withLineArrowStyle(defaultLine(from, to), style), anchors });
   }
 
   return { scene: makeScene('Imported Draw.io diagram', shapes), importCode: source, warnings: [] };
@@ -467,6 +488,50 @@ const pathToLines = (path: string, stroke: string, strokeWidth: number, warnings
 const styleValue = (style: string, key: string, fallback: string): string => {
   const match = new RegExp(`${key}=([^;]+)`).exec(style);
   return normalizeColor(match?.[1], fallback);
+};
+
+const hasDrawioArrow = (style: string, key: 'startArrow' | 'endArrow'): boolean => {
+  const value = styleValue(style, key, '');
+  return Boolean(value && value !== 'none');
+};
+
+const drawioArrowType = (style: string): LineShape['arrowType'] => {
+  const arrow = `${styleValue(style, 'startArrow', '')};${styleValue(style, 'endArrow', '')}`.toLowerCase();
+  if (arrow.includes('diamond')) {
+    return 'diamond';
+  }
+  if (arrow.includes('oval')) {
+    return 'circle';
+  }
+  if (arrow.includes('block') || arrow.includes('classic') || arrow.includes('open')) {
+    return 'triangle';
+  }
+  return 'latex';
+};
+
+const isDrawioArrowVertex = (style: string): boolean =>
+  /(?:^|;)shape=(?:singleArrow|doubleArrow|flexArrow|filledEdge)(?:;|$)/.test(style) || /(?:^|;)arrowWidth=/.test(style);
+
+const drawioEdgePoints = (geometry: Element): readonly { readonly x: number; readonly y: number }[] => {
+  const points = Array.from(geometry.querySelectorAll('mxPoint'))
+    .filter((point) => ['sourcePoint', 'targetPoint', ''].includes(point.getAttribute('as') ?? ''))
+    .map((point) => ({ x: numberAttr(point, 'x'), y: numberAttr(point, 'y') }))
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+
+  if (points.length >= 2) {
+    return points;
+  }
+
+  const x = numberAttr(geometry, 'x', Number.NaN);
+  const y = numberAttr(geometry, 'y', Number.NaN);
+  const width = numberAttr(geometry, 'width', Number.NaN);
+  const height = numberAttr(geometry, 'height', Number.NaN);
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(width) && Number.isFinite(height)
+    ? [
+        { x, y },
+        { x: x + width, y: y + height }
+      ]
+    : [];
 };
 
 const decodeHtml = (value: string): string => {

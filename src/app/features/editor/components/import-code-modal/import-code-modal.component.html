@@ -235,9 +235,18 @@
       } @else {
         <span></span>
       }
-      <button class="primary-button" type="button" [disabled]="!canImport()" (click)="importSelectedSource()">
-        {{ actionLabel() }}
-      </button>
+      <div class="import-code-modal__footer-actions">
+        @if (sceneHasContent()) {
+          <app-toggle-field
+            class="clear-scene-toggle"
+            [checked]="clearSceneBeforeImport()"
+            [label]="'import.clearSceneBeforeImport' | translate"
+            (checkedChange)="setClearSceneBeforeImport($event)"></app-toggle-field>
+        }
+        <button class="primary-button" type="button" [disabled]="!canImport()" (click)="importSelectedSource()">
+          {{ actionLabel() }}
+        </button>
+      </div>
     </footer>
   </section>
 </div>

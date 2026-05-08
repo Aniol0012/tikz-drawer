@@ -3325,6 +3325,7 @@
       [codeTheme]="codeHighlightTheme()"
       [warnings]="parserWarnings()"
       [appVersion]="appVersion"
+      [sceneHasContent]="objectCount() > 0"
       (closeDialog)="closeImportModal()"
       (codeChange)="updateImportCode($event)"
       (importResult)="applyImportDialogResult($event)"></app-import-code-modal>
@@ -3352,6 +3353,7 @@
       (copyError)="handleCopyError()"
       (downloadPng)="downloadCanvasPng()"
       (downloadSvg)="downloadCanvasSvg()"
+      (downloadProjectJson)="downloadProjectJson()"
       (openSettings)="openExportSettingsModal()"
       (closeSettings)="closeExportSettingsModal()"
       (downloadTex)="downloadStandaloneFile()"

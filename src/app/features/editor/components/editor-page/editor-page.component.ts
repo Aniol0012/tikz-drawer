@@ -1938,6 +1938,26 @@ export class EditorPageComponent {
     URL.revokeObjectURL(url);
   }
 
+  downloadProjectJson(): void {
+    const project = {
+      format: 'tikz-drawer-project',
+      version: this.appVersion,
+      exportedAt: new Date().toISOString(),
+      state: {
+        scene: this.scene(),
+        preferences: this.preferences(),
+        importCode: this.store.importCode()
+      }
+    };
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${this.exportFileBaseName()}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   downloadCanvasSvg(): void {
     const exportDocument = this.buildCanvasExportDocument();
     const blob = new Blob([exportDocument.markup], { type: 'image/svg+xml;charset=utf-8' });
@@ -2307,7 +2327,7 @@ export class EditorPageComponent {
 
   applyImportDialogResult(result: ImportDialogResult): void {
     this.runSceneMutation(() => {
-      this.store.applyImportedScene(result.scene, result.importCode, result.warnings);
+      this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true);
       this.viewportCenter.set({ x: 0, y: 0 });
       this.inspectorTab.set('scene');
     });
