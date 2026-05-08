@@ -45,10 +45,7 @@
         </div>
       </section>
 
-      <section
-        class="import-input-panel"
-        [class.import-input-panel--image]="sourceKind() === 'image'"
-        [attr.aria-label]="'import.inputAreaLabel' | translate">
+      <section class="import-input-panel" [attr.aria-label]="'import.inputAreaLabel' | translate">
         <div class="import-input-panel__header">
           <span class="import-input-panel__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -62,13 +59,6 @@
 
         <div class="file-row">
           <label class="file-drop">
-            @if (sourceKind() !== 'image') {
-              <span class="file-drop__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <path [attr.d]="sourceIconPath(selectedSourceOption())"></path>
-                </svg>
-              </span>
-            }
             <span class="file-drop__text">
               <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
               <small>{{ selectedSourceOption().helperKey | translate }}</small>
