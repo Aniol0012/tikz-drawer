@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal, viewChild } from '@angular/core';
 
 interface TooltipState {
   readonly text: string;
@@ -29,15 +30,21 @@ export class CustomTooltipComponent {
   private showHandle: ReturnType<typeof setTimeout> | null = null;
   private hideHandle: ReturnType<typeof setTimeout> | null = null;
   private dismissHandle: ReturnType<typeof setTimeout> | null = null;
+  private positionHandle: number | null = null;
   private mutationObserver: MutationObserver | null = null;
+  private readonly handleAnyScroll = () => this.refreshActiveTooltip();
 
   readonly tooltip = signal<TooltipState | null>(null);
+  readonly tooltipElement = viewChild<ElementRef<HTMLElement>>('tooltipElement');
 
   constructor() {
+    this.document.addEventListener('scroll', this.handleAnyScroll, true);
     this.destroyRef.onDestroy(() => {
       this.clearTimers();
+      this.clearPositionHandle();
       this.disconnectMutationObserver();
       this.restoreTitle(this.activeTarget);
+      this.document.removeEventListener('scroll', this.handleAnyScroll, true);
     });
   }
 
@@ -109,7 +116,7 @@ export class CustomTooltipComponent {
   @HostListener('window:scroll')
   @HostListener('window:resize')
   onViewportChange(): void {
-    this.hideNow();
+    this.refreshActiveTooltip();
   }
 
   private scheduleShow(target: HTMLElement, immediate = false): void {
@@ -137,6 +144,7 @@ export class CustomTooltipComponent {
     this.removeNativeTitle(target);
     this.observeTooltipText(target);
     this.tooltip.set(this.positionTooltip(target, text));
+    this.scheduleMeasuredPosition(target, text);
   }
 
   private scheduleHide(): void {
@@ -192,6 +200,7 @@ export class CustomTooltipComponent {
       ...this.positionTooltip(this.activeTarget, text),
       phase: currentTooltip.phase
     });
+    this.scheduleMeasuredPosition(this.activeTarget, text, currentTooltip.phase);
   }
 
   private disconnectMutationObserver(): void {
@@ -204,13 +213,13 @@ export class CustomTooltipComponent {
       return null;
     }
 
+    if (target.closest('[data-tooltip-disabled]')) {
+      return null;
+    }
+
     const explicitCandidate = target.closest<HTMLElement>('[data-tooltip]');
     if (explicitCandidate && !explicitCandidate.closest('app-custom-tooltip')) {
       return this.tooltipText(explicitCandidate) ? explicitCandidate : null;
-    }
-
-    if (target.closest('[data-tooltip-disabled]')) {
-      return null;
     }
 
     if (this.isNativeControlEventTarget(target) || this.isShoelaceDropdownTarget(target)) {
@@ -260,12 +269,29 @@ export class CustomTooltipComponent {
   private positionTooltip(target: HTMLElement, text: string): TooltipState {
     const rect = target.getBoundingClientRect();
     const viewportWidth = this.document.defaultView?.innerWidth ?? this.document.documentElement.clientWidth;
+    const viewportHeight = this.document.defaultView?.innerHeight ?? this.document.documentElement.clientHeight;
     const estimatedWidth = Math.min(TOOLTIP_MAX_WIDTH_PX, Math.max(44, text.length * 6.4 + 20));
+    const estimatedHeight = Math.max(26, Math.ceil(text.length / 34) * 15 + 14);
+    return this.positionTooltipWithSize(target, text, estimatedWidth, estimatedHeight, rect, viewportWidth, viewportHeight);
+  }
+
+  private positionTooltipWithSize(
+    target: HTMLElement,
+    text: string,
+    width: number,
+    height: number,
+    rect = target.getBoundingClientRect(),
+    viewportWidth = this.document.defaultView?.innerWidth ?? this.document.documentElement.clientWidth,
+    viewportHeight = this.document.defaultView?.innerHeight ?? this.document.documentElement.clientHeight
+  ): TooltipState {
     const anchorX = rect.left + rect.width / 2;
-    const left = Math.min(viewportWidth - TOOLTIP_MARGIN_PX - estimatedWidth / 2, Math.max(TOOLTIP_MARGIN_PX + estimatedWidth / 2, anchorX));
-    const hasTopSpace = rect.top > 44;
+    const left = Math.min(viewportWidth - TOOLTIP_MARGIN_PX - width / 2, Math.max(TOOLTIP_MARGIN_PX + width / 2, anchorX));
+    const hasTopSpace = rect.top - height - TOOLTIP_OFFSET_PX > TOOLTIP_MARGIN_PX;
     const placement = hasTopSpace ? 'top' : 'bottom';
-    const top = hasTopSpace ? rect.top - TOOLTIP_OFFSET_PX : rect.bottom + TOOLTIP_OFFSET_PX;
+    const rawTop = hasTopSpace ? rect.top - TOOLTIP_OFFSET_PX : rect.bottom + TOOLTIP_OFFSET_PX;
+    const top = hasTopSpace
+      ? Math.max(TOOLTIP_MARGIN_PX + height, rawTop)
+      : Math.min(viewportHeight - TOOLTIP_MARGIN_PX - height, Math.max(TOOLTIP_MARGIN_PX, rawTop));
 
     return {
       text,
@@ -274,6 +300,23 @@ export class CustomTooltipComponent {
       placement,
       phase: 'entering'
     };
+  }
+
+  private scheduleMeasuredPosition(target: HTMLElement, text: string, phase: TooltipState['phase'] = 'entering'): void {
+    this.clearPositionHandle();
+    this.positionHandle = requestAnimationFrame(() => {
+      this.positionHandle = null;
+      const element = this.tooltipElement()?.nativeElement;
+      if (!element || this.activeTarget !== target || this.tooltip()?.phase === 'leaving') {
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      this.tooltip.set({
+        ...this.positionTooltipWithSize(target, text, rect.width, rect.height),
+        phase
+      });
+    });
   }
 
   private clearTimers(): void {
@@ -294,6 +337,13 @@ export class CustomTooltipComponent {
     if (this.dismissHandle !== null) {
       clearTimeout(this.dismissHandle);
       this.dismissHandle = null;
+    }
+  }
+
+  private clearPositionHandle(): void {
+    if (this.positionHandle !== null) {
+      cancelAnimationFrame(this.positionHandle);
+      this.positionHandle = null;
     }
   }
 }

@@ -42,13 +42,14 @@ describe('parseTikz', () => {
     expect(shape.arrowType).toBe('straight-barb');
   });
 
-  it('reports unsupported lines as warnings', () => {
+  it('preserves unsupported lines as raw TikZ warnings', () => {
     const result = parseTikz(String.raw`\begin{tikzpicture}
 \foo{bar}
 \end{tikzpicture}`);
 
     expect(result.scene.shapes).toHaveLength(0);
-    expect(result.warnings).toEqual([String.raw`Unsupported line skipped: \foo{bar}`]);
+    expect(result.scene.rawTikzLines).toEqual([String.raw`\foo{bar}`]);
+    expect(result.warnings).toEqual([String.raw`Unsupported line preserved as raw TikZ: \foo{bar}`]);
   });
 
   it('stores rectangle y as the lower edge when importing TikZ rectangles', () => {

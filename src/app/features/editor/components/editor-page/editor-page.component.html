@@ -71,6 +71,16 @@
             [value]="libraryQuery()"
             [placeholder]="'searchLibrary' | translate"
             (input)="setLibraryQuery($any($event.target).value)" />
+          <button
+            class="search-field__clear"
+            type="button"
+            [class.is-visible]="libraryQuery()"
+            [attr.aria-label]="'figureSearchClear' | translate"
+            (click)="setLibraryQuery('')">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.close"></path>
+            </svg>
+          </button>
         </div>
       </section>
 
@@ -3308,15 +3318,17 @@
   @if (importModalOpen()) {
     <app-import-code-modal
       [title]="'importCode' | translate"
-      [actionLabel]="'importCode' | translate"
+      [actionLabel]="'import' | translate"
       [closeLabel]="'close' | translate"
       [warningsLabel]="'codeWarnings' | translate"
       [code]="store.importCode()"
       [codeTheme]="codeHighlightTheme()"
       [warnings]="parserWarnings()"
+      [appVersion]="appVersion"
+      [sceneHasContent]="objectCount() > 0"
       (closeDialog)="closeImportModal()"
       (codeChange)="updateImportCode($event)"
-      (importCode)="applyImportCode()"></app-import-code-modal>
+      (importResult)="applyImportDialogResult($event)"></app-import-code-modal>
   }
 
   @if (exportModalOpen()) {
@@ -3341,6 +3353,7 @@
       (copyError)="handleCopyError()"
       (downloadPng)="downloadCanvasPng()"
       (downloadSvg)="downloadCanvasSvg()"
+      (downloadProjectJson)="downloadProjectJson()"
       (openSettings)="openExportSettingsModal()"
       (closeSettings)="closeExportSettingsModal()"
       (downloadTex)="downloadStandaloneFile()"

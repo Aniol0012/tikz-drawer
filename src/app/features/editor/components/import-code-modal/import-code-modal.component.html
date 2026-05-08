@@ -1,5 +1,11 @@
 <div class="import-code-modal-backdrop">
-  <section class="import-code-modal" (click)="$event.stopPropagation()">
+  <section
+    class="import-code-modal"
+    role="dialog"
+    aria-modal="true"
+    data-tooltip-disabled
+    [attr.aria-label]="title()"
+    (click)="$event.stopPropagation()">
     <header class="import-code-modal__header">
       <div class="import-code-modal__copy">
         <h2>{{ title() }}</h2>
@@ -11,40 +17,236 @@
       </button>
     </header>
 
-    <div class="code-stack code-stack--import" [attr.data-code-theme]="codeTheme()">
-      <div class="code-editor" [class.is-invalid]="hasSyntaxIssue()" [class.is-focused]="codeInputFocused()">
-        <pre
-          #importCodePreview
-          class="code-block code-block--editor code-editor__preview"><code [innerHTML]="highlightedCode()"></code></pre>
-        <textarea
-          #importCodeInput
-          class="code-input code-input--overlay"
-          [attr.aria-invalid]="hasSyntaxIssue()"
-          [value]="code()"
-          wrap="off"
-          spellcheck="false"
-          (input)="onCodeInput($event)"
-          (keydown)="onCodeInputKeydown($event)"
-          (focus)="onCodeInputFocus()"
-          (blur)="onCodeInputBlur()"
-          (scroll)="syncScroll()"></textarea>
-      </div>
-      <div class="import-code-modal__actions">
-        <button class="primary-button secondary-button--compact" type="button" (click)="importCode.emit()">
+    <div class="import-code-modal__body">
+      <section class="source-section" [attr.aria-label]="'import.sourceSelectorLabel' | translate">
+        <div class="import-source-grid" role="tablist" [attr.aria-label]="'import.sourceSelectorLabel' | translate">
+          @for (option of sourceOptions; track option.kind) {
+            <button
+              class="import-source-option"
+              type="button"
+              role="tab"
+              [class.is-selected]="sourceKind() === option.kind"
+              [class.import-source-option--reference]="option.tone === 'reference'"
+              [attr.data-source-kind]="option.kind"
+              [attr.aria-selected]="sourceKind() === option.kind"
+              [attr.aria-label]="option.labelKey | translate"
+              (click)="updateSourceKind(option.kind)">
+              <span class="import-source-option__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path [attr.d]="sourceIconPath(option)"></path>
+                </svg>
+              </span>
+              <span class="import-source-option__text">
+                <strong>{{ option.labelKey | translate }}</strong>
+                <small>{{ option.helperKey | translate }}</small>
+              </span>
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="import-input-panel" [attr.aria-label]="'import.inputAreaLabel' | translate">
+        <div class="import-input-panel__header">
+          <span class="import-input-panel__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path [attr.d]="sourceIconPath(selectedSourceOption())"></path>
+            </svg>
+          </span>
+          <div>
+            <strong>{{ selectedSourceOption().inputTitleKey | translate }}</strong>
+          </div>
+        </div>
+
+        <div class="file-row">
+          <label class="file-drop">
+            <span class="file-drop__text">
+              <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
+              <small>{{ selectedSourceOption().helperKey | translate }}</small>
+            </span>
+            <input
+              #importFileInput
+              type="file"
+              [attr.accept]="selectedSourceOption().accept"
+              [attr.aria-label]="'import.chooseFileAria' | translate"
+              (change)="onFileSelected($event)" />
+          </label>
+          @if (fileName()) {
+            <button
+              class="file-clear-button"
+              type="button"
+              [attr.aria-label]="'import.clearFile' | translate"
+              (click)="clearSelectedFile()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="trashIconPath"></path>
+              </svg>
+            </button>
+          }
+        </div>
+
+        @if (sourceKind() === 'tex' && texDiagrams().length) {
+          <section class="diagram-picker" [attr.aria-label]="'import.diagramPickerLabel' | translate">
+            <div class="diagram-picker__header">
+              <strong>{{ 'import.diagramPickerTitle' | translate }}</strong>
+              <span>{{ 'import.diagramPickerSummary' | translate }}</span>
+            </div>
+            <div class="diagram-picker__list">
+              @for (diagram of texDiagrams(); track diagram.title; let index = $index) {
+                <label>
+                  <input
+                    type="checkbox"
+                    [checked]="selectedTexDiagramIndexes().includes(index)"
+                    (change)="toggleTexDiagram(index, $event)" />
+                  <span>{{ diagram.title }}</span>
+                </label>
+              }
+            </div>
+          </section>
+        }
+
+        @if (sourceKind() === 'csv') {
+          <section class="csv-options" [attr.aria-label]="'import.csvOptionsLabel' | translate">
+            <label>
+              <span>{{ 'import.csvXColumn' | translate }}</span>
+              <input
+                type="text"
+                [value]="csvXColumn()"
+                [attr.aria-label]="'import.csvXColumn' | translate"
+                (input)="updateCsvColumn('x', $event)" />
+            </label>
+            <label>
+              <span>{{ 'import.csvYColumn' | translate }}</span>
+              <input
+                type="text"
+                [value]="csvYColumn()"
+                [attr.aria-label]="'import.csvYColumn' | translate"
+                (input)="updateCsvColumn('y', $event)" />
+            </label>
+            <label>
+              <span>{{ 'import.csvLabelColumn' | translate }}</span>
+              <input
+                type="text"
+                [value]="csvLabelColumn()"
+                [attr.aria-label]="'import.csvLabelColumn' | translate"
+                (input)="updateCsvColumn('label', $event)" />
+            </label>
+            <label>
+              <span>{{ 'import.csvGroupColumn' | translate }}</span>
+              <input
+                type="text"
+                [value]="csvGroupColumn()"
+                [attr.aria-label]="'import.csvGroupColumn' | translate"
+                (input)="updateCsvColumn('group', $event)" />
+            </label>
+          </section>
+        }
+
+        <section class="import-workspace">
+          @if (sourceKind() === 'tikz' || sourceKind() === 'mermaid') {
+            <div
+              class="code-editor"
+              [class.has-warning]="sourceKind() === 'tikz' && hasSyntaxIssue()"
+              [class.is-focused]="codeInputFocused()">
+              <pre
+                #importCodePreview
+                class="code-block code-block--editor code-editor__preview"><code [innerHTML]="sourceKind() === 'tikz' ? highlightedCode() : code()"></code></pre>
+              <textarea
+                #importCodeInput
+                class="code-input code-input--overlay"
+                [attr.aria-label]="'import.codeInputAria' | translate"
+                [attr.aria-invalid]="false"
+                [value]="code()"
+                wrap="off"
+                spellcheck="false"
+                (input)="onCodeInput($event)"
+                (keydown)="onCodeInputKeydown($event)"
+                (focus)="onCodeInputFocus()"
+                (blur)="onCodeInputBlur()"
+                (scroll)="syncScroll()"></textarea>
+            </div>
+          } @else if (fileContent()) {
+            <pre class="code-block code-block--file-preview"><code>{{ fileContent() }}</code></pre>
+          } @else if (imageDataUrl()) {
+            <div class="image-preview">
+              <img [src]="imageDataUrl()" [alt]="fileName()" />
+            </div>
+          }
+        </section>
+      </section>
+
+      @if (displayedErrors().length) {
+        <section class="import-message import-message--error" role="alert" [attr.aria-label]="'import.errorTitle' | translate">
+          <div class="import-message__header">
+            <strong>{{ 'import.errorTitle' | translate }}</strong>
+            <span>{{ 'import.errorSummary' | translate }}</span>
+          </div>
+          <ul>
+            @for (error of displayedErrors(); track error) {
+              <li>{{ error }}</li>
+            }
+          </ul>
+        </section>
+      }
+
+      @if (warningViews().length) {
+        <section class="import-message import-message--warning" role="status" [attr.aria-label]="'import.warningTitle' | translate">
+          <div class="import-message__header">
+            <span class="import-message__badge">{{ warningViews().length }}</span>
+            <div>
+              <strong>{{ 'import.warningTitle' | translate }}</strong>
+              <span>{{ warningSummaryText() }}</span>
+            </div>
+          </div>
+          <p class="import-message__summary">{{ 'import.warningSummary' | translate }}</p>
+          <button
+            class="warning-details-toggle"
+            type="button"
+            [attr.aria-expanded]="warningDetailsExpanded()"
+            (click)="toggleWarningDetails()">
+            {{ (warningDetailsExpanded() ? 'import.hideWarningDetails' : 'import.showWarningDetails') | translate }}
+          </button>
+          @if (warningDetailsExpanded()) {
+            <ul class="warning-detail-list">
+              @for (warning of warningViews(); track warning.detail + warning.summary) {
+                <li>
+                  <span>{{ warning.summary }}</span>
+                  @if (warning.detail) {
+                    <code>{{ warning.detail }}</code>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <div class="warning-preview-list">
+              @for (warning of warningViews().slice(0, 2); track warning.detail + warning.summary) {
+                <span>{{ warning.summary }}</span>
+              }
+              @if (warningViews().length > 2) {
+                <span>{{ 'import.warningMoreDetails' | translate }}</span>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+
+    <footer class="import-code-modal__footer">
+      @if (fileName()) {
+        <span>{{ fileName() }}</span>
+      } @else {
+        <span></span>
+      }
+      <div class="import-code-modal__footer-actions">
+        @if (sceneHasContent()) {
+          <app-toggle-field
+            class="clear-scene-toggle"
+            [checked]="clearSceneBeforeImport()"
+            [label]="'import.clearSceneBeforeImport' | translate"
+            (checkedChange)="setClearSceneBeforeImport($event)"></app-toggle-field>
+        }
+        <button class="primary-button" type="button" [disabled]="!canImport()" (click)="importSelectedSource()">
           {{ actionLabel() }}
         </button>
       </div>
-    </div>
-
-    @if (warnings().length) {
-      <div class="warning-box">
-        <p>{{ warningsLabel() }}</p>
-        <ul>
-          @for (warning of warnings(); track warning) {
-            <li>{{ warning }}</li>
-          }
-        </ul>
-      </div>
-    }
+    </footer>
   </section>
 </div>

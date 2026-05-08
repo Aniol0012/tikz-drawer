@@ -57,6 +57,11 @@
             <path [attr.d]="icon('download')"></path></svg
           ><span>{{ 'downloadSvg' | translate }}</span>
         </button>
+        <button class="secondary-button export-btn" type="button" (click)="downloadProjectJson.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="icon('download')"></path></svg
+          ><span>{{ 'downloadProjectJson' | translate }}</span>
+        </button>
         <button class="secondary-button export-btn" type="button" (click)="openSettings.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="icon('settings')"></path></svg

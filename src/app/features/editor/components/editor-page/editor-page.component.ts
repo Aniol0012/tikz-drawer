@@ -186,6 +186,7 @@ import {
   restoreCodeHighlightThemeFromStorage,
   serializableLatexExportConfig as serializableLatexExportConfigUtil
 } from '../../utils/editor-storage.utils';
+import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
   shapeSetIds as shapeSetIdsUtil,
@@ -236,6 +237,7 @@ import {
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG } from '../../config/latex-export.config';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
+import type { ImportDialogResult } from '../../import/import-sources';
 import type {
   ArrowMarkerGeometry,
   ArrowTipKind,
@@ -1937,6 +1939,17 @@ export class EditorPageComponent {
     URL.revokeObjectURL(url);
   }
 
+  downloadProjectJson(): void {
+    const project = buildProjectJsonExport(this.scene(), this.preferences(), this.store.importCode(), this.appVersion);
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${this.exportFileBaseName()}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   downloadCanvasSvg(): void {
     const exportDocument = this.buildCanvasExportDocument();
     const blob = new Blob([exportDocument.markup], { type: 'image/svg+xml;charset=utf-8' });
@@ -2302,6 +2315,15 @@ export class EditorPageComponent {
       this.viewportCenter.set({ x: 0, y: 0 });
       this.inspectorTab.set('scene');
     });
+  }
+
+  applyImportDialogResult(result: ImportDialogResult): void {
+    this.runSceneMutation(() => {
+      this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true);
+      this.viewportCenter.set({ x: 0, y: 0 });
+      this.inspectorTab.set('scene');
+    });
+    this.closeImportModal();
   }
 
   removeSelected(): void {

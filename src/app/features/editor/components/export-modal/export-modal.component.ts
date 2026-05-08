@@ -62,6 +62,7 @@ export class ExportModalComponent {
   readonly copyError = output<unknown>();
   readonly downloadPng = output<void>();
   readonly downloadSvg = output<void>();
+  readonly downloadProjectJson = output<void>();
   readonly openSettings = output<void>();
   readonly closeSettings = output<void>();
   readonly downloadTex = output<void>();
