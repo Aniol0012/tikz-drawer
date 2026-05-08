@@ -4,6 +4,45 @@ import type { PersistedEditorState } from '../models/tikz.models';
 import { defaultPreferences } from '../presets/presets';
 
 describe('import sources', () => {
+  it('imports draw.io connectors between vertices with arrow and intermediate anchors', () => {
+    const result = importDrawioSource(`
+      <mxfile>
+        <diagram>
+          <mxGraphModel>
+            <root>
+              <mxCell id="0" />
+              <mxCell id="1" parent="0" />
+              <mxCell id="source" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;">
+                <mxGeometry x="40" y="80" width="120" height="60" as="geometry" />
+              </mxCell>
+              <mxCell id="target" vertex="1" parent="1" style="ellipse;whiteSpace=wrap;html=1;">
+                <mxGeometry x="320" y="80" width="120" height="60" as="geometry" />
+              </mxCell>
+              <mxCell id="edge-1" edge="1" parent="1" source="source" target="target" style="endArrow=block;dashed=1;strokeColor=#00aa88;">
+                <mxGeometry relative="1" as="geometry">
+                  <Array as="points">
+                    <mxPoint x="220" y="80" />
+                  </Array>
+                </mxGeometry>
+              </mxCell>
+            </root>
+          </mxGraphModel>
+        </diagram>
+      </mxfile>
+    `);
+
+    const line = result.scene.shapes.find((shape) => shape.kind === 'line');
+    expect(line).toMatchObject({
+      kind: 'line',
+      from: { x: 2.5, y: 2.75 },
+      to: { x: 9.5, y: 2.75 },
+      arrowEnd: true,
+      arrowType: 'triangle',
+      strokeStyle: 'dashed',
+      stroke: '#00aa88'
+    });
+  });
+
   it('imports draw.io connectors defined with explicit points', () => {
     const result = importDrawioSource(`
       <mxfile>
@@ -95,5 +134,25 @@ describe('import sources', () => {
       kind: 'image',
       src: 'data:image/png;base64,abc123'
     });
+  });
+
+  it('warns when the project JSON version differs from the running app version', () => {
+    const state: PersistedEditorState = {
+      preferences: defaultPreferences,
+      importCode: '',
+      scene: {
+        name: 'Blank',
+        bounds: { width: 960, height: 640 },
+        shapes: []
+      }
+    };
+
+    const result = importProjectJson(JSON.stringify({ version: '1.0.0', state }), '2.0.0');
+
+    expect(result.warnings).toEqual(['Project version 1.0.0 differs from app version 2.0.0; loaded without migration.']);
+  });
+
+  it('rejects JSON files that do not contain a project scene', () => {
+    expect(() => importProjectJson(JSON.stringify({ hello: 'world' }), '1.0.0')).toThrow('The JSON file is not a valid Tikz Drawer project.');
   });
 });

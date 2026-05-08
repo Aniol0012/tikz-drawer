@@ -513,7 +513,8 @@ const isDrawioArrowVertex = (style: string): boolean =>
   /(?:^|;)shape=(?:singleArrow|doubleArrow|flexArrow|filledEdge)(?:;|$)/.test(style) || /(?:^|;)arrowWidth=/.test(style);
 
 const drawioEdgePoints = (geometry: Element): readonly { readonly x: number; readonly y: number }[] => {
-  const points = Array.from(geometry.querySelectorAll('mxPoint'))
+  const points = Array.from(geometry.getElementsByTagName('*'))
+    .filter((element) => element.localName.toLowerCase() === 'mxpoint' || element.tagName.toLowerCase() === 'mxpoint')
     .filter((point) => ['sourcePoint', 'targetPoint', ''].includes(point.getAttribute('as') ?? ''))
     .map((point) => ({ x: numberAttr(point, 'x'), y: numberAttr(point, 'y') }))
     .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));

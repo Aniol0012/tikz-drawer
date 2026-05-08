@@ -186,6 +186,7 @@ import {
   restoreCodeHighlightThemeFromStorage,
   serializableLatexExportConfig as serializableLatexExportConfigUtil
 } from '../../utils/editor-storage.utils';
+import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
   shapeSetIds as shapeSetIdsUtil,
@@ -1939,16 +1940,7 @@ export class EditorPageComponent {
   }
 
   downloadProjectJson(): void {
-    const project = {
-      format: 'tikz-drawer-project',
-      version: this.appVersion,
-      exportedAt: new Date().toISOString(),
-      state: {
-        scene: this.scene(),
-        preferences: this.preferences(),
-        importCode: this.store.importCode()
-      }
-    };
+    const project = buildProjectJsonExport(this.scene(), this.preferences(), this.store.importCode(), this.appVersion);
     const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = this.document.createElement('a');
