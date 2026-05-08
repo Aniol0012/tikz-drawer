@@ -140,19 +140,56 @@
 
 .import-source-option {
   position: relative;
+  --source-tone: var(--accent);
   min-height: 62px;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   padding: 10px;
-  border: 1px solid var(--tool-border);
+  border: 1px solid color-mix(in srgb, var(--source-tone) 22%, var(--tool-border));
   border-radius: 12px;
-  background: var(--tool-surface);
+  background: color-mix(in srgb, var(--source-tone) 5%, var(--tool-surface));
   color: inherit;
   text-align: left;
   font: inherit;
   cursor: pointer;
+}
+
+.import-source-option[data-source-kind='tikz'] {
+  --source-tone: #4f7cff;
+}
+
+.import-source-option[data-source-kind='tex'] {
+  --source-tone: #7c5cff;
+}
+
+.import-source-option[data-source-kind='project-json'] {
+  --source-tone: #2b9d8f;
+}
+
+.import-source-option[data-source-kind='drawio'] {
+  --source-tone: #d77922;
+}
+
+.import-source-option[data-source-kind='svg'] {
+  --source-tone: #d14d72;
+}
+
+.import-source-option[data-source-kind='mermaid'] {
+  --source-tone: #1d9a57;
+}
+
+.import-source-option[data-source-kind='dot'] {
+  --source-tone: #667085;
+}
+
+.import-source-option[data-source-kind='csv'] {
+  --source-tone: #b38b00;
+}
+
+.import-source-option[data-source-kind='image'] {
+  --source-tone: #0f8fcf;
 }
 
 .import-source-option__icon,
@@ -163,10 +200,10 @@
   height: 34px;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--tool-border) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--source-tone, var(--tool-border)) 32%, var(--tool-border));
   border-radius: 12px;
-  background: color-mix(in srgb, var(--input-background) 78%, transparent);
-  color: color-mix(in srgb, var(--app-foreground) 74%, var(--muted-foreground));
+  background: color-mix(in srgb, var(--source-tone, var(--input-background)) 10%, var(--input-background));
+  color: color-mix(in srgb, var(--source-tone, var(--app-foreground)) 76%, var(--app-foreground));
 }
 
 .import-source-option__text {
@@ -196,8 +233,8 @@
 .import-source-option:hover,
 .file-drop:hover,
 .diagram-picker label:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--tool-border-strong));
-  background: color-mix(in srgb, var(--accent) 6%, var(--tool-surface));
+  border-color: color-mix(in srgb, var(--source-tone, var(--accent)) 42%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--source-tone, var(--accent)) 8%, var(--tool-surface));
 }
 
 .import-source-option:active,
@@ -208,20 +245,15 @@
 }
 
 .import-source-option.is-selected {
-  border-color: color-mix(in srgb, var(--accent) 62%, var(--tool-border-strong));
-  background: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: color-mix(in srgb, var(--source-tone) 68%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--source-tone) 14%, var(--tool-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--source-tone) 32%, transparent);
 }
 
 .import-source-option.is-selected .import-source-option__icon {
-  border-color: color-mix(in srgb, var(--accent) 54%, var(--tool-border));
-  background: color-mix(in srgb, var(--accent) 16%, var(--input-background));
-  color: color-mix(in srgb, var(--accent) 76%, var(--app-foreground));
-}
-
-.import-source-option--reference.is-selected {
-  border-color: color-mix(in srgb, var(--warning) 42%, var(--tool-border-strong));
-  background: color-mix(in srgb, var(--warning) 8%, var(--tool-surface));
+  border-color: color-mix(in srgb, var(--source-tone) 58%, var(--tool-border));
+  background: color-mix(in srgb, var(--source-tone) 18%, var(--input-background));
+  color: color-mix(in srgb, var(--source-tone) 82%, var(--app-foreground));
 }
 
 .import-input-panel {
@@ -264,6 +296,10 @@
   background: color-mix(in srgb, var(--tool-surface) 76%, transparent);
   color: var(--muted-foreground);
   cursor: pointer;
+}
+
+.import-input-panel--image .file-drop {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .file-clear-button {
