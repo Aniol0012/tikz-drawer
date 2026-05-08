@@ -1017,7 +1017,6 @@ export class EditorPageComponent {
   private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
   private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
-  private readonly imageHrefCache = new Map<string, string>();
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -1033,12 +1032,6 @@ export class EditorPageComponent {
       if (this.syncBroadcastRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.syncBroadcastRafHandle);
       }
-      for (const objectUrl of this.imageHrefCache.values()) {
-        if (objectUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(objectUrl);
-        }
-      }
-      this.imageHrefCache.clear();
       this.syncChannel?.close();
     });
 
@@ -2096,42 +2089,6 @@ export class EditorPageComponent {
       image.onerror = () => reject(new Error(errorMessage));
       image.src = src;
     });
-  }
-
-  imageHref(src: string): string {
-    const cached = this.imageHrefCache.get(src);
-    if (cached) {
-      return cached;
-    }
-
-    if (!src.startsWith('data:')) {
-      this.imageHrefCache.set(src, src);
-      return src;
-    }
-
-    const objectUrl = this.dataUrlToObjectUrl(src);
-    this.imageHrefCache.set(src, objectUrl);
-    return objectUrl;
-  }
-
-  private dataUrlToObjectUrl(dataUrl: string): string {
-    const match = /^data:([^;,]+)?(?:;charset=[^;,]+)?(;base64)?,(.*)$/s.exec(dataUrl);
-    if (!match) {
-      return dataUrl;
-    }
-
-    const mimeType = match[1] || 'application/octet-stream';
-    const isBase64 = Boolean(match[2]);
-    const payload = match[3] || '';
-
-    try {
-      const bytes = isBase64
-        ? Uint8Array.from(atob(payload), (character) => character.charCodeAt(0))
-        : Uint8Array.from(decodeURIComponent(payload), (character) => character.charCodeAt(0));
-      return URL.createObjectURL(new Blob([bytes], { type: mimeType }));
-    } catch {
-      return dataUrl;
-    }
   }
 
   private drawImageShape(

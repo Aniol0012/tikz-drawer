@@ -451,7 +451,7 @@
                     [attr.height]="shape.height * preferences().scale"
                     [attr.transform]="shapeRotationTransform(shape)"
                     [attr.opacity]="shape.strokeOpacity"
-                    [attr.href]="imageHref(shape.src)"
+                    [attr.href]="shape.src"
                     preserveAspectRatio="xMidYMid meet"></image>
                   <rect
                     [attr.x]="toSvgX(shape.x)"
@@ -606,7 +606,7 @@
                       [attr.height]="previewShape.height * preferences().scale"
                       [attr.transform]="shapeRotationTransform(previewShape)"
                       [attr.opacity]="previewShape.strokeOpacity"
-                      [attr.href]="imageHref(previewShape.src)"
+                      [attr.href]="previewShape.src"
                       preserveAspectRatio="xMidYMid meet"></image>
                     <rect
                       [attr.x]="toSvgX(previewShape.x)"
@@ -869,7 +869,7 @@
                       [attr.width]="shape.width"
                       [attr.height]="shape.height"
                       [attr.opacity]="shape.opacity"
-                      [attr.href]="imageHref(shape.href)"
+                      [attr.href]="shape.href"
                       preserveAspectRatio="xMidYMid meet"></image>
                     <rect
                       class="minimap__shape"
