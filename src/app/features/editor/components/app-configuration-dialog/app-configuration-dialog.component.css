@@ -9,14 +9,14 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(16, 24, 40, 0.28);
-  backdrop-filter: blur(5px);
+  background: rgba(16, 16, 16, 0.42);
+  backdrop-filter: blur(10px);
 }
 
 .configuration-modal {
-  width: min(1320px, 100%);
-  max-height: min(940px, calc(100dvh - 48px));
-  min-height: min(820px, calc(100dvh - 48px));
+  width: min(1180px, calc(100vw - 40px));
+  height: min(880px, calc(100dvh - 48px));
+  max-height: min(880px, calc(100dvh - 48px));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   overflow: hidden;
@@ -120,7 +120,8 @@
 
 .configuration-body {
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 22px;
 }
 
@@ -130,11 +131,15 @@
 }
 
 .configuration-grid--general {
-  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  grid-template-columns: minmax(260px, 0.78fr) minmax(340px, 1fr);
 }
 
 .configuration-grid--scene {
-  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(300px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(340px, 0.92fr);
+  grid-template-areas:
+    'style text preview'
+    'behavior behavior preview';
+  align-items: start;
 }
 
 .configuration-grid--latex {
@@ -154,6 +159,25 @@
 
 .settings-card--wide {
   grid-column: 1 / -1;
+}
+
+.settings-card--preview {
+  grid-area: preview;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+}
+
+.settings-card--style {
+  grid-area: style;
+}
+
+.settings-card--text {
+  grid-area: text;
+}
+
+.settings-card--behavior {
+  grid-area: behavior;
 }
 
 .settings-card__header {
@@ -193,6 +217,24 @@
 
 .field--full {
   grid-column: 1 / -1;
+}
+
+.settings-card--style .field--full {
+  grid-column: auto;
+}
+
+.settings-card--style label.field--full,
+.settings-card--text .field--color-picker {
+  grid-column: 1 / -1;
+}
+
+.settings-card--text .form-grid--single,
+.settings-card--behavior .form-grid--single {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-card--behavior app-toggle-field {
+  min-width: 0;
 }
 
 .field input:not([type='color']) {
@@ -305,7 +347,10 @@
 
 .scene-preview {
   position: relative;
-  min-height: 210px;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 260px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -316,7 +361,7 @@
   position: absolute;
   inset: 0;
   background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 14px 14px;
+  background-size: var(--scene-preview-grid-size, 14px) var(--scene-preview-grid-size, 14px);
 }
 
 .scene-preview__axis {
@@ -343,12 +388,6 @@
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.scene-preview path,
-.scene-preview circle,
-.scene-preview rect {
-  stroke-width: 2;
 }
 
 .code-stack {
@@ -498,8 +537,30 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .configuration-grid--scene {
+    grid-template-areas:
+      'style'
+      'text'
+      'behavior'
+      'preview';
+  }
+
   .settings-card--wide {
     grid-column: auto;
+  }
+
+  .settings-card--preview {
+    position: static;
+  }
+
+  .settings-card--style .field--full,
+  .settings-card--text .form-grid--single,
+  .settings-card--behavior .form-grid--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-card--style .field--full {
+    grid-column: 1 / -1;
   }
 }
 
@@ -510,6 +571,8 @@
   }
 
   .configuration-modal {
+    width: 100%;
+    height: calc(100dvh - 16px);
     max-height: calc(100dvh - 16px);
     min-height: 0;
     border-radius: 10px;

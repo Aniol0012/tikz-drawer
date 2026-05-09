@@ -73,36 +73,6 @@
 
                 <section class="settings-card">
                   <div class="settings-card__header">
-                    <h3>{{ 'workspace' | translate }}</h3>
-                  </div>
-                  <div class="form-grid form-grid--single">
-                    <app-range-input-card
-                      [label]="'zoomPercent' | translate"
-                      [value]="zoomPercent()"
-                      [rangeMin]="25"
-                      [rangeMax]="300"
-                      [rangeStep]="5"
-                      [numberMin]="25"
-                      [numberMax]="300"
-                      [numberStep]="5"
-                      (valueInput)="updateZoomPercent($event)"></app-range-input-card>
-                    <app-toggle-field
-                      [checked]="preferences().showGrid"
-                      [label]="'showGrid' | translate"
-                      (checkedChange)="updatePreferenceBoolean('showGrid', $event)"></app-toggle-field>
-                    <app-toggle-field
-                      [checked]="preferences().showAxes"
-                      [label]="'showAxes' | translate"
-                      (checkedChange)="updatePreferenceBoolean('showAxes', $event)"></app-toggle-field>
-                    <app-toggle-field
-                      [checked]="preferences().snapToGrid"
-                      [label]="'snapToGrid' | translate"
-                      (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
-                  </div>
-                </section>
-
-                <section class="settings-card">
-                  <div class="settings-card__header">
                     <h3>{{ 'codePreview' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--single">
@@ -110,7 +80,7 @@
                       <span>{{ 'codeTheme' | translate }}</span>
                       <app-select
                         [value]="codeTheme()"
-                        [options]="translatedSelectOptions(codeThemeOptions)"
+                        [options]="codeThemeSelectOptions()"
                         (valueChange)="setCodeHighlightTheme($event)"></app-select>
                     </label>
                     <div class="code-stack code-stack--theme-preview tikz-code-theme" [attr.style]="codeThemeStyle()">
@@ -125,7 +95,7 @@
           @case ('scene') {
             <section id="configuration-panel-scene" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-scene">
               <div class="configuration-grid configuration-grid--scene">
-                <section class="settings-card">
+                <section class="settings-card settings-card--style">
                   <div class="settings-card__header">
                     <h3>{{ 'sceneStyleDefaults' | translate }}</h3>
                   </div>
@@ -160,14 +130,73 @@
                       [numberMax]="4.5"
                       [numberStep]="0.1"
                       (valueInput)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)"></app-range-input-card>
+                    <label class="field field--full">
+                      <span>{{ 'defaultArrowType' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultArrowType"
+                        [options]="arrowTipSelectOptions()"
+                        (valueChange)="setDefaultArrowType($event)"></app-select>
+                    </label>
+                    <label class="field field--full">
+                      <span>{{ 'defaultLineStyle' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultLineStrokeStyle"
+                        [options]="lineStrokeStyleSelectOptions()"
+                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                    </label>
                   </div>
                 </section>
 
-                <section class="settings-card">
+                <section class="settings-card settings-card--text">
+                  <div class="settings-card__header">
+                    <h3>{{ 'defaultText' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultTextColor' | translate }}</span>
+                      <input
+                        type="color"
+                        [value]="preferences().defaultTextColor"
+                        (input)="updatePreferenceText('defaultTextColor', $event)" />
+                    </label>
+                    <app-range-input-card
+                      [label]="'defaultTextFontSize' | translate"
+                      [value]="preferences().defaultTextFontSize"
+                      [rangeMin]="0.2"
+                      [rangeMax]="2"
+                      [rangeStep]="0.02"
+                      [numberMin]="0.2"
+                      [numberMax]="2"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultTextFontSize', $event, 0.2, 2)"></app-range-input-card>
+                    <app-range-input-card
+                      [label]="'defaultCornerRadius' | translate"
+                      [value]="preferences().defaultCornerRadius"
+                      [rangeMin]="0"
+                      [rangeMax]="1.6"
+                      [rangeStep]="0.02"
+                      [numberMin]="0"
+                      [numberMax]="1.6"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--behavior">
                   <div class="settings-card__header">
                     <h3>{{ 'canvasBehavior' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'zoomPercent' | translate"
+                      [value]="zoomPercent()"
+                      [rangeMin]="25"
+                      [rangeMax]="300"
+                      [rangeStep]="5"
+                      [numberMin]="25"
+                      [numberMax]="300"
+                      [numberStep]="5"
+                      (valueInput)="updateZoomPercent($event)"></app-range-input-card>
                     <app-range-input-card
                       [label]="'snapTolerance' | translate"
                       [value]="preferences().snapStep"
@@ -197,7 +226,7 @@
                   <div class="settings-card__header">
                     <h3>{{ 'preview' | translate }}</h3>
                   </div>
-                  <div class="scene-preview" aria-hidden="true">
+                  <div class="scene-preview" [style.--scene-preview-grid-size.px]="previewGridSize()" aria-hidden="true">
                     @if (preferences().showGrid) {
                       <span class="scene-preview__grid"></span>
                     }
@@ -205,32 +234,64 @@
                       <span class="scene-preview__axis scene-preview__axis--x"></span>
                       <span class="scene-preview__axis scene-preview__axis--y"></span>
                     }
-                    <svg viewBox="0 0 220 140">
-                      <path
-                        d="M38 92 68 28 98 92Z"
-                        [attr.fill]="preferences().defaultFill"
-                        [attr.stroke]="preferences().defaultStroke"></path>
-                      <circle
-                        cx="128"
-                        cy="84"
-                        r="24"
-                        [attr.fill]="preferences().defaultFill"
-                        [attr.stroke]="preferences().defaultStroke"></circle>
-                      <rect
-                        x="146"
-                        y="26"
-                        width="34"
-                        height="34"
-                        [attr.fill]="preferences().defaultFill"
-                        [attr.stroke]="preferences().defaultStroke"></rect>
-                      <path
-                        d="M168 104 202 70"
-                        fill="none"
-                        [attr.stroke]="preferences().defaultStroke"
-                        marker-end="url(#configuration-preview-arrow)"></path>
+                    <svg viewBox="0 0 300 220">
+                      <g [attr.transform]="previewTransform()">
+                        <path
+                          d="M42 122 80 56 118 122Z"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-linejoin]="preferences().defaultCornerRadius > 0 ? 'round' : 'miter'"></path>
+                        <circle
+                          cx="168"
+                          cy="126"
+                          r="25"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"></circle>
+                        <rect
+                          x="220"
+                          y="48"
+                          width="38"
+                          height="38"
+                          [attr.rx]="previewCornerRadius()"
+                          [attr.ry]="previewCornerRadius()"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"></rect>
+                        <path
+                          d="M44 168 C98 188 140 150 188 166 S248 150 262 118"
+                          fill="none"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-dasharray]="previewStrokeDasharray()"
+                          stroke-linecap="round"
+                          marker-end="url(#configuration-preview-arrow)"></path>
+                        <text
+                          x="126"
+                          y="72"
+                          [attr.fill]="preferences().defaultTextColor"
+                          [attr.font-size]="previewTextFontSize()"
+                          font-weight="700">
+                          TikZ
+                        </text>
+                      </g>
                       <defs>
-                        <marker id="configuration-preview-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
-                          <path d="M0,0 L0,6 L8,3 z" [attr.fill]="preferences().defaultStroke"></path>
+                        <marker
+                          id="configuration-preview-arrow"
+                          markerUnits="userSpaceOnUse"
+                          [attr.markerWidth]="previewArrowMarkerSize()"
+                          [attr.markerHeight]="previewArrowMarkerSize()"
+                          [attr.refX]="previewArrowMarkerSize() - 1"
+                          [attr.refY]="previewArrowMarkerSize() / 2"
+                          orient="auto">
+                          <path
+                            [attr.d]="previewArrowPath()"
+                            [attr.fill]="previewArrowFill()"
+                            [attr.stroke]="previewArrowStroke()"
+                            [attr.stroke-width]="previewArrowStrokeWidth()"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"></path>
                         </marker>
                       </defs>
                     </svg>

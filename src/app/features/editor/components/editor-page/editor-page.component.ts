@@ -204,6 +204,7 @@ import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codeg
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
+import { AppThemeService } from '../../state/app-theme.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
@@ -312,6 +313,7 @@ export class EditorPageComponent {
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
+  private readonly appThemeService = inject(AppThemeService);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly editorStorage = inject(EditorLocalStorageService);
@@ -1428,12 +1430,13 @@ export class EditorPageComponent {
   }
 
   setTheme(theme: ThemeMode): void {
-    if (this.themeToggleLocked || this.preferences().theme === theme) {
+    const nextTheme = this.appThemeService.normalize(theme, this.preferences().theme);
+    if (this.themeToggleLocked || this.preferences().theme === nextTheme) {
       return;
     }
 
     this.themeToggleLocked = true;
-    this.store.setTheme(theme);
+    this.store.setTheme(nextTheme);
     if (this.themeToggleCooldownHandle !== null) {
       clearTimeout(this.themeToggleCooldownHandle);
     }
@@ -1444,7 +1447,7 @@ export class EditorPageComponent {
   }
 
   toggleTheme(): void {
-    this.setTheme(this.preferences().theme === 'dark' ? 'light' : 'dark');
+    this.setTheme(this.appThemeService.nextTheme(this.preferences().theme));
   }
 
   toggleFileMenu(): void {
@@ -5822,13 +5825,14 @@ export class EditorPageComponent {
           arrowOpacity: 1,
           arrowOpen: false,
           arrowRound: false,
+          arrowType: preferences.defaultArrowType,
           arrowScale: preferences.defaultArrowScale,
           arrowLengthScale: 1,
           arrowWidthScale: 1,
           arrowBendMode: 'none',
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth,
-          strokeStyle: shape.strokeStyle ?? 'solid'
+          strokeStyle: preferences.defaultLineStrokeStyle
         };
       case 'rectangle':
       case 'triangle':
@@ -5840,7 +5844,8 @@ export class EditorPageComponent {
           fill: preferences.defaultFill,
           strokeOpacity: 1,
           fillOpacity: 1,
-          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
+          ...(shape.kind === 'rectangle' || shape.kind === 'triangle' ? { cornerRadius: preferences.defaultCornerRadius } : {}),
+          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
@@ -5853,7 +5858,9 @@ export class EditorPageComponent {
       case 'text':
         return {
           ...shape,
-          colorOpacity: 1
+          color: preferences.defaultTextColor,
+          colorOpacity: 1,
+          fontSize: preferences.defaultTextFontSize
         };
     }
   }
@@ -5975,10 +5982,10 @@ export class EditorPageComponent {
       to,
       anchors: rest.slice(0, -1),
       lineMode: 'curved',
-      strokeStyle: 'solid',
+      strokeStyle: this.preferences().defaultLineStrokeStyle,
       arrowStart: false,
       arrowEnd: false,
-      arrowType: 'latex',
+      arrowType: this.preferences().defaultArrowType,
       arrowColor: this.preferences().defaultStroke,
       arrowOpacity: 1,
       arrowOpen: false,

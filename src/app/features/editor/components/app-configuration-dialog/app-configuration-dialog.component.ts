@@ -23,8 +23,9 @@ import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { EditorStore } from '../../state/editor.store';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
+import { AppThemeService } from '../../state/app-theme.service';
 import { iconPaths } from '../../config/editor-icons';
-import type { EditorPreferences } from '../../models/tikz.models';
+import type { ArrowTipKind, EditorPreferences, LineStrokeStyle } from '../../models/tikz.models';
 import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } from '../editor-page/editor-page.types';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
@@ -43,6 +44,22 @@ type ConfigurationTabDescriptor = {
   readonly iconPath: string;
 };
 
+const LINE_STROKE_STYLE_OPTIONS = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'] as const satisfies readonly LineStrokeStyle[];
+const ARROW_TIP_OPTIONS = [
+  'latex',
+  'triangle',
+  'stealth',
+  'diamond',
+  'circle',
+  'bar',
+  'hooks',
+  'bracket',
+  'kite',
+  'square',
+  'parenthesis',
+  'straight-barb'
+] as const satisfies readonly ArrowTipKind[];
+
 @Component({
   selector: 'app-configuration-dialog',
   standalone: true,
@@ -59,6 +76,7 @@ export class AppConfigurationDialogComponent {
   private readonly configuration = inject(EditorConfigurationService);
   private readonly languageService = inject(EditorLanguageService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
+  private readonly appThemeService = inject(AppThemeService);
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
@@ -99,6 +117,8 @@ export class AppConfigurationDialogComponent {
   readonly fontSizeOptions = LATEX_FONT_SIZE_OPTIONS;
   readonly colorModeOptions = LATEX_COLOR_MODE_OPTIONS;
   readonly codeThemeOptions = CODE_HIGHLIGHT_THEME_OPTIONS;
+  readonly lineStrokeStyleOptions = LINE_STROKE_STYLE_OPTIONS;
+  readonly arrowTipOptions = ARROW_TIP_OPTIONS;
   readonly highlightedCodeThemePreview = this.codeHighlightThemeService.highlightedPreviewSource;
   readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
@@ -118,10 +138,20 @@ export class AppConfigurationDialogComponent {
       this.codeTheme() === 'aurora' &&
       this.language() === detectLanguage()
   );
-  readonly themeOptions = computed<readonly AppSelectOption[]>(() => [
-    { value: 'light', label: this.t('light') },
-    { value: 'dark', label: this.t('dark') }
-  ]);
+  readonly themeOptions = computed<readonly AppSelectOption[]>(() => this.appThemeService.options((key) => this.t(key)));
+  readonly codeThemeSelectOptions = computed<readonly AppSelectOption[]>(() => this.translatedSelectOptions(this.codeThemeOptions));
+  readonly lineStrokeStyleSelectOptions = computed<readonly AppSelectOption[]>(() =>
+    this.lineStrokeStyleOptions.map((style) => ({
+      value: style,
+      label: this.t(this.lineStrokeStyleLabelKey(style))
+    }))
+  );
+  readonly arrowTipSelectOptions = computed<readonly AppSelectOption[]>(() =>
+    this.arrowTipOptions.map((arrowType) => ({
+      value: arrowType,
+      label: this.t(this.arrowTypeLabelKey(arrowType))
+    }))
+  );
   private initialTabValue: ApplicationConfigurationTab = 'general';
 
   t(key: string): string {
@@ -176,8 +206,9 @@ export class AppConfigurationDialogComponent {
   }
 
   setTheme(value: string): void {
-    if (value === 'light' || value === 'dark') {
-      this.patchPreferences({ theme: value });
+    const theme = this.appThemeService.normalize(value, this.preferences().theme);
+    if (theme !== this.preferences().theme) {
+      this.patchPreferences({ theme });
     }
   }
 
@@ -257,6 +288,18 @@ export class AppConfigurationDialogComponent {
     this.configuration.setCodeHighlightTheme(theme);
   }
 
+  setDefaultLineStrokeStyle(style: string): void {
+    if (this.lineStrokeStyleOptions.includes(style as LineStrokeStyle)) {
+      this.patchPreferences({ defaultLineStrokeStyle: style as LineStrokeStyle });
+    }
+  }
+
+  setDefaultArrowType(arrowType: string): void {
+    if (this.arrowTipOptions.includes(arrowType as ArrowTipKind)) {
+      this.patchPreferences({ defaultArrowType: arrowType as ArrowTipKind });
+    }
+  }
+
   translatedSelectOptions(options: readonly LabelKeyOption[]): readonly AppSelectOption[] {
     return options.map((option) => ({
       value: option.value,
@@ -269,6 +312,167 @@ export class AppConfigurationDialogComponent {
       value: fontSize,
       label: fontSize
     }));
+  }
+
+  previewStrokeDasharray(): string | null {
+    switch (this.preferences().defaultLineStrokeStyle) {
+      case 'dashed':
+        return '8 5';
+      case 'dotted':
+        return '1 5';
+      case 'dash-dotted':
+        return '8 4 1 4';
+      case 'loosely-dashed':
+        return '12 7';
+      case 'solid':
+        return null;
+    }
+  }
+
+  previewStrokeWidth(): number {
+    return Math.min(6, Math.max(1, 1 + Math.sqrt(this.preferences().defaultStrokeWidth) * 1.25));
+  }
+
+  previewArrowMarkerSize(): number {
+    return Math.min(18, Math.max(9, 7 + this.preferences().defaultArrowScale * 3));
+  }
+
+  previewArrowPath(): string {
+    const size = this.previewArrowMarkerSize();
+    const half = size / 2;
+    const inset = Math.max(2, size * 0.22);
+    const radius = Math.max(2.4, size * 0.26);
+
+    switch (this.preferences().defaultArrowType) {
+      case 'triangle':
+      case 'latex':
+        return `M${inset},1 L${size - 1},${half} L${inset},${size - 1} Z`;
+      case 'stealth':
+        return `M1,1 L${size - 1},${half} L1,${size - 1} Q${size * 0.35},${half} 1,1 Z`;
+      case 'diamond':
+        return `M1,${half} L${half},1 L${size - 1},${half} L${half},${size - 1} Z`;
+      case 'circle':
+        return `M${half - radius},${half} a${radius},${radius} 0 1 0 ${radius * 2},0 a${radius},${radius} 0 1 0 ${-radius * 2},0`;
+      case 'bar':
+        return `M${half},${size * 0.14} L${half},${size * 0.86}`;
+      case 'hooks':
+        return `M${size - 1},${half} C${size * 0.5},${half} ${size * 0.42},${size * 0.16} ${size * 0.18},${size * 0.2} M${size - 1},${half} C${size * 0.5},${half} ${size * 0.42},${size * 0.84} ${size * 0.18},${size * 0.8}`;
+      case 'bracket':
+        return `M${size - 1},${size * 0.18} H${size * 0.36} V${size * 0.82} H${size - 1}`;
+      case 'kite':
+        return `M1,${half} L${size * 0.48},1 L${size - 1},${half} L${size * 0.48},${size - 1} Z`;
+      case 'square':
+        return `M${size * 0.25},${size * 0.25} H${size * 0.82} V${size * 0.75} H${size * 0.25} Z`;
+      case 'parenthesis':
+        return `M${size * 0.68},${size * 0.12} C${size * 0.36},${size * 0.28} ${size * 0.36},${size * 0.72} ${size * 0.68},${size * 0.88}`;
+      case 'straight-barb':
+        return `M1,1 L${size - 1},${half} L1,${size - 1}`;
+    }
+  }
+
+  previewArrowFill(): string {
+    switch (this.preferences().defaultArrowType) {
+      case 'latex':
+      case 'triangle':
+      case 'stealth':
+      case 'kite':
+      case 'square':
+        return this.preferences().defaultStroke;
+      case 'diamond':
+      case 'circle':
+      case 'bar':
+      case 'hooks':
+      case 'bracket':
+      case 'parenthesis':
+      case 'straight-barb':
+        return 'none';
+    }
+  }
+
+  previewArrowStroke(): string {
+    switch (this.preferences().defaultArrowType) {
+      case 'latex':
+      case 'triangle':
+      case 'stealth':
+      case 'kite':
+      case 'square':
+        return 'none';
+      case 'diamond':
+      case 'circle':
+      case 'bar':
+      case 'hooks':
+      case 'bracket':
+      case 'parenthesis':
+      case 'straight-barb':
+        return this.preferences().defaultStroke;
+    }
+  }
+
+  previewArrowStrokeWidth(): number {
+    return Math.max(1.2, this.previewStrokeWidth() * 0.8);
+  }
+
+  previewTextFontSize(): number {
+    return Math.max(9, this.preferences().defaultTextFontSize * 24);
+  }
+
+  previewCornerRadius(): number {
+    return Math.min(18, this.preferences().defaultCornerRadius * 8);
+  }
+
+  previewGridSize(): number {
+    const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
+    return Math.min(28, Math.max(8, 14 * zoomRatio));
+  }
+
+  previewTransform(): string {
+    const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
+    const scale = Math.min(1.22, Math.max(0.78, zoomRatio));
+    return `translate(150 110) scale(${scale}) translate(-150 -110)`;
+  }
+
+  private lineStrokeStyleLabelKey(style: LineStrokeStyle): string {
+    switch (style) {
+      case 'solid':
+        return 'lineStrokeStyleSolid';
+      case 'dashed':
+        return 'lineStrokeStyleDashed';
+      case 'dotted':
+        return 'lineStrokeStyleDotted';
+      case 'dash-dotted':
+        return 'lineStrokeStyleDashDotted';
+      case 'loosely-dashed':
+        return 'lineStrokeStyleLooselyDashed';
+    }
+  }
+
+  private arrowTypeLabelKey(arrowType: ArrowTipKind): string {
+    switch (arrowType) {
+      case 'latex':
+        return 'arrowTypeLatex';
+      case 'triangle':
+        return 'arrowTypeTriangle';
+      case 'stealth':
+        return 'arrowTypeStealth';
+      case 'diamond':
+        return 'arrowTypeDiamond';
+      case 'circle':
+        return 'arrowTypeCircle';
+      case 'bar':
+        return 'arrowTypeBar';
+      case 'hooks':
+        return 'arrowTypeHooks';
+      case 'bracket':
+        return 'arrowTypeBracket';
+      case 'kite':
+        return 'arrowTypeKite';
+      case 'square':
+        return 'arrowTypeSquare';
+      case 'parenthesis':
+        return 'arrowTypeParenthesis';
+      case 'straight-barb':
+        return 'arrowTypeStraightBarb';
+    }
   }
 
   applySuggestedCaptionAndLabel(): void {
@@ -320,7 +524,12 @@ export class AppConfigurationDialogComponent {
       current.defaultStroke === expected.defaultStroke &&
       current.defaultFill === expected.defaultFill &&
       current.defaultStrokeWidth === expected.defaultStrokeWidth &&
-      current.defaultArrowScale === expected.defaultArrowScale
+      current.defaultArrowScale === expected.defaultArrowScale &&
+      current.defaultArrowType === expected.defaultArrowType &&
+      current.defaultLineStrokeStyle === expected.defaultLineStrokeStyle &&
+      current.defaultCornerRadius === expected.defaultCornerRadius &&
+      current.defaultTextColor === expected.defaultTextColor &&
+      current.defaultTextFontSize === expected.defaultTextFontSize
     );
   }
 

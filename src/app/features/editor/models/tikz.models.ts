@@ -172,6 +172,11 @@ export interface EditorPreferences {
   readonly defaultFill: string;
   readonly defaultStrokeWidth: number;
   readonly defaultArrowScale: number;
+  readonly defaultArrowType: ArrowTipKind;
+  readonly defaultLineStrokeStyle: LineStrokeStyle;
+  readonly defaultCornerRadius: number;
+  readonly defaultTextColor: string;
+  readonly defaultTextFontSize: number;
 }
 
 export interface PersistedEditorState {

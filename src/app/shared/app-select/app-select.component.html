@@ -6,6 +6,8 @@
     class="app-select"
     [class.is-open]="isOpen()"
     [value]="value()"
+    [displayLabel]="selectedOption()?.label ?? ''"
+    [attr.display-label]="selectedOption()?.label ?? null"
     [attr.aria-label]="ariaLabel()"
     [attr.hoist]="hoist() ? '' : null"
     (sl-change)="onSelectionChange($event)"
