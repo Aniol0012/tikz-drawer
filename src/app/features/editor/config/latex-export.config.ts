@@ -71,6 +71,7 @@ export const LATEX_COLOR_MODE_OPTIONS = [
 export const LATEX_CODE_THEME_PREVIEW_SOURCE = '\\begin{tikzpicture}\n\\draw (0,0) -- (1.6,0.8);\n\\end{tikzpicture}';
 
 export const CODE_HIGHLIGHT_THEMES = ['aurora', 'sunset', 'midnight', 'forest', 'rose', 'graphite'] as const;
+export type CodeHighlightTheme = (typeof CODE_HIGHLIGHT_THEMES)[number];
 
 export const CODE_HIGHLIGHT_THEME_OPTIONS = [
   { value: 'aurora', labelKey: 'codeThemeAurora' },

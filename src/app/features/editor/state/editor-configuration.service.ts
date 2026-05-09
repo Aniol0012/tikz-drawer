@@ -1,13 +1,12 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
-import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG, type LatexExportConfig } from '../config/latex-export.config';
+import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG, type CodeHighlightTheme, type LatexExportConfig } from '../config/latex-export.config';
 import {
   normalizeLatexExportConfig,
   parseStoredLatexExportConfig,
   restoreCodeHighlightThemeFromStorage,
   serializableLatexExportConfig
 } from '../utils/editor-storage.utils';
-import type { CodeHighlightTheme } from '../components/editor-page/editor-page.types';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 
 @Injectable()

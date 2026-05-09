@@ -1,5 +1,9 @@
 <div class="modal-backdrop">
-  <section class="export-modal" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+  <section
+    class="export-modal tikz-code-theme"
+    [attr.style]="codeThemeStyle()"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()">
     <header class="export-modal__header">
       <div>
         <p>{{ 'exportTitle' | translate }}</p>

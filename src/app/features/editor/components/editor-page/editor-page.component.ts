@@ -166,7 +166,6 @@ import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import {
   decodeSharePayload,
   encodeSharePayload,
-  highlightLatex,
   type SelectionBounds,
   transformCanvasShape,
   type TransformCanvasShapeOptions,
@@ -204,6 +203,7 @@ import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTem
 import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
+import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
@@ -311,6 +311,7 @@ export class EditorPageComponent {
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
+  private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly editorStorage = inject(EditorLocalStorageService);
@@ -958,10 +959,10 @@ export class EditorPageComponent {
   readonly standaloneDocument = computed(() => this.buildStandaloneDocument());
   readonly displayedExportCode = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().code : this.standaloneDocument()));
   readonly displayedExportImports = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().imports : ''));
-  readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
-  readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
-  readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
-  readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
+  readonly highlightedExportImports = computed(() => this.codeHighlightThemeService.highlight(this.displayedExportImports()));
+  readonly highlightedExportCode = computed(() => this.codeHighlightThemeService.highlight(this.displayedExportCode()));
+  readonly highlightedGeneratedImports = computed(() => this.codeHighlightThemeService.highlight(this.snippetExport().imports));
+  readonly highlightedGeneratedCode = computed(() => this.codeHighlightThemeService.highlight(this.snippetExport().code));
   readonly selectionHandleSize = computed(() =>
     this.coarsePointer() ? EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.coarse : EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.fine
   );

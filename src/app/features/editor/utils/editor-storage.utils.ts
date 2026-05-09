@@ -1,6 +1,6 @@
-import type { CodeHighlightTheme, LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
+import type { LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
 import { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../components/editor-page/editor-page.types';
-import { CODE_HIGHLIGHT_THEMES } from '../config/latex-export.config';
+import { CODE_HIGHLIGHT_THEMES, type CodeHighlightTheme } from '../config/latex-export.config';
 
 const isOneOf = <const T extends readonly string[]>(value: unknown, options: T): value is T[number] => typeof value === 'string' && options.includes(value);
 

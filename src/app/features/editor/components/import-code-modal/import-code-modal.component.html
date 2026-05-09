@@ -143,7 +143,8 @@
         <section class="import-workspace">
           @if (sourceKind() === 'tikz' || sourceKind() === 'mermaid') {
             <div
-              class="code-editor"
+              class="code-editor tikz-code-theme"
+              [attr.style]="codeThemeStyle()"
               [class.has-warning]="sourceKind() === 'tikz' && hasSyntaxIssue()"
               [class.is-focused]="codeInputFocused()">
               <pre

@@ -3250,6 +3250,7 @@
   @if (exportModalOpen()) {
     <app-export-modal
       [theme]="preferences().theme"
+      [codeTheme]="codeHighlightTheme()"
       [iconMap]="iconMap"
       [exportMode]="exportMode()"
       [shareUrl]="shareUrl()"

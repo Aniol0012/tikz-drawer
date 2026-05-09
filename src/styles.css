@@ -130,3 +130,27 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.tikz-code-theme .tok-command {
+  color: var(--code-command, #4a78dc);
+}
+
+.tikz-code-theme .tok-option {
+  color: var(--code-option, #5e7d3d);
+}
+
+.tikz-code-theme .tok-punctuation {
+  color: var(--code-punctuation, #6e6e6e);
+}
+
+.tikz-code-theme .tok-number {
+  color: var(--code-number, #b86a32);
+}
+
+.tikz-code-theme .tok-color {
+  color: var(--code-color, #bb4f72);
+}
+
+.tikz-code-theme .tok-comment {
+  color: var(--code-comment, #8b8b8b);
+}

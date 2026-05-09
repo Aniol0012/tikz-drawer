@@ -4,7 +4,6 @@ import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
   DEFAULT_LATEX_EXPORT_CONFIG,
   LATEX_ALIGNMENT_OPTIONS,
-  LATEX_CODE_THEME_PREVIEW_SOURCE,
   LATEX_COLOR_MODE_OPTIONS,
   LATEX_FIGURE_PLACEMENT_OPTIONS,
   LATEX_FONT_SIZE_OPTIONS,
@@ -21,9 +20,9 @@ import { defaultPreferences } from '../../presets/presets';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { detectLanguage, getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
-import { highlightLatex } from '../../utils/editor-page.utils';
 import { EditorStore } from '../../state/editor.store';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { iconPaths } from '../../config/editor-icons';
 import type { EditorPreferences } from '../../models/tikz.models';
 import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } from '../editor-page/editor-page.types';
@@ -59,6 +58,7 @@ export class AppConfigurationDialogComponent {
   private readonly store = inject(EditorStore);
   private readonly configuration = inject(EditorConfigurationService);
   private readonly languageService = inject(EditorLanguageService);
+  private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
@@ -99,7 +99,8 @@ export class AppConfigurationDialogComponent {
   readonly fontSizeOptions = LATEX_FONT_SIZE_OPTIONS;
   readonly colorModeOptions = LATEX_COLOR_MODE_OPTIONS;
   readonly codeThemeOptions = CODE_HIGHLIGHT_THEME_OPTIONS;
-  readonly highlightedCodeThemePreview = highlightLatex(LATEX_CODE_THEME_PREVIEW_SOURCE);
+  readonly highlightedCodeThemePreview = this.codeHighlightThemeService.highlightedPreviewSource;
+  readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
   readonly languageSelectOptions = computed<readonly AppSelectOption[]>(() =>
     this.languageOptions().map((option) => ({

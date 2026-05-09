@@ -113,7 +113,7 @@
                         [options]="translatedSelectOptions(codeThemeOptions)"
                         (valueChange)="setCodeHighlightTheme($event)"></app-select>
                     </label>
-                    <div class="code-stack code-stack--theme-preview" [attr.data-code-theme]="codeTheme()">
+                    <div class="code-stack code-stack--theme-preview tikz-code-theme" [attr.style]="codeThemeStyle()">
                       <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
                     </div>
                   </div>

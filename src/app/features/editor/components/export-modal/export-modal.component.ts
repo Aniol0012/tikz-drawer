@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import type { ThemeMode } from '../../models/tikz.models';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
-import type { ExportMode } from '../editor-page/editor-page.types';
+import type { CodeHighlightTheme, ExportMode } from '../editor-page/editor-page.types';
 import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../shared/copy-button/copy-button.component';
+import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 
 @Component({
   selector: 'app-export-modal',
@@ -15,7 +16,10 @@ import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../s
   }
 })
 export class ExportModalComponent {
+  private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
+
   readonly theme = input.required<ThemeMode>();
+  readonly codeTheme = input.required<CodeHighlightTheme>();
   readonly iconMap = input.required<Record<string, string>>();
   readonly exportMode = input.required<ExportMode>();
   readonly shareUrl = input.required<string>();
@@ -37,5 +41,9 @@ export class ExportModalComponent {
 
   icon(key: string): string {
     return this.iconMap()[key] ?? '';
+  }
+
+  codeThemeStyle(): string {
+    return this.codeHighlightThemeService.cssVariableStyle(this.codeTheme());
   }
 }
