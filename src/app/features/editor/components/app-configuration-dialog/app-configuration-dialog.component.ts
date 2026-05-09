@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Inp
 import type { ElementRef } from '@angular/core';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
+  DEFAULT_LATEX_EXPORT_CONFIG,
   LATEX_ALIGNMENT_OPTIONS,
   LATEX_CODE_THEME_PREVIEW_SOURCE,
   LATEX_COLOR_MODE_OPTIONS,
@@ -15,13 +16,15 @@ import {
   type LatexExportTextKey,
   type LatexFontSize
 } from '../../config/latex-export.config';
+import { DEFAULT_EDITOR_SCALE } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
-import { getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
+import { detectLanguage, getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { highlightLatex } from '../../utils/editor-page.utils';
 import { EditorStore } from '../../state/editor.store';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { iconPaths } from '../../config/editor-icons';
 import type { EditorPreferences } from '../../models/tikz.models';
 import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } from '../editor-page/editor-page.types';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
@@ -33,6 +36,12 @@ export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
 type LabelKeyOption = {
   readonly value: string;
   readonly labelKey: string;
+};
+
+type ConfigurationTabDescriptor = {
+  readonly id: ApplicationConfigurationTab;
+  readonly labelKey: string;
+  readonly iconPath: string;
 };
 
 @Component({
@@ -78,11 +87,12 @@ export class AppConfigurationDialogComponent {
   readonly latexExportConfig = this.configuration.latexExportConfig;
   readonly codeTheme = this.configuration.codeHighlightTheme;
   readonly language = this.languageService.language;
+  readonly resetConfirmationOpen = signal(false);
 
-  readonly tabs: readonly { readonly id: ApplicationConfigurationTab; readonly labelKey: string }[] = [
-    { id: 'general', labelKey: 'generalSettings' },
-    { id: 'scene', labelKey: 'sceneSettings' },
-    { id: 'latex', labelKey: 'latexSettings' }
+  readonly tabs: readonly ConfigurationTabDescriptor[] = [
+    { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
+    { id: 'scene', labelKey: 'settingsTabScene', iconPath: iconPaths.scene },
+    { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.fileTex }
   ];
   readonly placementOptions = LATEX_FIGURE_PLACEMENT_OPTIONS;
   readonly alignmentOptions = LATEX_ALIGNMENT_OPTIONS;
@@ -91,6 +101,22 @@ export class AppConfigurationDialogComponent {
   readonly codeThemeOptions = CODE_HIGHLIGHT_THEME_OPTIONS;
   readonly highlightedCodeThemePreview = highlightLatex(LATEX_CODE_THEME_PREVIEW_SOURCE);
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
+  readonly languageSelectOptions = computed<readonly AppSelectOption[]>(() =>
+    this.languageOptions().map((option) => ({
+      value: option.value,
+      label: option.longLabel,
+      longLabel: option.longLabel,
+      flagSrc: option.flagSrc
+    }))
+  );
+  readonly zoomPercent = computed(() => Math.round((this.preferences().scale / DEFAULT_EDITOR_SCALE) * 100));
+  readonly settingsAreDefault = computed(
+    () =>
+      this.preferencesEqual(this.preferences(), defaultPreferences) &&
+      this.latexExportConfigEqual(this.latexExportConfig(), DEFAULT_LATEX_EXPORT_CONFIG) &&
+      this.codeTheme() === 'aurora' &&
+      this.language() === detectLanguage()
+  );
   readonly themeOptions = computed<readonly AppSelectOption[]>(() => [
     { value: 'light', label: this.t('light') },
     { value: 'dark', label: this.t('dark') }
@@ -103,6 +129,7 @@ export class AppConfigurationDialogComponent {
 
   selectTab(tab: ApplicationConfigurationTab, focus = false): void {
     this.activeTab.set(tab);
+    this.resetConfirmationOpen.set(false);
     if (focus) {
       queueMicrotask(() => this.focusActiveTab());
     }
@@ -139,6 +166,10 @@ export class AppConfigurationDialogComponent {
   onDialogKeydown(event: KeyboardEvent): void {
     event.stopPropagation();
     if (event.key === 'Escape') {
+      if (this.resetConfirmationOpen()) {
+        this.resetConfirmationOpen.set(false);
+        return;
+      }
       this.closeDialog.emit();
     }
   }
@@ -157,6 +188,16 @@ export class AppConfigurationDialogComponent {
 
   updatePreferenceText(key: PreferenceTextKey, event: Event): void {
     this.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
+  }
+
+  updateZoomPercent(event: Event): void {
+    const percent = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(percent)) {
+      return;
+    }
+
+    const clampedPercent = Math.min(300, Math.max(25, percent));
+    this.patchPreferences({ scale: (DEFAULT_EDITOR_SCALE * clampedPercent) / 100 });
   }
 
   updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
@@ -236,9 +277,21 @@ export class AppConfigurationDialogComponent {
     });
   }
 
-  resetToDefaults(): void {
+  requestResetToDefaults(): void {
+    if (!this.settingsAreDefault()) {
+      this.resetConfirmationOpen.set(true);
+    }
+  }
+
+  cancelResetToDefaults(): void {
+    this.resetConfirmationOpen.set(false);
+  }
+
+  confirmResetToDefaults(): void {
     this.store.patchPreferences(defaultPreferences);
     this.configuration.resetToDefaults();
+    this.languageService.setLanguage(detectLanguage());
+    this.resetConfirmationOpen.set(false);
   }
 
   private patchPreferences(patch: Partial<EditorPreferences>): void {
@@ -253,5 +306,38 @@ export class AppConfigurationDialogComponent {
     this.tabButtons()
       .find((tab) => tab.nativeElement.dataset['tab'] === this.activeTab())
       ?.nativeElement.focus();
+  }
+
+  private preferencesEqual(current: EditorPreferences, expected: EditorPreferences): boolean {
+    return (
+      current.theme === expected.theme &&
+      current.snapToGrid === expected.snapToGrid &&
+      current.showGrid === expected.showGrid &&
+      current.showAxes === expected.showAxes &&
+      current.scale === expected.scale &&
+      current.snapStep === expected.snapStep &&
+      current.defaultStroke === expected.defaultStroke &&
+      current.defaultFill === expected.defaultFill &&
+      current.defaultStrokeWidth === expected.defaultStrokeWidth &&
+      current.defaultArrowScale === expected.defaultArrowScale
+    );
+  }
+
+  private latexExportConfigEqual(current: LatexExportConfig, expected: LatexExportConfig): boolean {
+    return (
+      current.colorMode === expected.colorMode &&
+      current.wrapInFigure === expected.wrapInFigure &&
+      current.figurePlacement === expected.figurePlacement &&
+      current.alignment === expected.alignment &&
+      current.scaleToWidth === expected.scaleToWidth &&
+      current.includeFrame === expected.includeFrame &&
+      current.maxWidthPercent === expected.maxWidthPercent &&
+      current.standaloneBorderMm === expected.standaloneBorderMm &&
+      current.fontSize === expected.fontSize &&
+      current.includeCaption === expected.includeCaption &&
+      current.caption === expected.caption &&
+      current.includeLabel === expected.includeLabel &&
+      current.label === expected.label
+    );
   }
 }

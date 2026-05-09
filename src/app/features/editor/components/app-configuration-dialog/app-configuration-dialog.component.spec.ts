@@ -99,16 +99,22 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.codeHighlightTheme()).toBe('forest');
   });
 
-  it('resets editor, scene and LaTeX settings to defaults', () => {
+  it('asks before resetting editor, scene and LaTeX settings to defaults', () => {
     component.updatePreferenceBoolean('showAxes', false);
     component.updateLatexExportBoolean('wrapInFigure', true);
     component.setCodeHighlightTheme('midnight');
 
-    component.resetToDefaults();
+    component.requestResetToDefaults();
+
+    expect(component.resetConfirmationOpen()).toBe(true);
+
+    component.confirmResetToDefaults();
 
     expect(store.preferences()).toEqual(defaultPreferences);
     expect(configuration.latexExportConfig().wrapInFigure).toBe(false);
     expect(configuration.codeHighlightTheme()).toBe('aurora');
+    expect(component.settingsAreDefault()).toBe(true);
+    expect(component.resetConfirmationOpen()).toBe(false);
   });
 
   it('closes on Escape without leaking editor shortcuts', () => {

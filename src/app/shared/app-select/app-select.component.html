@@ -1,4 +1,7 @@
-<div class="app-select-shell" [class.is-open]="isOpen()">
+<div class="app-select-shell" [class.is-open]="isOpen()" [class.has-flag]="selectedOption()?.flagSrc">
+  @if (selectedOption()?.flagSrc; as flagSrc) {
+    <img class="app-select-shell__flag" [src]="flagSrc" alt="" aria-hidden="true" />
+  }
   <sl-select
     class="app-select"
     [class.is-open]="isOpen()"
@@ -10,6 +13,9 @@
     (sl-hide)="setOpen(false)">
     @for (option of options(); track option.value) {
       <sl-option [value]="option.value" [disabled]="option.disabled ? true : null">
+        @if (option.flagSrc) {
+          <img class="app-select__option-flag" [src]="option.flagSrc" alt="" aria-hidden="true" />
+        }
         {{ isOpen() ? (option.longLabel ?? option.label) : option.label }}
       </sl-option>
     }

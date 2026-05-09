@@ -5,21 +5,23 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 95;
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: 24px;
   background: rgba(16, 24, 40, 0.28);
   backdrop-filter: blur(5px);
 }
 
 .configuration-modal {
-  width: min(1180px, 100%);
-  max-height: min(820px, calc(100vh - 44px));
+  width: min(1320px, 100%);
+  max-height: min(940px, calc(100dvh - 48px));
+  min-height: min(820px, calc(100dvh - 48px));
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   overflow: hidden;
   color: var(--app-foreground);
+  font-family: var(--font-sans);
   background: var(--panel-background);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -45,20 +47,10 @@
   gap: 3px;
 }
 
-.configuration-modal__header p,
 .configuration-modal__header h2,
-.configuration-modal__header span,
 .settings-card__header h3,
 .settings-note {
   margin: 0;
-}
-
-.configuration-modal__header p {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .configuration-modal__header h2 {
@@ -66,7 +58,6 @@
   font-weight: 800;
 }
 
-.configuration-modal__header span,
 .settings-note {
   color: var(--muted-foreground);
   font-size: 0.86rem;
@@ -74,45 +65,50 @@
 }
 
 .configuration-tabs {
-  display: flex;
-  gap: 18px;
-  padding: 0 22px;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--border);
+  width: min(420px, calc(100% - 44px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 12px 22px;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-background);
 }
 
 .configuration-tab {
-  min-height: 54px;
+  min-height: 36px;
   position: relative;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
-  border-radius: 0;
-  padding: 0 2px;
+  border-radius: 8px;
+  padding: 0 12px;
   color: var(--muted-foreground);
   background: transparent;
   font: inherit;
   font-weight: 750;
   cursor: pointer;
-}
-
-.configuration-tab::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  border-radius: 999px 999px 0 0;
-  background: transparent;
+  white-space: nowrap;
 }
 
 .configuration-tab.is-active {
   color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, var(--panel-background));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
-.configuration-tab.is-active::after {
-  background: var(--accent);
+.configuration-tab svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .configuration-tab:focus-visible,
@@ -134,7 +130,7 @@
 }
 
 .configuration-grid--general {
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
 }
 
 .configuration-grid--scene {
@@ -363,13 +359,45 @@
   overflow: auto;
   padding: 14px;
   color: var(--code-text, var(--app-foreground));
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-  font-size: 0.8rem;
-  line-height: 1.55;
+  font: 500 0.8rem/1.55 var(--font-mono);
 }
 
 .configuration-modal__footer {
   border-top: 1px solid var(--border);
+}
+
+.reset-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel-background));
+}
+
+.reset-confirmation div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.reset-confirmation strong {
+  font-size: 0.9rem;
+}
+
+.reset-confirmation span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.reset-confirmation__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .primary-button,
@@ -401,9 +429,20 @@
   background: var(--panel-background);
 }
 
+.secondary-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
 .secondary-button--compact {
   min-height: 32px;
   padding: 0 10px;
+  font-size: 0.78rem;
+}
+
+.primary-button--compact {
+  min-height: 32px;
+  padding: 0 12px;
   font-size: 0.78rem;
 }
 
@@ -443,25 +482,115 @@
 @media (max-width: 640px) {
   .modal-backdrop {
     align-items: stretch;
-    padding: 10px;
+    padding: 8px;
   }
 
   .configuration-modal {
-    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 16px);
+    min-height: 0;
+    border-radius: 10px;
   }
 
   .configuration-modal__header,
   .configuration-modal__footer,
   .configuration-body {
-    padding: 14px;
+    padding: 10px 12px;
+  }
+
+  .configuration-modal__header {
+    gap: 10px;
+  }
+
+  .configuration-modal__header h2 {
+    font-size: 1rem;
   }
 
   .configuration-tabs {
-    padding: 0 14px;
+    width: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 10px;
+    padding: 4px;
+  }
+
+  .configuration-tab {
+    min-height: 38px;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px;
+    font-size: 0.78rem;
+  }
+
+  .configuration-tab svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .configuration-body {
+    padding-top: 10px;
+  }
+
+  .configuration-grid,
+  .form-grid {
+    gap: 10px;
+  }
+
+  .settings-card {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .settings-card__header h3 {
+    font-size: 0.92rem;
+  }
+
+  .field {
+    gap: 6px;
+    font-size: 0.8rem;
+  }
+
+  .field input:not([type='color']) {
+    height: 38px;
+    min-height: 38px;
   }
 
   .form-grid--two,
   .export-config-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scene-preview {
+    min-height: 150px;
+  }
+
+  .code-block {
+    min-height: 88px;
+    padding: 10px;
+    font-size: 0.76rem;
+  }
+
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 38px;
+  }
+
+  .reset-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 10px 12px;
+  }
+
+  .reset-confirmation__actions {
+    justify-content: stretch;
+  }
+
+  .reset-confirmation__actions button {
+    flex: 1 1 120px;
   }
 }

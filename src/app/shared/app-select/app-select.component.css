@@ -33,6 +33,19 @@
   width: 100%;
 }
 
+.app-select-shell__flag {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 11px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
 .app-select::part(combobox) {
   min-height: 34px;
   padding-inline: 10px 30px;
@@ -42,6 +55,10 @@
     border-color 160ms ease,
     box-shadow 160ms ease,
     background-color 160ms ease;
+}
+
+.app-select-shell.has-flag .app-select::part(combobox) {
+  padding-inline-start: 36px;
 }
 
 .app-select::part(display-input) {
@@ -112,6 +129,15 @@
   transition:
     background-color 140ms ease,
     color 140ms ease;
+}
+
+.app-select__option-flag {
+  width: 16px;
+  height: 16px;
+  margin-inline-end: 8px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: -3px;
 }
 
 .app-select sl-option::part(checked-icon) {

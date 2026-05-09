@@ -353,6 +353,7 @@ export class EditorPageComponent {
   readonly importModalOpen = signal(false);
   readonly appConfigurationDialogOpen = signal(false);
   readonly appConfigurationInitialTab = signal<ApplicationConfigurationTab>('general');
+  readonly reopenExportAfterConfiguration = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
   readonly codeHighlightTheme = this.configuration.codeHighlightTheme;
   readonly latexExportConfig = this.configuration.latexExportConfig;
@@ -1502,7 +1503,12 @@ export class EditorPageComponent {
     this.shareFeedbackTone.set('info');
   }
 
-  openAppConfigurationDialog(tab: ApplicationConfigurationTab = 'general'): void {
+  openAppConfigurationDialog(tab: ApplicationConfigurationTab = 'general', returnToExport = false): void {
+    const shouldReturnToExport = returnToExport && this.exportModalOpen();
+    this.reopenExportAfterConfiguration.set(shouldReturnToExport);
+    if (shouldReturnToExport) {
+      this.exportModalOpen.set(false);
+    }
     this.appConfigurationInitialTab.set(tab);
     this.appConfigurationDialogOpen.set(true);
     this.closeFileMenu();
@@ -1510,6 +1516,10 @@ export class EditorPageComponent {
 
   closeAppConfigurationDialog(): void {
     this.appConfigurationDialogOpen.set(false);
+    if (this.reopenExportAfterConfiguration()) {
+      this.reopenExportAfterConfiguration.set(false);
+      this.exportModalOpen.set(true);
+    }
   }
 
   setInspectorTab(tab: InspectorTab): void {

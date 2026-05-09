@@ -5,13 +5,12 @@
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="'configuration-title'"
+      data-tooltip-disabled
       (click)="$event.stopPropagation()"
       (keydown)="onDialogKeydown($event)">
       <header class="configuration-modal__header">
         <div>
-          <p>{{ 'settings' | translate }}</p>
-          <h2 id="configuration-title">{{ 'applicationConfiguration' | translate }}</h2>
-          <span>{{ 'applicationConfigurationDescription' | translate }}</span>
+          <h2 id="configuration-title">{{ 'settings' | translate }}</h2>
         </div>
         <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeDialog.emit()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -35,7 +34,10 @@
             [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
             (click)="selectTab(tab.id)"
             (keydown)="onTabKeydown($event, tab.id)">
-            {{ tab.labelKey | translate }}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="tab.iconPath"></path>
+            </svg>
+            <span>{{ tab.labelKey | translate }}</span>
           </button>
         }
       </div>
@@ -60,8 +62,42 @@
                     </label>
                     <label class="field">
                       <span>{{ 'language' | translate }}</span>
-                      <app-select [value]="language()" [options]="languageOptions()" (valueChange)="setLanguage($event)"></app-select>
+                      <app-select
+                        [value]="language()"
+                        [options]="languageSelectOptions()"
+                        [ariaLabel]="'language' | translate"
+                        (valueChange)="setLanguage($event)"></app-select>
                     </label>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'workspace' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'zoomPercent' | translate"
+                      [value]="zoomPercent()"
+                      [rangeMin]="25"
+                      [rangeMax]="300"
+                      [rangeStep]="5"
+                      [numberMin]="25"
+                      [numberMax]="300"
+                      [numberStep]="5"
+                      (valueInput)="updateZoomPercent($event)"></app-range-input-card>
+                    <app-toggle-field
+                      [checked]="preferences().showGrid"
+                      [label]="'showGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showGrid', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().showAxes"
+                      [label]="'showAxes' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showAxes', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().snapToGrid"
+                      [label]="'snapToGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
                   </div>
                 </section>
 
@@ -360,8 +396,27 @@
         }
       </div>
 
+      @if (resetConfirmationOpen()) {
+        <div class="reset-confirmation" role="alertdialog" [attr.aria-label]="'resetDefaultsConfirmTitle' | translate">
+          <div>
+            <strong>{{ 'resetDefaultsConfirmTitle' | translate }}</strong>
+            <span>{{ 'resetDefaultsConfirmDescription' | translate }}</span>
+          </div>
+          <div class="reset-confirmation__actions">
+            <button class="secondary-button secondary-button--compact" type="button" (click)="cancelResetToDefaults()">
+              {{ 'cancel' | translate }}
+            </button>
+            <button class="primary-button primary-button--compact" type="button" (click)="confirmResetToDefaults()">
+              {{ 'resetDefaultsConfirmAction' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+
       <footer class="configuration-modal__footer">
-        <button class="secondary-button" type="button" (click)="resetToDefaults()">{{ 'resetDefaults' | translate }}</button>
+        <button class="secondary-button" type="button" [disabled]="settingsAreDefault()" (click)="requestResetToDefaults()">
+          {{ 'resetDefaults' | translate }}
+        </button>
         <button class="primary-button" type="button" (click)="closeDialog.emit()">{{ 'done' | translate }}</button>
       </footer>
     </section>
