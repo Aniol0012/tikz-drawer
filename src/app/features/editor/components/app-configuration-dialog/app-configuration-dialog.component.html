@@ -1,0 +1,369 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="closeDialog.emit()">
+    <section
+      class="configuration-modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'configuration-title'"
+      (click)="$event.stopPropagation()"
+      (keydown)="onDialogKeydown($event)">
+      <header class="configuration-modal__header">
+        <div>
+          <p>{{ 'settings' | translate }}</p>
+          <h2 id="configuration-title">{{ 'applicationConfiguration' | translate }}</h2>
+          <span>{{ 'applicationConfigurationDescription' | translate }}</span>
+        </div>
+        <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeDialog.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m7 7 10 10M17 7 7 17"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="configuration-tabs" role="tablist" [attr.aria-label]="'settings' | translate">
+        @for (tab of tabs; track tab.id) {
+          <button
+            #configurationTab
+            class="configuration-tab"
+            type="button"
+            role="tab"
+            [id]="'configuration-tab-' + tab.id"
+            [attr.data-tab]="tab.id"
+            [class.is-active]="activeTab() === tab.id"
+            [attr.aria-selected]="activeTab() === tab.id"
+            [attr.aria-controls]="'configuration-panel-' + tab.id"
+            [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
+            (click)="selectTab(tab.id)"
+            (keydown)="onTabKeydown($event, tab.id)">
+            {{ tab.labelKey | translate }}
+          </button>
+        }
+      </div>
+
+      <div class="configuration-body">
+        @switch (activeTab()) {
+          @case ('general') {
+            <section
+              id="configuration-panel-general"
+              class="configuration-panel"
+              role="tabpanel"
+              aria-labelledby="configuration-tab-general">
+              <div class="configuration-grid configuration-grid--general">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'interface' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'theme' | translate }}</span>
+                      <app-select [value]="preferences().theme" [options]="themeOptions()" (valueChange)="setTheme($event)"></app-select>
+                    </label>
+                    <label class="field">
+                      <span>{{ 'language' | translate }}</span>
+                      <app-select [value]="language()" [options]="languageOptions()" (valueChange)="setLanguage($event)"></app-select>
+                    </label>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'codePreview' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'codeTheme' | translate }}</span>
+                      <app-select
+                        [value]="codeTheme()"
+                        [options]="translatedSelectOptions(codeThemeOptions)"
+                        (valueChange)="setCodeHighlightTheme($event)"></app-select>
+                    </label>
+                    <div class="code-stack code-stack--theme-preview" [attr.data-code-theme]="codeTheme()">
+                      <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </section>
+          }
+
+          @case ('scene') {
+            <section id="configuration-panel-scene" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-scene">
+              <div class="configuration-grid configuration-grid--scene">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'sceneStyleDefaults' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--two">
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultStroke' | translate }}</span>
+                      <input type="color" [value]="preferences().defaultStroke" (input)="updatePreferenceText('defaultStroke', $event)" />
+                    </label>
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultFill' | translate }}</span>
+                      <input type="color" [value]="preferences().defaultFill" (input)="updatePreferenceText('defaultFill', $event)" />
+                    </label>
+                    <app-range-input-card
+                      class="field--full"
+                      [label]="'defaultLineWidth' | translate"
+                      [value]="preferences().defaultStrokeWidth"
+                      [rangeMin]="0.02"
+                      [rangeMax]="8"
+                      [rangeStep]="0.02"
+                      [numberMin]="0.02"
+                      [numberMax]="8"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
+                    <app-range-input-card
+                      class="field--full"
+                      [label]="'arrowScale' | translate"
+                      [value]="preferences().defaultArrowScale"
+                      [rangeMin]="0.4"
+                      [rangeMax]="4.5"
+                      [rangeStep]="0.1"
+                      [numberMin]="0.4"
+                      [numberMax]="4.5"
+                      [numberStep]="0.1"
+                      (valueInput)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)"></app-range-input-card>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'canvasBehavior' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'snapTolerance' | translate"
+                      [value]="preferences().snapStep"
+                      [rangeMin]="0.05"
+                      [rangeMax]="2"
+                      [rangeStep]="0.05"
+                      [numberMin]="0.05"
+                      [numberMax]="2"
+                      [numberStep]="0.05"
+                      (valueInput)="updatePreferenceNumber('snapStep', $event, 0.05, 2)"></app-range-input-card>
+                    <app-toggle-field
+                      [checked]="preferences().showGrid"
+                      [label]="'showGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showGrid', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().showAxes"
+                      [label]="'showAxes' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showAxes', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().snapToGrid"
+                      [label]="'snapToGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--preview">
+                  <div class="settings-card__header">
+                    <h3>{{ 'preview' | translate }}</h3>
+                  </div>
+                  <div class="scene-preview" aria-hidden="true">
+                    @if (preferences().showGrid) {
+                      <span class="scene-preview__grid"></span>
+                    }
+                    @if (preferences().showAxes) {
+                      <span class="scene-preview__axis scene-preview__axis--x"></span>
+                      <span class="scene-preview__axis scene-preview__axis--y"></span>
+                    }
+                    <svg viewBox="0 0 220 140">
+                      <path
+                        d="M38 92 68 28 98 92Z"
+                        [attr.fill]="preferences().defaultFill"
+                        [attr.stroke]="preferences().defaultStroke"></path>
+                      <circle
+                        cx="128"
+                        cy="84"
+                        r="24"
+                        [attr.fill]="preferences().defaultFill"
+                        [attr.stroke]="preferences().defaultStroke"></circle>
+                      <rect
+                        x="146"
+                        y="26"
+                        width="34"
+                        height="34"
+                        [attr.fill]="preferences().defaultFill"
+                        [attr.stroke]="preferences().defaultStroke"></rect>
+                      <path
+                        d="M168 104 202 70"
+                        fill="none"
+                        [attr.stroke]="preferences().defaultStroke"
+                        marker-end="url(#configuration-preview-arrow)"></path>
+                      <defs>
+                        <marker id="configuration-preview-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                          <path d="M0,0 L0,6 L8,3 z" [attr.fill]="preferences().defaultStroke"></path>
+                        </marker>
+                      </defs>
+                    </svg>
+                  </div>
+                  <p class="settings-note">{{ 'sceneSettingsPreviewDescription' | translate }}</p>
+                </section>
+              </div>
+            </section>
+          }
+
+          @case ('latex') {
+            <section id="configuration-panel-latex" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-latex">
+              <div class="configuration-grid configuration-grid--latex">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexEnvironment' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-toggle-field
+                      [checked]="latexExportConfig().wrapInFigure"
+                      [label]="'latexWrapFigure' | translate"
+                      (checkedChange)="updateLatexExportBoolean('wrapInFigure', $event)"></app-toggle-field>
+                    @if (latexExportConfig().wrapInFigure) {
+                      <label class="field">
+                        <span>{{ 'latexFigurePlacement' | translate }}</span>
+                        <app-select
+                          [value]="latexExportConfig().figurePlacement"
+                          [options]="translatedSelectOptions(placementOptions)"
+                          (valueChange)="setLatexExportText('figurePlacement', $event)"></app-select>
+                      </label>
+                    }
+                    <label class="field">
+                      <span>{{ 'latexFontSize' | translate }}</span>
+                      <app-select
+                        [value]="latexExportConfig().fontSize"
+                        [options]="fontSizeSelectOptions()"
+                        (valueChange)="setLatexFontSize($event)"></app-select>
+                    </label>
+                    @if (!latexExportConfig().wrapInFigure) {
+                      <p class="settings-note">{{ 'latexScopeGuard' | translate }}</p>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexLayout' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <div class="field">
+                      <span>{{ 'latexAlignment' | translate }}</span>
+                      <div class="mode-switch mode-switch--full">
+                        @for (option of alignmentOptions; track option.value) {
+                          <button
+                            type="button"
+                            [class.is-active]="latexExportConfig().alignment === option.value"
+                            (click)="setLatexAlignment(option.value)">
+                            {{ t(option.labelKey) }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <app-toggle-field
+                      [checked]="latexExportConfig().scaleToWidth"
+                      [label]="'latexScaleToWidth' | translate"
+                      (checkedChange)="updateLatexExportBoolean('scaleToWidth', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeFrame"
+                      [label]="'latexIncludeFrame' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeFrame', $event)"></app-toggle-field>
+                    @if (latexExportConfig().scaleToWidth) {
+                      <app-range-input-card
+                        [label]="'latexMaxWidth' | translate"
+                        [value]="latexExportConfig().maxWidthPercent"
+                        [rangeMin]="10"
+                        [rangeMax]="100"
+                        [rangeStep]="5"
+                        [numberMin]="10"
+                        [numberMax]="100"
+                        [numberStep]="5"
+                        (valueInput)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)"></app-range-input-card>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexStandalone' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'latexStandaloneBorder' | translate"
+                      [value]="latexExportConfig().standaloneBorderMm"
+                      [rangeMin]="0"
+                      [rangeMax]="24"
+                      [rangeStep]="1"
+                      [numberMin]="0"
+                      [numberMax]="24"
+                      [numberStep]="1"
+                      (valueInput)="updateLatexExportNumber('standaloneBorderMm', $event, 0, 24)"></app-range-input-card>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header settings-card__header--action">
+                    <h3>{{ 'latexCaptionLabel' | translate }}</h3>
+                    <button class="secondary-button secondary-button--compact" type="button" (click)="applySuggestedCaptionAndLabel()">
+                      {{ 'latexSuggest' | translate }}
+                    </button>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeCaption"
+                      [label]="'latexIncludeCaption' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeCaption', $event)"></app-toggle-field>
+                    @if (latexExportConfig().includeCaption) {
+                      <label class="field">
+                        <span>{{ 'latexCaption' | translate }}</span>
+                        <input
+                          type="text"
+                          [value]="latexExportConfig().caption"
+                          [placeholder]="suggestedCaption"
+                          (input)="updateLatexExportText('caption', $event)" />
+                      </label>
+                    }
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeLabel"
+                      [label]="'latexIncludeLabel' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeLabel', $event)"></app-toggle-field>
+                    @if (latexExportConfig().includeLabel) {
+                      <label class="field">
+                        <span>{{ 'latexLabel' | translate }}</span>
+                        <input
+                          type="text"
+                          [value]="latexExportConfig().label"
+                          [placeholder]="suggestedLabel"
+                          (input)="updateLatexExportText('label', $event)" />
+                      </label>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--wide">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexColors' | translate }}</h3>
+                  </div>
+                  <div class="export-config-grid">
+                    @for (option of colorModeOptions; track option.value) {
+                      <button
+                        class="export-option-card"
+                        type="button"
+                        [class.is-active]="latexExportConfig().colorMode === option.value"
+                        (click)="patchLatexExportConfig({ colorMode: option.value })">
+                        <strong>{{ t(option.titleKey) }}</strong>
+                        <span>{{ t(option.descriptionKey) }}</span>
+                      </button>
+                    }
+                  </div>
+                </section>
+              </div>
+            </section>
+          }
+        }
+      </div>
+
+      <footer class="configuration-modal__footer">
+        <button class="secondary-button" type="button" (click)="resetToDefaults()">{{ 'resetDefaults' | translate }}</button>
+        <button class="primary-button" type="button" (click)="closeDialog.emit()">{{ 'done' | translate }}</button>
+      </footer>
+    </section>
+  </div>
+}

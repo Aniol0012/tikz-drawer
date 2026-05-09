@@ -70,6 +70,7 @@ export class EditorTopbarComponent {
   readonly shareLinkCopied = output<string>();
   readonly copyError = output<unknown>();
   readonly importOpen = output<void>();
+  readonly settingsOpen = output<void>();
   readonly fileMenuToggle = output<void>();
   readonly fileMenuClose = output<void>();
   readonly mobileLibraryOpen = output<void>();

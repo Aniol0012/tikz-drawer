@@ -100,7 +100,6 @@ import {
   type ArrowScaleKind,
   type ArrowTipOption,
   type ClipboardShapeSet,
-  type CodeHighlightTheme,
   type ContextAction,
   type ContextMenuState,
   type CssTextAlign,
@@ -113,7 +112,6 @@ import {
   type InspectorTab,
   type InteractionState,
   type LatexAlignment,
-  type LatexExportConfig,
   type LibrarySection,
   type LineAttachmentPreviewDescriptor,
   type LineBooleanKey,
@@ -125,9 +123,6 @@ import {
   type MultiEditSelectionInfo,
   type NotificationTone,
   type PinchZoomState,
-  type PreferenceBooleanKey,
-  type PreferenceNumberKey,
-  type PreferenceTextKey,
   type RecentTextTap,
   type RectangleCanvasShape,
   type ResizeCursor,
@@ -158,6 +153,7 @@ import { EditorCanvasToolbarComponent } from '../editor-canvas-toolbar/editor-ca
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { ExportModalComponent } from '../export-modal/export-modal.component';
+import { AppConfigurationDialogComponent, type ApplicationConfigurationTab } from '../app-configuration-dialog/app-configuration-dialog.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
@@ -178,14 +174,7 @@ import {
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil } from '../../utils/editor-export-svg.utils';
-import {
-  normalizeLatexExportConfig as normalizeLatexExportConfigUtil,
-  parsePinnedToolIdsFromStorage,
-  parseSavedTemplatesFromStorage,
-  parseStoredLatexExportConfig as parseStoredLatexExportConfigUtil,
-  restoreCodeHighlightThemeFromStorage,
-  serializableLatexExportConfig as serializableLatexExportConfigUtil
-} from '../../utils/editor-storage.utils';
+import { parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
@@ -235,14 +224,13 @@ import {
   type GraphPresetId
 } from '../../models/graph.models';
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
-import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG } from '../../config/latex-export.config';
+import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
   ArrowMarkerGeometry,
   ArrowTipKind,
   CanvasShape,
-  EditorPreferences,
   EditorSyncMessage,
   LineEndpointAttachment,
   LineShape,
@@ -289,6 +277,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     TableDialogComponent,
     ImportCodeModalComponent,
     ExportModalComponent,
+    AppConfigurationDialogComponent,
     RangeInputCardComponent,
     RegularPolygonDialogComponent,
     GraphDialogComponent,
@@ -300,7 +289,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EditorStore],
+  providers: [EditorStore, EditorConfigurationService],
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
     '(window:keydown)': 'handleWindowKeydown($event)',
@@ -315,14 +304,13 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
-  private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
-  private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
+  readonly configuration = inject(EditorConfigurationService);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly editorStorage = inject(EditorLocalStorageService);
@@ -363,10 +351,11 @@ export class EditorPageComponent {
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
   readonly importModalOpen = signal(false);
-  readonly exportSettingsModalOpen = signal(false);
+  readonly appConfigurationDialogOpen = signal(false);
+  readonly appConfigurationInitialTab = signal<ApplicationConfigurationTab>('general');
   readonly exportMode = signal<ExportMode>('snippet');
-  readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
-  readonly latexExportConfig = signal<LatexExportConfig>(this.restoreLatexExportConfig());
+  readonly codeHighlightTheme = this.configuration.codeHighlightTheme;
+  readonly latexExportConfig = this.configuration.latexExportConfig;
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly pinnedToolIds = signal<readonly string[]>([]);
   readonly pinnedToolsReady = signal(false);
@@ -430,7 +419,6 @@ export class EditorPageComponent {
     interface: true,
     concepts: true,
     properties: false,
-    sceneSettings: false,
     layers: false
   });
   readonly spacePressed = signal(false);
@@ -1122,12 +1110,6 @@ export class EditorPageComponent {
     });
 
     effect(() => {
-      this.editorStorage.setString(this.codeThemeStorageKey, this.codeHighlightTheme());
-    });
-    effect(() => {
-      this.editorStorage.setJson(this.latexExportConfigStorageKey, this.serializableLatexExportConfig(this.latexExportConfig()));
-    });
-    effect(() => {
       this.editorStorage.setJson(this.sidebarSizesStorageKey, {
         left: this.leftSidebarWidth(),
         right: this.rightSidebarWidth()
@@ -1516,24 +1498,18 @@ export class EditorPageComponent {
 
   closeExportModal(): void {
     this.exportModalOpen.set(false);
-    this.exportSettingsModalOpen.set(false);
     this.shareFeedback.set('');
     this.shareFeedbackTone.set('info');
   }
 
-  openExportSettingsModal(): void {
-    this.exportSettingsModalOpen.set(true);
+  openAppConfigurationDialog(tab: ApplicationConfigurationTab = 'general'): void {
+    this.appConfigurationInitialTab.set(tab);
+    this.appConfigurationDialogOpen.set(true);
+    this.closeFileMenu();
   }
 
-  closeExportSettingsModal(): void {
-    this.exportSettingsModalOpen.set(false);
-  }
-
-  patchLatexExportConfig(patch: Partial<LatexExportConfig>): void {
-    this.latexExportConfig.update((config) => ({
-      ...config,
-      ...patch
-    }));
+  closeAppConfigurationDialog(): void {
+    this.appConfigurationDialogOpen.set(false);
   }
 
   setInspectorTab(tab: InspectorTab): void {
@@ -2447,28 +2423,8 @@ export class EditorPageComponent {
     this.runSceneMutation(() => this.store.sendSelectedToBack());
   }
 
-  updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
-    const rawValue = Number((event.target as HTMLInputElement).value);
-    const clampedValue = maximumValue === undefined ? Math.max(minimumValue, rawValue) : Math.min(maximumValue, Math.max(minimumValue, rawValue));
-    this.store.patchPreferences({ [key]: clampedValue } as Partial<EditorPreferences>);
-  }
-
-  updatePreferenceText(key: PreferenceTextKey, event: Event): void {
-    this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
-  }
-
-  onBooleanPreferenceChange(key: PreferenceBooleanKey, checked: boolean): void {
-    this.store.patchPreferences({ [key]: checked } as Partial<EditorPreferences>);
-  }
-
   onSceneNameInputValue(value: string): void {
     this.store.renameScene(value);
-  }
-
-  setCodeHighlightTheme(theme: string): void {
-    if (CODE_HIGHLIGHT_THEMES.includes(theme as CodeHighlightTheme)) {
-      this.codeHighlightTheme.set(theme as CodeHighlightTheme);
-    }
   }
 
   updateShapeText(key: ShapeTextKey, event: Event): void {
@@ -5227,7 +5183,7 @@ export class EditorPageComponent {
       { isOpen: () => !!this.regularPolygonDialogState(), close: () => this.closeRegularPolygonDialog() },
       { isOpen: () => !!this.graphDialogState(), close: () => this.closeGraphDialog() },
       { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
-      { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
+      { isOpen: () => this.appConfigurationDialogOpen(), close: () => this.closeAppConfigurationDialog() },
       { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },
       { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
       { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
@@ -5380,13 +5336,7 @@ export class EditorPageComponent {
       return;
     }
 
-    if (key === this.codeThemeStorageKey && newValue) {
-      this.setCodeHighlightTheme(newValue);
-      return;
-    }
-
-    if (key === this.latexExportConfigStorageKey) {
-      this.latexExportConfig.set(this.parseStoredLatexExportConfig(newValue));
+    if (this.configuration.restoreFromStorageEvent(key, newValue)) {
       return;
     }
 
@@ -5620,7 +5570,7 @@ export class EditorPageComponent {
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
     if (sharedState.latexExportConfig) {
-      this.latexExportConfig.set(this.normalizeLatexExportConfig(sharedState.latexExportConfig));
+      this.configuration.setLatexExportConfig(sharedState.latexExportConfig);
     }
     this.clearSharedSceneFromUrl();
   }
@@ -6357,15 +6307,6 @@ export class EditorPageComponent {
     this.editorStorage.setJson(this.savedTemplatesStorageKey, this.savedTemplates());
   }
 
-  private restoreCodeHighlightTheme(): CodeHighlightTheme {
-    const saved = this.editorStorage.getString(this.codeThemeStorageKey);
-    return restoreCodeHighlightThemeFromStorage(saved, 'aurora');
-  }
-
-  private restoreLatexExportConfig(): LatexExportConfig {
-    return this.parseStoredLatexExportConfig(this.editorStorage.getString(this.latexExportConfigStorageKey));
-  }
-
   private restoreSidebarSizes(): { readonly left: number; readonly right: number } {
     return this.parseStoredSidebarSizes(this.editorStorage.getString(this.sidebarSizesStorageKey));
   }
@@ -6393,18 +6334,6 @@ export class EditorPageComponent {
     }
 
     return { left, right };
-  }
-
-  private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
-    return parseStoredLatexExportConfigUtil(raw, DEFAULT_LATEX_EXPORT_CONFIG);
-  }
-
-  private serializableLatexExportConfig(config: LatexExportConfig): Partial<LatexExportConfig> {
-    return serializableLatexExportConfigUtil(config);
-  }
-
-  private normalizeLatexExportConfig(config: Partial<LatexExportConfig> | null | undefined, preserveFreeText = true): LatexExportConfig {
-    return normalizeLatexExportConfigUtil(config, DEFAULT_LATEX_EXPORT_CONFIG, preserveFreeText);
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
@@ -6895,7 +6824,7 @@ export class EditorPageComponent {
       this.fileMenuOpen() ||
       this.exportModalOpen() ||
       this.importModalOpen() ||
-      this.exportSettingsModalOpen() ||
+      this.appConfigurationDialogOpen() ||
       this.figureSearchOpen() ||
       this.templateDialogOpen() ||
       !!this.templateDeleteTarget() ||
