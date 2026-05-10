@@ -183,10 +183,10 @@ export const normalizedKeyboardShortcuts = (
 ): KeyboardShortcutConfig => {
   const withDefaults = shortcutConfigWithDefaults(shortcuts);
   return Object.fromEntries(
-    (Object.keys(DEFAULT_KEYBOARD_SHORTCUTS) as KeyboardShortcutAction[]).map((action) => [
-      action,
-      normalizeKeyboardShortcut(withDefaults[action], DEFAULT_KEYBOARD_SHORTCUTS[action])
-    ])
+    (Object.keys(DEFAULT_KEYBOARD_SHORTCUTS) as KeyboardShortcutAction[]).map((action) => {
+      const shortcut = withDefaults[action];
+      return [action, typeof shortcut === 'string' && shortcut.trim() === '' ? '' : normalizeKeyboardShortcut(shortcut, DEFAULT_KEYBOARD_SHORTCUTS[action])];
+    })
   ) as KeyboardShortcutConfig;
 };
 

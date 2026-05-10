@@ -78,7 +78,7 @@
                         <small>{{ 'keyboardShortcutsDescription' | translate }}</small>
                       </span>
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="tabs[0].iconPath"></path>
+                        <path [attr.d]="shortcutSettingsIconPath"></path>
                       </svg>
                     </button>
                   </div>
@@ -521,9 +521,19 @@
                     [previousLabel]="'previousShortcut' | translate"
                     [nextLabel]="'newShortcut' | translate"
                     [cancelLabel]="'cancel' | translate"
-                    [applyLabel]="'apply' | translate"
+                    [actionId]="row.action"
+                    [assignedShortcuts]="shortcutAssignments()"
+                    [unassignedLabel]="'unassignedShortcut' | translate"
+                    [listeningLabel]="'shortcutListening' | translate"
+                    [conflictTitleLabel]="'shortcutConflictTitle' | translate"
+                    [conflictDescriptionLabel]="'shortcutConflictDescription' | translate"
+                    [conflictReplaceLabel]="'shortcutConflictReplace' | translate"
+                    [conflictKeepLabel]="'shortcutConflictKeep' | translate"
                     [macPlatform]="isMacPlatform()"
-                    (valueChange)="updateShortcut(row.action, $event)"></app-keyboard-shortcut-capture>
+                    (valueChange)="updateShortcut(row.action, $event)"
+                    (reassignShortcut)="
+                      updateShortcut(row.action, $event.shortcut, $event.conflictingActionId)
+                    "></app-keyboard-shortcut-capture>
                 </label>
               }
             </div>

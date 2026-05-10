@@ -18,6 +18,7 @@ import {
   isZoomOutShortcutKey,
   keyboardShortcutLabel,
   normalizeKeyboardShortcut,
+  normalizedKeyboardShortcuts,
   pressedModifierFromKey,
   shortcutFromKeyboardEvent,
   toolIdFromShortcutEvent,
@@ -82,6 +83,14 @@ describe('editor-keyboard utils', () => {
     expect(toolIdFromShortcutEvent(shortcutEvent({ key: 'A', shiftKey: true }), shortcuts)).toBe('arrow');
     expect(keyboardShortcutLabel('Mod+K')).toBe('Ctrl + K');
     expect(keyboardShortcutLabel('Mod+K', true)).toBe('⌘ K');
+  });
+
+  it('keeps explicitly unassigned shortcuts empty', () => {
+    const shortcuts = normalizedKeyboardShortcuts({ figureSearch: '', selectTool: 'v' });
+
+    expect(shortcuts.figureSearch).toBe('');
+    expect(shortcuts.selectTool).toBe('V');
+    expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true }), shortcuts)).toBe(false);
   });
 
   it('opens settings with configured shortcut and the alternate settings chord', () => {

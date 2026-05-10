@@ -1,4 +1,4 @@
-<button class="shortcut-capture-button" type="button" [attr.aria-label]="label" (click)="beginCapture()">
+<button class="shortcut-capture-button" type="button" [attr.aria-label]="label" (pointerdown)="beginCapture()" (click)="beginCapture()">
   {{ currentLabel() }}
 </button>
 
@@ -12,23 +12,44 @@
     tabindex="0"
     (keydown)="onCaptureKeydown($event)">
     <section class="shortcut-capture-panel" (click)="$event.stopPropagation()">
-      <header>
-        <h3>{{ label }}</h3>
-        <p>{{ instruction }}</p>
+      <header class="shortcut-capture-header">
+        <span class="shortcut-capture-status">{{ listeningLabel }}</span>
+        <div>
+          <h3>{{ label }}</h3>
+          <p>{{ instruction }}</p>
+        </div>
       </header>
-      <div class="shortcut-capture-values">
-        <div>
-          <span>{{ previousLabel }}</span>
-          <strong>{{ currentLabel() }}</strong>
-        </div>
-        <div>
-          <span>{{ nextLabel }}</span>
-          <strong>{{ pendingLabel() || '...' }}</strong>
-        </div>
+      <div class="shortcut-capture-combo">
+        <span class="shortcut-capture-combo__label">{{ previousLabel }}</span>
+        <strong>{{ currentLabel() }}</strong>
+        <span class="shortcut-capture-combo__arrow">→</span>
+        <span class="shortcut-capture-combo__label">{{ nextLabel }}</span>
+        <strong class="is-pending">{{ pendingLabel() || '...' }}</strong>
       </div>
+      @if (conflict(); as conflictingShortcut) {
+        <div class="shortcut-capture-conflict" role="alert">
+          <div>
+            <strong>{{ conflictTitleLabel }}</strong>
+            <span>{{ conflictDescriptionLabel }}</span>
+          </div>
+          <dl>
+            <div>
+              <dt>{{ previousLabel }}</dt>
+              <dd>{{ conflictingShortcut.label }}</dd>
+            </div>
+            <div>
+              <dt>{{ nextLabel }}</dt>
+              <dd>{{ pendingLabel() }}</dd>
+            </div>
+          </dl>
+          <div class="shortcut-capture-conflict__actions">
+            <button class="secondary-button" type="button" (click)="keepConflictingShortcut()">{{ conflictKeepLabel }}</button>
+            <button class="primary-button" type="button" (click)="replaceConflictingShortcut()">{{ conflictReplaceLabel }}</button>
+          </div>
+        </div>
+      }
       <footer>
         <button class="secondary-button" type="button" (click)="cancelCapture()">{{ cancelLabel }}</button>
-        <button class="primary-button" type="button" [disabled]="!canApply()" (click)="applyCapture()">{{ applyLabel }}</button>
       </footer>
     </section>
   </div>

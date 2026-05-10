@@ -34,6 +34,9 @@ describe('KeyboardShortcutCaptureComponent', () => {
   });
 
   it('waits for a non-modifier key before allowing apply', () => {
+    const valueChangeSpy = vi.fn();
+    component.valueChange.subscribe(valueChangeSpy);
+
     component.beginCapture();
     component.onCaptureKeydown(new KeyboardEvent('keydown', { key: 'Control', ctrlKey: true }));
 
@@ -42,17 +45,16 @@ describe('KeyboardShortcutCaptureComponent', () => {
 
     component.onCaptureKeydown(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
 
-    expect(component.pendingLabel()).toBe('Ctrl + K');
-    expect(component.canApply()).toBe(true);
+    expect(valueChangeSpy).toHaveBeenCalledWith('Mod+K');
+    expect(component.isCapturing()).toBe(false);
   });
 
-  it('emits the normalized shortcut only when applied', () => {
+  it('emits the normalized shortcut as soon as a complete chord is pressed', () => {
     const valueChangeSpy = vi.fn();
     component.valueChange.subscribe(valueChangeSpy);
 
     component.beginCapture();
     component.onCaptureKeydown(new KeyboardEvent('keydown', { key: ',', metaKey: true }));
-    component.applyCapture();
 
     expect(valueChangeSpy).toHaveBeenCalledWith('Mod+,');
     expect(component.isCapturing()).toBe(false);
@@ -67,5 +69,45 @@ describe('KeyboardShortcutCaptureComponent', () => {
 
     expect(valueChangeSpy).not.toHaveBeenCalled();
     expect(component.isCapturing()).toBe(false);
+  });
+
+  it('asks for a decision when the shortcut is already assigned elsewhere', () => {
+    const valueChangeSpy = vi.fn();
+    const reassignSpy = vi.fn();
+    component.valueChange.subscribe(valueChangeSpy);
+    component.reassignShortcut.subscribe(reassignSpy);
+    fixture.componentRef.setInput('actionId', 'figureSearch');
+    fixture.componentRef.setInput('assignedShortcuts', [
+      { id: 'figureSearch', label: 'Search shapes', shortcut: 'Mod+F' },
+      { id: 'selectTool', label: 'Select tool', shortcut: 'Mod+K' }
+    ]);
+
+    component.beginCapture();
+    component.onCaptureKeydown(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+
+    expect(valueChangeSpy).not.toHaveBeenCalled();
+    expect(component.conflict()?.id).toBe('selectTool');
+    expect(component.isCapturing()).toBe(true);
+
+    component.replaceConflictingShortcut();
+
+    expect(reassignSpy).toHaveBeenCalledWith({ shortcut: 'Mod+K', conflictingActionId: 'selectTool' });
+    expect(component.isCapturing()).toBe(false);
+  });
+
+  it('keeps the previous shortcut on conflict and waits for another key', () => {
+    fixture.componentRef.setInput('actionId', 'figureSearch');
+    fixture.componentRef.setInput('assignedShortcuts', [
+      { id: 'figureSearch', label: 'Search shapes', shortcut: 'Mod+F' },
+      { id: 'selectTool', label: 'Select tool', shortcut: 'Mod+K' }
+    ]);
+
+    component.beginCapture();
+    component.onCaptureKeydown(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    component.keepConflictingShortcut();
+
+    expect(component.conflict()).toBeNull();
+    expect(component.pendingShortcut()).toBeNull();
+    expect(component.isCapturing()).toBe(true);
   });
 });

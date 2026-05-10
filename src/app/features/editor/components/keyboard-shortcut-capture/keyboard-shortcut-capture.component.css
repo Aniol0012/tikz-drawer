@@ -16,68 +16,170 @@
 
 .shortcut-capture-overlay {
   position: fixed;
+  z-index: 260;
   inset: 0;
-  z-index: 120;
   display: grid;
   place-items: center;
-  padding: 24px;
-  background: rgba(16, 16, 16, 0.48);
-  backdrop-filter: blur(7px);
+  padding: 20px;
+  background: rgba(16, 16, 16, 0.22);
+  backdrop-filter: blur(4px);
+}
+
+.shortcut-capture-overlay:focus {
+  outline: 0;
 }
 
 .shortcut-capture-panel {
   width: min(520px, 100%);
   display: grid;
-  gap: 18px;
+  gap: 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 20px;
+  padding: 18px;
   color: var(--app-foreground);
   background: var(--panel-background);
   box-shadow: var(--floating-shadow);
 }
 
-.shortcut-capture-panel h3,
-.shortcut-capture-panel p {
+.shortcut-capture-header {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.shortcut-capture-header h3,
+.shortcut-capture-header p {
   margin: 0;
 }
 
-.shortcut-capture-panel h3 {
-  font-size: 1rem;
+.shortcut-capture-header h3 {
+  font-size: 1.08rem;
+  line-height: 1.18;
+  letter-spacing: 0;
 }
 
-.shortcut-capture-panel p {
+.shortcut-capture-header p {
   margin-top: 4px;
   color: var(--muted-foreground);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   line-height: 1.45;
 }
 
-.shortcut-capture-values {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.shortcut-capture-status {
+  width: max-content;
+  display: inline-grid;
+  place-items: center;
+  min-height: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 999px;
+  padding: 0 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 0.64rem;
+  font-weight: 850;
+  text-transform: uppercase;
 }
 
-.shortcut-capture-values div {
+.shortcut-capture-combo {
   min-width: 0;
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px;
   background: var(--input-background);
+  flex-wrap: wrap;
 }
 
-.shortcut-capture-values span {
+.shortcut-capture-combo__label {
   color: var(--muted-foreground);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 750;
 }
 
-.shortcut-capture-values strong {
-  min-height: 24px;
-  font: 800 1rem/1.2 var(--font-mono);
+.shortcut-capture-combo strong {
+  min-width: 54px;
+  min-height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0 10px;
+  background: var(--panel-background);
+  overflow-wrap: anywhere;
+  font: 850 1rem/1.15 var(--font-mono);
+}
+
+.shortcut-capture-combo strong.is-pending {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  color: var(--accent);
+}
+
+.shortcut-capture-combo__arrow {
+  color: var(--muted-foreground);
+  font-weight: 800;
+}
+
+.shortcut-capture-conflict {
+  display: grid;
+  gap: 16px;
+  border: 1px solid color-mix(in srgb, #f59e0b 44%, var(--border));
+  border-radius: 8px;
+  padding: 16px;
+  background: color-mix(in srgb, #f59e0b 11%, var(--panel-background));
+}
+
+.shortcut-capture-conflict div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.shortcut-capture-conflict strong {
+  font-size: 0.98rem;
+}
+
+.shortcut-capture-conflict span,
+.shortcut-capture-conflict dt {
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.shortcut-capture-conflict dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.shortcut-capture-conflict dl div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--panel-background);
+}
+
+.shortcut-capture-conflict dt,
+.shortcut-capture-conflict dd {
+  margin: 0;
+}
+
+.shortcut-capture-conflict dd {
+  overflow-wrap: anywhere;
+  font-weight: 800;
+}
+
+.shortcut-capture-conflict__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .shortcut-capture-panel footer {
@@ -115,10 +217,24 @@
 
 @media (max-width: 560px) {
   .shortcut-capture-overlay {
-    padding: 12px;
+    padding: 10px;
   }
 
-  .shortcut-capture-values {
+  .shortcut-capture-panel {
+    padding: 14px;
+  }
+
+  .shortcut-capture-header {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcut-capture-conflict dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcut-capture-conflict__actions,
+  .shortcut-capture-panel footer {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

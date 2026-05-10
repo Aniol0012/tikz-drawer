@@ -222,6 +222,48 @@ const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
   return boundsFromPoints(rotatedPoints) as SelectionBounds;
 };
 
+const pointToSegmentDistance = (point: Point, start: Point, end: Point): number => {
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  const lengthSquared = deltaX * deltaX + deltaY * deltaY;
+  if (lengthSquared <= GEOMETRY_EPSILON) {
+    return Math.hypot(point.x - start.x, point.y - start.y);
+  }
+
+  const t = clamp(((point.x - start.x) * deltaX + (point.y - start.y) * deltaY) / lengthSquared, 0, 1);
+  return Math.hypot(point.x - (start.x + t * deltaX), point.y - (start.y + t * deltaY));
+};
+
+export const pointInTriangleShape = (shape: TriangleCanvasShape, point: Point, strokeTolerance = 0): boolean => {
+  const center = shapeCenter(shape);
+  const localPoint = rotatePointAround(point, center, shape.rotation ?? 0);
+  const [apex, left, right] = trianglePoints(shape);
+  const signedArea = (a: Point, b: Point, c: Point): number => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  const totalArea = signedArea(apex, left, right);
+  if (Math.abs(totalArea) <= GEOMETRY_EPSILON) {
+    return false;
+  }
+
+  const tolerance = Math.max(strokeTolerance, 0);
+  const barycentricTolerance = tolerance / Math.max(shape.width, shape.height, 1);
+  const alpha = signedArea(localPoint, left, right) / totalArea;
+  const beta = signedArea(apex, localPoint, right) / totalArea;
+  const gamma = signedArea(apex, left, localPoint) / totalArea;
+  const insideFill = alpha >= -barycentricTolerance && beta >= -barycentricTolerance && gamma >= -barycentricTolerance;
+  if (insideFill) {
+    return true;
+  }
+
+  return (
+    tolerance > 0 &&
+    Math.min(
+      pointToSegmentDistance(localPoint, apex, left),
+      pointToSegmentDistance(localPoint, left, right),
+      pointToSegmentDistance(localPoint, right, apex)
+    ) <= tolerance
+  );
+};
+
 export const buildLinePath = (shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string => {
   const points = linePoints(shape).map(projectPoint);
   if (points.length < 2) {

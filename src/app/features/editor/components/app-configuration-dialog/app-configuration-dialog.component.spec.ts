@@ -131,6 +131,13 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe('Mod+K');
 
     component.openShortcutSettings();
+    component.updateShortcut('selectTool', 'Mod+K', 'figureSearch');
+    component.saveShortcutSettings();
+
+    expect(configuration.generalConfig().keyboardShortcuts.selectTool).toBe('Mod+K');
+    expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe('');
+
+    component.openShortcutSettings();
     expect(component.shortcutsAreDefault()).toBe(false);
 
     component.requestResetShortcutsToDefaults();
@@ -184,5 +191,22 @@ describe('AppConfigurationDialogComponent', () => {
     component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     expect(closeSpy).toHaveBeenCalledOnce();
+  });
+
+  it('closes only the topmost settings layer on Escape', () => {
+    component.openShortcutSettings();
+    component.updateShortcut('figureSearch', 'Mod+K');
+    component.requestResetShortcutsToDefaults();
+
+    component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(component.shortcutResetConfirmationOpen()).toBe(false);
+    expect(component.shortcutsDialogOpen()).toBe(true);
+    expect(closeSpy).not.toHaveBeenCalled();
+
+    component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(component.shortcutsDialogOpen()).toBe(false);
+    expect(closeSpy).not.toHaveBeenCalled();
   });
 });

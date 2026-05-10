@@ -32,7 +32,7 @@ import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } fro
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
-import { KeyboardShortcutCaptureComponent } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
+import { KeyboardShortcutCaptureComponent, type KeyboardShortcutAssignment } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
 import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
@@ -121,6 +121,7 @@ export class AppConfigurationDialogComponent {
   readonly arrowTipOptions = ARROW_TIP_OPTIONS;
   readonly minZoomPercent = Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100);
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
+  readonly shortcutSettingsIconPath = iconPaths.keyboard;
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
     { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
@@ -178,6 +179,13 @@ export class AppConfigurationDialogComponent {
     }))
   );
   readonly shortcutsAreDefault = computed(() => this.shortcutConfigEqual(this.editableShortcuts(), DEFAULT_KEYBOARD_SHORTCUTS));
+  readonly shortcutAssignments = computed<readonly KeyboardShortcutAssignment[]>(() =>
+    this.shortcutRows.map((row) => ({
+      id: row.action,
+      label: this.t(row.labelKey),
+      shortcut: this.editableShortcuts()[row.action]
+    }))
+  );
   private initialTabValue: ApplicationConfigurationTab = 'general';
 
   t(key: string): string {
@@ -225,9 +233,13 @@ export class AppConfigurationDialogComponent {
   onDialogKeydown(event: KeyboardEvent): void {
     event.stopPropagation();
     if (event.key === 'Escape') {
+      event.preventDefault();
       if (this.shortcutsDialogOpen()) {
-        this.shortcutsDialogOpen.set(false);
-        this.shortcutResetConfirmationOpen.set(false);
+        if (this.shortcutResetConfirmationOpen()) {
+          this.shortcutResetConfirmationOpen.set(false);
+        } else {
+          this.shortcutsDialogOpen.set(false);
+        }
         return;
       }
       if (this.resetConfirmationOpen()) {
@@ -267,9 +279,10 @@ export class AppConfigurationDialogComponent {
     this.shortcutResetConfirmationOpen.set(false);
   }
 
-  updateShortcut(action: KeyboardShortcutAction, shortcut: string): void {
+  updateShortcut(action: KeyboardShortcutAction, shortcut: string, conflictingAction?: string): void {
     this.editableShortcuts.update((shortcuts) => ({
       ...shortcuts,
+      ...(this.isShortcutAction(conflictingAction) ? { [conflictingAction]: '' } : {}),
       [action]: shortcut
     }));
   }
@@ -295,7 +308,7 @@ export class AppConfigurationDialogComponent {
   }
 
   shortcutLabel(shortcut: string): string {
-    return keyboardShortcutLabel(shortcut, this.isMacPlatform());
+    return shortcut.trim() ? keyboardShortcutLabel(shortcut, this.isMacPlatform()) : this.t('unassignedShortcut');
   }
 
   updatePreferenceText(key: PreferenceTextKey, event: Event): void {
@@ -601,6 +614,10 @@ export class AppConfigurationDialogComponent {
 
   private shortcutConfigEqual(current: KeyboardShortcutConfig, expected: KeyboardShortcutConfig): boolean {
     return (Object.keys(DEFAULT_KEYBOARD_SHORTCUTS) as KeyboardShortcutAction[]).every((action) => current[action] === expected[action]);
+  }
+
+  private isShortcutAction(action: string | undefined): action is KeyboardShortcutAction {
+    return !!action && Object.prototype.hasOwnProperty.call(DEFAULT_KEYBOARD_SHORTCUTS, action);
   }
 
   isMacPlatform(): boolean {

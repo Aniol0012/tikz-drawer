@@ -263,6 +263,7 @@ import {
   maxRectangleCornerRadius as maxRectangleCornerRadiusUtil,
   maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
+  pointInTriangleShape as pointInTriangleShapeUtil,
   rotatePointAround as rotatePointAroundUtil,
   rotateShapeAround as rotateShapeAroundUtil,
   shapeBounds as shapeBoundsUtil,
@@ -2170,6 +2171,10 @@ export class EditorPageComponent {
   }
 
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     event.stopPropagation();
     this.focusCanvasViewport();
 
@@ -3039,6 +3044,10 @@ export class EditorPageComponent {
   }
 
   openShapeContextMenu(event: MouseEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     if (this.consumeContextMenuSuppression()) {
       event.preventDefault();
       event.stopPropagation();
@@ -3238,6 +3247,10 @@ export class EditorPageComponent {
   }
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     if (!this.canStartMove(event)) {
       this.recentSelectedShapeTap.set(null);
       return;
@@ -3264,6 +3277,15 @@ export class EditorPageComponent {
 
   private canStartMove(event: PointerEvent): boolean {
     return this.activeTool() === 'select' && event.button === 0 && !this.spacePressed();
+  }
+
+  private pointerHitsShape(event: Pick<MouseEvent, 'clientX' | 'clientY'>, shape: CanvasShape): boolean {
+    if (shape.kind !== 'triangle') {
+      return true;
+    }
+
+    const strokeTolerance = Math.max(shape.strokeWidth / 2, 0.06);
+    return pointInTriangleShapeUtil(shape, this.toScenePoint(event.clientX, event.clientY), strokeTolerance);
   }
 
   private handleMoveStartForTextShape(event: PointerEvent, shape: TextCanvasShape): boolean {

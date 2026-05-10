@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import type { AppSelectOption } from '../../../shared/app-select/app-select.component';
+import { iconPaths } from '../config/editor-icons';
 import type { ThemeMode } from '../models/tikz.models';
 
 export const APP_THEMES = ['light', 'dark'] as const satisfies readonly ThemeMode[];
@@ -16,7 +17,8 @@ export class AppThemeService {
   options(translate: (key: string) => string): readonly AppSelectOption[] {
     return this.themes.map((theme) => ({
       value: theme,
-      label: translate(theme)
+      label: translate(theme),
+      iconPath: theme === 'dark' ? iconPaths.moon : iconPaths.sun
     }));
   }
 

@@ -7,6 +7,7 @@ import {
   cornerRadiusFromPointer,
   maxTriangleCornerRadius,
   normalizeRotationDegrees,
+  pointInTriangleShape,
   rotateShapeAround,
   shapeBounds,
   triangleCornerAttachmentPoints
@@ -120,6 +121,22 @@ describe('editor-geometry utils', () => {
     expect(roundedBounds?.right).toBeLessThan(3);
     expect(roundedBounds?.bottom).toBe(-1.5);
     expect(roundedBounds?.top).toBeLessThan(2.5);
+  });
+
+  it('hit-tests triangle shapes by their actual geometry', () => {
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: 0, y: 0 })).toBe(true);
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: -2.8, y: 2.2 })).toBe(false);
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: -2.95, y: -1.45 }, 0.12)).toBe(true);
+  });
+
+  it('hit-tests rotated triangles in local shape space', () => {
+    const rotatedTriangle = { ...triangleShape, cornerRadius: 0, rotation: 30 };
+    const center = { x: rotatedTriangle.x + rotatedTriangle.width / 2, y: rotatedTriangle.y + rotatedTriangle.height / 2 };
+    const insidePoint = rotatePointAround({ x: 0, y: 0 }, center, -30);
+    const outsidePoint = rotatePointAround({ x: -2.8, y: 2.2 }, center, -30);
+
+    expect(pointInTriangleShape(rotatedTriangle, insidePoint)).toBe(true);
+    expect(pointInTriangleShape(rotatedTriangle, outsidePoint)).toBe(false);
   });
 
   it('normalizes rotation values into the editor range', () => {
