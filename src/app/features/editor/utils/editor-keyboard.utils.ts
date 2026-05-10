@@ -8,6 +8,7 @@ export type KeyboardShortcutAction =
   | 'undo'
   | 'redo'
   | 'figureSearch'
+  | 'openSettings'
   | 'delete'
   | 'zoomIn'
   | 'zoomOut'
@@ -22,6 +23,10 @@ export type KeyboardShortcutAction =
   | 'ellipseTool'
   | 'imageTool';
 export type KeyboardShortcutConfig = Readonly<Record<KeyboardShortcutAction, string>>;
+export type KeyboardShortcutCapture = {
+  readonly shortcut: string;
+  readonly complete: boolean;
+};
 
 type KeyboardShortcutEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey'> & Partial<Pick<KeyboardEvent, 'altKey'>>;
 type SelectionModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>;
@@ -49,6 +54,7 @@ export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcutConfig = {
   undo: 'Mod+Z',
   redo: 'Mod+Y',
   figureSearch: 'Mod+F',
+  openSettings: 'Mod+,',
   delete: 'Delete',
   zoomIn: '+',
   zoomOut: '-',
@@ -136,7 +142,12 @@ export const normalizeKeyboardShortcut = (shortcut: string, fallback = ''): stri
     } else if (normalizedPart === 'alt') {
       modifiers.add('Alt');
     } else {
-      key = normalizedPart === 'delete' || normalizedPart === 'backspace' ? normalizedPart[0].toUpperCase() + normalizedPart.slice(1) : part.toUpperCase();
+      key =
+        normalizedPart === 'delete' || normalizedPart === 'backspace' || normalizedPart === 'enter'
+          ? normalizedPart[0].toUpperCase() + normalizedPart.slice(1)
+          : part.length === 1 && /[a-z]/i.test(part)
+            ? part.toUpperCase()
+            : part;
     }
   }
 
@@ -187,7 +198,8 @@ export const isKeyboardShortcut = (event: KeyboardShortcutEvent, shortcut: strin
 
   const parts = new Set(normalizedShortcutParts(normalizedShortcut).map((part) => normalizeKeyboardKey(part)));
   const key = [...parts].find((part) => part !== 'mod' && part !== 'shift' && part !== 'alt');
-  if (!key || (normalizeKeyboardKey(event.key) !== key && !(key === '+' && event.key === '='))) {
+  const eventKey = normalizeKeyboardKey(event.key);
+  if (!key || (eventKey !== key && !(key === '+' && event.key === '=') && !(key === 'space' && event.key === ' '))) {
     return false;
   }
 
@@ -220,6 +232,9 @@ export const isFigureSearchShortcut = (event: KeyboardShortcutEvent, shortcuts?:
 
 export const isFindShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
   isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'figureSearch'));
+
+export const isOpenSettingsShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
+  isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'openSettings')) || isKeyboardShortcut(event, 'Mod+Alt+S');
 
 export const toolIdFromShortcutEvent = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): string | null => {
   for (const action of TOOL_ACTIONS) {
@@ -295,3 +310,38 @@ export const isZoomOutShortcut = (event: KeyboardShortcutEvent, shortcuts?: Part
   isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'zoomOut'));
 
 export const isZoomOutShortcutKey = (key: string): boolean => isZoomOutShortcut({ key, ctrlKey: false, metaKey: false, shiftKey: false });
+
+export const shortcutFromKeyboardEvent = (event: KeyboardShortcutEvent, fallback = ''): KeyboardShortcutCapture => {
+  const key = normalizeKeyboardKey(event.key);
+  if (key === 'escape') {
+    return { shortcut: fallback, complete: false };
+  }
+
+  const modifiers: string[] = [];
+  if (isPrimaryModifierPressed(event)) {
+    modifiers.push('Mod');
+  }
+  if (event.altKey) {
+    modifiers.push('Alt');
+  }
+  if (event.shiftKey && key !== 'shift') {
+    modifiers.push('Shift');
+  }
+
+  if (key === 'control' || key === 'meta' || key === 'alt' || key === 'shift') {
+    return { shortcut: modifiers.join('+') || fallback, complete: false };
+  }
+
+  const printableKey =
+    key === ' '
+      ? 'Space'
+      : key === 'delete' || key === 'backspace' || key === 'enter'
+        ? key[0].toUpperCase() + key.slice(1)
+        : event.key.length === 1 && /[a-z]/i.test(event.key)
+          ? event.key.toUpperCase()
+          : event.key;
+  return {
+    shortcut: normalizeKeyboardShortcut([...modifiers, printableKey].join('+'), fallback),
+    complete: true
+  };
+};

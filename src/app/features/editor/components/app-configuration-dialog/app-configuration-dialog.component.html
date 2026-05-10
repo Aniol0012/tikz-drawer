@@ -514,17 +514,39 @@
                     <strong>{{ row.labelKey | translate }}</strong>
                     <small>{{ shortcutLabel(editableShortcuts()[row.action]) }}</small>
                   </span>
-                  <input
-                    type="text"
+                  <app-keyboard-shortcut-capture
                     [value]="editableShortcuts()[row.action]"
-                    [attr.aria-label]="row.labelKey | translate"
-                    (change)="updateShortcut(row.action, $event)" />
+                    [label]="row.labelKey | translate"
+                    [instruction]="'shortcutCaptureInstruction' | translate"
+                    [previousLabel]="'previousShortcut' | translate"
+                    [nextLabel]="'newShortcut' | translate"
+                    [cancelLabel]="'cancel' | translate"
+                    [applyLabel]="'apply' | translate"
+                    [macPlatform]="isMacPlatform()"
+                    (valueChange)="updateShortcut(row.action, $event)"></app-keyboard-shortcut-capture>
                 </label>
               }
             </div>
 
+            @if (shortcutResetConfirmationOpen()) {
+              <div class="shortcut-reset-confirmation" role="alertdialog" [attr.aria-label]="'resetShortcutsConfirmTitle' | translate">
+                <div>
+                  <strong>{{ 'resetShortcutsConfirmTitle' | translate }}</strong>
+                  <span>{{ 'resetShortcutsConfirmDescription' | translate }}</span>
+                </div>
+                <div class="shortcut-reset-confirmation__actions">
+                  <button class="secondary-button secondary-button--compact" type="button" (click)="cancelResetShortcutsToDefaults()">
+                    {{ 'cancel' | translate }}
+                  </button>
+                  <button class="primary-button primary-button--compact" type="button" (click)="confirmResetShortcutsToDefaults()">
+                    {{ 'resetShortcuts' | translate }}
+                  </button>
+                </div>
+              </div>
+            }
+
             <footer class="shortcuts-dialog__footer">
-              <button class="secondary-button" type="button" (click)="resetShortcutsToDefaults()">
+              <button class="secondary-button" type="button" [disabled]="shortcutsAreDefault()" (click)="requestResetShortcutsToDefaults()">
                 {{ 'resetShortcuts' | translate }}
               </button>
               <button class="primary-button" type="button" (click)="saveShortcutSettings()">

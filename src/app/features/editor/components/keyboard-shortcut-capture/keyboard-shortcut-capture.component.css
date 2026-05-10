@@ -1,0 +1,124 @@
+:host {
+  display: block;
+}
+
+.shortcut-capture-button {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--app-foreground);
+  background: var(--panel-background);
+  font: 750 0.86rem/1 var(--font-mono);
+  cursor: pointer;
+}
+
+.shortcut-capture-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 16, 16, 0.48);
+  backdrop-filter: blur(7px);
+}
+
+.shortcut-capture-panel {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  color: var(--app-foreground);
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.shortcut-capture-panel h3,
+.shortcut-capture-panel p {
+  margin: 0;
+}
+
+.shortcut-capture-panel h3 {
+  font-size: 1rem;
+}
+
+.shortcut-capture-panel p {
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.shortcut-capture-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shortcut-capture-values div {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--input-background);
+}
+
+.shortcut-capture-values span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.shortcut-capture-values strong {
+  min-height: 24px;
+  font: 800 1rem/1.2 var(--font-mono);
+}
+
+.shortcut-capture-panel footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: 1px solid var(--accent);
+  color: #fff;
+  background: var(--accent);
+}
+
+.primary-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  border: 1px solid var(--border);
+  color: var(--app-foreground);
+  background: var(--panel-background);
+}
+
+@media (max-width: 560px) {
+  .shortcut-capture-overlay {
+    padding: 12px;
+  }
+
+  .shortcut-capture-values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -93,6 +93,7 @@ import {
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
 import { ARROW_TIP_OPTIONS, arrowTipIconFilled as isSharedArrowTipIconFilled } from '../../config/arrow-tip.config';
+import { LINE_STROKE_STYLE_OPTIONS } from '../../config/line-stroke-style.config';
 import type { Axis, LineAttachmentCandidate } from './editor-page.types';
 import {
   type ArrowControlHandle,
@@ -158,7 +159,7 @@ import { RangeInputCardComponent } from '../range-input-card/range-input-card.co
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
-import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
+import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -188,6 +189,7 @@ import {
   isDeleteShortcut,
   isEscapeShortcutKey,
   isFigureSearchShortcut,
+  isOpenSettingsShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectAllShortcut,
@@ -495,6 +497,14 @@ export class EditorPageComponent {
     }
   ];
   readonly arrowTipOptions = ARROW_TIP_OPTIONS;
+  readonly lineStrokeStyleOptions = LINE_STROKE_STYLE_OPTIONS;
+  readonly lineStrokeStyleSelectOptions = computed<readonly AppSelectOption[]>(() =>
+    this.lineStrokeStyleOptions.map((style) => ({
+      value: style.id,
+      label: this.t(style.labelKey),
+      iconPath: style.iconPath
+    }))
+  );
   readonly templateIconOptions = [
     'pencil',
     'arrow',
@@ -4920,6 +4930,13 @@ export class EditorPageComponent {
 
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
+
+    if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openAppConfigurationDialog();
+      return;
+    }
 
     if (isFigureSearchShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       event.preventDefault();

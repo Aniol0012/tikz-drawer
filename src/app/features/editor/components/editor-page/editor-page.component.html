@@ -1191,13 +1191,7 @@
                         ><span>{{ 'lineStrokeStyle' | translate }}</span
                         ><app-select
                           [value]="shape.strokeStyle ?? 'solid'"
-                          [options]="[
-                            { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
-                            { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
-                            { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
-                            { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
-                            { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
-                          ]"
+                          [options]="lineStrokeStyleSelectOptions()"
                           (valueChange)="setLineStrokeStyle($event)"></app-select
                       ></label>
                     </div>
@@ -2288,13 +2282,7 @@
                             ><span>{{ 'lineStrokeStyle' | translate }}</span
                             ><app-select
                               [value]="shape.strokeStyle ?? 'solid'"
-                              [options]="[
-                                { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
-                                { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
-                                { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
-                                { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
-                                { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
-                              ]"
+                              [options]="lineStrokeStyleSelectOptions()"
                               (valueChange)="setLineStrokeStyle($event)"></app-select
                           ></label>
                         </div>
@@ -2998,6 +2986,7 @@
             <button
               class="inline-icon-button"
               type="button"
+              data-tooltip-disabled
               [attr.aria-label]="'sceneSettings' | translate"
               (click)="openAppConfigurationDialog('scene')">
               <svg viewBox="0 0 24 24" aria-hidden="true">

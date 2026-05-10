@@ -569,15 +569,42 @@
   background: var(--input-background);
 }
 
-.shortcut-row input {
+.shortcut-row app-keyboard-shortcut-capture {
   min-width: 0;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0 10px;
-  color: var(--app-foreground);
-  background: var(--panel-background);
-  font: 650 0.86rem/1 var(--font-mono);
+}
+
+.shortcut-reset-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--panel-background));
+}
+
+.shortcut-reset-confirmation div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.shortcut-reset-confirmation strong {
+  font-size: 0.9rem;
+}
+
+.shortcut-reset-confirmation span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.shortcut-reset-confirmation__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .shortcuts-dialog__footer {
@@ -839,5 +866,11 @@
 
   .shortcut-row {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcut-reset-confirmation {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 10px 12px;
   }
 }

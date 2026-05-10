@@ -1,0 +1,35 @@
+<button class="shortcut-capture-button" type="button" [attr.aria-label]="label" (click)="beginCapture()">
+  {{ currentLabel() }}
+</button>
+
+@if (isCapturing()) {
+  <div
+    #captureOverlay
+    class="shortcut-capture-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="label"
+    tabindex="0"
+    (keydown)="onCaptureKeydown($event)">
+    <section class="shortcut-capture-panel" (click)="$event.stopPropagation()">
+      <header>
+        <h3>{{ label }}</h3>
+        <p>{{ instruction }}</p>
+      </header>
+      <div class="shortcut-capture-values">
+        <div>
+          <span>{{ previousLabel }}</span>
+          <strong>{{ currentLabel() }}</strong>
+        </div>
+        <div>
+          <span>{{ nextLabel }}</span>
+          <strong>{{ pendingLabel() || '...' }}</strong>
+        </div>
+      </div>
+      <footer>
+        <button class="secondary-button" type="button" (click)="cancelCapture()">{{ cancelLabel }}</button>
+        <button class="primary-button" type="button" [disabled]="!canApply()" (click)="applyCapture()">{{ applyLabel }}</button>
+      </footer>
+    </section>
+  </div>
+}

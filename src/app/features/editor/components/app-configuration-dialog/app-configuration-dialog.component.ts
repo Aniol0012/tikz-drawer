@@ -16,6 +16,7 @@ import {
   type LatexFontSize
 } from '../../config/latex-export.config';
 import { ARROW_TIP_OPTIONS } from '../../config/arrow-tip.config';
+import { LINE_STROKE_STYLE_OPTIONS } from '../../config/line-stroke-style.config';
 import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -31,13 +32,8 @@ import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } fro
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
-import {
-  DEFAULT_KEYBOARD_SHORTCUTS,
-  keyboardShortcutLabel,
-  normalizeKeyboardShortcut,
-  type KeyboardShortcutAction,
-  type KeyboardShortcutConfig
-} from '../../utils/editor-keyboard.utils';
+import { KeyboardShortcutCaptureComponent } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
+import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
 
@@ -57,14 +53,13 @@ type ShortcutRow = {
   readonly labelKey: string;
 };
 
-const LINE_STROKE_STYLE_OPTIONS = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'] as const satisfies readonly LineStrokeStyle[];
 const PREVIEW_VIEWBOX_WIDTH = 300;
 const PREVIEW_VIEWBOX_HEIGHT = 220;
 
 @Component({
   selector: 'app-configuration-dialog',
   standalone: true,
-  imports: [AppSelectComponent, ToggleFieldComponent, RangeInputCardComponent, EditorTranslatePipe],
+  imports: [AppSelectComponent, ToggleFieldComponent, RangeInputCardComponent, KeyboardShortcutCaptureComponent, EditorTranslatePipe],
   templateUrl: './app-configuration-dialog.component.html',
   styleUrl: './app-configuration-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,6 +104,7 @@ export class AppConfigurationDialogComponent {
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
+  readonly shortcutResetConfirmationOpen = signal(false);
   readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
@@ -127,6 +123,7 @@ export class AppConfigurationDialogComponent {
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
+    { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
     { action: 'selectTool', labelKey: 'shortcutAction.selectTool' },
     { action: 'pencilTool', labelKey: 'shortcutAction.pencilTool' },
     { action: 'segmentTool', labelKey: 'shortcutAction.segmentTool' },
@@ -167,8 +164,9 @@ export class AppConfigurationDialogComponent {
   readonly codeThemeSelectOptions = computed<readonly AppSelectOption[]>(() => this.translatedSelectOptions(this.codeThemeOptions));
   readonly lineStrokeStyleSelectOptions = computed<readonly AppSelectOption[]>(() =>
     this.lineStrokeStyleOptions.map((style) => ({
-      value: style,
-      label: this.t(this.lineStrokeStyleLabelKey(style))
+      value: style.id,
+      label: this.t(style.labelKey),
+      iconPath: style.iconPath
     }))
   );
   readonly arrowTipSelectOptions = computed<readonly AppSelectOption[]>(() =>
@@ -179,6 +177,7 @@ export class AppConfigurationDialogComponent {
       iconFilled: arrowType.filled
     }))
   );
+  readonly shortcutsAreDefault = computed(() => this.shortcutConfigEqual(this.editableShortcuts(), DEFAULT_KEYBOARD_SHORTCUTS));
   private initialTabValue: ApplicationConfigurationTab = 'general';
 
   t(key: string): string {
@@ -189,6 +188,7 @@ export class AppConfigurationDialogComponent {
     this.activeTab.set(tab);
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);
+    this.shortcutResetConfirmationOpen.set(false);
     if (focus) {
       queueMicrotask(() => this.focusActiveTab());
     }
@@ -227,6 +227,7 @@ export class AppConfigurationDialogComponent {
     if (event.key === 'Escape') {
       if (this.shortcutsDialogOpen()) {
         this.shortcutsDialogOpen.set(false);
+        this.shortcutResetConfirmationOpen.set(false);
         return;
       }
       if (this.resetConfirmationOpen()) {
@@ -258,23 +259,34 @@ export class AppConfigurationDialogComponent {
     this.editableShortcuts.set({ ...this.generalConfig().keyboardShortcuts });
     this.shortcutsDialogOpen.set(true);
     this.resetConfirmationOpen.set(false);
+    this.shortcutResetConfirmationOpen.set(false);
   }
 
   closeShortcutSettings(): void {
     this.shortcutsDialogOpen.set(false);
+    this.shortcutResetConfirmationOpen.set(false);
   }
 
-  updateShortcut(action: KeyboardShortcutAction, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const fallback = this.editableShortcuts()[action] || DEFAULT_KEYBOARD_SHORTCUTS[action];
+  updateShortcut(action: KeyboardShortcutAction, shortcut: string): void {
     this.editableShortcuts.update((shortcuts) => ({
       ...shortcuts,
-      [action]: normalizeKeyboardShortcut(input.value, fallback)
+      [action]: shortcut
     }));
   }
 
-  resetShortcutsToDefaults(): void {
+  requestResetShortcutsToDefaults(): void {
+    if (!this.shortcutsAreDefault()) {
+      this.shortcutResetConfirmationOpen.set(true);
+    }
+  }
+
+  cancelResetShortcutsToDefaults(): void {
+    this.shortcutResetConfirmationOpen.set(false);
+  }
+
+  confirmResetShortcutsToDefaults(): void {
     this.editableShortcuts.set({ ...DEFAULT_KEYBOARD_SHORTCUTS });
+    this.shortcutResetConfirmationOpen.set(false);
   }
 
   saveShortcutSettings(): void {
@@ -357,7 +369,7 @@ export class AppConfigurationDialogComponent {
   }
 
   setDefaultLineStrokeStyle(style: string): void {
-    if (this.lineStrokeStyleOptions.includes(style as LineStrokeStyle)) {
+    if (this.lineStrokeStyleOptions.some((option) => option.id === style)) {
       this.patchPreferences({ defaultLineStrokeStyle: style as LineStrokeStyle });
     }
   }
@@ -502,21 +514,6 @@ export class AppConfigurationDialogComponent {
     return `${left} ${top} ${width} ${height}`;
   }
 
-  private lineStrokeStyleLabelKey(style: LineStrokeStyle): string {
-    switch (style) {
-      case 'solid':
-        return 'lineStrokeStyleSolid';
-      case 'dashed':
-        return 'lineStrokeStyleDashed';
-      case 'dotted':
-        return 'lineStrokeStyleDotted';
-      case 'dash-dotted':
-        return 'lineStrokeStyleDashDotted';
-      case 'loosely-dashed':
-        return 'lineStrokeStyleLooselyDashed';
-    }
-  }
-
   applySuggestedCaptionAndLabel(): void {
     this.patchLatexExportConfig({
       caption: this.suggestedCaption,
@@ -540,6 +537,7 @@ export class AppConfigurationDialogComponent {
     this.languageService.setLanguage(detectLanguage());
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);
+    this.shortcutResetConfirmationOpen.set(false);
   }
 
   private patchPreferences(patch: Partial<EditorPreferences>): void {
@@ -605,7 +603,7 @@ export class AppConfigurationDialogComponent {
     return (Object.keys(DEFAULT_KEYBOARD_SHORTCUTS) as KeyboardShortcutAction[]).every((action) => current[action] === expected[action]);
   }
 
-  private isMacPlatform(): boolean {
+  isMacPlatform(): boolean {
     return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   }
 }

@@ -7,6 +7,7 @@ import {
   isDeleteShortcutKey,
   isEscapeShortcutKey,
   isFindShortcut,
+  isOpenSettingsShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectionModifierPressed,
@@ -18,6 +19,7 @@ import {
   keyboardShortcutLabel,
   normalizeKeyboardShortcut,
   pressedModifierFromKey,
+  shortcutFromKeyboardEvent,
   toolIdFromShortcutEvent,
   toolIdFromShortcutKey
 } from './editor-keyboard.utils';
@@ -27,6 +29,7 @@ type ShortcutEventLike = {
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly shiftKey: boolean;
+  readonly altKey: boolean;
 };
 
 type SelectionModifierEventLike = Pick<ShortcutEventLike, 'ctrlKey' | 'metaKey' | 'shiftKey'>;
@@ -36,6 +39,7 @@ const shortcutEvent = (patch: Partial<ShortcutEventLike>): ShortcutEventLike => 
   ctrlKey: false,
   metaKey: false,
   shiftKey: false,
+  altKey: false,
   ...patch
 });
 
@@ -78,6 +82,27 @@ describe('editor-keyboard utils', () => {
     expect(toolIdFromShortcutEvent(shortcutEvent({ key: 'A', shiftKey: true }), shortcuts)).toBe('arrow');
     expect(keyboardShortcutLabel('Mod+K')).toBe('Ctrl + K');
     expect(keyboardShortcutLabel('Mod+K', true)).toBe('⌘ K');
+  });
+
+  it('opens settings with configured shortcut and the alternate settings chord', () => {
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: ',', ctrlKey: true }))).toBe(true);
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true, altKey: true }))).toBe(true);
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true }))).toBe(false);
+  });
+
+  it('captures shortcuts from keyboard events while waiting for a non-modifier key', () => {
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: 'Control', ctrlKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod',
+      complete: false
+    });
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: 's', ctrlKey: true, altKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod+Alt+S',
+      complete: true
+    });
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: ',', metaKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod+,',
+      complete: true
+    });
   });
 
   it('detects undo and redo shortcuts', () => {

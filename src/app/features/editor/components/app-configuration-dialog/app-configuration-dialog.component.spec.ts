@@ -29,7 +29,9 @@ describe('AppConfigurationDialogComponent', () => {
     ['toggle-field.component.html', resolve(process.cwd(), 'src/app/shared/toggle-field')],
     ['toggle-field.component.css', resolve(process.cwd(), 'src/app/shared/toggle-field')],
     ['range-input-card.component.html', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')],
-    ['range-input-card.component.css', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')]
+    ['range-input-card.component.css', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')],
+    ['keyboard-shortcut-capture.component.html', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
+    ['keyboard-shortcut-capture.component.css', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')]
   ]);
 
   beforeAll(async () => {
@@ -110,22 +112,36 @@ describe('AppConfigurationDialogComponent', () => {
     expect(options.find((option) => option.value === 'triangle')?.iconFilled).toBe(true);
   });
 
+  it('adds line-style icons to the default line style dropdown', () => {
+    const options = component.lineStrokeStyleSelectOptions();
+
+    expect(options.map((option) => option.value)).toEqual(['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed']);
+    expect(options.every((option) => option.iconPath)).toBe(true);
+  });
+
   it('updates general configuration and editable keyboard shortcuts', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
 
     expect(configuration.generalConfig().showHelpTooltips).toBe(false);
 
     component.openShortcutSettings();
-    component.updateShortcut('figureSearch', { target: { value: 'Ctrl + K' } } as unknown as Event);
+    component.updateShortcut('figureSearch', 'Mod+K');
     component.saveShortcutSettings();
 
     expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe('Mod+K');
 
     component.openShortcutSettings();
-    component.resetShortcutsToDefaults();
+    expect(component.shortcutsAreDefault()).toBe(false);
+
+    component.requestResetShortcutsToDefaults();
+
+    expect(component.shortcutResetConfirmationOpen()).toBe(true);
+
+    component.confirmResetShortcutsToDefaults();
     component.saveShortcutSettings();
 
     expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe(DEFAULT_KEYBOARD_SHORTCUTS.figureSearch);
+    expect(component.shortcutsAreDefault()).toBe(true);
   });
 
   it('centralizes LaTeX and code-theme configuration through the dialog', () => {
