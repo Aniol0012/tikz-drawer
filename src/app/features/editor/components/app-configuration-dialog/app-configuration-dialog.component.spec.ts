@@ -7,9 +7,11 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorStore } from '../../state/editor.store';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { DEFAULT_KEYBOARD_SHORTCUTS } from '../../utils/editor-keyboard.utils';
 import { AppConfigurationDialogComponent, type ApplicationConfigurationTab } from './app-configuration-dialog.component';
 
 describe('AppConfigurationDialogComponent', () => {
@@ -82,6 +84,50 @@ describe('AppConfigurationDialogComponent', () => {
     });
   });
 
+  it('uses the editor zoom range and clamps through the same scale constants', () => {
+    component.updateZoomPercent({ target: { value: '999' } } as unknown as Event);
+
+    expect(store.preferences().scale).toBe(EDITOR_SCALE_MAX);
+    expect(component.maxZoomPercent).toBe(Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100));
+
+    component.updateZoomPercent({ target: { value: '1' } } as unknown as Event);
+
+    expect(store.preferences().scale).toBe(EDITOR_SCALE_MIN);
+    expect(component.minZoomPercent).toBe(Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100));
+  });
+
+  it('keeps the scene preview readable by zooming the viewBox instead of capping the scale', () => {
+    store.patchPreferences({ scale: DEFAULT_EDITOR_SCALE * 2 });
+
+    expect(component.previewViewBox()).toBe('75 55 150 110');
+  });
+
+  it('reuses the shared arrow tip descriptors for the configuration dropdown', () => {
+    const options = component.arrowTipSelectOptions();
+
+    expect(options.map((option) => option.value)).toContain('straight-barb');
+    expect(options.every((option) => option.iconPath)).toBe(true);
+    expect(options.find((option) => option.value === 'triangle')?.iconFilled).toBe(true);
+  });
+
+  it('updates general configuration and editable keyboard shortcuts', () => {
+    component.updateGeneralBoolean('showHelpTooltips', false);
+
+    expect(configuration.generalConfig().showHelpTooltips).toBe(false);
+
+    component.openShortcutSettings();
+    component.updateShortcut('figureSearch', { target: { value: 'Ctrl + K' } } as unknown as Event);
+    component.saveShortcutSettings();
+
+    expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe('Mod+K');
+
+    component.openShortcutSettings();
+    component.resetShortcutsToDefaults();
+    component.saveShortcutSettings();
+
+    expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe(DEFAULT_KEYBOARD_SHORTCUTS.figureSearch);
+  });
+
   it('centralizes LaTeX and code-theme configuration through the dialog', () => {
     component.updateLatexExportBoolean('wrapInFigure', true);
     component.setLatexAlignment('right');
@@ -113,6 +159,7 @@ describe('AppConfigurationDialogComponent', () => {
     expect(store.preferences()).toEqual(defaultPreferences);
     expect(configuration.latexExportConfig().wrapInFigure).toBe(false);
     expect(configuration.codeHighlightTheme()).toBe('aurora');
+    expect(configuration.generalConfig().showHelpTooltips).toBe(true);
     expect(component.settingsAreDefault()).toBe(true);
     expect(component.resetConfirmationOpen()).toBe(false);
   });

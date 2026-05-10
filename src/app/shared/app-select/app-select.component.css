@@ -33,17 +33,36 @@
   width: 100%;
 }
 
-.app-select-shell__flag {
+.app-select-shell__flag,
+.app-select-shell__icon {
   position: absolute;
   z-index: 1;
   top: 50%;
   left: 11px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.app-select-shell__flag {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   object-fit: cover;
-  pointer-events: none;
-  transform: translateY(-50%);
+}
+
+.app-select-shell__icon {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-select-shell__icon--filled,
+.app-select__option-icon--filled {
+  fill: currentColor;
 }
 
 .app-select::part(combobox) {
@@ -57,7 +76,8 @@
     background-color 160ms ease;
 }
 
-.app-select-shell.has-flag .app-select::part(combobox) {
+.app-select-shell.has-flag .app-select::part(combobox),
+.app-select-shell.has-icon .app-select::part(combobox) {
   padding-inline-start: 36px;
 }
 
@@ -131,13 +151,25 @@
     color 140ms ease;
 }
 
-.app-select__option-flag {
+.app-select__option-flag,
+.app-select__option-icon {
   width: 16px;
   height: 16px;
   margin-inline-end: 8px;
+  vertical-align: -3px;
+}
+
+.app-select__option-flag {
   border-radius: 50%;
   object-fit: cover;
-  vertical-align: -3px;
+}
+
+.app-select__option-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .app-select sl-option::part(checked-icon) {

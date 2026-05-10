@@ -15,13 +15,14 @@ import {
   type LatexExportTextKey,
   type LatexFontSize
 } from '../../config/latex-export.config';
-import { DEFAULT_EDITOR_SCALE } from '../../constants/editor.constants';
+import { ARROW_TIP_OPTIONS } from '../../config/arrow-tip.config';
+import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { detectLanguage, getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { EditorStore } from '../../state/editor.store';
-import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { DEFAULT_EDITOR_GENERAL_CONFIG, EditorConfigurationService, type EditorGeneralConfig } from '../../state/editor-configuration.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
 import { iconPaths } from '../../config/editor-icons';
@@ -30,6 +31,13 @@ import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } fro
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
+import {
+  DEFAULT_KEYBOARD_SHORTCUTS,
+  keyboardShortcutLabel,
+  normalizeKeyboardShortcut,
+  type KeyboardShortcutAction,
+  type KeyboardShortcutConfig
+} from '../../utils/editor-keyboard.utils';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
 
@@ -44,21 +52,14 @@ type ConfigurationTabDescriptor = {
   readonly iconPath: string;
 };
 
+type ShortcutRow = {
+  readonly action: KeyboardShortcutAction;
+  readonly labelKey: string;
+};
+
 const LINE_STROKE_STYLE_OPTIONS = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'] as const satisfies readonly LineStrokeStyle[];
-const ARROW_TIP_OPTIONS = [
-  'latex',
-  'triangle',
-  'stealth',
-  'diamond',
-  'circle',
-  'bar',
-  'hooks',
-  'bracket',
-  'kite',
-  'square',
-  'parenthesis',
-  'straight-barb'
-] as const satisfies readonly ArrowTipKind[];
+const PREVIEW_VIEWBOX_WIDTH = 300;
+const PREVIEW_VIEWBOX_HEIGHT = 220;
 
 @Component({
   selector: 'app-configuration-dialog',
@@ -103,9 +104,12 @@ export class AppConfigurationDialogComponent {
   readonly activeTab = signal<ApplicationConfigurationTab>('general');
   readonly preferences = this.store.preferences;
   readonly latexExportConfig = this.configuration.latexExportConfig;
+  readonly generalConfig = this.configuration.generalConfig;
   readonly codeTheme = this.configuration.codeHighlightTheme;
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
+  readonly shortcutsDialogOpen = signal(false);
+  readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
@@ -119,6 +123,26 @@ export class AppConfigurationDialogComponent {
   readonly codeThemeOptions = CODE_HIGHLIGHT_THEME_OPTIONS;
   readonly lineStrokeStyleOptions = LINE_STROKE_STYLE_OPTIONS;
   readonly arrowTipOptions = ARROW_TIP_OPTIONS;
+  readonly minZoomPercent = Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100);
+  readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
+  readonly shortcutRows: readonly ShortcutRow[] = [
+    { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
+    { action: 'selectTool', labelKey: 'shortcutAction.selectTool' },
+    { action: 'pencilTool', labelKey: 'shortcutAction.pencilTool' },
+    { action: 'segmentTool', labelKey: 'shortcutAction.segmentTool' },
+    { action: 'arrowTool', labelKey: 'shortcutAction.arrowTool' },
+    { action: 'boxTool', labelKey: 'shortcutAction.boxTool' },
+    { action: 'circleTool', labelKey: 'shortcutAction.circleTool' },
+    { action: 'labelTool', labelKey: 'shortcutAction.labelTool' },
+    { action: 'undo', labelKey: 'undo' },
+    { action: 'redo', labelKey: 'redo' },
+    { action: 'copy', labelKey: 'copy' },
+    { action: 'cut', labelKey: 'cut' },
+    { action: 'paste', labelKey: 'paste' },
+    { action: 'delete', labelKey: 'delete' },
+    { action: 'zoomIn', labelKey: 'zoomIn' },
+    { action: 'zoomOut', labelKey: 'zoomOut' }
+  ];
   readonly highlightedCodeThemePreview = this.codeHighlightThemeService.highlightedPreviewSource;
   readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
@@ -135,6 +159,7 @@ export class AppConfigurationDialogComponent {
     () =>
       this.preferencesEqual(this.preferences(), defaultPreferences) &&
       this.latexExportConfigEqual(this.latexExportConfig(), DEFAULT_LATEX_EXPORT_CONFIG) &&
+      this.generalConfigEqual(this.generalConfig()) &&
       this.codeTheme() === 'aurora' &&
       this.language() === detectLanguage()
   );
@@ -148,8 +173,10 @@ export class AppConfigurationDialogComponent {
   );
   readonly arrowTipSelectOptions = computed<readonly AppSelectOption[]>(() =>
     this.arrowTipOptions.map((arrowType) => ({
-      value: arrowType,
-      label: this.t(this.arrowTypeLabelKey(arrowType))
+      value: arrowType.id,
+      label: this.t(arrowType.labelKey),
+      iconPath: arrowType.iconPath,
+      iconFilled: arrowType.filled
     }))
   );
   private initialTabValue: ApplicationConfigurationTab = 'general';
@@ -161,6 +188,7 @@ export class AppConfigurationDialogComponent {
   selectTab(tab: ApplicationConfigurationTab, focus = false): void {
     this.activeTab.set(tab);
     this.resetConfirmationOpen.set(false);
+    this.shortcutsDialogOpen.set(false);
     if (focus) {
       queueMicrotask(() => this.focusActiveTab());
     }
@@ -197,6 +225,10 @@ export class AppConfigurationDialogComponent {
   onDialogKeydown(event: KeyboardEvent): void {
     event.stopPropagation();
     if (event.key === 'Escape') {
+      if (this.shortcutsDialogOpen()) {
+        this.shortcutsDialogOpen.set(false);
+        return;
+      }
       if (this.resetConfirmationOpen()) {
         this.resetConfirmationOpen.set(false);
         return;
@@ -218,6 +250,42 @@ export class AppConfigurationDialogComponent {
     }
   }
 
+  updateGeneralBoolean(key: 'showHelpTooltips', checked: boolean): void {
+    this.configuration.patchGeneralConfig({ [key]: checked });
+  }
+
+  openShortcutSettings(): void {
+    this.editableShortcuts.set({ ...this.generalConfig().keyboardShortcuts });
+    this.shortcutsDialogOpen.set(true);
+    this.resetConfirmationOpen.set(false);
+  }
+
+  closeShortcutSettings(): void {
+    this.shortcutsDialogOpen.set(false);
+  }
+
+  updateShortcut(action: KeyboardShortcutAction, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const fallback = this.editableShortcuts()[action] || DEFAULT_KEYBOARD_SHORTCUTS[action];
+    this.editableShortcuts.update((shortcuts) => ({
+      ...shortcuts,
+      [action]: normalizeKeyboardShortcut(input.value, fallback)
+    }));
+  }
+
+  resetShortcutsToDefaults(): void {
+    this.editableShortcuts.set({ ...DEFAULT_KEYBOARD_SHORTCUTS });
+  }
+
+  saveShortcutSettings(): void {
+    this.configuration.setKeyboardShortcuts(this.editableShortcuts());
+    this.shortcutsDialogOpen.set(false);
+  }
+
+  shortcutLabel(shortcut: string): string {
+    return keyboardShortcutLabel(shortcut, this.isMacPlatform());
+  }
+
   updatePreferenceText(key: PreferenceTextKey, event: Event): void {
     this.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
   }
@@ -228,7 +296,7 @@ export class AppConfigurationDialogComponent {
       return;
     }
 
-    const clampedPercent = Math.min(300, Math.max(25, percent));
+    const clampedPercent = Math.min(this.maxZoomPercent, Math.max(this.minZoomPercent, percent));
     this.patchPreferences({ scale: (DEFAULT_EDITOR_SCALE * clampedPercent) / 100 });
   }
 
@@ -295,7 +363,7 @@ export class AppConfigurationDialogComponent {
   }
 
   setDefaultArrowType(arrowType: string): void {
-    if (this.arrowTipOptions.includes(arrowType as ArrowTipKind)) {
+    if (this.arrowTipOptions.some((option) => option.id === arrowType)) {
       this.patchPreferences({ defaultArrowType: arrowType as ArrowTipKind });
     }
   }
@@ -422,13 +490,16 @@ export class AppConfigurationDialogComponent {
 
   previewGridSize(): number {
     const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
-    return Math.min(28, Math.max(8, 14 * zoomRatio));
+    return Math.max(6, 14 * zoomRatio);
   }
 
-  previewTransform(): string {
+  previewViewBox(): string {
     const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
-    const scale = Math.min(1.22, Math.max(0.78, zoomRatio));
-    return `translate(150 110) scale(${scale}) translate(-150 -110)`;
+    const width = PREVIEW_VIEWBOX_WIDTH / zoomRatio;
+    const height = PREVIEW_VIEWBOX_HEIGHT / zoomRatio;
+    const left = PREVIEW_VIEWBOX_WIDTH / 2 - width / 2;
+    const top = PREVIEW_VIEWBOX_HEIGHT / 2 - height / 2;
+    return `${left} ${top} ${width} ${height}`;
   }
 
   private lineStrokeStyleLabelKey(style: LineStrokeStyle): string {
@@ -443,35 +514,6 @@ export class AppConfigurationDialogComponent {
         return 'lineStrokeStyleDashDotted';
       case 'loosely-dashed':
         return 'lineStrokeStyleLooselyDashed';
-    }
-  }
-
-  private arrowTypeLabelKey(arrowType: ArrowTipKind): string {
-    switch (arrowType) {
-      case 'latex':
-        return 'arrowTypeLatex';
-      case 'triangle':
-        return 'arrowTypeTriangle';
-      case 'stealth':
-        return 'arrowTypeStealth';
-      case 'diamond':
-        return 'arrowTypeDiamond';
-      case 'circle':
-        return 'arrowTypeCircle';
-      case 'bar':
-        return 'arrowTypeBar';
-      case 'hooks':
-        return 'arrowTypeHooks';
-      case 'bracket':
-        return 'arrowTypeBracket';
-      case 'kite':
-        return 'arrowTypeKite';
-      case 'square':
-        return 'arrowTypeSquare';
-      case 'parenthesis':
-        return 'arrowTypeParenthesis';
-      case 'straight-barb':
-        return 'arrowTypeStraightBarb';
     }
   }
 
@@ -497,6 +539,7 @@ export class AppConfigurationDialogComponent {
     this.configuration.resetToDefaults();
     this.languageService.setLanguage(detectLanguage());
     this.resetConfirmationOpen.set(false);
+    this.shortcutsDialogOpen.set(false);
   }
 
   private patchPreferences(patch: Partial<EditorPreferences>): void {
@@ -549,5 +592,20 @@ export class AppConfigurationDialogComponent {
       current.includeLabel === expected.includeLabel &&
       current.label === expected.label
     );
+  }
+
+  private generalConfigEqual(current: EditorGeneralConfig): boolean {
+    return (
+      current.showHelpTooltips === DEFAULT_EDITOR_GENERAL_CONFIG.showHelpTooltips &&
+      this.shortcutConfigEqual(current.keyboardShortcuts, DEFAULT_EDITOR_GENERAL_CONFIG.keyboardShortcuts)
+    );
+  }
+
+  private shortcutConfigEqual(current: KeyboardShortcutConfig, expected: KeyboardShortcutConfig): boolean {
+    return (Object.keys(DEFAULT_KEYBOARD_SHORTCUTS) as KeyboardShortcutAction[]).every((action) => current[action] === expected[action]);
+  }
+
+  private isMacPlatform(): boolean {
+    return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   }
 }

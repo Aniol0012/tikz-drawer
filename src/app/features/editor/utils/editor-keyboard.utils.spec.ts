@@ -15,7 +15,10 @@ import {
   isUndoShortcut,
   isZoomInShortcutKey,
   isZoomOutShortcutKey,
+  keyboardShortcutLabel,
+  normalizeKeyboardShortcut,
   pressedModifierFromKey,
+  toolIdFromShortcutEvent,
   toolIdFromShortcutKey
 } from './editor-keyboard.utils';
 
@@ -65,6 +68,16 @@ describe('editor-keyboard utils', () => {
     expect(isFindShortcut(shortcutEvent({ key: 'F', metaKey: true }))).toBe(true);
     expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true, shiftKey: true }))).toBe(false);
     expect(isFindShortcut(shortcutEvent({ key: 'f' }))).toBe(false);
+  });
+
+  it('normalizes and applies custom shortcuts', () => {
+    const shortcuts = { figureSearch: normalizeKeyboardShortcut('Ctrl + K'), arrowTool: 'Shift+A' };
+
+    expect(shortcuts.figureSearch).toBe('Mod+K');
+    expect(isFindShortcut(shortcutEvent({ key: 'k', ctrlKey: true }), shortcuts)).toBe(true);
+    expect(toolIdFromShortcutEvent(shortcutEvent({ key: 'A', shiftKey: true }), shortcuts)).toBe('arrow');
+    expect(keyboardShortcutLabel('Mod+K')).toBe('Ctrl + K');
+    expect(keyboardShortcutLabel('Mod+K', true)).toBe('⌘ K');
   });
 
   it('detects undo and redo shortcuts', () => {

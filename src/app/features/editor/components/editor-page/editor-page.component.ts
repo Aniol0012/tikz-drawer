@@ -92,13 +92,13 @@ import {
   TEXT_MIN_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
+import { ARROW_TIP_OPTIONS, arrowTipIconFilled as isSharedArrowTipIconFilled } from '../../config/arrow-tip.config';
 import type { Axis, LineAttachmentCandidate } from './editor-page.types';
 import {
   type ArrowControlHandle,
   type ArrowDirection,
   type ArrowEndpoint,
   type ArrowScaleKind,
-  type ArrowTipOption,
   type ClipboardShapeSet,
   type ContextAction,
   type ContextMenuState,
@@ -185,7 +185,7 @@ import {
   arrowNavigationKeyFromKey,
   isCopyShortcut,
   isCutShortcut,
-  isDeleteShortcutKey,
+  isDeleteShortcut,
   isEscapeShortcutKey,
   isFigureSearchShortcut,
   isPasteShortcut,
@@ -193,11 +193,14 @@ import {
   isSelectAllShortcut,
   isSelectionModifierPressed,
   isUndoShortcut,
-  isZoomInShortcutKey,
-  isZoomOutShortcutKey,
+  isZoomInShortcut,
+  isZoomOutShortcut,
+  keyboardShortcutForAction,
+  keyboardShortcutLabel,
+  type KeyboardShortcutAction,
   type ModifierKey,
   pressedModifierFromKey,
-  toolIdFromShortcutKey
+  toolIdFromShortcutEvent
 } from '../../utils/editor-keyboard.utils';
 import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets/presets';
 import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
@@ -293,6 +296,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
   providers: [EditorStore, EditorConfigurationService],
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
+    '[attr.data-tooltip-disabled]': 'configuration.generalConfig().showHelpTooltips ? null : ""',
     '(window:keydown)': 'handleWindowKeydown($event)',
     '(window:paste)': 'handleWindowPaste($event)',
     '(window:keyup)': 'handleWindowKeyup($event)',
@@ -368,7 +372,7 @@ export class EditorPageComponent {
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly figureSearchOpen = signal(false);
-  readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl + F', '⌘ F');
+  readonly figureSearchShortcutLabel = computed(() => this.shortcutLabel('figureSearch'));
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
@@ -490,20 +494,7 @@ export class EditorPageComponent {
       ]
     }
   ];
-  readonly arrowTipOptions: readonly ArrowTipOption[] = [
-    { id: 'latex', title: 'Latex' },
-    { id: 'triangle', title: 'Triangle' },
-    { id: 'stealth', title: 'Stealth' },
-    { id: 'diamond', title: 'Open triangle' },
-    { id: 'circle', title: 'Circle' },
-    { id: 'bar', title: 'Bar' },
-    { id: 'hooks', title: 'Hooks' },
-    { id: 'bracket', title: 'Bracket' },
-    { id: 'kite', title: 'Kite' },
-    { id: 'square', title: 'Square' },
-    { id: 'parenthesis', title: 'Parenthesis' },
-    { id: 'straight-barb', title: 'Straight barb' }
-  ];
+  readonly arrowTipOptions = ARROW_TIP_OPTIONS;
   readonly templateIconOptions = [
     'pencil',
     'arrow',
@@ -1221,29 +1212,34 @@ export class EditorPageComponent {
   }
 
   toolShortcut(toolId: string): string | undefined {
+    const action = this.shortcutActionForTool(toolId);
+    return action ? this.shortcutLabel(action) : undefined;
+  }
+
+  private shortcutActionForTool(toolId: string): KeyboardShortcutAction | null {
     switch (toolId) {
       case 'select':
-        return 'V';
+        return 'selectTool';
       case 'label':
-        return 'T';
+        return 'labelTool';
       case 'box':
-        return 'R';
+        return 'boxTool';
       case 'circle':
-        return 'C';
+        return 'circleTool';
       case 'segment':
-        return 'L';
+        return 'segmentTool';
       case 'arrow':
-        return 'A';
+        return 'arrowTool';
       case 'pencil':
-        return 'P';
+        return 'pencilTool';
       case 'note':
-        return 'N';
+        return 'noteTool';
       case 'ellipse':
-        return 'E';
+        return 'ellipseTool';
       case 'image':
-        return 'I';
+        return 'imageTool';
       default:
-        return undefined;
+        return null;
     }
   }
 
@@ -1537,18 +1533,15 @@ export class EditorPageComponent {
       ...sections,
       layers: false
     }));
-    afterNextRender(() => {
-      const scrollIntoLayers = () => {
-        const sidebarScroll = this.rightSidebar()?.sidebarScroll()?.nativeElement;
-        const layersSection = this.layersSection()?.nativeElement;
-        if (sidebarScroll && layersSection) {
-          const top = Math.max(layersSection.offsetTop - 12, 0);
-          sidebarScroll.scrollTo({ top, behavior: 'smooth' });
-          return;
-        }
-        layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      };
-      requestAnimationFrame(() => requestAnimationFrame(scrollIntoLayers));
+    this.runAfterNextPaint(() => {
+      const sidebarScroll = this.rightSidebar()?.sidebarScroll()?.nativeElement;
+      const layersSection = this.layersSection()?.nativeElement;
+      if (sidebarScroll && layersSection) {
+        const top = Math.max(layersSection.offsetTop - 12, 0);
+        sidebarScroll.scrollTo({ top, behavior: 'smooth' });
+        return;
+      }
+      layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   }
 
@@ -4304,65 +4297,15 @@ export class EditorPageComponent {
   }
 
   arrowTipIconPath(arrowType: ArrowTipKind): string {
-    switch (arrowType) {
-      case 'latex':
-        return getIconPath('arrowTipLatex');
-      case 'triangle':
-        return getIconPath('arrowTipTriangle');
-      case 'stealth':
-        return getIconPath('arrowTipStealth');
-      case 'diamond':
-        return getIconPath('arrowTipDiamond');
-      case 'circle':
-        return getIconPath('arrowTipCircle');
-      case 'bar':
-        return getIconPath('arrowTipBar');
-      case 'hooks':
-        return getIconPath('arrowTipHooks');
-      case 'bracket':
-        return getIconPath('arrowTipBracket');
-      case 'kite':
-        return getIconPath('arrowTipKite');
-      case 'square':
-        return getIconPath('arrowTipSquare');
-      case 'parenthesis':
-        return getIconPath('arrowTipParenthesis');
-      case 'straight-barb':
-        return getIconPath('arrowTipStraightBarb');
-    }
+    return this.arrowTipOptions.find((option) => option.id === arrowType)?.iconPath ?? getIconPath('arrowTipLatex');
   }
 
   arrowTipIconFilled(arrowType: ArrowTipKind): boolean {
-    return arrowType === 'triangle' || arrowType === 'stealth' || arrowType === 'circle' || arrowType === 'kite' || arrowType === 'square';
+    return isSharedArrowTipIconFilled(arrowType);
   }
 
   arrowTipLabel(arrowType: ArrowTipKind): string {
-    switch (arrowType) {
-      case 'latex':
-        return this.t('arrowTypeLatex');
-      case 'triangle':
-        return this.t('arrowTypeTriangle');
-      case 'stealth':
-        return this.t('arrowTypeStealth');
-      case 'diamond':
-        return this.t('arrowTypeDiamond');
-      case 'circle':
-        return this.t('arrowTypeCircle');
-      case 'bar':
-        return this.t('arrowTypeBar');
-      case 'hooks':
-        return this.t('arrowTypeHooks');
-      case 'bracket':
-        return this.t('arrowTypeBracket');
-      case 'kite':
-        return this.t('arrowTypeKite');
-      case 'square':
-        return this.t('arrowTypeSquare');
-      case 'parenthesis':
-        return this.t('arrowTypeParenthesis');
-      case 'straight-barb':
-        return this.t('arrowTypeStraightBarb');
-    }
+    return this.t(this.arrowTipOptions.find((option) => option.id === arrowType)?.labelKey ?? 'arrowTypeLatex');
   }
 
   selectionOutline(): {
@@ -4978,7 +4921,7 @@ export class EditorPageComponent {
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
 
-    if (isFigureSearchShortcut(event)) {
+    if (isFigureSearchShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       event.preventDefault();
       event.stopPropagation();
       this.openFigureSearch();
@@ -5011,23 +4954,23 @@ export class EditorPageComponent {
       return;
     }
 
-    const toolId = toolIdFromShortcutKey(event.key);
+    const toolId = toolIdFromShortcutEvent(event, this.configuration.generalConfig().keyboardShortcuts);
     if (toolId) {
       this.setActiveTool(toolId);
       return;
     }
 
-    if (isDeleteShortcutKey(event.key)) {
+    if (isDeleteShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.removeSelected();
       return;
     }
 
-    if (isZoomInShortcutKey(event.key)) {
+    if (isZoomInShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.zoomIn();
       return;
     }
 
-    if (isZoomOutShortcutKey(event.key)) {
+    if (isZoomOutShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.zoomOut();
       return;
     }
@@ -5046,7 +4989,7 @@ export class EditorPageComponent {
   }
 
   private handleSelectAllShortcut(event: KeyboardEvent): boolean {
-    if (!isSelectAllShortcut(event)) {
+    if (!isSelectAllShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       return false;
     }
 
@@ -5064,20 +5007,44 @@ export class EditorPageComponent {
     if (this.handleUndoRedoShortcut(event)) {
       return true;
     }
-    if (this.handlePreventableShortcut(event, isCopyShortcut, () => this.copySelected())) {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isCopyShortcut(shortcutEvent, shortcuts),
+        () => this.copySelected()
+      )
+    ) {
       return true;
     }
-    if (this.handlePreventableShortcut(event, isCutShortcut, () => this.cutSelected())) {
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isCutShortcut(shortcutEvent, shortcuts),
+        () => this.cutSelected()
+      )
+    ) {
       return true;
     }
-    return isPasteShortcut(event);
+    return isPasteShortcut(event, shortcuts);
   }
 
   private handleUndoRedoShortcut(event: KeyboardEvent): boolean {
-    if (this.handlePreventableShortcut(event, isRedoShortcut, () => this.redo())) {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isRedoShortcut(shortcutEvent, shortcuts),
+        () => this.redo()
+      )
+    ) {
       return true;
     }
-    return this.handlePreventableShortcut(event, isUndoShortcut, () => this.undo());
+    return this.handlePreventableShortcut(
+      event,
+      (shortcutEvent) => isUndoShortcut(shortcutEvent, shortcuts),
+      () => this.undo()
+    );
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {
@@ -6859,9 +6826,13 @@ export class EditorPageComponent {
     this.canvasViewport().nativeElement.focus({ preventScroll: true });
   }
 
-  private platformShortcutLabel(windowsLabel: string, macLabel: string): string {
+  private shortcutLabel(action: KeyboardShortcutAction): string {
+    return keyboardShortcutLabel(keyboardShortcutForAction(this.configuration.generalConfig().keyboardShortcuts, action), this.isMacPlatform());
+  }
+
+  private isMacPlatform(): boolean {
     const platform = this.document.defaultView?.navigator.platform.toLowerCase() ?? '';
-    return platform.includes('mac') ? macLabel : windowsLabel;
+    return platform.includes('mac');
   }
 
   private selectAllSceneShapes(): void {
@@ -6962,29 +6933,16 @@ export class EditorPageComponent {
   }
 
   private focusInlineTextInput(): void {
-    afterNextRender(() => {
-      const runSelection = () => {
-        const input = this.inlineTextInput()?.nativeElement;
-        if (!input) {
-          return;
-        }
-
-        input.focus({ preventScroll: true });
-        const end = input.value.length;
-        input.setSelectionRange(0, end, 'forward');
-        input.select();
-      };
-
-      const view = this.document.defaultView;
-      if (!view) {
-        runSelection();
+    this.runAfterNextPaint(() => {
+      const input = this.inlineTextInput()?.nativeElement;
+      if (!input) {
         return;
       }
 
-      view.requestAnimationFrame(() => {
-        runSelection();
-        view.setTimeout(runSelection, 0);
-      });
+      input.focus({ preventScroll: true });
+      const end = input.value.length;
+      input.setSelectionRange(0, end, 'forward');
+      input.select();
     });
   }
 
@@ -7023,11 +6981,21 @@ export class EditorPageComponent {
     const end = input.selectionEnd ?? start;
     const nextValue = `${input.value.slice(0, start)}${symbol}${input.value.slice(end)}`;
     onValue(nextValue);
-    afterNextRender(() => {
+    this.runAfterNextPaint(() => {
       input.focus();
       const nextCursor = start + symbol.length;
       input.setSelectionRange(nextCursor, nextCursor);
     });
+  }
+
+  private runAfterNextPaint(callback: () => void): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      callback();
+      return;
+    }
+
+    view.requestAnimationFrame(() => view.requestAnimationFrame(callback));
   }
 
   private exportFileBaseName(): string {

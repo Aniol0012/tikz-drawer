@@ -1,6 +1,19 @@
-<div class="app-select-shell" [class.is-open]="isOpen()" [class.has-flag]="selectedOption()?.flagSrc">
+<div
+  class="app-select-shell"
+  [class.is-open]="isOpen()"
+  [class.has-flag]="selectedOption()?.flagSrc"
+  [class.has-icon]="selectedOption()?.iconPath">
   @if (selectedOption()?.flagSrc; as flagSrc) {
     <img class="app-select-shell__flag" [src]="flagSrc" alt="" aria-hidden="true" />
+  }
+  @if (selectedOption()?.iconPath; as iconPath) {
+    <svg
+      class="app-select-shell__icon"
+      [class.app-select-shell__icon--filled]="selectedOption()?.iconFilled"
+      viewBox="0 0 24 24"
+      aria-hidden="true">
+      <path [attr.d]="iconPath"></path>
+    </svg>
   }
   <sl-select
     class="app-select"
@@ -17,6 +30,15 @@
       <sl-option [value]="option.value" [disabled]="option.disabled ? true : null">
         @if (option.flagSrc) {
           <img class="app-select__option-flag" [src]="option.flagSrc" alt="" aria-hidden="true" />
+        }
+        @if (option.iconPath) {
+          <svg
+            class="app-select__option-icon"
+            [class.app-select__option-icon--filled]="option.iconFilled"
+            viewBox="0 0 24 24"
+            aria-hidden="true">
+            <path [attr.d]="option.iconPath"></path>
+          </svg>
         }
         {{ isOpen() ? (option.longLabel ?? option.label) : option.label }}
       </sl-option>

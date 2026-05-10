@@ -431,6 +431,48 @@
   padding: 0;
 }
 
+.scene-layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scene-layers-header h3 {
+  margin: 0;
+  color: var(--app-foreground);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.inline-icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  background: var(--tool-surface);
+  cursor: pointer;
+}
+
+.inline-icon-button:hover,
+.inline-icon-button:focus-visible {
+  color: var(--app-foreground);
+  border-color: var(--tool-border-strong);
+}
+
+.inline-icon-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
 .section-header svg {
   flex: 0 0 auto;
   transition: transform 160ms ease;

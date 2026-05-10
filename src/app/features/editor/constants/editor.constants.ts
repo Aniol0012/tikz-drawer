@@ -5,6 +5,7 @@ export const EDITOR_STORAGE_KEYS = {
   language: 'tikz-drawer.language',
   codeTheme: 'tikz-drawer.code-theme',
   latexExportConfig: 'tikz-drawer.latex-export-config',
+  generalConfig: 'tikz-drawer.general-config',
   sidebarSizes: 'tikz-drawer.sidebar-sizes',
   syncState: 'tikz-drawer.sync-state'
 } as const;

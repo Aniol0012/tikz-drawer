@@ -2992,33 +2992,37 @@
           }
         </section>
       } @else {
-        <section #layersSection class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('layers')">
-          <button class="section-header" type="button" (click)="toggleSection('layers')">
-            <span>{{ 'layers' | translate }}</span
-            ><svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.chevronDown"></path>
-            </svg>
-          </button>
-          @if (!isSectionCollapsed('layers')) {
-            <div class="object-list">
-              @for (shape of scene().shapes; track shape.id) {
-                <button
-                  class="object-row"
-                  type="button"
-                  [class.is-active]="selectionContainsShape(shape.id)"
-                  (click)="selectSceneShape(shape.id)">
-                  <span class="object-row__icon"
-                    ><svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="shapeIcon(shape)"></path></svg
-                  ></span>
-                  <span class="object-row__content">
-                    <strong>{{ shape.name }}</strong>
-                    <small>{{ localizedShapeKind(shape.kind) }}</small>
-                  </span>
-                </button>
-              }
-            </div>
-          }
+        <section #layersSection class="sidebar-section">
+          <div class="scene-layers-header">
+            <h3>{{ 'layers' | translate }}</h3>
+            <button
+              class="inline-icon-button"
+              type="button"
+              [attr.aria-label]="'sceneSettings' | translate"
+              (click)="openAppConfigurationDialog('scene')">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.settings"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="object-list">
+            @for (shape of scene().shapes; track shape.id) {
+              <button
+                class="object-row"
+                type="button"
+                [class.is-active]="selectionContainsShape(shape.id)"
+                (click)="selectSceneShape(shape.id)">
+                <span class="object-row__icon"
+                  ><svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="shapeIcon(shape)"></path></svg
+                ></span>
+                <span class="object-row__content">
+                  <strong>{{ shape.name }}</strong>
+                  <small>{{ localizedShapeKind(shape.kind) }}</small>
+                </span>
+              </button>
+            }
+          </div>
         </section>
       }
     </app-editor-right-sidebar>
@@ -3286,7 +3290,7 @@
       [placeholder]="'figureSearchPlaceholder' | translate"
       [clearLabel]="'figureSearchClear' | translate"
       [noResultsLabel]="'figureSearchNoResults' | translate"
-      [shortcutLabel]="figureSearchShortcutLabel"
+      [shortcutLabel]="figureSearchShortcutLabel()"
       [selectLabel]="'figureSearchSelect' | translate"
       (closeSearch)="closeFigureSearch()"
       (selectPreset)="selectFigureSearchPreset($event)"></app-figure-search-overlay>

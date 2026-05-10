@@ -7,6 +7,8 @@ export interface AppSelectOption {
   readonly label: string;
   readonly longLabel?: string;
   readonly flagSrc?: string;
+  readonly iconPath?: string;
+  readonly iconFilled?: boolean;
   readonly disabled?: boolean;
 }
 

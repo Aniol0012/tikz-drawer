@@ -68,6 +68,19 @@
                         [ariaLabel]="'language' | translate"
                         (valueChange)="setLanguage($event)"></app-select>
                     </label>
+                    <app-toggle-field
+                      [checked]="generalConfig().showHelpTooltips"
+                      [label]="'showHelpTooltips' | translate"
+                      (checkedChange)="updateGeneralBoolean('showHelpTooltips', $event)"></app-toggle-field>
+                    <button class="settings-action-row" type="button" (click)="openShortcutSettings()">
+                      <span>
+                        <strong>{{ 'keyboardShortcuts' | translate }}</strong>
+                        <small>{{ 'keyboardShortcutsDescription' | translate }}</small>
+                      </span>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="tabs[0].iconPath"></path>
+                      </svg>
+                    </button>
                   </div>
                 </section>
 
@@ -190,11 +203,11 @@
                     <app-range-input-card
                       [label]="'zoomPercent' | translate"
                       [value]="zoomPercent()"
-                      [rangeMin]="25"
-                      [rangeMax]="300"
+                      [rangeMin]="minZoomPercent"
+                      [rangeMax]="maxZoomPercent"
                       [rangeStep]="5"
-                      [numberMin]="25"
-                      [numberMax]="300"
+                      [numberMin]="minZoomPercent"
+                      [numberMax]="maxZoomPercent"
                       [numberStep]="5"
                       (valueInput)="updateZoomPercent($event)"></app-range-input-card>
                     <app-range-input-card
@@ -234,8 +247,8 @@
                       <span class="scene-preview__axis scene-preview__axis--x"></span>
                       <span class="scene-preview__axis scene-preview__axis--y"></span>
                     }
-                    <svg viewBox="0 0 300 220">
-                      <g [attr.transform]="previewTransform()">
+                    <svg [attr.viewBox]="previewViewBox()">
+                      <g>
                         <path
                           d="M42 122 80 56 118 122Z"
                           [attr.fill]="preferences().defaultFill"
@@ -471,6 +484,54 @@
               {{ 'resetDefaultsConfirmAction' | translate }}
             </button>
           </div>
+        </div>
+      }
+
+      @if (shortcutsDialogOpen()) {
+        <div class="nested-dialog-backdrop" (click)="closeShortcutSettings()">
+          <section
+            class="shortcuts-dialog"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'keyboardShortcuts' | translate"
+            (click)="$event.stopPropagation()">
+            <header class="shortcuts-dialog__header">
+              <div>
+                <h3>{{ 'keyboardShortcuts' | translate }}</h3>
+                <p>{{ 'keyboardShortcutsDescription' | translate }}</p>
+              </div>
+              <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeShortcutSettings()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m7 7 10 10M17 7 7 17"></path>
+                </svg>
+              </button>
+            </header>
+
+            <div class="shortcut-list">
+              @for (row of shortcutRows; track row.action) {
+                <label class="shortcut-row">
+                  <span>
+                    <strong>{{ row.labelKey | translate }}</strong>
+                    <small>{{ shortcutLabel(editableShortcuts()[row.action]) }}</small>
+                  </span>
+                  <input
+                    type="text"
+                    [value]="editableShortcuts()[row.action]"
+                    [attr.aria-label]="row.labelKey | translate"
+                    (change)="updateShortcut(row.action, $event)" />
+                </label>
+              }
+            </div>
+
+            <footer class="shortcuts-dialog__footer">
+              <button class="secondary-button" type="button" (click)="resetShortcutsToDefaults()">
+                {{ 'resetShortcuts' | translate }}
+              </button>
+              <button class="primary-button" type="button" (click)="saveShortcutSettings()">
+                {{ 'apply' | translate }}
+              </button>
+            </footer>
+          </section>
         </div>
       }
 

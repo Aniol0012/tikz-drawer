@@ -14,6 +14,7 @@
 }
 
 .configuration-modal {
+  position: relative;
   width: min(1180px, calc(100vw - 40px));
   height: min(880px, calc(100dvh - 48px));
   max-height: min(880px, calc(100dvh - 48px));
@@ -237,6 +238,52 @@
   min-width: 0;
 }
 
+.settings-action-row {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--app-foreground);
+  background: var(--input-background);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-action-row span,
+.shortcut-row span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.settings-action-row strong,
+.shortcut-row strong {
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.settings-action-row small,
+.shortcut-row small {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.settings-action-row svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
 .field input:not([type='color']) {
   min-width: 0;
   height: 42px;
@@ -443,6 +490,98 @@
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.nested-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(16, 16, 16, 0.24);
+  backdrop-filter: blur(5px);
+}
+
+.shortcuts-dialog {
+  width: min(760px, 100%);
+  max-height: min(680px, calc(100dvh - 96px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.shortcuts-dialog__header,
+.shortcuts-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+}
+
+.shortcuts-dialog__header {
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcuts-dialog__header div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.shortcuts-dialog__header h3,
+.shortcuts-dialog__header p {
+  margin: 0;
+}
+
+.shortcuts-dialog__header h3 {
+  font-size: 1rem;
+}
+
+.shortcuts-dialog__header p {
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.shortcut-list {
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+.shortcut-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 190px);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-background);
+}
+
+.shortcut-row input {
+  min-width: 0;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--app-foreground);
+  background: var(--panel-background);
+  font: 650 0.86rem/1 var(--font-mono);
+}
+
+.shortcuts-dialog__footer {
+  border-top: 1px solid var(--border);
 }
 
 .primary-button,
@@ -679,5 +818,26 @@
 
   .reset-confirmation__actions button {
     flex: 1 1 120px;
+  }
+
+  .nested-dialog-backdrop {
+    padding: 10px;
+  }
+
+  .shortcuts-dialog {
+    max-height: calc(100dvh - 48px);
+  }
+
+  .shortcuts-dialog__header,
+  .shortcuts-dialog__footer {
+    padding: 12px;
+  }
+
+  .shortcut-list {
+    padding: 10px 12px;
+  }
+
+  .shortcut-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
