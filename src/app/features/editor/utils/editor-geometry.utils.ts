@@ -149,6 +149,58 @@ const roundedPolygonOutlinePoints = (points: readonly Point[], radius: number): 
   });
 };
 
+const pointInPolygon = (point: Point, polygon: readonly Point[]): boolean => {
+  if (polygon.length < 3) {
+    return false;
+  }
+
+  let inside = false;
+  for (let currentIndex = 0, previousIndex = polygon.length - 1; currentIndex < polygon.length; previousIndex = currentIndex, currentIndex += 1) {
+    const current = polygon[currentIndex];
+    const previous = polygon[previousIndex];
+    const crossesHorizontalRay =
+      current.y > point.y !== previous.y > point.y && point.x < ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y) + current.x;
+    if (crossesHorizontalRay) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+};
+
+const pointToPolygonDistance = (point: Point, polygon: readonly Point[]): number => {
+  if (!polygon.length) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return polygon.reduce((minimumDistance, current, index) => {
+    const next = polygon[(index + 1) % polygon.length];
+    return Math.min(minimumDistance, pointToSegmentDistance(point, current, next));
+  }, Number.POSITIVE_INFINITY);
+};
+
+const normalizeAnchorFromCenter = (center: Point, point: Point): Point => {
+  const deltaX = point.x - center.x;
+  const deltaY = point.y - center.y;
+  const length = Math.hypot(deltaX, deltaY);
+  if (length <= GEOMETRY_EPSILON) {
+    return { x: 0, y: 0 };
+  }
+
+  return { x: deltaX / length, y: deltaY / length };
+};
+
+const sameAnchor = (first: Point, second: Point): boolean => Math.abs(first.x - second.x) < 0.001 && Math.abs(first.y - second.y) < 0.001;
+
+const closestAnchorIndex = (anchor: Point, anchors: readonly Point[]): number =>
+  anchors.reduce(
+    (closest, candidate, index) => {
+      const distance = Math.hypot(candidate.x - anchor.x, candidate.y - anchor.y);
+      return distance < closest.distance ? { index, distance } : closest;
+    },
+    { index: -1, distance: Number.POSITIVE_INFINITY }
+  ).index;
+
 const triangleCornerIndexFromHandle = (handle: ResizeHandle): number | null => {
   switch (handle) {
     case 'corner-radius-apex':
@@ -215,6 +267,19 @@ export const triangleCornerAttachmentPoints = (shape: TriangleCanvasShape): read
   return [attachmentPoint(corners[0], 0), attachmentPoint(corners[1], 1), attachmentPoint(corners[2], 2)];
 };
 
+export const triangleCornerAttachmentAnchors = (shape: TriangleCanvasShape): readonly [Point, Point, Point] => {
+  const center = shapeCenter(shape);
+  const [apex, left, right] = trianglePoints(shape);
+  return [normalizeAnchorFromCenter(center, apex), normalizeAnchorFromCenter(center, left), normalizeAnchorFromCenter(center, right)];
+};
+
+export const triangleCornerAttachmentPointFromAnchor = (shape: TriangleCanvasShape, anchor: Point): Point => {
+  const anchors = triangleCornerAttachmentAnchors(shape);
+  const exactIndex = anchors.findIndex((candidate) => sameAnchor(candidate, anchor));
+  const attachmentIndex = exactIndex >= 0 ? exactIndex : closestAnchorIndex(anchor, anchors);
+  return triangleCornerAttachmentPoints(shape)[attachmentIndex] ?? shapeCenter(shape);
+};
+
 const triangleBounds = (shape: TriangleCanvasShape): SelectionBounds => {
   const points = roundedPolygonOutlinePoints(trianglePoints(shape), effectiveTriangleCornerRadius(shape));
   const rotation = shape.rotation ?? 0;
@@ -234,34 +299,23 @@ const pointToSegmentDistance = (point: Point, start: Point, end: Point): number 
   return Math.hypot(point.x - (start.x + t * deltaX), point.y - (start.y + t * deltaY));
 };
 
+export const triangleOutlinePoints = (shape: TriangleCanvasShape): readonly Point[] =>
+  roundedPolygonOutlinePoints(trianglePoints(shape), effectiveTriangleCornerRadius(shape));
+
 export const pointInTriangleShape = (shape: TriangleCanvasShape, point: Point, strokeTolerance = 0): boolean => {
-  const center = shapeCenter(shape);
-  const localPoint = rotatePointAround(point, center, shape.rotation ?? 0);
-  const [apex, left, right] = trianglePoints(shape);
-  const signedArea = (a: Point, b: Point, c: Point): number => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-  const totalArea = signedArea(apex, left, right);
-  if (Math.abs(totalArea) <= GEOMETRY_EPSILON) {
+  const outline = triangleOutlinePoints(shape);
+  if (outline.length < 3) {
     return false;
   }
 
+  const center = shapeCenter(shape);
+  const localPoint = rotatePointAround(point, center, shape.rotation ?? 0);
   const tolerance = Math.max(strokeTolerance, 0);
-  const barycentricTolerance = tolerance / Math.max(shape.width, shape.height, 1);
-  const alpha = signedArea(localPoint, left, right) / totalArea;
-  const beta = signedArea(apex, localPoint, right) / totalArea;
-  const gamma = signedArea(apex, left, localPoint) / totalArea;
-  const insideFill = alpha >= -barycentricTolerance && beta >= -barycentricTolerance && gamma >= -barycentricTolerance;
-  if (insideFill) {
+  if (pointInPolygon(localPoint, outline)) {
     return true;
   }
 
-  return (
-    tolerance > 0 &&
-    Math.min(
-      pointToSegmentDistance(localPoint, apex, left),
-      pointToSegmentDistance(localPoint, left, right),
-      pointToSegmentDistance(localPoint, right, apex)
-    ) <= tolerance
-  );
+  return tolerance > 0 && pointToPolygonDistance(localPoint, outline) <= tolerance;
 };
 
 export const buildLinePath = (shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string => {

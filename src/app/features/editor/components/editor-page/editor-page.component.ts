@@ -269,7 +269,9 @@ import {
   shapeBounds as shapeBoundsUtil,
   shapeCenter as shapeCenterUtil,
   shapeRotation as shapeRotationUtil,
-  triangleCornerAttachmentPoints as triangleCornerAttachmentPointsUtil,
+  triangleCornerAttachmentAnchors as triangleCornerAttachmentAnchorsUtil,
+  triangleCornerAttachmentPointFromAnchor as triangleCornerAttachmentPointFromAnchorUtil,
+  triangleOutlinePoints as triangleOutlinePointsUtil,
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
@@ -2860,12 +2862,12 @@ export class EditorPageComponent {
   private patchInspectorSelection(mutator: (shape: CanvasShape) => CanvasShape): void {
     this.ensureInspectorEditHistoryCheckpoint();
 
-    if (this.selectionCount() > 1) {
-      this.store.patchSelectedShapes(mutator);
+    const selectedShapes = this.selectedShapes();
+    if (selectedShapes.length === 0) {
       return;
     }
 
-    this.store.patchSelectedShape(mutator);
+    this.replaceShapesAndSyncAttachedLines(selectedShapes.map((shape) => mutator(shape)));
   }
 
   private ensureInspectorEditHistoryCheckpoint(): void {
@@ -3625,6 +3627,10 @@ export class EditorPageComponent {
     return [...nextMovedShapes, ...attachedLines];
   }
 
+  private replaceShapesAndSyncAttachedLines(nextShapes: readonly CanvasShape[]): void {
+    this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
+  }
+
   private handlePanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
     const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
     const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
@@ -3680,9 +3686,7 @@ export class EditorPageComponent {
       interactionState.handle.startsWith('corner-radius-')
     ) {
       const nextCornerRadius = this.cornerRadiusFromPointer(interactionState.initialShape, interactionState.handle, adjustedPointerPoint);
-      this.store.patchSelectedShape((shape) =>
-        shape.kind === 'rectangle' || shape.kind === 'triangle' ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape) : shape
-      );
+      this.replaceShapesAndSyncAttachedLines([{ ...interactionState.initialShape, cornerRadius: nextCornerRadius } as CanvasShape]);
       return;
     }
 
@@ -3696,7 +3700,7 @@ export class EditorPageComponent {
         nextPoint,
         event.altKey
       );
-      this.store.patchSelectedShape(() => resizedShape);
+      this.replaceShapesAndSyncAttachedLines([resizedShape]);
       return;
     }
 
@@ -3704,7 +3708,9 @@ export class EditorPageComponent {
       return;
     }
 
-    this.store.replaceShapes(this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint));
+    this.replaceShapesAndSyncAttachedLines(
+      this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint)
+    );
   }
 
   private withLineEndpointAttachment(shape: CanvasShape, handle: ResizeHandle, point: Point, forceDetach = false): CanvasShape {
@@ -3849,8 +3855,7 @@ export class EditorPageComponent {
 
   private shapeAttachmentAnchors(shape: CanvasShape): readonly Point[] {
     if (shape.kind === 'triangle') {
-      const center = this.shapeCenter(shape);
-      return this.triangleAttachmentPoints(shape).map((point) => this.normalizeAttachmentAnchor(center, point));
+      return triangleCornerAttachmentAnchorsUtil(shape);
     }
 
     return [
@@ -3923,12 +3928,7 @@ export class EditorPageComponent {
     }
 
     if (shape.kind === 'triangle') {
-      const anchors = this.shapeAttachmentAnchors(shape);
-      const attachmentIndex = anchors.findIndex((candidate) => this.sameAnchor(candidate, anchor));
-      if (attachmentIndex >= 0) {
-        const point = this.triangleAttachmentPoints(shape)[attachmentIndex];
-        return this.rotatedShapeAttachmentPoint(shape, point, center);
-      }
+      return this.rotatedShapeAttachmentPoint(shape, triangleCornerAttachmentPointFromAnchorUtil(shape, anchor), center);
     }
 
     if (shape.kind === 'rectangle' || shape.kind === 'image') {
@@ -4602,7 +4602,7 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR) / this.preferences().scale;
+    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR * 2.15) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
     const corners = this.trianglePoints(shape);
     const center = this.shapeCenter(shape);
@@ -6475,6 +6475,10 @@ export class EditorPageComponent {
       return this.lineIntersectsMarqueeBounds(shape, bounds);
     }
 
+    if (shape.kind === 'triangle') {
+      return this.triangleIntersectsMarqueeBounds(shape, bounds);
+    }
+
     const shapeBounds = this.computeBounds([shape]);
     return (
       shapeBounds !== null &&
@@ -6482,6 +6486,39 @@ export class EditorPageComponent {
       shapeBounds.right >= bounds.left &&
       shapeBounds.bottom <= bounds.top &&
       shapeBounds.top >= bounds.bottom
+    );
+  }
+
+  private triangleIntersectsMarqueeBounds(shape: TriangleCanvasShape, bounds: SelectionBounds): boolean {
+    const width = bounds.right - bounds.left;
+    const height = bounds.top - bounds.bottom;
+    const point = { x: (bounds.left + bounds.right) / 2, y: (bounds.bottom + bounds.top) / 2 };
+    const tolerance = Math.max(shape.strokeWidth / 2, 0.06);
+    if (width <= 0.0001 && height <= 0.0001) {
+      return pointInTriangleShapeUtil(shape, point, tolerance);
+    }
+
+    const center = this.shapeCenter(shape);
+    const rotation = this.shapeRotation(shape);
+    const outlinePoints = triangleOutlinePointsUtil(shape).map((outlinePoint) =>
+      rotation ? this.rotatePointAround(outlinePoint, center, -rotation) : outlinePoint
+    );
+
+    if (outlinePoints.some((outlinePoint) => this.pointInsideBounds(outlinePoint, bounds))) {
+      return true;
+    }
+
+    const corners = [
+      { x: bounds.left, y: bounds.bottom },
+      { x: bounds.right, y: bounds.bottom },
+      { x: bounds.right, y: bounds.top },
+      { x: bounds.left, y: bounds.top }
+    ];
+    return (
+      corners.some((corner) => pointInTriangleShapeUtil(shape, corner, tolerance)) ||
+      outlinePoints.some((outlinePoint, index) =>
+        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] as Point, bounds)
+      )
     );
   }
 
@@ -6552,10 +6589,6 @@ export class EditorPageComponent {
 
   private trianglePoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
     return trianglePointsUtil(shape);
-  }
-
-  private triangleAttachmentPoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
-    return triangleCornerAttachmentPointsUtil(shape);
   }
 
   private buildTrianglePath(shape: TriangleCanvasShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }, cornerRadius = 0): string {

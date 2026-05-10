@@ -15,14 +15,14 @@
 }
 
 .shortcut-capture-overlay {
-  position: absolute;
-  z-index: 6;
+  position: fixed;
+  z-index: 160;
   inset: 0;
   display: grid;
   place-items: center;
   padding: 18px;
-  background: color-mix(in srgb, var(--panel-background) 84%, transparent);
-  backdrop-filter: blur(6px);
+  background: rgba(16, 16, 16, 0.32);
+  backdrop-filter: blur(12px) saturate(0.82);
 }
 
 .shortcut-capture-overlay:focus {
@@ -30,6 +30,8 @@
 }
 
 .shortcut-capture-panel {
+  position: relative;
+  z-index: 1;
   width: min(500px, 100%);
   display: grid;
   gap: 14px;

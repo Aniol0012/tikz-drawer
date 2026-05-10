@@ -10,8 +10,10 @@
     aria-modal="true"
     [attr.aria-label]="label"
     tabindex="0"
+    (pointerdown)="onOverlayPointerDown($event)"
+    (click)="onOverlayClick($event)"
     (keydown)="onCaptureKeydown($event)">
-    <section class="shortcut-capture-panel" (click)="$event.stopPropagation()">
+    <section class="shortcut-capture-panel" (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
       <header class="shortcut-capture-header">
         <span class="shortcut-capture-status" aria-hidden="true"></span>
         <div>

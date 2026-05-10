@@ -71,6 +71,20 @@ describe('KeyboardShortcutCaptureComponent', () => {
     expect(component.isCapturing()).toBe(false);
   });
 
+  it('keeps the overlay mounted until outside click closes only the capture layer', () => {
+    component.beginCapture();
+    fixture.detectChanges();
+
+    const overlay = fixture.nativeElement.querySelector('.shortcut-capture-overlay') as HTMLElement | null;
+    expect(overlay).not.toBeNull();
+
+    overlay?.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+    expect(component.isCapturing()).toBe(true);
+
+    overlay?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(component.isCapturing()).toBe(false);
+  });
+
   it('asks for a decision when the shortcut is already assigned elsewhere', () => {
     const valueChangeSpy = vi.fn();
     const reassignSpy = vi.fn();

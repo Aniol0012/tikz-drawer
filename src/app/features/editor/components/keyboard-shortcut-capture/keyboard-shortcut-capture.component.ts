@@ -115,6 +115,19 @@ export class KeyboardShortcutCaptureComponent {
     this.focusCaptureSurface();
   }
 
+  onOverlayPointerDown(event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  onOverlayClick(event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.target === event.currentTarget) {
+      this.cancelCapture();
+    }
+  }
+
   onCaptureKeydown(event: KeyboardEvent): void {
     event.preventDefault();
     event.stopPropagation();
