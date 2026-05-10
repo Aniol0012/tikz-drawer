@@ -341,6 +341,14 @@ export class EditorPageComponent {
   readonly selectedShape = this.store.selectedShape;
   readonly selectedShapes = this.store.selectedShapes;
   readonly selectionCount = this.store.selectionCount;
+  readonly singleSelectedTriangle = computed<TriangleCanvasShape | null>(() => {
+    if (this.selectionCount() !== 1) {
+      return null;
+    }
+
+    const selectedShape = this.selectedShape();
+    return selectedShape?.kind === 'triangle' ? selectedShape : null;
+  });
   readonly parserWarnings = this.store.parserWarnings;
   readonly objectPresets = this.store.objectPresets;
   readonly scenePresets = this.store.scenePresets;
@@ -841,13 +849,21 @@ export class EditorPageComponent {
     if (!selectionBounds) {
       return [];
     }
+    if (singleSelectedShape?.kind === 'triangle') {
+      const handles: HandleDescriptor[] = [...this.triangleSelectionHandles(singleSelectedShape)];
+      if (this.selectionCanRotate(selectedShapes)) {
+        handles.push(this.rotationHandleFromHandles(handles, singleSelectedShape));
+      }
+      handles.push(...this.cornerRadiusHandles(singleSelectedShape));
+      return handles;
+    }
     const rotatedSingleShapeHandles = singleSelectedShape ? this.rotatedSingleShapeHandles(singleSelectedShape) : null;
     if (rotatedSingleShapeHandles) {
       const handles: HandleDescriptor[] = [...rotatedSingleShapeHandles];
       if (this.selectionCanRotate(selectedShapes)) {
         handles.push(this.rotationHandleFromHandles(rotatedSingleShapeHandles, singleSelectedShape as CanvasShape));
       }
-      if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+      if (singleSelectedShape?.kind === 'rectangle') {
         handles.push(...this.cornerRadiusHandles(singleSelectedShape));
       }
       return handles;
@@ -872,7 +888,7 @@ export class EditorPageComponent {
     if (rotateHandle) {
       handles.push(rotateHandle);
     }
-    if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+    if (singleSelectedShape?.kind === 'rectangle') {
       handles.push(...this.cornerRadiusHandles(singleSelectedShape));
     }
     return handles;
@@ -2291,6 +2307,11 @@ export class EditorPageComponent {
 
   onShapeDoubleClick(event: MouseEvent, shape: CanvasShape): void {
     if (this.activeTool() !== 'select') {
+      this.recentSelectedShapeTap.set(null);
+      return;
+    }
+
+    if (!this.pointerHitsShape(event, shape)) {
       this.recentSelectedShapeTap.set(null);
       return;
     }
@@ -4493,6 +4514,30 @@ export class EditorPageComponent {
       const rotatedPoint = this.rotatePointAround(point, center, -rotation);
       const x = this.toSvgX(rotatedPoint.x);
       const y = this.toSvgY(rotatedPoint.y);
+      return {
+        id,
+        x,
+        y,
+        cursor: this.resizeCursorForVector({ x: x - centerSvg.x, y: y - centerSvg.y })
+      };
+    });
+  }
+
+  private triangleSelectionHandles(shape: TriangleCanvasShape): readonly HandleDescriptor[] {
+    const center = this.shapeCenter(shape);
+    const rotation = this.shapeRotation(shape);
+    const [apex, left, right] = this.trianglePoints(shape);
+    const handles: ReadonlyArray<{ readonly id: ResizeHandle; readonly point: Point }> = [
+      { id: 'n', point: apex },
+      { id: 'sw', point: left },
+      { id: 'se', point: right }
+    ];
+    const centerSvg = { x: this.toSvgX(center.x), y: this.toSvgY(center.y) };
+
+    return handles.map(({ id, point }) => {
+      const renderedPoint = rotation ? this.rotatePointAround(point, center, -rotation) : point;
+      const x = this.toSvgX(renderedPoint.x);
+      const y = this.toSvgY(renderedPoint.y);
       return {
         id,
         x,

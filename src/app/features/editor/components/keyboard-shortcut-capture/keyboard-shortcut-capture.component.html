@@ -13,18 +13,23 @@
     (keydown)="onCaptureKeydown($event)">
     <section class="shortcut-capture-panel" (click)="$event.stopPropagation()">
       <header class="shortcut-capture-header">
-        <span class="shortcut-capture-status">{{ listeningLabel }}</span>
+        <span class="shortcut-capture-status" aria-hidden="true"></span>
         <div>
+          <span class="shortcut-capture-eyebrow">{{ listeningLabel }}</span>
           <h3>{{ label }}</h3>
           <p>{{ instruction }}</p>
         </div>
       </header>
       <div class="shortcut-capture-combo">
-        <span class="shortcut-capture-combo__label">{{ previousLabel }}</span>
-        <strong>{{ currentLabel() }}</strong>
+        <div class="shortcut-capture-combo__slot">
+          <span class="shortcut-capture-combo__label">{{ previousLabel }}</span>
+          <strong>{{ currentLabel() }}</strong>
+        </div>
         <span class="shortcut-capture-combo__arrow">→</span>
-        <span class="shortcut-capture-combo__label">{{ nextLabel }}</span>
-        <strong class="is-pending">{{ pendingLabel() || '...' }}</strong>
+        <div class="shortcut-capture-combo__slot shortcut-capture-combo__slot--active">
+          <span class="shortcut-capture-combo__label">{{ nextLabel }}</span>
+          <strong class="is-pending">{{ pendingLabel() || '...' }}</strong>
+        </div>
       </div>
       @if (conflict(); as conflictingShortcut) {
         <div class="shortcut-capture-conflict" role="alert">

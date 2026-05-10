@@ -15,14 +15,14 @@
 }
 
 .shortcut-capture-overlay {
-  position: fixed;
-  z-index: 260;
+  position: absolute;
+  z-index: 6;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 20px;
-  background: rgba(16, 16, 16, 0.22);
-  backdrop-filter: blur(4px);
+  padding: 18px;
+  background: color-mix(in srgb, var(--panel-background) 84%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 .shortcut-capture-overlay:focus {
@@ -30,23 +30,23 @@
 }
 
 .shortcut-capture-panel {
-  width: min(520px, 100%);
+  width: min(500px, 100%);
   display: grid;
-  gap: 16px;
+  gap: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 18px;
+  padding: 16px;
   color: var(--app-foreground);
   background: var(--panel-background);
-  box-shadow: var(--floating-shadow);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
 }
 
 .shortcut-capture-header {
   min-width: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 
 .shortcut-capture-header h3,
@@ -55,54 +55,76 @@
 }
 
 .shortcut-capture-header h3 {
-  font-size: 1.08rem;
+  font-size: 0.98rem;
   line-height: 1.18;
   letter-spacing: 0;
 }
 
 .shortcut-capture-header p {
-  margin-top: 4px;
+  margin-top: 3px;
   color: var(--muted-foreground);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .shortcut-capture-status {
-  width: max-content;
+  width: 32px;
+  height: 32px;
   display: inline-grid;
   place-items: center;
-  min-height: 22px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
-  border-radius: 999px;
-  padding: 0 8px;
-  color: var(--accent);
+  border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
-  font-size: 0.64rem;
+}
+
+.shortcut-capture-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.shortcut-capture-eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--accent);
+  font-size: 0.66rem;
   font-weight: 850;
+  line-height: 1;
   text-transform: uppercase;
 }
 
 .shortcut-capture-combo {
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   background: var(--input-background);
-  flex-wrap: wrap;
+}
+
+.shortcut-capture-combo__slot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .shortcut-capture-combo__label {
   color: var(--muted-foreground);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 750;
 }
 
 .shortcut-capture-combo strong {
-  min-width: 54px;
-  min-height: 34px;
+  min-width: 50px;
+  min-height: 30px;
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--border);
@@ -110,7 +132,7 @@
   padding: 0 10px;
   background: var(--panel-background);
   overflow-wrap: anywhere;
-  font: 850 1rem/1.15 var(--font-mono);
+  font: 850 0.9rem/1.15 var(--font-mono);
 }
 
 .shortcut-capture-combo strong.is-pending {
@@ -125,10 +147,10 @@
 
 .shortcut-capture-conflict {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   border: 1px solid color-mix(in srgb, #f59e0b 44%, var(--border));
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px;
   background: color-mix(in srgb, #f59e0b 11%, var(--panel-background));
 }
 
@@ -138,13 +160,13 @@
 }
 
 .shortcut-capture-conflict strong {
-  font-size: 0.98rem;
+  font-size: 0.9rem;
 }
 
 .shortcut-capture-conflict span,
 .shortcut-capture-conflict dt {
   color: var(--muted-foreground);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
@@ -186,6 +208,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  padding-top: 2px;
 }
 
 .primary-button,
@@ -225,7 +248,15 @@
   }
 
   .shortcut-capture-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .shortcut-capture-combo {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shortcut-capture-combo__arrow {
+    display: none;
   }
 
   .shortcut-capture-conflict dl {

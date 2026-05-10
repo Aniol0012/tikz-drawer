@@ -663,6 +663,11 @@
 
           @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [attr.d]="selectionPath"></path>
+          } @else if (singleSelectedTriangle(); as triangle) {
+            <path
+              class="selection-outline selection-outline--shape"
+              [attr.d]="triangleSvgPath(triangle)"
+              [attr.transform]="shapeRotationTransform(triangle)"></path>
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"

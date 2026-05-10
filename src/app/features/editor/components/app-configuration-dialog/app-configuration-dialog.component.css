@@ -504,6 +504,7 @@
 }
 
 .shortcuts-dialog {
+  position: relative;
   width: min(760px, 100%);
   max-height: min(680px, calc(100dvh - 96px));
   display: grid;
