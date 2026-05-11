@@ -1,4 +1,5 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import type { AfterViewInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 
 @Component({
   selector: 'app-toggle-field',
