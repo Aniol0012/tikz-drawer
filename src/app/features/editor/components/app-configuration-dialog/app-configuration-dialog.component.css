@@ -499,12 +499,21 @@
   display: grid;
   place-items: center;
   padding: 20px;
+  background: transparent;
+}
+
+.nested-dialog-backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: rgba(16, 16, 16, 0.24);
   backdrop-filter: blur(5px);
+  pointer-events: none;
 }
 
 .shortcuts-dialog {
   position: relative;
+  z-index: 1;
   width: min(760px, 100%);
   max-height: min(680px, calc(100dvh - 96px));
   display: grid;

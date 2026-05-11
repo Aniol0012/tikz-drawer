@@ -21,7 +21,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(16, 16, 16, 0.32);
+  background: rgba(16, 16, 16, 0.42);
   backdrop-filter: blur(12px) saturate(0.82);
 }
 
