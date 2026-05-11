@@ -1,0 +1,63 @@
+<button class="shortcut-capture-button" type="button" [attr.aria-label]="label" (pointerdown)="beginCapture()" (click)="beginCapture()">
+  {{ currentLabel() }}
+</button>
+
+@if (isCapturing()) {
+  <div
+    #captureOverlay
+    class="shortcut-capture-overlay"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="label"
+    tabindex="0"
+    (pointerdown)="onOverlayPointerDown($event)"
+    (click)="onOverlayClick($event)"
+    (keydown)="onCaptureKeydown($event)">
+    <section class="shortcut-capture-panel" (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+      <header class="shortcut-capture-header">
+        <span class="shortcut-capture-status" aria-hidden="true"></span>
+        <div>
+          <span class="shortcut-capture-eyebrow">{{ listeningLabel }}</span>
+          <h3>{{ label }}</h3>
+          <p>{{ instruction }}</p>
+        </div>
+      </header>
+      <div class="shortcut-capture-combo">
+        <div class="shortcut-capture-combo__slot">
+          <span class="shortcut-capture-combo__label">{{ previousLabel }}</span>
+          <strong>{{ currentLabel() }}</strong>
+        </div>
+        <span class="shortcut-capture-combo__arrow">→</span>
+        <div class="shortcut-capture-combo__slot shortcut-capture-combo__slot--active">
+          <span class="shortcut-capture-combo__label">{{ nextLabel }}</span>
+          <strong class="is-pending">{{ pendingLabel() || '...' }}</strong>
+        </div>
+      </div>
+      @if (conflict(); as conflictingShortcut) {
+        <div class="shortcut-capture-conflict" role="alert">
+          <div>
+            <strong>{{ conflictTitleLabel }}</strong>
+            <span>{{ conflictDescriptionLabel }}</span>
+          </div>
+          <dl>
+            <div>
+              <dt>{{ previousLabel }}</dt>
+              <dd>{{ conflictingShortcut.label }}</dd>
+            </div>
+            <div>
+              <dt>{{ nextLabel }}</dt>
+              <dd>{{ pendingLabel() }}</dd>
+            </div>
+          </dl>
+          <div class="shortcut-capture-conflict__actions">
+            <button class="secondary-button" type="button" (click)="keepConflictingShortcut()">{{ conflictKeepLabel }}</button>
+            <button class="primary-button" type="button" (click)="replaceConflictingShortcut()">{{ conflictReplaceLabel }}</button>
+          </div>
+        </div>
+      }
+      <footer>
+        <button class="secondary-button" type="button" (click)="cancelCapture()">{{ cancelLabel }}</button>
+      </footer>
+    </section>
+  </div>
+}

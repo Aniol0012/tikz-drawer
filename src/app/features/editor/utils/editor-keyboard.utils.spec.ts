@@ -7,6 +7,7 @@ import {
   isDeleteShortcutKey,
   isEscapeShortcutKey,
   isFindShortcut,
+  isOpenSettingsShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectionModifierPressed,
@@ -15,7 +16,12 @@ import {
   isUndoShortcut,
   isZoomInShortcutKey,
   isZoomOutShortcutKey,
+  keyboardShortcutLabel,
+  normalizeKeyboardShortcut,
+  normalizedKeyboardShortcuts,
   pressedModifierFromKey,
+  shortcutFromKeyboardEvent,
+  toolIdFromShortcutEvent,
   toolIdFromShortcutKey
 } from './editor-keyboard.utils';
 
@@ -24,6 +30,7 @@ type ShortcutEventLike = {
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly shiftKey: boolean;
+  readonly altKey: boolean;
 };
 
 type SelectionModifierEventLike = Pick<ShortcutEventLike, 'ctrlKey' | 'metaKey' | 'shiftKey'>;
@@ -33,6 +40,7 @@ const shortcutEvent = (patch: Partial<ShortcutEventLike>): ShortcutEventLike => 
   ctrlKey: false,
   metaKey: false,
   shiftKey: false,
+  altKey: false,
   ...patch
 });
 
@@ -65,6 +73,45 @@ describe('editor-keyboard utils', () => {
     expect(isFindShortcut(shortcutEvent({ key: 'F', metaKey: true }))).toBe(true);
     expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true, shiftKey: true }))).toBe(false);
     expect(isFindShortcut(shortcutEvent({ key: 'f' }))).toBe(false);
+  });
+
+  it('normalizes and applies custom shortcuts', () => {
+    const shortcuts = { figureSearch: normalizeKeyboardShortcut('Ctrl + K'), arrowTool: 'Shift+A' };
+
+    expect(shortcuts.figureSearch).toBe('Mod+K');
+    expect(isFindShortcut(shortcutEvent({ key: 'k', ctrlKey: true }), shortcuts)).toBe(true);
+    expect(toolIdFromShortcutEvent(shortcutEvent({ key: 'A', shiftKey: true }), shortcuts)).toBe('arrow');
+    expect(keyboardShortcutLabel('Mod+K')).toBe('Ctrl + K');
+    expect(keyboardShortcutLabel('Mod+K', true)).toBe('⌘ K');
+  });
+
+  it('keeps explicitly unassigned shortcuts empty', () => {
+    const shortcuts = normalizedKeyboardShortcuts({ figureSearch: '', selectTool: 'v' });
+
+    expect(shortcuts.figureSearch).toBe('');
+    expect(shortcuts.selectTool).toBe('V');
+    expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true }), shortcuts)).toBe(false);
+  });
+
+  it('opens settings with configured shortcut and the alternate settings chord', () => {
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: ',', ctrlKey: true }))).toBe(true);
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true, altKey: true }))).toBe(true);
+    expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true }))).toBe(false);
+  });
+
+  it('captures shortcuts from keyboard events while waiting for a non-modifier key', () => {
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: 'Control', ctrlKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod',
+      complete: false
+    });
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: 's', ctrlKey: true, altKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod+Alt+S',
+      complete: true
+    });
+    expect(shortcutFromKeyboardEvent(shortcutEvent({ key: ',', metaKey: true }), 'Mod+F')).toEqual({
+      shortcut: 'Mod+,',
+      complete: true
+    });
   });
 
   it('detects undo and redo shortcuts', () => {

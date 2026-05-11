@@ -14,6 +14,7 @@ import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorS
 import { remapStructuralShapeIds } from '../utils/table.utils';
 import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
+import { normalizeAppTheme } from './app-theme.service';
 
 const cloneShape = (shape: CanvasShape): CanvasShape => ({
   ...structuredClone(shape),
@@ -366,6 +367,7 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
   return {
     ...defaultPreferences,
     ...preferences,
+    theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
     scale: normalizedScale
   };
 };
@@ -602,7 +604,7 @@ export class EditorStore {
   setTheme(theme: EditorPreferences['theme']): void {
     this.preferences.update((preferences) => ({
       ...preferences,
-      theme
+      theme: normalizeAppTheme(theme, preferences.theme)
     }));
   }
 

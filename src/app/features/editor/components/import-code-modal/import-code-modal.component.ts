@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { getIconPath } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
-import { highlightLatex } from '../../utils/editor-page.utils';
 import { parseTikz } from '../../tikz/tikz.parser';
+import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import {
   extractTikzDiagrams,
@@ -96,6 +96,7 @@ interface ImportWarningView {
 })
 export class ImportCodeModalComponent {
   private readonly languageService = inject(EditorLanguageService);
+  private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
 
   readonly closeIconPath = getIconPath('close');
   readonly trashIconPath = getIconPath('trash');
@@ -117,7 +118,8 @@ export class ImportCodeModalComponent {
   readonly importCodePreview = viewChild<ElementRef<HTMLPreElement>>('importCodePreview');
   readonly importFileInput = viewChild<ElementRef<HTMLInputElement>>('importFileInput');
 
-  readonly highlightedCode = computed(() => highlightLatex(this.code() || ' '));
+  readonly highlightedCode = computed(() => this.codeHighlightThemeService.highlight(this.code() || ' '));
+  readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly parsedInput = computed(() => parseTikz(this.code()));
   readonly codeInputFocused = signal(false);
   readonly sourceKind = signal<ImportSourceKind>('tikz');

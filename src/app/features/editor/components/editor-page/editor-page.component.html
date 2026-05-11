@@ -32,6 +32,7 @@
     (fileMenuClose)="closeFileMenu()"
     (mobileLibraryOpen)="openMobileLibraryPanel()"
     (importOpen)="openImportModal()"
+    (settingsOpen)="openAppConfigurationDialog()"
     (exportOpen)="openExportModal()"></app-editor-topbar>
 
   @if (notifications().length) {
@@ -662,6 +663,11 @@
 
           @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [attr.d]="selectionPath"></path>
+          } @else if (singleSelectedTriangle(); as triangle) {
+            <path
+              class="selection-outline selection-outline--shape"
+              [attr.d]="triangleSvgPath(triangle)"
+              [attr.transform]="shapeRotationTransform(triangle)"></path>
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"
@@ -1168,35 +1174,21 @@
                         ><span>{{ 'arrowDirection' | translate }}</span
                         ><app-select
                           [value]="lineArrowDirection(shape)"
-                          [options]="[
-                            { value: 'none', label: ('arrowDirectionNone' | translate) },
-                            { value: 'forward', label: ('arrowDirectionForward' | translate) },
-                            { value: 'backward', label: ('arrowDirectionBackward' | translate) },
-                            { value: 'both', label: ('arrowDirectionBoth' | translate) }
-                          ]"
+                          [options]="arrowDirectionSelectOptions()"
                           (valueChange)="setLineArrowDirection($any($event))"></app-select
                       ></label>
                       <label class="field field--full"
                         ><span>{{ 'lineMode' | translate }}</span
                         ><app-select
                           [value]="shape.lineMode"
-                          [options]="[
-                            { value: 'straight', label: ('lineModeStraight' | translate) },
-                            { value: 'curved', label: ('lineModeCurved' | translate) }
-                          ]"
+                          [options]="lineModeSelectOptions()"
                           (valueChange)="setLineMode($event)"></app-select
                       ></label>
                       <label class="field field--full"
                         ><span>{{ 'lineStrokeStyle' | translate }}</span
                         ><app-select
                           [value]="shape.strokeStyle ?? 'solid'"
-                          [options]="[
-                            { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
-                            { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
-                            { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
-                            { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
-                            { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
-                          ]"
+                          [options]="lineStrokeStyleSelectOptions()"
                           (valueChange)="setLineStrokeStyle($event)"></app-select
                       ></label>
                     </div>
@@ -1266,12 +1258,7 @@
                           ><app-select
                             [ariaLabel]="'arrowBendMode' | translate"
                             [value]="shape.arrowBendMode"
-                            [options]="[
-                              { value: 'none', label: ('arrowBendNone' | translate) },
-                              { value: 'flex', label: ('arrowBendFlex' | translate) },
-                              { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
-                              { value: 'bend', label: ('arrowBendBend' | translate) }
-                            ]"
+                            [options]="arrowBendModeSelectOptions()"
                             (valueChange)="setLineArrowBendMode($event)"></app-select>
                         </div>
                       </div>
@@ -2265,35 +2252,21 @@
                             ><span>{{ 'arrowDirection' | translate }}</span
                             ><app-select
                               [value]="lineArrowDirection(shape)"
-                              [options]="[
-                                { value: 'none', label: ('arrowDirectionNone' | translate) },
-                                { value: 'forward', label: ('arrowDirectionForward' | translate) },
-                                { value: 'backward', label: ('arrowDirectionBackward' | translate) },
-                                { value: 'both', label: ('arrowDirectionBoth' | translate) }
-                              ]"
+                              [options]="arrowDirectionSelectOptions()"
                               (valueChange)="setLineArrowDirection($any($event))"></app-select
                           ></label>
                           <label class="field field--full"
                             ><span>{{ 'lineMode' | translate }}</span
                             ><app-select
                               [value]="shape.lineMode"
-                              [options]="[
-                                { value: 'straight', label: ('lineModeStraight' | translate) },
-                                { value: 'curved', label: ('lineModeCurved' | translate) }
-                              ]"
+                              [options]="lineModeSelectOptions()"
                               (valueChange)="setLineMode($event)"></app-select
                           ></label>
                           <label class="field field--full"
                             ><span>{{ 'lineStrokeStyle' | translate }}</span
                             ><app-select
                               [value]="shape.strokeStyle ?? 'solid'"
-                              [options]="[
-                                { value: 'solid', label: ('lineStrokeStyleSolid' | translate) },
-                                { value: 'dashed', label: ('lineStrokeStyleDashed' | translate) },
-                                { value: 'dotted', label: ('lineStrokeStyleDotted' | translate) },
-                                { value: 'dash-dotted', label: ('lineStrokeStyleDashDotted' | translate) },
-                                { value: 'loosely-dashed', label: ('lineStrokeStyleLooselyDashed' | translate) }
-                              ]"
+                              [options]="lineStrokeStyleSelectOptions()"
                               (valueChange)="setLineStrokeStyle($event)"></app-select
                           ></label>
                         </div>
@@ -2363,12 +2336,7 @@
                               ><app-select
                                 [ariaLabel]="'arrowBendMode' | translate"
                                 [value]="shape.arrowBendMode"
-                                [options]="[
-                                  { value: 'none', label: ('arrowBendNone' | translate) },
-                                  { value: 'flex', label: ('arrowBendFlex' | translate) },
-                                  { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
-                                  { value: 'bend', label: ('arrowBendBend' | translate) }
-                                ]"
+                                [options]="arrowBendModeSelectOptions()"
                                 (valueChange)="setLineArrowBendMode($event)"></app-select>
                             </div>
                           </div>
@@ -2991,118 +2959,38 @@
           }
         </section>
       } @else {
-        <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('sceneSettings')">
-          <button class="section-header" type="button" (click)="toggleSection('sceneSettings')">
-            <span>{{ 'canvasSettings' | translate }}</span
-            ><svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.chevronDown"></path>
-            </svg>
-          </button>
-          @if (!isSectionCollapsed('sceneSettings')) {
-            <div class="form-grid form-grid--scene-settings">
-              <label class="field field--color-picker"
-                ><span>{{ 'defaultStroke' | translate }}</span
-                ><input type="color" [value]="preferences().defaultStroke" (input)="updatePreferenceText('defaultStroke', $event)"
-              /></label>
-              <label class="field field--color-picker"
-                ><span>{{ 'defaultFill' | translate }}</span
-                ><input type="color" [value]="preferences().defaultFill" (input)="updatePreferenceText('defaultFill', $event)"
-              /></label>
-              <label class="field field--full field--snap-step"
-                ><span>{{ 'snapTolerance' | translate }}</span>
-                <div class="range-field">
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="2"
-                    step="0.05"
-                    [value]="preferences().snapStep"
-                    (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /><input
-                    type="number"
-                    min="0.05"
-                    max="2"
-                    step="0.05"
-                    [value]="preferences().snapStep"
-                    (input)="updatePreferenceNumber('snapStep', $event, 0.05, 2)" /></div
-              ></label>
-              <label class="field field--full"
-                ><span>{{ 'defaultLineWidth' | translate }}</span>
-                <div class="range-field">
-                  <input
-                    type="range"
-                    min="0.02"
-                    max="8"
-                    step="0.02"
-                    [value]="preferences().defaultStrokeWidth"
-                    (input)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)" /><input
-                    type="number"
-                    min="0.02"
-                    max="8"
-                    step="0.02"
-                    [value]="preferences().defaultStrokeWidth"
-                    (input)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)" /></div
-              ></label>
-              <label class="field field--full"
-                ><span>{{ 'arrowScale' | translate }}</span>
-                <div class="range-field">
-                  <input
-                    type="range"
-                    min="0.4"
-                    max="4.5"
-                    step="0.1"
-                    [value]="preferences().defaultArrowScale"
-                    (input)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)" /><input
-                    type="number"
-                    min="0.4"
-                    max="4.5"
-                    step="0.1"
-                    [value]="preferences().defaultArrowScale"
-                    (input)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)" /></div
-              ></label>
-              <app-toggle-field
-                [checked]="preferences().showGrid"
-                [label]="'showGrid' | translate"
-                (checkedChange)="onBooleanPreferenceChange('showGrid', $event)"></app-toggle-field>
-              <app-toggle-field
-                [checked]="preferences().showAxes"
-                [label]="'showAxes' | translate"
-                (checkedChange)="onBooleanPreferenceChange('showAxes', $event)"></app-toggle-field>
-              <app-toggle-field
-                class="field--full"
-                [checked]="preferences().snapToGrid"
-                [label]="'snapToGrid' | translate"
-                (checkedChange)="onBooleanPreferenceChange('snapToGrid', $event)"></app-toggle-field>
-            </div>
-          }
-        </section>
-
-        <section #layersSection class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('layers')">
-          <button class="section-header" type="button" (click)="toggleSection('layers')">
-            <span>{{ 'layers' | translate }}</span
-            ><svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.chevronDown"></path>
-            </svg>
-          </button>
-          @if (!isSectionCollapsed('layers')) {
-            <div class="object-list">
-              @for (shape of scene().shapes; track shape.id) {
-                <button
-                  class="object-row"
-                  type="button"
-                  [class.is-active]="selectionContainsShape(shape.id)"
-                  (click)="selectSceneShape(shape.id)">
-                  <span class="object-row__icon"
-                    ><svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="shapeIcon(shape)"></path></svg
-                  ></span>
-                  <span class="object-row__content">
-                    <strong>{{ shape.name }}</strong>
-                    <small>{{ localizedShapeKind(shape.kind) }}</small>
-                  </span>
-                </button>
-              }
-            </div>
-          }
+        <section #layersSection class="sidebar-section">
+          <div class="scene-layers-header">
+            <h3>{{ 'layers' | translate }}</h3>
+            <button
+              class="inline-icon-button"
+              type="button"
+              data-tooltip-disabled
+              [attr.aria-label]="'sceneSettings' | translate"
+              (click)="openAppConfigurationDialog('scene')">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.settings"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="object-list">
+            @for (shape of scene().shapes; track shape.id) {
+              <button
+                class="object-row"
+                type="button"
+                [class.is-active]="selectionContainsShape(shape.id)"
+                (click)="selectSceneShape(shape.id)">
+                <span class="object-row__icon"
+                  ><svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="shapeIcon(shape)"></path></svg
+                ></span>
+                <span class="object-row__content">
+                  <strong>{{ shape.name }}</strong>
+                  <small>{{ localizedShapeKind(shape.kind) }}</small>
+                </span>
+              </button>
+            }
+          </div>
         </section>
       }
     </app-editor-right-sidebar>
@@ -3334,19 +3222,15 @@
   @if (exportModalOpen()) {
     <app-export-modal
       [theme]="preferences().theme"
+      [codeTheme]="codeHighlightTheme()"
       [iconMap]="iconMap"
       [exportMode]="exportMode()"
-      [settingsOpen]="exportSettingsModalOpen()"
       [shareUrl]="shareUrl()"
-      [codeTheme]="codeHighlightTheme()"
-      [latexExportConfig]="latexExportConfig()"
       [exportImports]="displayedExportImports()"
       [exportCode]="displayedExportCode()"
       [highlightedExportImports]="highlightedExportImports()"
       [highlightedExportCode]="highlightedExportCode()"
       [shareLinkCopyValue]="shareLinkCopyValue"
-      [suggestedCaption]="suggestedCaption()"
-      [suggestedLabel]="suggestedLabel()"
       (closeDialog)="closeExportModal()"
       (exportModeChange)="exportMode.set($event)"
       (shareLinkCopied)="handleShareLinkCopied()"
@@ -3354,12 +3238,16 @@
       (downloadPng)="downloadCanvasPng()"
       (downloadSvg)="downloadCanvasSvg()"
       (downloadProjectJson)="downloadProjectJson()"
-      (openSettings)="openExportSettingsModal()"
-      (closeSettings)="closeExportSettingsModal()"
-      (downloadTex)="downloadStandaloneFile()"
-      (latexConfigPatch)="patchLatexExportConfig($event)"
-      (codeThemeChange)="setCodeHighlightTheme($event)"></app-export-modal>
+      (openSettings)="openAppConfigurationDialog('latex', true)"
+      (downloadTex)="downloadStandaloneFile()"></app-export-modal>
   }
+
+  <app-configuration-dialog
+    [open]="appConfigurationDialogOpen()"
+    [initialTab]="appConfigurationInitialTab()"
+    [suggestedCaption]="suggestedCaption()"
+    [suggestedLabel]="suggestedLabel()"
+    (closeDialog)="closeAppConfigurationDialog()"></app-configuration-dialog>
 
   @if (figureSearchOpen()) {
     <app-figure-search-overlay
@@ -3370,7 +3258,7 @@
       [placeholder]="'figureSearchPlaceholder' | translate"
       [clearLabel]="'figureSearchClear' | translate"
       [noResultsLabel]="'figureSearchNoResults' | translate"
-      [shortcutLabel]="figureSearchShortcutLabel"
+      [shortcutLabel]="figureSearchShortcutLabel()"
       [selectLabel]="'figureSearchSelect' | translate"
       (closeSearch)="closeFigureSearch()"
       (selectPreset)="selectFigureSearchPreset($event)"></app-figure-search-overlay>

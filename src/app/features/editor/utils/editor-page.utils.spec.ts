@@ -22,7 +22,12 @@ const preferences: EditorPreferences = {
   defaultStroke: '#111111',
   defaultFill: '#f5f5f5',
   defaultStrokeWidth: 0.28,
-  defaultArrowScale: 1.35
+  defaultArrowScale: 1.35,
+  defaultArrowType: 'latex',
+  defaultLineStrokeStyle: 'solid',
+  defaultCornerRadius: 0.14,
+  defaultTextColor: '#161616',
+  defaultTextFontSize: 0.42
 };
 
 const lineShape: LineShape = {

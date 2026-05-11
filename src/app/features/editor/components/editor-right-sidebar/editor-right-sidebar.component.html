@@ -1,5 +1,5 @@
 @if (showSidebarContent()) {
-  <div class="sidebar-tabs">
+  <div class="sidebar-tabs" [attr.data-active-tab]="editor().inspectorTab()">
     <button type="button" [class.is-active]="editor().inspectorTab() === 'properties'" (click)="editor().setInspectorTab('properties')">
       {{ editor().t('properties') }}
     </button>

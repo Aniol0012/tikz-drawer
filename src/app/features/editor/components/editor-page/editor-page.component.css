@@ -431,6 +431,48 @@
   padding: 0;
 }
 
+.scene-layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.scene-layers-header h3 {
+  margin: 0;
+  color: var(--app-foreground);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.inline-icon-button {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  background: var(--tool-surface);
+  cursor: pointer;
+}
+
+.inline-icon-button:hover,
+.inline-icon-button:focus-visible {
+  color: var(--app-foreground);
+  border-color: var(--tool-border-strong);
+}
+
+.inline-icon-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
 .section-header svg {
   flex: 0 0 auto;
   transition: transform 160ms ease;
@@ -2343,84 +2385,6 @@ kbd {
 
 .share-field input {
   flex: 1 1 280px;
-}
-
-:host ::ng-deep .tok-command {
-  color: var(--code-command, #4a78dc);
-}
-
-:host ::ng-deep .tok-option {
-  color: var(--code-option, #5e7d3d);
-}
-
-:host ::ng-deep .tok-punctuation {
-  color: var(--code-punctuation, #6e6e6e);
-}
-
-:host ::ng-deep .tok-number {
-  color: var(--code-number, #b86a32);
-}
-
-:host ::ng-deep .tok-color {
-  color: var(--code-color, #bb4f72);
-}
-
-:host ::ng-deep .tok-comment {
-  color: var(--code-comment, #8b8b8b);
-}
-
-[data-code-theme='aurora'] {
-  --code-command: #5c7cfa;
-  --code-option: #2f9e44;
-  --code-punctuation: #6b7280;
-  --code-number: #d97706;
-  --code-color: #d6336c;
-  --code-comment: #94a3b8;
-}
-
-[data-code-theme='sunset'] {
-  --code-command: #c2410c;
-  --code-option: #0f766e;
-  --code-punctuation: #7c6f64;
-  --code-number: #b45309;
-  --code-color: #be185d;
-  --code-comment: #a8a29e;
-}
-
-[data-code-theme='midnight'] {
-  --code-command: #7dd3fc;
-  --code-option: #86efac;
-  --code-punctuation: #94a3b8;
-  --code-number: #fbbf24;
-  --code-color: #f9a8d4;
-  --code-comment: #64748b;
-}
-
-[data-code-theme='forest'] {
-  --code-command: #2f855a;
-  --code-option: #4c9a2a;
-  --code-punctuation: #5f6b66;
-  --code-number: #c05621;
-  --code-color: #2b8a78;
-  --code-comment: #7a8b85;
-}
-
-[data-code-theme='rose'] {
-  --code-command: #c2255c;
-  --code-option: #2b8a3e;
-  --code-punctuation: #8a7d85;
-  --code-number: #d9480f;
-  --code-color: #a61e4d;
-  --code-comment: #9c8f97;
-}
-
-[data-code-theme='graphite'] {
-  --code-command: #4c6ef5;
-  --code-option: #2b8a3e;
-  --code-punctuation: #868e96;
-  --code-number: #e67700;
-  --code-color: #c2255c;
-  --code-comment: #adb5bd;
 }
 
 .export-config-grid {

@@ -92,15 +92,15 @@ import {
   TEXT_MIN_HEIGHT_FACTOR
 } from '../../constants/editor.constants';
 import { getIconPath, iconPaths } from '../../config/editor-icons';
+import { ARROW_TIP_OPTIONS, arrowTipIconFilled as isSharedArrowTipIconFilled } from '../../config/arrow-tip.config';
+import { LINE_STROKE_STYLE_OPTIONS } from '../../config/line-stroke-style.config';
 import type { Axis, LineAttachmentCandidate } from './editor-page.types';
 import {
   type ArrowControlHandle,
   type ArrowDirection,
   type ArrowEndpoint,
   type ArrowScaleKind,
-  type ArrowTipOption,
   type ClipboardShapeSet,
-  type CodeHighlightTheme,
   type ContextAction,
   type ContextMenuState,
   type CssTextAlign,
@@ -113,7 +113,6 @@ import {
   type InspectorTab,
   type InteractionState,
   type LatexAlignment,
-  type LatexExportConfig,
   type LibrarySection,
   type LineAttachmentPreviewDescriptor,
   type LineBooleanKey,
@@ -125,9 +124,6 @@ import {
   type MultiEditSelectionInfo,
   type NotificationTone,
   type PinchZoomState,
-  type PreferenceBooleanKey,
-  type PreferenceNumberKey,
-  type PreferenceTextKey,
   type RecentTextTap,
   type RectangleCanvasShape,
   type ResizeCursor,
@@ -158,11 +154,12 @@ import { EditorCanvasToolbarComponent } from '../editor-canvas-toolbar/editor-ca
 import { TableDialogComponent } from '../table-dialog/table-dialog.component';
 import { ImportCodeModalComponent } from '../import-code-modal/import-code-modal.component';
 import { ExportModalComponent } from '../export-modal/export-modal.component';
+import { AppConfigurationDialogComponent, type ApplicationConfigurationTab } from '../app-configuration-dialog/app-configuration-dialog.component';
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
-import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
+import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -170,7 +167,6 @@ import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import {
   decodeSharePayload,
   encodeSharePayload,
-  highlightLatex,
   type SelectionBounds,
   transformCanvasShape,
   type TransformCanvasShapeOptions,
@@ -178,14 +174,7 @@ import {
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil } from '../../utils/editor-export-svg.utils';
-import {
-  normalizeLatexExportConfig as normalizeLatexExportConfigUtil,
-  parsePinnedToolIdsFromStorage,
-  parseSavedTemplatesFromStorage,
-  parseStoredLatexExportConfig as parseStoredLatexExportConfigUtil,
-  restoreCodeHighlightThemeFromStorage,
-  serializableLatexExportConfig as serializableLatexExportConfigUtil
-} from '../../utils/editor-storage.utils';
+import { parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
@@ -197,24 +186,30 @@ import {
   arrowNavigationKeyFromKey,
   isCopyShortcut,
   isCutShortcut,
-  isDeleteShortcutKey,
+  isDeleteShortcut,
   isEscapeShortcutKey,
   isFigureSearchShortcut,
+  isOpenSettingsShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectAllShortcut,
   isSelectionModifierPressed,
   isUndoShortcut,
-  isZoomInShortcutKey,
-  isZoomOutShortcutKey,
+  isZoomInShortcut,
+  isZoomOutShortcut,
+  keyboardShortcutForAction,
+  keyboardShortcutLabel,
+  type KeyboardShortcutAction,
   type ModifierKey,
   pressedModifierFromKey,
-  toolIdFromShortcutKey
+  toolIdFromShortcutEvent
 } from '../../utils/editor-keyboard.utils';
 import { buildTablePresetShapes, localizePresetCanvasShapes as localizePresetTemplateShapes } from '../../presets/presets';
 import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codegen';
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
+import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
+import { AppThemeService } from '../../state/app-theme.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
@@ -235,14 +230,13 @@ import {
   type GraphPresetId
 } from '../../models/graph.models';
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
-import { CODE_HIGHLIGHT_THEMES, DEFAULT_LATEX_EXPORT_CONFIG } from '../../config/latex-export.config';
+import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
   ArrowMarkerGeometry,
   ArrowTipKind,
   CanvasShape,
-  EditorPreferences,
   EditorSyncMessage,
   LineEndpointAttachment,
   LineShape,
@@ -269,12 +263,15 @@ import {
   maxRectangleCornerRadius as maxRectangleCornerRadiusUtil,
   maxTriangleCornerRadius as maxTriangleCornerRadiusUtil,
   normalizeRotationDegrees as normalizeRotationDegreesUtil,
+  pointInTriangleShape as pointInTriangleShapeUtil,
   rotatePointAround as rotatePointAroundUtil,
   rotateShapeAround as rotateShapeAroundUtil,
   shapeBounds as shapeBoundsUtil,
   shapeCenter as shapeCenterUtil,
   shapeRotation as shapeRotationUtil,
-  triangleCornerAttachmentPoints as triangleCornerAttachmentPointsUtil,
+  triangleCornerAttachmentAnchors as triangleCornerAttachmentAnchorsUtil,
+  triangleCornerAttachmentPointFromAnchor as triangleCornerAttachmentPointFromAnchorUtil,
+  triangleOutlinePoints as triangleOutlinePointsUtil,
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
@@ -289,6 +286,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     TableDialogComponent,
     ImportCodeModalComponent,
     ExportModalComponent,
+    AppConfigurationDialogComponent,
     RangeInputCardComponent,
     RegularPolygonDialogComponent,
     GraphDialogComponent,
@@ -300,9 +298,10 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EditorStore],
+  providers: [EditorStore, EditorConfigurationService],
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
+    '[attr.data-tooltip-disabled]': 'configuration.generalConfig().showHelpTooltips ? null : ""',
     '(window:keydown)': 'handleWindowKeydown($event)',
     '(window:paste)': 'handleWindowPaste($event)',
     '(window:keyup)': 'handleWindowKeyup($event)',
@@ -315,14 +314,15 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
 export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
-  private readonly codeThemeStorageKey = EDITOR_STORAGE_KEYS.codeTheme;
-  private readonly latexExportConfigStorageKey = EDITOR_STORAGE_KEYS.latexExportConfig;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
+  readonly configuration = inject(EditorConfigurationService);
+  private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
+  private readonly appThemeService = inject(AppThemeService);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
   private readonly editorStorage = inject(EditorLocalStorageService);
@@ -343,6 +343,14 @@ export class EditorPageComponent {
   readonly selectedShape = this.store.selectedShape;
   readonly selectedShapes = this.store.selectedShapes;
   readonly selectionCount = this.store.selectionCount;
+  readonly singleSelectedTriangle = computed<TriangleCanvasShape | null>(() => {
+    if (this.selectionCount() !== 1) {
+      return null;
+    }
+
+    const selectedShape = this.selectedShape();
+    return selectedShape?.kind === 'triangle' ? selectedShape : null;
+  });
   readonly parserWarnings = this.store.parserWarnings;
   readonly objectPresets = this.store.objectPresets;
   readonly scenePresets = this.store.scenePresets;
@@ -363,10 +371,12 @@ export class EditorPageComponent {
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
   readonly importModalOpen = signal(false);
-  readonly exportSettingsModalOpen = signal(false);
+  readonly appConfigurationDialogOpen = signal(false);
+  readonly appConfigurationInitialTab = signal<ApplicationConfigurationTab>('general');
+  readonly reopenExportAfterConfiguration = signal(false);
   readonly exportMode = signal<ExportMode>('snippet');
-  readonly codeHighlightTheme = signal<CodeHighlightTheme>(this.restoreCodeHighlightTheme());
-  readonly latexExportConfig = signal<LatexExportConfig>(this.restoreLatexExportConfig());
+  readonly codeHighlightTheme = this.configuration.codeHighlightTheme;
+  readonly latexExportConfig = this.configuration.latexExportConfig;
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly pinnedToolIds = signal<readonly string[]>([]);
   readonly pinnedToolsReady = signal(false);
@@ -375,7 +385,7 @@ export class EditorPageComponent {
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
   readonly figureSearchOpen = signal(false);
-  readonly figureSearchShortcutLabel = this.platformShortcutLabel('Ctrl + F', '⌘ F');
+  readonly figureSearchShortcutLabel = computed(() => this.shortcutLabel('figureSearch'));
   readonly selectedImageFilename = signal('');
   readonly templateDialogOpen = signal(false);
   readonly templateDialogMode = signal<'create' | 'edit'>('create');
@@ -430,7 +440,6 @@ export class EditorPageComponent {
     interface: true,
     concepts: true,
     properties: false,
-    sceneSettings: false,
     layers: false
   });
   readonly spacePressed = signal(false);
@@ -498,20 +507,31 @@ export class EditorPageComponent {
       ]
     }
   ];
-  readonly arrowTipOptions: readonly ArrowTipOption[] = [
-    { id: 'latex', title: 'Latex' },
-    { id: 'triangle', title: 'Triangle' },
-    { id: 'stealth', title: 'Stealth' },
-    { id: 'diamond', title: 'Open triangle' },
-    { id: 'circle', title: 'Circle' },
-    { id: 'bar', title: 'Bar' },
-    { id: 'hooks', title: 'Hooks' },
-    { id: 'bracket', title: 'Bracket' },
-    { id: 'kite', title: 'Kite' },
-    { id: 'square', title: 'Square' },
-    { id: 'parenthesis', title: 'Parenthesis' },
-    { id: 'straight-barb', title: 'Straight barb' }
-  ];
+  readonly arrowTipOptions = ARROW_TIP_OPTIONS;
+  readonly lineStrokeStyleOptions = LINE_STROKE_STYLE_OPTIONS;
+  readonly lineStrokeStyleSelectOptions = computed<readonly AppSelectOption[]>(() =>
+    this.lineStrokeStyleOptions.map((style) => ({
+      value: style.id,
+      label: this.t(style.labelKey),
+      iconPath: style.iconPath
+    }))
+  );
+  readonly arrowDirectionSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'none', label: this.t('arrowDirectionNone'), iconPath: 'M5 12h14' },
+    { value: 'forward', label: this.t('arrowDirectionForward'), iconPath: iconPaths.arrow },
+    { value: 'backward', label: this.t('arrowDirectionBackward'), iconPath: 'M19 12H8m0 0 3-3m-3 3 3 3' },
+    { value: 'both', label: this.t('arrowDirectionBoth'), iconPath: 'M8 12h8M8 12l3-3m-3 3 3 3m5-3-3-3m3 3-3 3' }
+  ]);
+  readonly lineModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'straight', label: this.t('lineModeStraight'), iconPath: iconPaths.segment },
+    { value: 'curved', label: this.t('lineModeCurved'), iconPath: 'M5 16C8 7 16 17 19 8' }
+  ]);
+  readonly arrowBendModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M5 12h14' },
+    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M5 15C9 7 15 7 19 15' },
+    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M5 9C9 17 15 17 19 9' },
+    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M5 16Q12 5 19 16' }
+  ]);
   readonly templateIconOptions = [
     'pencil',
     'arrow',
@@ -847,13 +867,21 @@ export class EditorPageComponent {
     if (!selectionBounds) {
       return [];
     }
+    if (singleSelectedShape?.kind === 'triangle') {
+      const handles: HandleDescriptor[] = [...this.triangleSelectionHandles(singleSelectedShape)];
+      if (this.selectionCanRotate(selectedShapes)) {
+        handles.push(this.rotationHandleFromHandles(handles, singleSelectedShape));
+      }
+      handles.push(...this.cornerRadiusHandles(singleSelectedShape));
+      return handles;
+    }
     const rotatedSingleShapeHandles = singleSelectedShape ? this.rotatedSingleShapeHandles(singleSelectedShape) : null;
     if (rotatedSingleShapeHandles) {
       const handles: HandleDescriptor[] = [...rotatedSingleShapeHandles];
       if (this.selectionCanRotate(selectedShapes)) {
         handles.push(this.rotationHandleFromHandles(rotatedSingleShapeHandles, singleSelectedShape as CanvasShape));
       }
-      if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+      if (singleSelectedShape?.kind === 'rectangle') {
         handles.push(...this.cornerRadiusHandles(singleSelectedShape));
       }
       return handles;
@@ -878,7 +906,7 @@ export class EditorPageComponent {
     if (rotateHandle) {
       handles.push(rotateHandle);
     }
-    if (singleSelectedShape?.kind === 'rectangle' || singleSelectedShape?.kind === 'triangle') {
+    if (singleSelectedShape?.kind === 'rectangle') {
       handles.push(...this.cornerRadiusHandles(singleSelectedShape));
     }
     return handles;
@@ -969,10 +997,10 @@ export class EditorPageComponent {
   readonly standaloneDocument = computed(() => this.buildStandaloneDocument());
   readonly displayedExportCode = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().code : this.standaloneDocument()));
   readonly displayedExportImports = computed(() => (this.exportMode() === 'snippet' ? this.snippetExport().imports : ''));
-  readonly highlightedExportImports = computed(() => highlightLatex(this.displayedExportImports()));
-  readonly highlightedExportCode = computed(() => highlightLatex(this.displayedExportCode()));
-  readonly highlightedGeneratedImports = computed(() => highlightLatex(this.snippetExport().imports));
-  readonly highlightedGeneratedCode = computed(() => highlightLatex(this.snippetExport().code));
+  readonly highlightedExportImports = computed(() => this.codeHighlightThemeService.highlight(this.displayedExportImports()));
+  readonly highlightedExportCode = computed(() => this.codeHighlightThemeService.highlight(this.displayedExportCode()));
+  readonly highlightedGeneratedImports = computed(() => this.codeHighlightThemeService.highlight(this.snippetExport().imports));
+  readonly highlightedGeneratedCode = computed(() => this.codeHighlightThemeService.highlight(this.snippetExport().code));
   readonly selectionHandleSize = computed(() =>
     this.coarsePointer() ? EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.coarse : EDITOR_SELECTION_HANDLE_SIZE_BY_POINTER.fine
   );
@@ -1122,12 +1150,6 @@ export class EditorPageComponent {
     });
 
     effect(() => {
-      this.editorStorage.setString(this.codeThemeStorageKey, this.codeHighlightTheme());
-    });
-    effect(() => {
-      this.editorStorage.setJson(this.latexExportConfigStorageKey, this.serializableLatexExportConfig(this.latexExportConfig()));
-    });
-    effect(() => {
       this.editorStorage.setJson(this.sidebarSizesStorageKey, {
         left: this.leftSidebarWidth(),
         right: this.rightSidebarWidth()
@@ -1235,29 +1257,34 @@ export class EditorPageComponent {
   }
 
   toolShortcut(toolId: string): string | undefined {
+    const action = this.shortcutActionForTool(toolId);
+    return action ? this.shortcutLabel(action) : undefined;
+  }
+
+  private shortcutActionForTool(toolId: string): KeyboardShortcutAction | null {
     switch (toolId) {
       case 'select':
-        return 'V';
+        return 'selectTool';
       case 'label':
-        return 'T';
+        return 'labelTool';
       case 'box':
-        return 'R';
+        return 'boxTool';
       case 'circle':
-        return 'C';
+        return 'circleTool';
       case 'segment':
-        return 'L';
+        return 'segmentTool';
       case 'arrow':
-        return 'A';
+        return 'arrowTool';
       case 'pencil':
-        return 'P';
+        return 'pencilTool';
       case 'note':
-        return 'N';
+        return 'noteTool';
       case 'ellipse':
-        return 'E';
+        return 'ellipseTool';
       case 'image':
-        return 'I';
+        return 'imageTool';
       default:
-        return undefined;
+        return null;
     }
   }
 
@@ -1444,12 +1471,13 @@ export class EditorPageComponent {
   }
 
   setTheme(theme: ThemeMode): void {
-    if (this.themeToggleLocked || this.preferences().theme === theme) {
+    const nextTheme = this.appThemeService.normalize(theme, this.preferences().theme);
+    if (this.themeToggleLocked || this.preferences().theme === nextTheme) {
       return;
     }
 
     this.themeToggleLocked = true;
-    this.store.setTheme(theme);
+    this.store.setTheme(nextTheme);
     if (this.themeToggleCooldownHandle !== null) {
       clearTimeout(this.themeToggleCooldownHandle);
     }
@@ -1460,7 +1488,7 @@ export class EditorPageComponent {
   }
 
   toggleTheme(): void {
-    this.setTheme(this.preferences().theme === 'dark' ? 'light' : 'dark');
+    this.setTheme(this.appThemeService.nextTheme(this.preferences().theme));
   }
 
   toggleFileMenu(): void {
@@ -1516,24 +1544,27 @@ export class EditorPageComponent {
 
   closeExportModal(): void {
     this.exportModalOpen.set(false);
-    this.exportSettingsModalOpen.set(false);
     this.shareFeedback.set('');
     this.shareFeedbackTone.set('info');
   }
 
-  openExportSettingsModal(): void {
-    this.exportSettingsModalOpen.set(true);
+  openAppConfigurationDialog(tab: ApplicationConfigurationTab = 'general', returnToExport = false): void {
+    const shouldReturnToExport = returnToExport && this.exportModalOpen();
+    this.reopenExportAfterConfiguration.set(shouldReturnToExport);
+    if (shouldReturnToExport) {
+      this.exportModalOpen.set(false);
+    }
+    this.appConfigurationInitialTab.set(tab);
+    this.appConfigurationDialogOpen.set(true);
+    this.closeFileMenu();
   }
 
-  closeExportSettingsModal(): void {
-    this.exportSettingsModalOpen.set(false);
-  }
-
-  patchLatexExportConfig(patch: Partial<LatexExportConfig>): void {
-    this.latexExportConfig.update((config) => ({
-      ...config,
-      ...patch
-    }));
+  closeAppConfigurationDialog(): void {
+    this.appConfigurationDialogOpen.set(false);
+    if (this.reopenExportAfterConfiguration()) {
+      this.reopenExportAfterConfiguration.set(false);
+      this.exportModalOpen.set(true);
+    }
   }
 
   setInspectorTab(tab: InspectorTab): void {
@@ -1547,18 +1578,15 @@ export class EditorPageComponent {
       ...sections,
       layers: false
     }));
-    afterNextRender(() => {
-      const scrollIntoLayers = () => {
-        const sidebarScroll = this.rightSidebar()?.sidebarScroll()?.nativeElement;
-        const layersSection = this.layersSection()?.nativeElement;
-        if (sidebarScroll && layersSection) {
-          const top = Math.max(layersSection.offsetTop - 12, 0);
-          sidebarScroll.scrollTo({ top, behavior: 'smooth' });
-          return;
-        }
-        layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      };
-      requestAnimationFrame(() => requestAnimationFrame(scrollIntoLayers));
+    this.runAfterNextPaint(() => {
+      const sidebarScroll = this.rightSidebar()?.sidebarScroll()?.nativeElement;
+      const layersSection = this.layersSection()?.nativeElement;
+      if (sidebarScroll && layersSection) {
+        const top = Math.max(layersSection.offsetTop - 12, 0);
+        sidebarScroll.scrollTo({ top, behavior: 'smooth' });
+        return;
+      }
+      layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   }
 
@@ -2177,6 +2205,10 @@ export class EditorPageComponent {
   }
 
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     event.stopPropagation();
     this.focusCanvasViewport();
 
@@ -2293,6 +2325,11 @@ export class EditorPageComponent {
 
   onShapeDoubleClick(event: MouseEvent, shape: CanvasShape): void {
     if (this.activeTool() !== 'select') {
+      this.recentSelectedShapeTap.set(null);
+      return;
+    }
+
+    if (!this.pointerHitsShape(event, shape)) {
       this.recentSelectedShapeTap.set(null);
       return;
     }
@@ -2447,28 +2484,8 @@ export class EditorPageComponent {
     this.runSceneMutation(() => this.store.sendSelectedToBack());
   }
 
-  updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
-    const rawValue = Number((event.target as HTMLInputElement).value);
-    const clampedValue = maximumValue === undefined ? Math.max(minimumValue, rawValue) : Math.min(maximumValue, Math.max(minimumValue, rawValue));
-    this.store.patchPreferences({ [key]: clampedValue } as Partial<EditorPreferences>);
-  }
-
-  updatePreferenceText(key: PreferenceTextKey, event: Event): void {
-    this.store.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
-  }
-
-  onBooleanPreferenceChange(key: PreferenceBooleanKey, checked: boolean): void {
-    this.store.patchPreferences({ [key]: checked } as Partial<EditorPreferences>);
-  }
-
   onSceneNameInputValue(value: string): void {
     this.store.renameScene(value);
-  }
-
-  setCodeHighlightTheme(theme: string): void {
-    if (CODE_HIGHLIGHT_THEMES.includes(theme as CodeHighlightTheme)) {
-      this.codeHighlightTheme.set(theme as CodeHighlightTheme);
-    }
   }
 
   updateShapeText(key: ShapeTextKey, event: Event): void {
@@ -2861,12 +2878,12 @@ export class EditorPageComponent {
   private patchInspectorSelection(mutator: (shape: CanvasShape) => CanvasShape): void {
     this.ensureInspectorEditHistoryCheckpoint();
 
-    if (this.selectionCount() > 1) {
-      this.store.patchSelectedShapes(mutator);
+    const selectedShapes = this.selectedShapes();
+    if (selectedShapes.length === 0) {
       return;
     }
 
-    this.store.patchSelectedShape(mutator);
+    this.replaceShapesAndSyncAttachedLines(selectedShapes.map((shape) => mutator(shape)));
   }
 
   private ensureInspectorEditHistoryCheckpoint(): void {
@@ -3066,6 +3083,10 @@ export class EditorPageComponent {
   }
 
   openShapeContextMenu(event: MouseEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     if (this.consumeContextMenuSuppression()) {
       event.preventDefault();
       event.stopPropagation();
@@ -3265,6 +3286,10 @@ export class EditorPageComponent {
   }
 
   startMove(event: PointerEvent, shape: CanvasShape): void {
+    if (!this.pointerHitsShape(event, shape)) {
+      return;
+    }
+
     if (!this.canStartMove(event)) {
       this.recentSelectedShapeTap.set(null);
       return;
@@ -3291,6 +3316,15 @@ export class EditorPageComponent {
 
   private canStartMove(event: PointerEvent): boolean {
     return this.activeTool() === 'select' && event.button === 0 && !this.spacePressed();
+  }
+
+  private pointerHitsShape(event: Pick<MouseEvent, 'clientX' | 'clientY'>, shape: CanvasShape): boolean {
+    if (shape.kind !== 'triangle') {
+      return true;
+    }
+
+    const strokeTolerance = Math.max(shape.strokeWidth / 2, 0.06);
+    return pointInTriangleShapeUtil(shape, this.toScenePoint(event.clientX, event.clientY), strokeTolerance);
   }
 
   private handleMoveStartForTextShape(event: PointerEvent, shape: TextCanvasShape): boolean {
@@ -3609,6 +3643,10 @@ export class EditorPageComponent {
     return [...nextMovedShapes, ...attachedLines];
   }
 
+  private replaceShapesAndSyncAttachedLines(nextShapes: readonly CanvasShape[]): void {
+    this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
+  }
+
   private handlePanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
     const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
     const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
@@ -3664,9 +3702,7 @@ export class EditorPageComponent {
       interactionState.handle.startsWith('corner-radius-')
     ) {
       const nextCornerRadius = this.cornerRadiusFromPointer(interactionState.initialShape, interactionState.handle, adjustedPointerPoint);
-      this.store.patchSelectedShape((shape) =>
-        shape.kind === 'rectangle' || shape.kind === 'triangle' ? ({ ...shape, cornerRadius: nextCornerRadius } as CanvasShape) : shape
-      );
+      this.replaceShapesAndSyncAttachedLines([{ ...interactionState.initialShape, cornerRadius: nextCornerRadius } as CanvasShape]);
       return;
     }
 
@@ -3680,7 +3716,7 @@ export class EditorPageComponent {
         nextPoint,
         event.altKey
       );
-      this.store.patchSelectedShape(() => resizedShape);
+      this.replaceShapesAndSyncAttachedLines([resizedShape]);
       return;
     }
 
@@ -3688,7 +3724,9 @@ export class EditorPageComponent {
       return;
     }
 
-    this.store.replaceShapes(this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint));
+    this.replaceShapesAndSyncAttachedLines(
+      this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint)
+    );
   }
 
   private withLineEndpointAttachment(shape: CanvasShape, handle: ResizeHandle, point: Point, forceDetach = false): CanvasShape {
@@ -3833,8 +3871,7 @@ export class EditorPageComponent {
 
   private shapeAttachmentAnchors(shape: CanvasShape): readonly Point[] {
     if (shape.kind === 'triangle') {
-      const center = this.shapeCenter(shape);
-      return this.triangleAttachmentPoints(shape).map((point) => this.normalizeAttachmentAnchor(center, point));
+      return triangleCornerAttachmentAnchorsUtil(shape);
     }
 
     return [
@@ -3907,12 +3944,7 @@ export class EditorPageComponent {
     }
 
     if (shape.kind === 'triangle') {
-      const anchors = this.shapeAttachmentAnchors(shape);
-      const attachmentIndex = anchors.findIndex((candidate) => this.sameAnchor(candidate, anchor));
-      if (attachmentIndex >= 0) {
-        const point = this.triangleAttachmentPoints(shape)[attachmentIndex];
-        return this.rotatedShapeAttachmentPoint(shape, point, center);
-      }
+      return this.rotatedShapeAttachmentPoint(shape, triangleCornerAttachmentPointFromAnchorUtil(shape, anchor), center);
     }
 
     if (shape.kind === 'rectangle' || shape.kind === 'image') {
@@ -4334,65 +4366,15 @@ export class EditorPageComponent {
   }
 
   arrowTipIconPath(arrowType: ArrowTipKind): string {
-    switch (arrowType) {
-      case 'latex':
-        return getIconPath('arrowTipLatex');
-      case 'triangle':
-        return getIconPath('arrowTipTriangle');
-      case 'stealth':
-        return getIconPath('arrowTipStealth');
-      case 'diamond':
-        return getIconPath('arrowTipDiamond');
-      case 'circle':
-        return getIconPath('arrowTipCircle');
-      case 'bar':
-        return getIconPath('arrowTipBar');
-      case 'hooks':
-        return getIconPath('arrowTipHooks');
-      case 'bracket':
-        return getIconPath('arrowTipBracket');
-      case 'kite':
-        return getIconPath('arrowTipKite');
-      case 'square':
-        return getIconPath('arrowTipSquare');
-      case 'parenthesis':
-        return getIconPath('arrowTipParenthesis');
-      case 'straight-barb':
-        return getIconPath('arrowTipStraightBarb');
-    }
+    return this.arrowTipOptions.find((option) => option.id === arrowType)?.iconPath ?? getIconPath('arrowTipLatex');
   }
 
   arrowTipIconFilled(arrowType: ArrowTipKind): boolean {
-    return arrowType === 'triangle' || arrowType === 'stealth' || arrowType === 'circle' || arrowType === 'kite' || arrowType === 'square';
+    return isSharedArrowTipIconFilled(arrowType);
   }
 
   arrowTipLabel(arrowType: ArrowTipKind): string {
-    switch (arrowType) {
-      case 'latex':
-        return this.t('arrowTypeLatex');
-      case 'triangle':
-        return this.t('arrowTypeTriangle');
-      case 'stealth':
-        return this.t('arrowTypeStealth');
-      case 'diamond':
-        return this.t('arrowTypeDiamond');
-      case 'circle':
-        return this.t('arrowTypeCircle');
-      case 'bar':
-        return this.t('arrowTypeBar');
-      case 'hooks':
-        return this.t('arrowTypeHooks');
-      case 'bracket':
-        return this.t('arrowTypeBracket');
-      case 'kite':
-        return this.t('arrowTypeKite');
-      case 'square':
-        return this.t('arrowTypeSquare');
-      case 'parenthesis':
-        return this.t('arrowTypeParenthesis');
-      case 'straight-barb':
-        return this.t('arrowTypeStraightBarb');
-    }
+    return this.t(this.arrowTipOptions.find((option) => option.id === arrowType)?.labelKey ?? 'arrowTypeLatex');
   }
 
   selectionOutline(): {
@@ -4557,6 +4539,30 @@ export class EditorPageComponent {
     });
   }
 
+  private triangleSelectionHandles(shape: TriangleCanvasShape): readonly HandleDescriptor[] {
+    const center = this.shapeCenter(shape);
+    const rotation = this.shapeRotation(shape);
+    const [apex, left, right] = this.trianglePoints(shape);
+    const handles: ReadonlyArray<{ readonly id: ResizeHandle; readonly point: Point }> = [
+      { id: 'n', point: apex },
+      { id: 'sw', point: left },
+      { id: 'se', point: right }
+    ];
+    const centerSvg = { x: this.toSvgX(center.x), y: this.toSvgY(center.y) };
+
+    return handles.map(({ id, point }) => {
+      const renderedPoint = rotation ? this.rotatePointAround(point, center, -rotation) : point;
+      const x = this.toSvgX(renderedPoint.x);
+      const y = this.toSvgY(renderedPoint.y);
+      return {
+        id,
+        x,
+        y,
+        cursor: this.resizeCursorForVector({ x: x - centerSvg.x, y: y - centerSvg.y })
+      };
+    });
+  }
+
   private cornerRadiusHandles(shape: RectangleCanvasShape | TriangleCanvasShape): readonly HandleDescriptor[] {
     return shape.kind === 'rectangle' ? this.rectangleCornerRadiusHandles(shape) : this.triangleCornerRadiusHandles(shape);
   }
@@ -4612,7 +4618,7 @@ export class EditorPageComponent {
     if (maxRadius <= 0) {
       return [];
     }
-    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR) / this.preferences().scale;
+    const minimumVisibleInset = (this.selectionHandleSize() * EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR * 2.15) / this.preferences().scale;
     const inset = Math.min(maxRadius, Math.max(shape.cornerRadius, minimumVisibleInset));
     const corners = this.trianglePoints(shape);
     const center = this.shapeCenter(shape);
@@ -5008,7 +5014,14 @@ export class EditorPageComponent {
   handleWindowKeydown(event: KeyboardEvent): void {
     this.handleModifierKeydown(event);
 
-    if (isFigureSearchShortcut(event)) {
+    if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openAppConfigurationDialog();
+      return;
+    }
+
+    if (isFigureSearchShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       event.preventDefault();
       event.stopPropagation();
       this.openFigureSearch();
@@ -5041,23 +5054,23 @@ export class EditorPageComponent {
       return;
     }
 
-    const toolId = toolIdFromShortcutKey(event.key);
+    const toolId = toolIdFromShortcutEvent(event, this.configuration.generalConfig().keyboardShortcuts);
     if (toolId) {
       this.setActiveTool(toolId);
       return;
     }
 
-    if (isDeleteShortcutKey(event.key)) {
+    if (isDeleteShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.removeSelected();
       return;
     }
 
-    if (isZoomInShortcutKey(event.key)) {
+    if (isZoomInShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.zoomIn();
       return;
     }
 
-    if (isZoomOutShortcutKey(event.key)) {
+    if (isZoomOutShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       this.zoomOut();
       return;
     }
@@ -5076,7 +5089,7 @@ export class EditorPageComponent {
   }
 
   private handleSelectAllShortcut(event: KeyboardEvent): boolean {
-    if (!isSelectAllShortcut(event)) {
+    if (!isSelectAllShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       return false;
     }
 
@@ -5094,20 +5107,44 @@ export class EditorPageComponent {
     if (this.handleUndoRedoShortcut(event)) {
       return true;
     }
-    if (this.handlePreventableShortcut(event, isCopyShortcut, () => this.copySelected())) {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isCopyShortcut(shortcutEvent, shortcuts),
+        () => this.copySelected()
+      )
+    ) {
       return true;
     }
-    if (this.handlePreventableShortcut(event, isCutShortcut, () => this.cutSelected())) {
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isCutShortcut(shortcutEvent, shortcuts),
+        () => this.cutSelected()
+      )
+    ) {
       return true;
     }
-    return isPasteShortcut(event);
+    return isPasteShortcut(event, shortcuts);
   }
 
   private handleUndoRedoShortcut(event: KeyboardEvent): boolean {
-    if (this.handlePreventableShortcut(event, isRedoShortcut, () => this.redo())) {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (
+      this.handlePreventableShortcut(
+        event,
+        (shortcutEvent) => isRedoShortcut(shortcutEvent, shortcuts),
+        () => this.redo()
+      )
+    ) {
       return true;
     }
-    return this.handlePreventableShortcut(event, isUndoShortcut, () => this.undo());
+    return this.handlePreventableShortcut(
+      event,
+      (shortcutEvent) => isUndoShortcut(shortcutEvent, shortcuts),
+      () => this.undo()
+    );
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {
@@ -5227,7 +5264,7 @@ export class EditorPageComponent {
       { isOpen: () => !!this.regularPolygonDialogState(), close: () => this.closeRegularPolygonDialog() },
       { isOpen: () => !!this.graphDialogState(), close: () => this.closeGraphDialog() },
       { isOpen: () => this.templateDialogOpen(), close: () => this.closeTemplateDialog() },
-      { isOpen: () => this.exportSettingsModalOpen(), close: () => this.closeExportSettingsModal() },
+      { isOpen: () => this.appConfigurationDialogOpen(), close: () => this.closeAppConfigurationDialog() },
       { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },
       { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
       { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
@@ -5380,13 +5417,7 @@ export class EditorPageComponent {
       return;
     }
 
-    if (key === this.codeThemeStorageKey && newValue) {
-      this.setCodeHighlightTheme(newValue);
-      return;
-    }
-
-    if (key === this.latexExportConfigStorageKey) {
-      this.latexExportConfig.set(this.parseStoredLatexExportConfig(newValue));
+    if (this.configuration.restoreFromStorageEvent(key, newValue)) {
       return;
     }
 
@@ -5620,7 +5651,7 @@ export class EditorPageComponent {
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
     if (sharedState.latexExportConfig) {
-      this.latexExportConfig.set(this.normalizeLatexExportConfig(sharedState.latexExportConfig));
+      this.configuration.setLatexExportConfig(sharedState.latexExportConfig);
     }
     this.clearSharedSceneFromUrl();
   }
@@ -5861,13 +5892,14 @@ export class EditorPageComponent {
           arrowOpacity: 1,
           arrowOpen: false,
           arrowRound: false,
+          arrowType: preferences.defaultArrowType,
           arrowScale: preferences.defaultArrowScale,
           arrowLengthScale: 1,
           arrowWidthScale: 1,
           arrowBendMode: 'none',
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth,
-          strokeStyle: shape.strokeStyle ?? 'solid'
+          strokeStyle: preferences.defaultLineStrokeStyle
         };
       case 'rectangle':
       case 'triangle':
@@ -5879,7 +5911,8 @@ export class EditorPageComponent {
           fill: preferences.defaultFill,
           strokeOpacity: 1,
           fillOpacity: 1,
-          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
+          ...(shape.kind === 'rectangle' || shape.kind === 'triangle' ? { cornerRadius: preferences.defaultCornerRadius } : {}),
+          ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'image':
@@ -5892,7 +5925,9 @@ export class EditorPageComponent {
       case 'text':
         return {
           ...shape,
-          colorOpacity: 1
+          color: preferences.defaultTextColor,
+          colorOpacity: 1,
+          fontSize: preferences.defaultTextFontSize
         };
     }
   }
@@ -6014,10 +6049,10 @@ export class EditorPageComponent {
       to,
       anchors: rest.slice(0, -1),
       lineMode: 'curved',
-      strokeStyle: 'solid',
+      strokeStyle: this.preferences().defaultLineStrokeStyle,
       arrowStart: false,
       arrowEnd: false,
-      arrowType: 'latex',
+      arrowType: this.preferences().defaultArrowType,
       arrowColor: this.preferences().defaultStroke,
       arrowOpacity: 1,
       arrowOpen: false,
@@ -6357,15 +6392,6 @@ export class EditorPageComponent {
     this.editorStorage.setJson(this.savedTemplatesStorageKey, this.savedTemplates());
   }
 
-  private restoreCodeHighlightTheme(): CodeHighlightTheme {
-    const saved = this.editorStorage.getString(this.codeThemeStorageKey);
-    return restoreCodeHighlightThemeFromStorage(saved, 'aurora');
-  }
-
-  private restoreLatexExportConfig(): LatexExportConfig {
-    return this.parseStoredLatexExportConfig(this.editorStorage.getString(this.latexExportConfigStorageKey));
-  }
-
   private restoreSidebarSizes(): { readonly left: number; readonly right: number } {
     return this.parseStoredSidebarSizes(this.editorStorage.getString(this.sidebarSizesStorageKey));
   }
@@ -6393,18 +6419,6 @@ export class EditorPageComponent {
     }
 
     return { left, right };
-  }
-
-  private parseStoredLatexExportConfig(raw: string | null | undefined): LatexExportConfig {
-    return parseStoredLatexExportConfigUtil(raw, DEFAULT_LATEX_EXPORT_CONFIG);
-  }
-
-  private serializableLatexExportConfig(config: LatexExportConfig): Partial<LatexExportConfig> {
-    return serializableLatexExportConfigUtil(config);
-  }
-
-  private normalizeLatexExportConfig(config: Partial<LatexExportConfig> | null | undefined, preserveFreeText = true): LatexExportConfig {
-    return normalizeLatexExportConfigUtil(config, DEFAULT_LATEX_EXPORT_CONFIG, preserveFreeText);
   }
 
   private buildSnippetExport(): { readonly imports: string; readonly code: string; readonly combined: string } {
@@ -6477,6 +6491,10 @@ export class EditorPageComponent {
       return this.lineIntersectsMarqueeBounds(shape, bounds);
     }
 
+    if (shape.kind === 'triangle') {
+      return this.triangleIntersectsMarqueeBounds(shape, bounds);
+    }
+
     const shapeBounds = this.computeBounds([shape]);
     return (
       shapeBounds !== null &&
@@ -6484,6 +6502,39 @@ export class EditorPageComponent {
       shapeBounds.right >= bounds.left &&
       shapeBounds.bottom <= bounds.top &&
       shapeBounds.top >= bounds.bottom
+    );
+  }
+
+  private triangleIntersectsMarqueeBounds(shape: TriangleCanvasShape, bounds: SelectionBounds): boolean {
+    const width = bounds.right - bounds.left;
+    const height = bounds.top - bounds.bottom;
+    const point = { x: (bounds.left + bounds.right) / 2, y: (bounds.bottom + bounds.top) / 2 };
+    const tolerance = Math.max(shape.strokeWidth / 2, 0.06);
+    if (width <= 0.0001 && height <= 0.0001) {
+      return pointInTriangleShapeUtil(shape, point, tolerance);
+    }
+
+    const center = this.shapeCenter(shape);
+    const rotation = this.shapeRotation(shape);
+    const outlinePoints = triangleOutlinePointsUtil(shape).map((outlinePoint) =>
+      rotation ? this.rotatePointAround(outlinePoint, center, -rotation) : outlinePoint
+    );
+
+    if (outlinePoints.some((outlinePoint) => this.pointInsideBounds(outlinePoint, bounds))) {
+      return true;
+    }
+
+    const corners = [
+      { x: bounds.left, y: bounds.bottom },
+      { x: bounds.right, y: bounds.bottom },
+      { x: bounds.right, y: bounds.top },
+      { x: bounds.left, y: bounds.top }
+    ];
+    return (
+      corners.some((corner) => pointInTriangleShapeUtil(shape, corner, tolerance)) ||
+      outlinePoints.some((outlinePoint, index) =>
+        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] as Point, bounds)
+      )
     );
   }
 
@@ -6554,10 +6605,6 @@ export class EditorPageComponent {
 
   private trianglePoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
     return trianglePointsUtil(shape);
-  }
-
-  private triangleAttachmentPoints(shape: TriangleCanvasShape): readonly [Point, Point, Point] {
-    return triangleCornerAttachmentPointsUtil(shape);
   }
 
   private buildTrianglePath(shape: TriangleCanvasShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }, cornerRadius = 0): string {
@@ -6895,7 +6942,7 @@ export class EditorPageComponent {
       this.fileMenuOpen() ||
       this.exportModalOpen() ||
       this.importModalOpen() ||
-      this.exportSettingsModalOpen() ||
+      this.appConfigurationDialogOpen() ||
       this.figureSearchOpen() ||
       this.templateDialogOpen() ||
       !!this.templateDeleteTarget() ||
@@ -6912,9 +6959,13 @@ export class EditorPageComponent {
     this.canvasViewport().nativeElement.focus({ preventScroll: true });
   }
 
-  private platformShortcutLabel(windowsLabel: string, macLabel: string): string {
+  private shortcutLabel(action: KeyboardShortcutAction): string {
+    return keyboardShortcutLabel(keyboardShortcutForAction(this.configuration.generalConfig().keyboardShortcuts, action), this.isMacPlatform());
+  }
+
+  private isMacPlatform(): boolean {
     const platform = this.document.defaultView?.navigator.platform.toLowerCase() ?? '';
-    return platform.includes('mac') ? macLabel : windowsLabel;
+    return platform.includes('mac');
   }
 
   private selectAllSceneShapes(): void {
@@ -7015,29 +7066,16 @@ export class EditorPageComponent {
   }
 
   private focusInlineTextInput(): void {
-    afterNextRender(() => {
-      const runSelection = () => {
-        const input = this.inlineTextInput()?.nativeElement;
-        if (!input) {
-          return;
-        }
-
-        input.focus({ preventScroll: true });
-        const end = input.value.length;
-        input.setSelectionRange(0, end, 'forward');
-        input.select();
-      };
-
-      const view = this.document.defaultView;
-      if (!view) {
-        runSelection();
+    this.runAfterNextPaint(() => {
+      const input = this.inlineTextInput()?.nativeElement;
+      if (!input) {
         return;
       }
 
-      view.requestAnimationFrame(() => {
-        runSelection();
-        view.setTimeout(runSelection, 0);
-      });
+      input.focus({ preventScroll: true });
+      const end = input.value.length;
+      input.setSelectionRange(0, end, 'forward');
+      input.select();
     });
   }
 
@@ -7076,11 +7114,21 @@ export class EditorPageComponent {
     const end = input.selectionEnd ?? start;
     const nextValue = `${input.value.slice(0, start)}${symbol}${input.value.slice(end)}`;
     onValue(nextValue);
-    afterNextRender(() => {
+    this.runAfterNextPaint(() => {
       input.focus();
       const nextCursor = start + symbol.length;
       input.setSelectionRange(nextCursor, nextCursor);
     });
+  }
+
+  private runAfterNextPaint(callback: () => void): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      callback();
+      return;
+    }
+
+    view.requestAnimationFrame(() => view.requestAnimationFrame(callback));
   }
 
   private exportFileBaseName(): string {

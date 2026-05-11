@@ -3,7 +3,6 @@ import type { SelectionBounds } from '../../utils/editor-page.utils';
 
 export type InspectorTab = 'properties' | 'scene';
 export type ExportMode = 'snippet' | 'standalone';
-export type CodeHighlightTheme = 'aurora' | 'sunset' | 'midnight' | 'forest' | 'rose' | 'graphite';
 export type NotificationTone = 'info' | 'warning';
 export type SidebarSide = 'left' | 'right';
 export type SidebarResizeTarget = SidebarSide | 'mobile-left' | 'mobile-right';
@@ -12,8 +11,8 @@ export type CssTextAlign = 'left' | 'center' | 'right';
 export type TextStyleKey = 'fontWeight' | 'fontStyle' | 'textDecoration';
 export type TextStylePropertyKey = TextStyleKey | 'textAlign';
 export type TemplateDialogTextKey = 'title' | 'description';
-export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale';
-export type PreferenceTextKey = 'defaultStroke' | 'defaultFill';
+export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale' | 'defaultCornerRadius' | 'defaultTextFontSize';
+export type PreferenceTextKey = 'defaultStroke' | 'defaultFill' | 'defaultArrowType' | 'defaultLineStrokeStyle' | 'defaultTextColor';
 export type PreferenceBooleanKey = 'snapToGrid' | 'showGrid' | 'showAxes';
 export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';
 export type ShapeOpacityKey = 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity';
@@ -66,6 +65,7 @@ export interface ToastNotification {
 
 export { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../../config/latex-export.config';
 export type {
+  CodeHighlightTheme,
   LatexAlignment,
   LatexExportBooleanKey,
   LatexExportConfig,

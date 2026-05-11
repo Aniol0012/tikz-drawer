@@ -7,8 +7,11 @@ import {
   cornerRadiusFromPointer,
   maxTriangleCornerRadius,
   normalizeRotationDegrees,
+  pointInTriangleShape,
   rotateShapeAround,
   shapeBounds,
+  triangleCornerAttachmentAnchors,
+  triangleCornerAttachmentPointFromAnchor,
   triangleCornerAttachmentPoints
 } from './editor-geometry.utils';
 
@@ -111,6 +114,21 @@ describe('editor-geometry utils', () => {
     expect(rightSnap.y).toBeGreaterThan(-1.5);
   });
 
+  it('keeps triangle attachment anchors tied to their corner after radius and size changes', () => {
+    const [, leftAnchor] = triangleCornerAttachmentAnchors({ ...triangleShape, cornerRadius: 0 });
+    const resizedRoundedTriangle = {
+      ...triangleShape,
+      x: -3,
+      y: -1.5,
+      width: 8,
+      height: 5,
+      cornerRadius: 0.9
+    };
+    const [, leftAttachment] = triangleCornerAttachmentPoints(resizedRoundedTriangle);
+
+    expect(triangleCornerAttachmentPointFromAnchor(resizedRoundedTriangle, leftAnchor)).toEqual(leftAttachment);
+  });
+
   it('uses the rounded triangle outline for shape bounds', () => {
     const sharpBounds = shapeBounds({ ...triangleShape, cornerRadius: 0 });
     const roundedBounds = shapeBounds(triangleShape);
@@ -120,6 +138,29 @@ describe('editor-geometry utils', () => {
     expect(roundedBounds?.right).toBeLessThan(3);
     expect(roundedBounds?.bottom).toBe(-1.5);
     expect(roundedBounds?.top).toBeLessThan(2.5);
+  });
+
+  it('hit-tests triangle shapes by their actual geometry', () => {
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: 0, y: 0 })).toBe(true);
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: -2.8, y: 2.2 })).toBe(false);
+    expect(pointInTriangleShape({ ...triangleShape, cornerRadius: 0 }, { x: -2.95, y: -1.45 }, 0.12)).toBe(true);
+  });
+
+  it('hit-tests rounded triangles against the rounded outline', () => {
+    expect(pointInTriangleShape(triangleShape, { x: 0, y: 2.48 })).toBe(false);
+    expect(pointInTriangleShape(triangleShape, { x: 0, y: 1.9 })).toBe(true);
+    expect(pointInTriangleShape(triangleShape, { x: -2.98, y: -1.48 })).toBe(false);
+    expect(pointInTriangleShape(triangleShape, { x: -2.72, y: -1.24 }, 0.2)).toBe(true);
+  });
+
+  it('hit-tests rotated triangles in local shape space', () => {
+    const rotatedTriangle = { ...triangleShape, cornerRadius: 0, rotation: 30 };
+    const center = { x: rotatedTriangle.x + rotatedTriangle.width / 2, y: rotatedTriangle.y + rotatedTriangle.height / 2 };
+    const insidePoint = rotatePointAround({ x: 0, y: 0 }, center, -30);
+    const outsidePoint = rotatePointAround({ x: -2.8, y: 2.2 }, center, -30);
+
+    expect(pointInTriangleShape(rotatedTriangle, insidePoint)).toBe(true);
+    expect(pointInTriangleShape(rotatedTriangle, outsidePoint)).toBe(false);
   });
 
   it('normalizes rotation values into the editor range', () => {

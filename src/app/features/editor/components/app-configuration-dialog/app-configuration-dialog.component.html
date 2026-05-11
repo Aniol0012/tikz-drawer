@@ -1,0 +1,581 @@
+@if (isOpen()) {
+  <div class="modal-backdrop" (click)="closeDialog.emit()">
+    <section
+      class="configuration-modal"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="'configuration-title'"
+      data-tooltip-disabled
+      (click)="$event.stopPropagation()"
+      (keydown)="onDialogKeydown($event)">
+      <header class="configuration-modal__header">
+        <div>
+          <h2 id="configuration-title">{{ 'settings' | translate }}</h2>
+        </div>
+        <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeDialog.emit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m7 7 10 10M17 7 7 17"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="configuration-tabs" role="tablist" [attr.aria-label]="'settings' | translate" [attr.data-active-tab]="activeTab()">
+        @for (tab of tabs; track tab.id) {
+          <button
+            #configurationTab
+            class="configuration-tab"
+            type="button"
+            role="tab"
+            [id]="'configuration-tab-' + tab.id"
+            [attr.data-tab]="tab.id"
+            [class.is-active]="activeTab() === tab.id"
+            [attr.aria-selected]="activeTab() === tab.id"
+            [attr.aria-controls]="'configuration-panel-' + tab.id"
+            [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
+            (click)="selectTab(tab.id)"
+            (keydown)="onTabKeydown($event, tab.id)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="tab.iconPath"></path>
+            </svg>
+            <span>{{ tab.labelKey | translate }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="configuration-body">
+        @switch (activeTab()) {
+          @case ('general') {
+            <section
+              id="configuration-panel-general"
+              class="configuration-panel"
+              role="tabpanel"
+              aria-labelledby="configuration-tab-general">
+              <div class="configuration-grid configuration-grid--general">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'interface' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'theme' | translate }}</span>
+                      <app-select [value]="preferences().theme" [options]="themeOptions()" (valueChange)="setTheme($event)"></app-select>
+                    </label>
+                    <label class="field">
+                      <span>{{ 'language' | translate }}</span>
+                      <app-select
+                        [value]="language()"
+                        [options]="languageSelectOptions()"
+                        [ariaLabel]="'language' | translate"
+                        (valueChange)="setLanguage($event)"></app-select>
+                    </label>
+                    <app-toggle-field
+                      [checked]="generalConfig().showHelpTooltips"
+                      [label]="'showHelpTooltips' | translate"
+                      (checkedChange)="updateGeneralBoolean('showHelpTooltips', $event)"></app-toggle-field>
+                    <button class="settings-action-row" type="button" (click)="openShortcutSettings()">
+                      <span>
+                        <strong>{{ 'keyboardShortcuts' | translate }}</strong>
+                        <small>{{ 'keyboardShortcutsDescription' | translate }}</small>
+                      </span>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="shortcutSettingsIconPath"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'codePreview' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'codeTheme' | translate }}</span>
+                      <app-select
+                        [value]="codeTheme()"
+                        [options]="codeThemeSelectOptions()"
+                        (valueChange)="setCodeHighlightTheme($event)"></app-select>
+                    </label>
+                    <div class="code-stack code-stack--theme-preview tikz-code-theme" [attr.style]="codeThemeStyle()">
+                      <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </section>
+          }
+
+          @case ('scene') {
+            <section id="configuration-panel-scene" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-scene">
+              <div class="configuration-grid configuration-grid--scene">
+                <section class="settings-card settings-card--style">
+                  <div class="settings-card__header">
+                    <h3>{{ 'sceneStyleDefaults' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--two">
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultStroke' | translate }}</span>
+                      <input type="color" [value]="preferences().defaultStroke" (input)="updatePreferenceText('defaultStroke', $event)" />
+                    </label>
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultFill' | translate }}</span>
+                      <input type="color" [value]="preferences().defaultFill" (input)="updatePreferenceText('defaultFill', $event)" />
+                    </label>
+                    <app-range-input-card
+                      class="field--full"
+                      [label]="'defaultLineWidth' | translate"
+                      [value]="preferences().defaultStrokeWidth"
+                      [rangeMin]="0.02"
+                      [rangeMax]="8"
+                      [rangeStep]="0.02"
+                      [numberMin]="0.02"
+                      [numberMax]="8"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
+                    <app-range-input-card
+                      class="field--full"
+                      [label]="'arrowScale' | translate"
+                      [value]="preferences().defaultArrowScale"
+                      [rangeMin]="0.4"
+                      [rangeMax]="4.5"
+                      [rangeStep]="0.1"
+                      [numberMin]="0.4"
+                      [numberMax]="4.5"
+                      [numberStep]="0.1"
+                      (valueInput)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)"></app-range-input-card>
+                    <label class="field field--full">
+                      <span>{{ 'defaultArrowType' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultArrowType"
+                        [options]="arrowTipSelectOptions()"
+                        (valueChange)="setDefaultArrowType($event)"></app-select>
+                    </label>
+                    <label class="field field--full">
+                      <span>{{ 'defaultLineStyle' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultLineStrokeStyle"
+                        [options]="lineStrokeStyleSelectOptions()"
+                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                    </label>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--text">
+                  <div class="settings-card__header">
+                    <h3>{{ 'defaultText' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field field--color-picker">
+                      <span>{{ 'defaultTextColor' | translate }}</span>
+                      <input
+                        type="color"
+                        [value]="preferences().defaultTextColor"
+                        (input)="updatePreferenceText('defaultTextColor', $event)" />
+                    </label>
+                    <app-range-input-card
+                      [label]="'defaultTextFontSize' | translate"
+                      [value]="preferences().defaultTextFontSize"
+                      [rangeMin]="0.2"
+                      [rangeMax]="2"
+                      [rangeStep]="0.02"
+                      [numberMin]="0.2"
+                      [numberMax]="2"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultTextFontSize', $event, 0.2, 2)"></app-range-input-card>
+                    <app-range-input-card
+                      [label]="'defaultCornerRadius' | translate"
+                      [value]="preferences().defaultCornerRadius"
+                      [rangeMin]="0"
+                      [rangeMax]="1.6"
+                      [rangeStep]="0.02"
+                      [numberMin]="0"
+                      [numberMax]="1.6"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--behavior">
+                  <div class="settings-card__header">
+                    <h3>{{ 'canvasBehavior' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'zoomPercent' | translate"
+                      [value]="zoomPercent()"
+                      [rangeMin]="minZoomPercent"
+                      [rangeMax]="maxZoomPercent"
+                      [rangeStep]="5"
+                      [numberMin]="minZoomPercent"
+                      [numberMax]="maxZoomPercent"
+                      [numberStep]="5"
+                      (valueInput)="updateZoomPercent($event)"></app-range-input-card>
+                    <app-range-input-card
+                      [label]="'snapTolerance' | translate"
+                      [value]="preferences().snapStep"
+                      [rangeMin]="0.05"
+                      [rangeMax]="2"
+                      [rangeStep]="0.05"
+                      [numberMin]="0.05"
+                      [numberMax]="2"
+                      [numberStep]="0.05"
+                      (valueInput)="updatePreferenceNumber('snapStep', $event, 0.05, 2)"></app-range-input-card>
+                    <app-toggle-field
+                      [checked]="preferences().showGrid"
+                      [label]="'showGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showGrid', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().showAxes"
+                      [label]="'showAxes' | translate"
+                      (checkedChange)="updatePreferenceBoolean('showAxes', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().snapToGrid"
+                      [label]="'snapToGrid' | translate"
+                      (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--preview">
+                  <div class="settings-card__header">
+                    <h3>{{ 'preview' | translate }}</h3>
+                  </div>
+                  <div class="scene-preview" [style.--scene-preview-grid-size.px]="previewGridSize()" aria-hidden="true">
+                    @if (preferences().showGrid) {
+                      <span class="scene-preview__grid"></span>
+                    }
+                    @if (preferences().showAxes) {
+                      <span class="scene-preview__axis scene-preview__axis--x"></span>
+                      <span class="scene-preview__axis scene-preview__axis--y"></span>
+                    }
+                    <svg [attr.viewBox]="previewViewBox()">
+                      <g>
+                        <path
+                          d="M42 122 80 56 118 122Z"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-linejoin]="preferences().defaultCornerRadius > 0 ? 'round' : 'miter'"></path>
+                        <circle
+                          cx="168"
+                          cy="126"
+                          r="25"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"></circle>
+                        <rect
+                          x="220"
+                          y="48"
+                          width="38"
+                          height="38"
+                          [attr.rx]="previewCornerRadius()"
+                          [attr.ry]="previewCornerRadius()"
+                          [attr.fill]="preferences().defaultFill"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"></rect>
+                        <path
+                          d="M44 168 C98 188 140 150 188 166 S248 150 262 118"
+                          fill="none"
+                          [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-dasharray]="previewStrokeDasharray()"
+                          stroke-linecap="round"
+                          marker-end="url(#configuration-preview-arrow)"></path>
+                        <text
+                          x="126"
+                          y="72"
+                          [attr.fill]="preferences().defaultTextColor"
+                          [attr.font-size]="previewTextFontSize()"
+                          font-weight="700">
+                          TikZ
+                        </text>
+                      </g>
+                      <defs>
+                        <marker
+                          id="configuration-preview-arrow"
+                          markerUnits="userSpaceOnUse"
+                          [attr.markerWidth]="previewArrowMarkerSize()"
+                          [attr.markerHeight]="previewArrowMarkerSize()"
+                          [attr.refX]="previewArrowMarkerSize() - 1"
+                          [attr.refY]="previewArrowMarkerSize() / 2"
+                          orient="auto">
+                          <path
+                            [attr.d]="previewArrowPath()"
+                            [attr.fill]="previewArrowFill()"
+                            [attr.stroke]="previewArrowStroke()"
+                            [attr.stroke-width]="previewArrowStrokeWidth()"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"></path>
+                        </marker>
+                      </defs>
+                    </svg>
+                  </div>
+                  <p class="settings-note">{{ 'sceneSettingsPreviewDescription' | translate }}</p>
+                </section>
+              </div>
+            </section>
+          }
+
+          @case ('latex') {
+            <section id="configuration-panel-latex" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-latex">
+              <div class="configuration-grid configuration-grid--latex">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexEnvironment' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-toggle-field
+                      [checked]="latexExportConfig().wrapInFigure"
+                      [label]="'latexWrapFigure' | translate"
+                      (checkedChange)="updateLatexExportBoolean('wrapInFigure', $event)"></app-toggle-field>
+                    @if (latexExportConfig().wrapInFigure) {
+                      <label class="field">
+                        <span>{{ 'latexFigurePlacement' | translate }}</span>
+                        <app-select
+                          [value]="latexExportConfig().figurePlacement"
+                          [options]="translatedSelectOptions(placementOptions)"
+                          (valueChange)="setLatexExportText('figurePlacement', $event)"></app-select>
+                      </label>
+                    }
+                    <label class="field">
+                      <span>{{ 'latexFontSize' | translate }}</span>
+                      <app-select
+                        [value]="latexExportConfig().fontSize"
+                        [options]="fontSizeSelectOptions()"
+                        (valueChange)="setLatexFontSize($event)"></app-select>
+                    </label>
+                    @if (!latexExportConfig().wrapInFigure) {
+                      <p class="settings-note">{{ 'latexScopeGuard' | translate }}</p>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexLayout' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <div class="field">
+                      <span>{{ 'latexAlignment' | translate }}</span>
+                      <div
+                        class="mode-switch mode-switch--full"
+                        [class.mode-switch--ready]="alignmentSwitchReady()"
+                        [attr.data-active-alignment]="latexExportConfig().alignment">
+                        @for (option of alignmentOptions; track option.value) {
+                          <button
+                            type="button"
+                            [class.is-active]="latexExportConfig().alignment === option.value"
+                            (click)="setLatexAlignment(option.value)">
+                            {{ t(option.labelKey) }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <app-toggle-field
+                      [checked]="latexExportConfig().scaleToWidth"
+                      [label]="'latexScaleToWidth' | translate"
+                      (checkedChange)="updateLatexExportBoolean('scaleToWidth', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeFrame"
+                      [label]="'latexIncludeFrame' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeFrame', $event)"></app-toggle-field>
+                    @if (latexExportConfig().scaleToWidth) {
+                      <app-range-input-card
+                        [label]="'latexMaxWidth' | translate"
+                        [value]="latexExportConfig().maxWidthPercent"
+                        [rangeMin]="10"
+                        [rangeMax]="100"
+                        [rangeStep]="5"
+                        [numberMin]="10"
+                        [numberMax]="100"
+                        [numberStep]="5"
+                        (valueInput)="updateLatexExportNumber('maxWidthPercent', $event, 10, 100)"></app-range-input-card>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexStandalone' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-range-input-card
+                      [label]="'latexStandaloneBorder' | translate"
+                      [value]="latexExportConfig().standaloneBorderMm"
+                      [rangeMin]="0"
+                      [rangeMax]="24"
+                      [rangeStep]="1"
+                      [numberMin]="0"
+                      [numberMax]="24"
+                      [numberStep]="1"
+                      (valueInput)="updateLatexExportNumber('standaloneBorderMm', $event, 0, 24)"></app-range-input-card>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header settings-card__header--action">
+                    <h3>{{ 'latexCaptionLabel' | translate }}</h3>
+                    <button class="secondary-button secondary-button--compact" type="button" (click)="applySuggestedCaptionAndLabel()">
+                      {{ 'latexSuggest' | translate }}
+                    </button>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeCaption"
+                      [label]="'latexIncludeCaption' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeCaption', $event)"></app-toggle-field>
+                    @if (latexExportConfig().includeCaption) {
+                      <label class="field">
+                        <span>{{ 'latexCaption' | translate }}</span>
+                        <input
+                          type="text"
+                          [value]="latexExportConfig().caption"
+                          [placeholder]="suggestedCaption"
+                          (input)="updateLatexExportText('caption', $event)" />
+                      </label>
+                    }
+                    <app-toggle-field
+                      [checked]="latexExportConfig().includeLabel"
+                      [label]="'latexIncludeLabel' | translate"
+                      (checkedChange)="updateLatexExportBoolean('includeLabel', $event)"></app-toggle-field>
+                    @if (latexExportConfig().includeLabel) {
+                      <label class="field">
+                        <span>{{ 'latexLabel' | translate }}</span>
+                        <input
+                          type="text"
+                          [value]="latexExportConfig().label"
+                          [placeholder]="suggestedLabel"
+                          (input)="updateLatexExportText('label', $event)" />
+                      </label>
+                    }
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--wide">
+                  <div class="settings-card__header">
+                    <h3>{{ 'latexColors' | translate }}</h3>
+                  </div>
+                  <div class="export-config-grid">
+                    @for (option of colorModeOptions; track option.value) {
+                      <button
+                        class="export-option-card"
+                        type="button"
+                        [class.is-active]="latexExportConfig().colorMode === option.value"
+                        (click)="patchLatexExportConfig({ colorMode: option.value })">
+                        <strong>{{ t(option.titleKey) }}</strong>
+                        <span>{{ t(option.descriptionKey) }}</span>
+                      </button>
+                    }
+                  </div>
+                </section>
+              </div>
+            </section>
+          }
+        }
+      </div>
+
+      @if (resetConfirmationOpen()) {
+        <div class="reset-confirmation" role="alertdialog" [attr.aria-label]="'resetDefaultsConfirmTitle' | translate">
+          <div>
+            <strong>{{ 'resetDefaultsConfirmTitle' | translate }}</strong>
+            <span>{{ 'resetDefaultsConfirmDescription' | translate }}</span>
+          </div>
+          <div class="reset-confirmation__actions">
+            <button class="secondary-button secondary-button--compact" type="button" (click)="cancelResetToDefaults()">
+              {{ 'cancel' | translate }}
+            </button>
+            <button class="primary-button primary-button--compact" type="button" (click)="confirmResetToDefaults()">
+              {{ 'resetDefaultsConfirmAction' | translate }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (shortcutsDialogOpen()) {
+        <div class="nested-dialog-backdrop" (click)="closeShortcutSettings()">
+          <section
+            class="shortcuts-dialog"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'keyboardShortcuts' | translate"
+            (click)="$event.stopPropagation()">
+            <header class="shortcuts-dialog__header">
+              <div>
+                <h3>{{ 'keyboardShortcuts' | translate }}</h3>
+                <p>{{ 'keyboardShortcutsDescription' | translate }}</p>
+              </div>
+              <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeShortcutSettings()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m7 7 10 10M17 7 7 17"></path>
+                </svg>
+              </button>
+            </header>
+
+            <div class="shortcut-list">
+              @for (row of shortcutRows; track row.action) {
+                <label class="shortcut-row">
+                  <span>
+                    <strong>{{ row.labelKey | translate }}</strong>
+                    <small>{{ shortcutLabel(editableShortcuts()[row.action]) }}</small>
+                  </span>
+                  <app-keyboard-shortcut-capture
+                    [value]="editableShortcuts()[row.action]"
+                    [label]="row.labelKey | translate"
+                    [instruction]="'shortcutCaptureInstruction' | translate"
+                    [previousLabel]="'previousShortcut' | translate"
+                    [nextLabel]="'newShortcut' | translate"
+                    [cancelLabel]="'cancel' | translate"
+                    [actionId]="row.action"
+                    [assignedShortcuts]="shortcutAssignments()"
+                    [unassignedLabel]="'unassignedShortcut' | translate"
+                    [listeningLabel]="'shortcutListening' | translate"
+                    [conflictTitleLabel]="'shortcutConflictTitle' | translate"
+                    [conflictDescriptionLabel]="'shortcutConflictDescription' | translate"
+                    [conflictReplaceLabel]="'shortcutConflictReplace' | translate"
+                    [conflictKeepLabel]="'shortcutConflictKeep' | translate"
+                    [macPlatform]="isMacPlatform()"
+                    (valueChange)="updateShortcut(row.action, $event)"
+                    (reassignShortcut)="
+                      updateShortcut(row.action, $event.shortcut, $event.conflictingActionId)
+                    "></app-keyboard-shortcut-capture>
+                </label>
+              }
+            </div>
+
+            @if (shortcutResetConfirmationOpen()) {
+              <div class="shortcut-reset-confirmation" role="alertdialog" [attr.aria-label]="'resetShortcutsConfirmTitle' | translate">
+                <div>
+                  <strong>{{ 'resetShortcutsConfirmTitle' | translate }}</strong>
+                  <span>{{ 'resetShortcutsConfirmDescription' | translate }}</span>
+                </div>
+                <div class="shortcut-reset-confirmation__actions">
+                  <button class="secondary-button secondary-button--compact" type="button" (click)="cancelResetShortcutsToDefaults()">
+                    {{ 'cancel' | translate }}
+                  </button>
+                  <button class="primary-button primary-button--compact" type="button" (click)="confirmResetShortcutsToDefaults()">
+                    {{ 'resetShortcuts' | translate }}
+                  </button>
+                </div>
+              </div>
+            }
+
+            <footer class="shortcuts-dialog__footer">
+              <button class="secondary-button" type="button" [disabled]="shortcutsAreDefault()" (click)="requestResetShortcutsToDefaults()">
+                {{ 'resetShortcuts' | translate }}
+              </button>
+              <button class="primary-button" type="button" (click)="saveShortcutSettings()">
+                {{ 'apply' | translate }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      }
+
+      <footer class="configuration-modal__footer">
+        <button class="secondary-button" type="button" [disabled]="settingsAreDefault()" (click)="requestResetToDefaults()">
+          {{ 'resetDefaults' | translate }}
+        </button>
+        <button class="primary-button" type="button" (click)="closeDialog.emit()">{{ 'done' | translate }}</button>
+      </footer>
+    </section>
+  </div>
+}

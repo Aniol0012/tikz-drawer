@@ -288,7 +288,12 @@ export const defaultPreferences: EditorPreferences = {
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',
   defaultStrokeWidth: 0.28,
-  defaultArrowScale: 1.35
+  defaultArrowScale: 1.35,
+  defaultArrowType: 'latex',
+  defaultLineStrokeStyle: 'solid',
+  defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
+  defaultTextColor: DEFAULT_TEXT_COLOR,
+  defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE
 };
 
 export const objectPresets: readonly ObjectPreset[] = [

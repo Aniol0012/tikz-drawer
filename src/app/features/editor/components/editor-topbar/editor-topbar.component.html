@@ -116,6 +116,11 @@
                       <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
                     </svg>
                   </button>
+                  <button class="icon-button" type="button" [title]="t('settings')" (click)="settingsOpen.emit(); fileMenuClose.emit()">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path [attr.d]="icon('settings')"></path>
+                    </svg>
+                  </button>
                 </div>
 
                 <button class="primary-button primary-button--wide" type="button" (click)="exportOpen.emit()">
@@ -220,6 +225,12 @@
       <button class="icon-button" type="button" [title]="t('theme')" (click)="themeToggle.emit()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
+        </svg>
+      </button>
+
+      <button class="icon-button" type="button" [title]="t('settings')" (click)="settingsOpen.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="icon('settings')"></path>
         </svg>
       </button>
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, computed, input, output, signal } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 
@@ -6,6 +6,9 @@ export interface AppSelectOption {
   readonly value: string;
   readonly label: string;
   readonly longLabel?: string;
+  readonly flagSrc?: string;
+  readonly iconPath?: string;
+  readonly iconFilled?: boolean;
   readonly disabled?: boolean;
 }
 
@@ -22,6 +25,7 @@ export class AppSelectComponent {
   readonly ariaLabel = input<string | null>(null);
   readonly hoist = input(true);
   readonly isOpen = signal(false);
+  readonly selectedOption = computed(() => this.options().find((option) => option.value === this.value()) ?? null);
 
   readonly valueChange = output<string>();
 
