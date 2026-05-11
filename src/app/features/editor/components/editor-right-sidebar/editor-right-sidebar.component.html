@@ -6,6 +6,9 @@
     <button type="button" [class.is-active]="editor().inspectorTab() === 'scene'" (click)="editor().openSceneLayers()">
       {{ editor().t('sceneTab') }}
     </button>
+    <button type="button" [class.is-active]="editor().inspectorTab() === 'assistant'" (click)="editor().openAssistant()">
+      {{ editor().t('ai.tab') }}
+    </button>
   </div>
 
   <div #sidebarScroll class="sidebar-scroll">

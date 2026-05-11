@@ -19,7 +19,7 @@
 .sidebar-tabs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin: 10px 10px 0;
   padding: 2px;
@@ -34,7 +34,7 @@
   top: 2px;
   bottom: 2px;
   left: 2px;
-  width: calc((100% - 8px) / 2);
+  width: calc((100% - 12px) / 3);
   border-radius: 8px;
   background: var(--accent-soft);
   transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
@@ -42,6 +42,10 @@
 
 .sidebar-tabs[data-active-tab='scene']::before {
   transform: translateX(calc(100% + 4px));
+}
+
+.sidebar-tabs[data-active-tab='assistant']::before {
+  transform: translateX(calc((100% + 4px) * 2));
 }
 
 .sidebar-tabs button {
@@ -117,6 +121,10 @@
 
   .sidebar-tabs[data-active-tab='scene']::before {
     transform: translateX(calc(100% + 3px));
+  }
+
+  .sidebar-tabs[data-active-tab='assistant']::before {
+    transform: translateX(calc((100% + 3px) * 2));
   }
 
   .sidebar-tabs button {

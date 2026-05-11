@@ -1,0 +1,98 @@
+<section class="ai-panel" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+  <header class="ai-header">
+    <div class="ai-header__title">
+      <span class="ai-header__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.sparkles"></path>
+        </svg>
+      </span>
+      <div>
+        <p>{{ 'ai.title' | translate }}</p>
+        <h3>{{ 'ai.heading' | translate }}</h3>
+      </div>
+    </div>
+    <span class="model-pill">
+      <span></span>
+      {{ modelName }}
+    </span>
+  </header>
+
+  <div class="ai-context">
+    <span>{{ 'ai.contextLabel' | translate }}</span>
+    <strong>{{ currentContextLabel() }}</strong>
+  </div>
+
+  <div class="quick-section">
+    <span>{{ 'ai.quickActions' | translate }}</span>
+    <div class="quick-actions">
+      @for (action of quickActions; track action.id) {
+        <button type="button" (click)="useQuickAction(action)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.sparkles"></path>
+          </svg>
+          <span>{{ action.labelKey | translate }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="ai-chat" aria-live="polite">
+    @for (message of messages(); track message.id) {
+      <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
+        <p>{{ message.text }}</p>
+        @if (message.response; as response) {
+          @if (response.type === 'scenePatch') {
+            <div class="ai-proposal">
+              <span>{{ patchSummary(response) }}</span>
+              <div>
+                <button type="button" (click)="applyResponse(response)">
+                  {{ 'ai.apply' | translate }}
+                </button>
+                <button type="button" (click)="copyTikz(response)">
+                  {{ 'copyTikz' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+          @if (response.type === 'tikzCode') {
+            <div class="ai-proposal">
+              <span>{{ 'ai.tikzReady' | translate }}</span>
+              <div>
+                <button type="button" (click)="copyTikz(response)">
+                  {{ 'copyTikz' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </article>
+    }
+    @if (loading()) {
+      <article class="message message--system">
+        <p>{{ 'ai.loading' | translate }}</p>
+      </article>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="ai-error">{{ error() }}</div>
+  }
+
+  <form class="composer" (submit)="$event.preventDefault(); submit()">
+    <div class="composer__box">
+      <textarea
+        rows="3"
+        [attr.aria-label]="'ai.placeholder' | translate"
+        [placeholder]="'ai.placeholder' | translate"
+        [value]="draft()"
+        (input)="setDraft($any($event.target).value)"></textarea>
+      <button type="submit" [disabled]="loading() || !draft().trim()" [attr.aria-label]="'ai.send' | translate">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.send"></path>
+        </svg>
+      </button>
+    </div>
+  </form>
+
+  <p class="privacy-note">{{ 'ai.privacyNotice' | translate }}</p>
+</section>

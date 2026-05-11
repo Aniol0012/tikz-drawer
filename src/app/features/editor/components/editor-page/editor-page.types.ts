@@ -1,7 +1,7 @@
 import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory, TextShape } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 
-export type InspectorTab = 'properties' | 'scene';
+export type InspectorTab = 'properties' | 'scene' | 'assistant';
 export type ExportMode = 'snippet' | 'standalone';
 export type NotificationTone = 'info' | 'warning';
 export type SidebarSide = 'left' | 'right';

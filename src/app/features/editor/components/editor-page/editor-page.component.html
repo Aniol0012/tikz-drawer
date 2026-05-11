@@ -2958,6 +2958,8 @@
             <div class="empty-panel">{{ 'noneSelected' | translate }}</div>
           }
         </section>
+      } @else if (inspectorTab() === 'assistant') {
+        <app-ai-panel></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">
           <div class="scene-layers-header">

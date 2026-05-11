@@ -159,6 +159,7 @@ import { RangeInputCardComponent } from '../range-input-card/range-input-card.co
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
+import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
@@ -291,6 +292,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     RegularPolygonDialogComponent,
     GraphDialogComponent,
     FigureSearchOverlayComponent,
+    AiPanelComponent,
     AppSelectComponent,
     ToggleFieldComponent,
     EditorTranslatePipe
@@ -1588,6 +1590,11 @@ export class EditorPageComponent {
       }
       layersSection?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
+  }
+
+  openAssistant(): void {
+    this.rightSidebarCollapsed.set(false);
+    this.inspectorTab.set('assistant');
   }
 
   setLibraryQuery(value: string): void {
