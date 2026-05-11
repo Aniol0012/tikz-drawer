@@ -110,7 +110,7 @@ export class AppConfigurationDialogComponent {
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
     { id: 'scene', labelKey: 'settingsTabScene', iconPath: iconPaths.scene },
-    { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.fileTex }
+    { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.latex }
   ];
   readonly placementOptions = LATEX_FIGURE_PLACEMENT_OPTIONS;
   readonly alignmentOptions = LATEX_ALIGNMENT_OPTIONS;
