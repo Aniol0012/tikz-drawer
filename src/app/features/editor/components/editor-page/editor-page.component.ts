@@ -516,6 +516,22 @@ export class EditorPageComponent {
       iconPath: style.iconPath
     }))
   );
+  readonly arrowDirectionSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'none', label: this.t('arrowDirectionNone'), iconPath: 'M5 12h14' },
+    { value: 'forward', label: this.t('arrowDirectionForward'), iconPath: iconPaths.arrow },
+    { value: 'backward', label: this.t('arrowDirectionBackward'), iconPath: 'M19 12H8m0 0 3-3m-3 3 3 3' },
+    { value: 'both', label: this.t('arrowDirectionBoth'), iconPath: 'M8 12h8M8 12l3-3m-3 3 3 3m5-3-3-3m3 3-3 3' }
+  ]);
+  readonly lineModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'straight', label: this.t('lineModeStraight'), iconPath: iconPaths.segment },
+    { value: 'curved', label: this.t('lineModeCurved'), iconPath: 'M5 16C8 7 16 17 19 8' }
+  ]);
+  readonly arrowBendModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M5 12h14' },
+    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M5 15C9 7 15 7 19 15' },
+    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M5 9C9 17 15 17 19 9' },
+    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M5 16Q12 5 19 16' }
+  ]);
   readonly templateIconOptions = [
     'pencil',
     'arrow',

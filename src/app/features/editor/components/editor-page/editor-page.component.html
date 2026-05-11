@@ -1174,22 +1174,14 @@
                         ><span>{{ 'arrowDirection' | translate }}</span
                         ><app-select
                           [value]="lineArrowDirection(shape)"
-                          [options]="[
-                            { value: 'none', label: ('arrowDirectionNone' | translate) },
-                            { value: 'forward', label: ('arrowDirectionForward' | translate) },
-                            { value: 'backward', label: ('arrowDirectionBackward' | translate) },
-                            { value: 'both', label: ('arrowDirectionBoth' | translate) }
-                          ]"
+                          [options]="arrowDirectionSelectOptions()"
                           (valueChange)="setLineArrowDirection($any($event))"></app-select
                       ></label>
                       <label class="field field--full"
                         ><span>{{ 'lineMode' | translate }}</span
                         ><app-select
                           [value]="shape.lineMode"
-                          [options]="[
-                            { value: 'straight', label: ('lineModeStraight' | translate) },
-                            { value: 'curved', label: ('lineModeCurved' | translate) }
-                          ]"
+                          [options]="lineModeSelectOptions()"
                           (valueChange)="setLineMode($event)"></app-select
                       ></label>
                       <label class="field field--full"
@@ -1266,12 +1258,7 @@
                           ><app-select
                             [ariaLabel]="'arrowBendMode' | translate"
                             [value]="shape.arrowBendMode"
-                            [options]="[
-                              { value: 'none', label: ('arrowBendNone' | translate) },
-                              { value: 'flex', label: ('arrowBendFlex' | translate) },
-                              { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
-                              { value: 'bend', label: ('arrowBendBend' | translate) }
-                            ]"
+                            [options]="arrowBendModeSelectOptions()"
                             (valueChange)="setLineArrowBendMode($event)"></app-select>
                         </div>
                       </div>
@@ -2265,22 +2252,14 @@
                             ><span>{{ 'arrowDirection' | translate }}</span
                             ><app-select
                               [value]="lineArrowDirection(shape)"
-                              [options]="[
-                                { value: 'none', label: ('arrowDirectionNone' | translate) },
-                                { value: 'forward', label: ('arrowDirectionForward' | translate) },
-                                { value: 'backward', label: ('arrowDirectionBackward' | translate) },
-                                { value: 'both', label: ('arrowDirectionBoth' | translate) }
-                              ]"
+                              [options]="arrowDirectionSelectOptions()"
                               (valueChange)="setLineArrowDirection($any($event))"></app-select
                           ></label>
                           <label class="field field--full"
                             ><span>{{ 'lineMode' | translate }}</span
                             ><app-select
                               [value]="shape.lineMode"
-                              [options]="[
-                                { value: 'straight', label: ('lineModeStraight' | translate) },
-                                { value: 'curved', label: ('lineModeCurved' | translate) }
-                              ]"
+                              [options]="lineModeSelectOptions()"
                               (valueChange)="setLineMode($event)"></app-select
                           ></label>
                           <label class="field field--full"
@@ -2357,12 +2336,7 @@
                               ><app-select
                                 [ariaLabel]="'arrowBendMode' | translate"
                                 [value]="shape.arrowBendMode"
-                                [options]="[
-                                  { value: 'none', label: ('arrowBendNone' | translate) },
-                                  { value: 'flex', label: ('arrowBendFlex' | translate) },
-                                  { value: 'flex-prime', label: ('arrowBendFlexPrime' | translate) },
-                                  { value: 'bend', label: ('arrowBendBend' | translate) }
-                                ]"
+                                [options]="arrowBendModeSelectOptions()"
                                 (valueChange)="setLineArrowBendMode($event)"></app-select>
                             </div>
                           </div>
