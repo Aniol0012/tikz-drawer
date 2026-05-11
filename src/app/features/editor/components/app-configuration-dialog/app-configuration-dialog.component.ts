@@ -80,6 +80,9 @@ export class AppConfigurationDialogComponent {
     this.isOpen.set(value);
     if (value) {
       this.activeTab.set(this.initialTabValue);
+      this.prepareAlignmentSwitch(this.initialTabValue);
+    } else {
+      this.alignmentSwitchReady.set(false);
     }
   }
 
@@ -87,6 +90,7 @@ export class AppConfigurationDialogComponent {
     this.initialTabValue = value;
     if (this.isOpen()) {
       this.activeTab.set(value);
+      this.prepareAlignmentSwitch(value);
     }
   }
 
@@ -106,6 +110,7 @@ export class AppConfigurationDialogComponent {
   readonly shortcutsDialogOpen = signal(false);
   readonly shortcutResetConfirmationOpen = signal(false);
   readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
+  readonly alignmentSwitchReady = signal(false);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
@@ -194,6 +199,7 @@ export class AppConfigurationDialogComponent {
 
   selectTab(tab: ApplicationConfigurationTab, focus = false): void {
     this.activeTab.set(tab);
+    this.prepareAlignmentSwitch(tab);
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);
     this.shortcutResetConfirmationOpen.set(false);
@@ -555,6 +561,24 @@ export class AppConfigurationDialogComponent {
 
   private patchPreferences(patch: Partial<EditorPreferences>): void {
     this.store.patchPreferences(patch);
+  }
+
+  private prepareAlignmentSwitch(tab: ApplicationConfigurationTab): void {
+    if (tab !== 'latex') {
+      this.alignmentSwitchReady.set(false);
+      return;
+    }
+
+    this.alignmentSwitchReady.set(false);
+    const scheduleReady =
+      typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame
+        : (callback: FrameRequestCallback): number => {
+            globalThis.setTimeout(() => callback(Date.now()), 0);
+            return 0;
+          };
+
+    scheduleReady(() => this.alignmentSwitchReady.set(this.activeTab() === 'latex'));
   }
 
   patchLatexExportConfig(patch: Partial<LatexExportConfig>): void {

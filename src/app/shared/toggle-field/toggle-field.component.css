@@ -78,9 +78,6 @@ input[type='checkbox'] {
   border-radius: 999px;
   background: color-mix(in srgb, var(--app-foreground) 12%, var(--tool-surface));
   cursor: inherit;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease;
 }
 
 input[type='checkbox']::before {
@@ -93,6 +90,15 @@ input[type='checkbox']::before {
   border-radius: 50%;
   background: var(--panel-background);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+
+:host(.toggle-field--ready) input[type='checkbox'] {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+:host(.toggle-field--ready) input[type='checkbox']::before {
   transition: transform 160ms ease;
 }
 

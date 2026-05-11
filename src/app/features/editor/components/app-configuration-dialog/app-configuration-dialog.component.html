@@ -19,7 +19,7 @@
         </button>
       </header>
 
-      <div class="configuration-tabs" role="tablist" [attr.aria-label]="'settings' | translate">
+      <div class="configuration-tabs" role="tablist" [attr.aria-label]="'settings' | translate" [attr.data-active-tab]="activeTab()">
         @for (tab of tabs; track tab.id) {
           <button
             #configurationTab
@@ -356,7 +356,10 @@
                   <div class="form-grid form-grid--single">
                     <div class="field">
                       <span>{{ 'latexAlignment' | translate }}</span>
-                      <div class="mode-switch mode-switch--full">
+                      <div
+                        class="mode-switch mode-switch--full"
+                        [class.mode-switch--ready]="alignmentSwitchReady()"
+                        [attr.data-active-alignment]="latexExportConfig().alignment">
                         @for (option of alignmentOptions; track option.value) {
                           <button
                             type="button"
