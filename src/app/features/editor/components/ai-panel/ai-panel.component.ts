@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
@@ -40,16 +40,6 @@ export class AiPanelComponent {
       createdAt: Date.now()
     }
   ]);
-  readonly currentContextLabel = computed(() => {
-    const selectionCount = this.store.selectionCount();
-    if (selectionCount === 1) {
-      return this.languageService.t('ai.context.selectedOne');
-    }
-    if (selectionCount > 1) {
-      return this.languageService.tOrFallback('ai.context.selectedMany', 'Selección múltiple').replace('{count}', String(selectionCount));
-    }
-    return this.languageService.t('ai.context.scene');
-  });
 
   setDraft(value: string): void {
     this.draft.set(value);
@@ -57,6 +47,20 @@ export class AiPanelComponent {
 
   useQuickAction(action: AiQuickAction): void {
     this.draft.set(this.languageService.t(action.promptKey));
+  }
+
+  iconForAction(action: AiQuickAction): string {
+    return this.iconMap[action.icon];
+  }
+
+  handleComposerKeydown(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.shiftKey || keyboardEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+    void this.submit();
   }
 
   async submit(): Promise<void> {

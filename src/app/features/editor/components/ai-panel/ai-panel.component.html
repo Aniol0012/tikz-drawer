@@ -17,18 +17,13 @@
     </span>
   </header>
 
-  <div class="ai-context">
-    <span>{{ 'ai.contextLabel' | translate }}</span>
-    <strong>{{ currentContextLabel() }}</strong>
-  </div>
-
   <div class="quick-section">
     <span>{{ 'ai.quickActions' | translate }}</span>
     <div class="quick-actions">
       @for (action of quickActions; track action.id) {
         <button type="button" (click)="useQuickAction(action)">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.sparkles"></path>
+            <path [attr.d]="iconForAction(action)"></path>
           </svg>
           <span>{{ action.labelKey | translate }}</span>
         </button>
@@ -85,7 +80,8 @@
         [attr.aria-label]="'ai.placeholder' | translate"
         [placeholder]="'ai.placeholder' | translate"
         [value]="draft()"
-        (input)="setDraft($any($event.target).value)"></textarea>
+        (input)="setDraft($any($event.target).value)"
+        (keydown.enter)="handleComposerKeydown($event)"></textarea>
       <button type="submit" [disabled]="loading() || !draft().trim()" [attr.aria-label]="'ai.send' | translate">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>

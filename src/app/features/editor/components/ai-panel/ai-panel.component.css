@@ -5,11 +5,14 @@
 
 .ai-panel {
   --ai-radius: 10px;
-  --ai-soft: color-mix(in srgb, var(--accent-soft) 52%, var(--panel-background));
-  --ai-line: color-mix(in srgb, var(--tool-border) 76%, transparent);
+  --ai-soft: color-mix(in srgb, var(--accent-soft) 42%, var(--panel-background));
+  --ai-line: color-mix(in srgb, var(--tool-border) 74%, transparent);
+  --ai-elevated: color-mix(in srgb, var(--panel-background) 94%, var(--tool-surface));
   display: grid;
+  grid-template-rows: auto auto minmax(180px, 1fr) auto auto auto;
   gap: 12px;
   min-width: 0;
+  min-height: min(620px, calc(100vh - 132px));
 }
 
 .ai-header {
@@ -52,7 +55,6 @@
 
 .ai-header p,
 .quick-section > span,
-.ai-context span,
 .ai-proposal span {
   margin: 0;
   color: var(--muted-foreground);
@@ -94,58 +96,41 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, #12a150 14%, transparent);
 }
 
-.ai-context {
-  display: grid;
-  gap: 4px;
-  padding: 11px 12px;
-  border: 1px solid var(--ai-line);
-  border-radius: var(--ai-radius);
-  background: linear-gradient(135deg, var(--panel-background), var(--ai-soft));
-}
-
-.ai-context strong {
-  min-width: 0;
-  color: var(--foreground);
-  font-size: 0.9rem;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
 .quick-section {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .quick-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
 .quick-actions button {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
+  justify-content: center;
+  gap: 7px;
   min-width: 0;
-  min-height: 40px;
-  padding: 8px 10px;
+  min-height: 32px;
+  padding: 6px 9px;
   border: 1px solid var(--ai-line);
-  border-radius: var(--ai-radius);
-  background: var(--panel-background);
+  border-radius: 999px;
+  background: var(--ai-elevated);
   color: var(--foreground);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.73rem;
   font-weight: 800;
   line-height: 1.15;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 .quick-actions button:hover {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--tool-border));
-  background: var(--ai-soft);
+  background: color-mix(in srgb, var(--accent-soft) 62%, var(--panel-background));
   color: var(--accent-strong);
 }
 
@@ -156,42 +141,49 @@
 
 .quick-actions svg {
   flex: 0 0 auto;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 .ai-chat {
   display: grid;
   align-content: start;
   gap: 9px;
-  max-height: min(43vh, 390px);
+  min-height: 0;
   overflow: auto;
-  padding: 2px 2px 2px 0;
+  padding: 4px 2px 6px 0;
+  scrollbar-width: thin;
 }
 
 .message {
   display: grid;
   gap: 8px;
   width: fit-content;
-  max-width: min(100%, 330px);
+  max-width: min(100%, 335px);
   padding: 10px 12px;
   border: 1px solid var(--ai-line);
-  border-radius: 12px 12px 12px 5px;
-  background: var(--panel-background);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-radius: 13px 13px 13px 5px;
+  background: var(--ai-elevated);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 8px 18px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 .message--user {
   justify-self: end;
   border-color: color-mix(in srgb, var(--accent) 36%, var(--tool-border));
   border-radius: 12px 12px 5px 12px;
-  background: color-mix(in srgb, var(--accent-soft) 78%, var(--panel-background));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent-soft) 92%, var(--panel-background)),
+    color-mix(in srgb, var(--accent-soft) 68%, var(--panel-background))
+  );
 }
 
 .message--system {
   max-width: 100%;
   border-style: dashed;
-  background: var(--tool-surface);
+  background: color-mix(in srgb, var(--tool-surface) 82%, var(--panel-background));
   color: var(--muted-foreground);
 }
 
@@ -245,17 +237,17 @@
   grid-template-columns: minmax(0, 1fr) 34px;
   align-items: end;
   gap: 8px;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid var(--ai-line);
-  border-radius: 12px;
-  background: var(--panel-background);
+  border-radius: 14px;
+  background: var(--ai-elevated);
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
 }
 
 .composer textarea {
   width: 100%;
   min-width: 0;
-  max-height: 150px;
+  max-height: 128px;
   resize: vertical;
   border: 0;
   outline: 0;
@@ -264,7 +256,7 @@
   font: inherit;
   font-size: 0.86rem;
   line-height: 1.35;
-  padding: 5px 2px;
+  padding: 5px 2px 5px 4px;
 }
 
 .composer textarea::placeholder {
@@ -277,14 +269,14 @@
   width: 34px;
   height: 34px;
   border: 0;
-  border-radius: 9px;
-  background: var(--accent);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2f7dff, #6d5dfc);
   color: var(--accent-foreground);
   cursor: pointer;
 }
 
 .composer button:disabled {
-  background: var(--tool-surface);
+  background: color-mix(in srgb, var(--tool-surface) 90%, var(--panel-background));
   color: color-mix(in srgb, var(--muted-foreground) 72%, transparent);
   cursor: not-allowed;
 }
@@ -309,14 +301,11 @@
 @media (max-width: 760px) {
   .ai-panel {
     gap: 10px;
+    min-height: 480px;
   }
 
   .quick-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .ai-chat {
-    max-height: 32vh;
+    gap: 6px;
   }
 }
 
