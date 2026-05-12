@@ -59,7 +59,7 @@
 }
 
 .ai-header p,
-.quick-section > span,
+.quick-section__header span,
 .ai-proposal span {
   margin: 0;
   color: var(--muted-foreground);
@@ -81,7 +81,8 @@
   grid-template-columns: 8px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
-  max-width: 210px;
+  flex: 1 1 240px;
+  max-width: 280px;
   min-height: 44px;
   padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--ai-line));
@@ -101,8 +102,8 @@
   height: 7px;
   grid-row: 1 / span 2;
   border-radius: 999px;
-  background: #12a150;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #12a150 14%, transparent);
+  background: #dc2626;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #dc2626 14%, transparent);
 }
 
 .model-pill strong,
@@ -122,9 +123,19 @@
   text-overflow: ellipsis;
 }
 
-.model-pill--local span {
+.model-pill--ready > span {
+  background: #12a150;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #12a150 14%, transparent);
+}
+
+.model-pill--local.model-pill--ready > span {
   background: #2563eb;
   box-shadow: 0 0 0 3px color-mix(in srgb, #2563eb 14%, transparent);
+}
+
+.model-pill--loading > span {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 16%, transparent);
 }
 
 .ai-status-row {
@@ -165,14 +176,20 @@
 }
 
 .quick-section,
-.quick-section__header {
+.quick-section__header,
+.conversation-actions {
   display: grid;
   gap: 7px;
 }
 
 .quick-section__header {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
+}
+
+.conversation-actions {
+  justify-items: end;
+  margin-top: -2px;
 }
 
 .ghost-action {

@@ -11,7 +11,11 @@
         <h3>{{ 'ai.heading' | translate }}</h3>
       </div>
     </div>
-    <span class="model-pill" [class.model-pill--local]="activeAiMode() === 'local'">
+    <span
+      class="model-pill"
+      [class.model-pill--local]="activeAiMode() === 'local'"
+      [class.model-pill--ready]="aiReady()"
+      [class.model-pill--loading]="webLlmLoading() && !webLlmReady()">
       <span></span>
       <strong>{{ aiModeLabelKey() | translate }}</strong>
       <em>{{ activeModelName() }}</em>
@@ -29,9 +33,6 @@
   <div class="quick-section">
     <div class="quick-section__header">
       <span>{{ 'ai.quickActions' | translate }}</span>
-      <button class="ghost-action" type="button" (click)="resetConversation()">
-        {{ 'ai.resetConversation' | translate }}
-      </button>
     </div>
     <div class="quick-actions">
       @for (action of quickActions; track action.id) {
@@ -87,6 +88,14 @@
     }
   </div>
 
+  @if (assistantState.messages().length > 0) {
+    <div class="conversation-actions">
+      <button class="ghost-action" type="button" (click)="resetConversation()">
+        {{ 'ai.resetConversation' | translate }}
+      </button>
+    </div>
+  }
+
   @if (assistantState.error()) {
     <div class="ai-error">{{ assistantState.error() }}</div>
   }
@@ -102,7 +111,7 @@
         (keydown.enter)="handleComposerKeydown($event)"></textarea>
       <button
         type="submit"
-        [disabled]="assistantState.loading() || !assistantState.draft().trim()"
+        [disabled]="composerDisabled()"
         [attr.aria-label]="'ai.send' | translate">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>

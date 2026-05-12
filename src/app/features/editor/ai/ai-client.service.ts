@@ -32,16 +32,7 @@ export class AiClientService {
     };
 
     const result = await this.providerSelector.generateText(request);
-    try {
-      return this.responseFromTextResult(result);
-    } catch (error) {
-      if (result.mode === 'cloud') {
-        throw error;
-      }
-
-      const cloudResult = await this.providerSelector.generateWithCloud(request);
-      return this.responseFromTextResult(cloudResult);
-    }
+    return this.responseFromTextResult(result);
   }
 
   private responseFromTextResult(result: { readonly mode: 'local' | 'cloud'; readonly modelName: string; readonly text: string }): AiResponse {

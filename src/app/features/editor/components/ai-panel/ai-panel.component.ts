@@ -65,6 +65,16 @@ export class AiPanelComponent {
         return 'ai.modeCloud';
     }
   });
+  readonly webLlmReady = computed(() => this.localAiProvider.isReady(this.aiSettings().webLlmModel));
+  readonly webLlmLoading = computed(() => this.localAiProvider.isLoading(this.aiSettings().webLlmModel));
+  readonly aiReady = computed(() => {
+    if (this.aiSettings().providerType !== 'webllm') {
+      return true;
+    }
+
+    return this.webLlmReady();
+  });
+  readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim() || !this.aiReady());
   readonly quickActions = AI_QUICK_ACTIONS;
 
   setDraft(value: string): void {
@@ -91,7 +101,7 @@ export class AiPanelComponent {
 
   async submit(): Promise<void> {
     const instruction = this.assistantState.draft().trim();
-    if (!instruction || this.assistantState.loading()) {
+    if (!instruction || this.assistantState.loading() || !this.aiReady()) {
       return;
     }
 
@@ -108,7 +118,7 @@ export class AiPanelComponent {
       }
       this.assistantState.appendMessage({ role: 'assistant', text: response.message, response });
     } catch (error) {
-      this.assistantState.error.set(error instanceof Error ? error.message : this.languageService.t('ai.errorGeneric'));
+      this.assistantState.error.set(this.errorMessage(error));
     } finally {
       this.assistantState.loading.set(false);
     }
@@ -165,5 +175,17 @@ export class AiPanelComponent {
     }
 
     return this.aiSettings().webLlmModel;
+  }
+
+  private errorMessage(error: unknown): string {
+    if (!(error instanceof Error)) {
+      return this.languageService.t('ai.errorGeneric');
+    }
+
+    if (error.message.startsWith('ai.')) {
+      return this.languageService.t(error.message);
+    }
+
+    return this.languageService.t('ai.errorGeneric');
   }
 }

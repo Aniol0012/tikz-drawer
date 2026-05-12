@@ -5,10 +5,6 @@
       <span>{{ t('version') }} {{ appVersion() }}</span>
     </div>
 
-    @if (devMode()) {
-      <span class="dev-mode-badge">{{ t('devMode') }}</span>
-    }
-
     <label class="scene-input" for="scene-name-input">
       <input id="scene-name-input" type="text" [attr.aria-label]="t('name')" [value]="sceneName()" (input)="onSceneNameInput($event)" />
     </label>
@@ -185,6 +181,10 @@
 
   @if (!mobileLayout()) {
     <div class="topbar__right">
+      @if (devMode()) {
+        <span class="dev-mode-badge">{{ t('devMode') }}</span>
+      }
+
       <sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
         <button slot="trigger" class="language-select language-select--shoelace" type="button" [attr.aria-label]="t('language')">
           <span>{{ languageLabel() }}</span>

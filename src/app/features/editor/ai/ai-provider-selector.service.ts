@@ -29,24 +29,24 @@ export class AiProviderSelectorService {
   }
 
   readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'Firebase AI has timed out.');
+    return await this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout');
   };
 
   private readonly generateWithWebLlm = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.localProvider.generateText(request), WEB_LLM_GENERATION_TIMEOUT_MS, 'WebLLM has timed out.');
+    return await this.withTimeout(this.localProvider.generateText(request), WEB_LLM_GENERATION_TIMEOUT_MS, 'ai.errorWebLlmTimeout');
   };
 
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'Browser local AI has timed out.');
+    return await this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout');
   };
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (this.localProvider.isReady(request.options.webLlmModel)) {
-      return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithBrowserLocal, this.generateWithCloud], request);
+      return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithBrowserLocal], request);
     }
 
     if (this.browserLocalSupported()) {
-      return await this.generateWithFallback([this.generateWithBrowserLocal, this.generateWithCloud], request);
+      return await this.generateWithBrowserLocal(request);
     }
 
     return await this.generateWithCloud(request);
@@ -54,10 +54,10 @@ export class AiProviderSelectorService {
 
   private async generateWithWebLlmFallback(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (!this.localProvider.isSupported() || !this.localProvider.isReady(request.options.webLlmModel)) {
-      return await this.generateWithCloud(request);
+      throw new Error('ai.errorWebLlmNotReady');
     }
 
-    return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithCloud], request);
+    return await this.generateWithWebLlm(request);
   }
 
   private async generateWithFallback(

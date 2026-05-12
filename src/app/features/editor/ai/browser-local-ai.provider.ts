@@ -12,12 +12,12 @@ export class BrowserLocalAiProvider {
   async generateText(request: AiProviderRequest): Promise<AiProviderTextResult> {
     const languageModel = this.localLanguageModel();
     if (!languageModel?.create) {
-      throw new Error('Browser local AI is not available.');
+      throw new Error('ai.errorBrowserLocalUnavailable');
     }
 
     const availability = languageModel.availability ? await languageModel.availability() : 'available';
     if (availability === 'unavailable') {
-      throw new Error('Browser local AI is unavailable.');
+      throw new Error('ai.errorBrowserLocalUnavailable');
     }
 
     const session = await languageModel.create({
