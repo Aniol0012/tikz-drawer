@@ -11,14 +11,28 @@
         <h3>{{ 'ai.heading' | translate }}</h3>
       </div>
     </div>
-    <span class="model-pill">
+    <span class="model-pill" [class.model-pill--local]="activeAiMode() === 'local'">
       <span></span>
-      {{ modelName }}
+      <strong>{{ aiModeLabelKey() | translate }}</strong>
+      <em>{{ activeModelName() }}</em>
     </span>
   </header>
 
+  @if (localAiStatus().loadingState === 'loading') {
+    <div class="ai-status-row">
+      <div class="ai-progress" [style.--ai-progress]="localAiStatus().progress">
+        <span></span>
+      </div>
+    </div>
+  }
+
   <div class="quick-section">
-    <span>{{ 'ai.quickActions' | translate }}</span>
+    <div class="quick-section__header">
+      <span>{{ 'ai.quickActions' | translate }}</span>
+      <button class="ghost-action" type="button" (click)="resetConversation()">
+        {{ 'ai.resetConversation' | translate }}
+      </button>
+    </div>
     <div class="quick-actions">
       @for (action of quickActions; track action.id) {
         <button type="button" (click)="useQuickAction(action)">
@@ -36,6 +50,11 @@
       <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
         <p>{{ message.text }}</p>
         @if (message.response; as response) {
+          @if (response.aiMode) {
+            <small class="message__mode">
+              {{ responseModeLabel(response) }} · {{ response.aiModelName || activeModelName() }}
+            </small>
+          }
           @if (response.type === 'scenePatch') {
             <div class="ai-proposal">
               <span>{{ patchSummary(response) }}</span>
@@ -63,7 +82,8 @@
       </article>
     }
     @if (assistantState.loading()) {
-      <article class="message message--system">
+      <article class="message message--system message--loading">
+        <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
         <p>{{ 'ai.loading' | translate }}</p>
       </article>
     }

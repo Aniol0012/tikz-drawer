@@ -76,12 +76,19 @@
 }
 
 .sidebar-scroll {
-  display: grid;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   min-height: 0;
   overflow: auto;
   overflow-x: hidden;
   padding: 12px;
+}
+
+.sidebar-scroll > app-ai-panel {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @media (max-width: 1220px) {

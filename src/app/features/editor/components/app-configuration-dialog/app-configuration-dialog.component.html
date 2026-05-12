@@ -101,6 +101,58 @@
                     </div>
                   </div>
                 </section>
+
+                @if (showDevAiConfiguration) {
+                  <section class="settings-card">
+                    <div class="settings-card__header">
+                      <h3>{{ 'ai.settingsTitle' | translate }}</h3>
+                    </div>
+                    <div class="form-grid form-grid--single">
+                      <label class="field">
+                        <span>{{ 'ai.providerType' | translate }}</span>
+                        <app-select
+                          [value]="aiSettings().providerType"
+                          [options]="aiProviderTypeOptions()"
+                          (valueChange)="setAiProviderType($event)"></app-select>
+                      </label>
+                      <label class="field">
+                        <span>{{ 'ai.localModel' | translate }}</span>
+                        <app-select
+                          [value]="aiSettings().webLlmModel"
+                          [options]="webLlmModelOptions()"
+                          (valueChange)="setWebLlmModel($event)"></app-select>
+                      </label>
+                      <label class="field">
+                        <span>{{ 'ai.cloudModel' | translate }}</span>
+                        <app-select
+                          [value]="aiSettings().remoteModel"
+                          [options]="remoteModelOptions()"
+                          (valueChange)="setRemoteModel($event)"></app-select>
+                      </label>
+                      <label class="field">
+                        <span>{{ 'ai.temperature' | translate }}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1.2"
+                          step="0.05"
+                          [value]="aiSettings().temperature"
+                          (input)="updateAiTemperature($event)" />
+                      </label>
+                      <label class="field">
+                        <span>{{ 'ai.maxTokens' | translate }}</span>
+                        <input
+                          type="number"
+                          min="250"
+                          max="2000"
+                          step="50"
+                          [value]="aiSettings().maxTokens"
+                          (input)="updateAiMaxTokens($event)" />
+                      </label>
+                      <p class="settings-note">{{ 'ai.settingsDescription' | translate }}</p>
+                    </div>
+                  </section>
+                }
               </div>
             </section>
           }

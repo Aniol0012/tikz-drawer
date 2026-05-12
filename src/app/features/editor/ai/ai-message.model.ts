@@ -1,4 +1,5 @@
 import type { CanvasShape } from '../models/tikz.models';
+import type { AiProviderMode } from './ai-provider-result.model';
 
 export type AiMessageRole = 'user' | 'assistant' | 'system';
 export type AiResponseType = 'message' | 'scenePatch' | 'tikzCode';
@@ -27,4 +28,6 @@ export interface AiResponse {
   readonly message: string;
   readonly patch?: ScenePatch;
   readonly tikzCode?: string;
+  readonly aiMode?: AiProviderMode;
+  readonly aiModelName?: string;
 }

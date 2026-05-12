@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, isDevMode, Output, signal, viewChildren } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
@@ -34,6 +34,11 @@ import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-fie
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { KeyboardShortcutCaptureComponent, type KeyboardShortcutAssignment } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
 import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
+import { REMOTE_AI_MODEL_OPTIONS, WEB_LLM_MODEL_OPTIONS, AiSettingsService } from '../../ai/ai-settings.service';
+import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
+import { FIREBASE_AI_MODEL } from '../../ai/firebase-ai.config';
+import { AiProviderSelectorService } from '../../ai/ai-provider-selector.service';
+import type { AiProviderType } from '../../ai/ai-provider-result.model';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
 
@@ -73,6 +78,9 @@ export class AppConfigurationDialogComponent {
   private readonly languageService = inject(EditorLanguageService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly appThemeService = inject(AppThemeService);
+  private readonly aiSettingsService = inject(AiSettingsService);
+  private readonly localAiProvider = inject(WebLlmLocalAiProvider);
+  private readonly aiProviderSelector = inject(AiProviderSelectorService);
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
@@ -105,6 +113,10 @@ export class AppConfigurationDialogComponent {
   readonly latexExportConfig = this.configuration.latexExportConfig;
   readonly generalConfig = this.configuration.generalConfig;
   readonly codeTheme = this.configuration.codeHighlightTheme;
+  readonly aiSettings = this.aiSettingsService.settings;
+  readonly localAiStatus = this.localAiProvider.status;
+  readonly browserLocalSupported = this.aiProviderSelector.browserLocalSupported;
+  readonly showDevAiConfiguration = isDevMode();
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
@@ -127,6 +139,31 @@ export class AppConfigurationDialogComponent {
   readonly minZoomPercent = Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100);
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
+  readonly cloudAiModelName = FIREBASE_AI_MODEL;
+  readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
+    const options: AppSelectOption[] = [
+      { value: 'webllm', label: this.t('ai.providerWebLlm') },
+      { value: 'remote', label: this.t('ai.providerRemote') }
+    ];
+
+    if (this.browserLocalSupported()) {
+      options.splice(1, 0, { value: 'local', label: this.t('ai.providerLocal') });
+    }
+
+    return options;
+  });
+  readonly webLlmModelOptions = computed<readonly AppSelectOption[]>(() =>
+    WEB_LLM_MODEL_OPTIONS.map((model) => ({
+      value: model,
+      label: model
+    }))
+  );
+  readonly remoteModelOptions = computed<readonly AppSelectOption[]>(() =>
+    REMOTE_AI_MODEL_OPTIONS.map((model) => ({
+      value: model,
+      label: model
+    }))
+  );
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
     { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
@@ -163,6 +200,7 @@ export class AppConfigurationDialogComponent {
       this.preferencesEqual(this.preferences(), defaultPreferences) &&
       this.latexExportConfigEqual(this.latexExportConfig(), DEFAULT_LATEX_EXPORT_CONFIG) &&
       this.generalConfigEqual(this.generalConfig()) &&
+      (!this.showDevAiConfiguration || this.aiSettingsService.isDefault()) &&
       this.codeTheme() === 'aurora' &&
       this.language() === detectLanguage()
   );
@@ -271,6 +309,30 @@ export class AppConfigurationDialogComponent {
 
   updateGeneralBoolean(key: 'showHelpTooltips', checked: boolean): void {
     this.configuration.patchGeneralConfig({ [key]: checked });
+  }
+
+  updateAiTemperature(event: Event): void {
+    const temperature = Number((event.target as HTMLInputElement).value);
+    this.aiSettingsService.patchSettings({ temperature });
+  }
+
+  updateAiMaxTokens(event: Event): void {
+    const maxTokens = Number((event.target as HTMLInputElement).value);
+    this.aiSettingsService.patchSettings({ maxTokens });
+  }
+
+  setAiProviderType(value: string): void {
+    if (value === 'webllm' || value === 'local' || value === 'remote') {
+      this.aiSettingsService.patchSettings({ providerType: value satisfies AiProviderType });
+    }
+  }
+
+  setWebLlmModel(value: string): void {
+    this.aiSettingsService.patchSettings({ webLlmModel: value });
+  }
+
+  setRemoteModel(value: string): void {
+    this.aiSettingsService.patchSettings({ remoteModel: value });
   }
 
   openShortcutSettings(): void {
@@ -553,6 +615,7 @@ export class AppConfigurationDialogComponent {
   confirmResetToDefaults(): void {
     this.store.patchPreferences(defaultPreferences);
     this.configuration.resetToDefaults();
+    this.aiSettingsService.resetToDefaults();
     this.languageService.setLanguage(detectLanguage());
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);

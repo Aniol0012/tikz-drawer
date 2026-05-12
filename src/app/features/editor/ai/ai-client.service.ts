@@ -1,197 +1,84 @@
-import { Injectable, inject } from '@angular/core';
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai';
-import { FIREBASE_AI_MODEL, FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY, FIREBASE_CONFIG } from './firebase-ai.config';
+import { Injectable, inject, signal } from '@angular/core';
 import { AiResponseParserService } from './ai-response-parser.service';
 import type { AiSceneContext } from './ai-scene-context.model';
-import type { AiResponse } from './ai-message.model';
+import type { AiMessage, AiResponse } from './ai-message.model';
+import { AiProviderSelectorService } from './ai-provider-selector.service';
+import { AiSettingsService } from './ai-settings.service';
 
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
   private readonly parser = inject(AiResponseParserService);
-  private readonly app: FirebaseApp;
+  private readonly providerSelector = inject(AiProviderSelectorService);
+  private readonly settingsService = inject(AiSettingsService);
 
-  constructor() {
-    this.app = initializeApp(FIREBASE_CONFIG);
-    this.initializeAnalytics();
-    this.initializeAppCheck();
-  }
+  readonly lastProviderMode = signal<'local' | 'cloud'>('cloud');
+  readonly lastModelName = signal('');
 
-  async sendPrompt(instruction: string, context: AiSceneContext): Promise<AiResponse> {
-    const localResponse = await this.tryLocalModel(instruction, context);
-    if (localResponse) {
-      return localResponse;
-    }
-
-    const ai = getAI(this.app, { backend: new GoogleAIBackend() });
-    const model = getGenerativeModel(ai, {
-      model: FIREBASE_AI_MODEL,
-      generationConfig: {
-        responseMimeType: 'application/json',
-        responseSchema: this.responseSchema()
-      },
-      systemInstruction: this.systemInstruction()
-    });
-
-    const response = await model.generateContent(JSON.stringify({ instruction, context }));
-    const text = response.response.text();
-    return this.parser.parse(text);
-  }
-
-  private async tryLocalModel(instruction: string, context: AiSceneContext): Promise<AiResponse | null> {
-    const languageModel = this.localLanguageModel();
-    if (!languageModel?.create) {
-      return null;
-    }
-
-    try {
-      const availability = languageModel.availability ? await languageModel.availability() : 'available';
-      if (availability === 'unavailable') {
-        return null;
-      }
-
-      const session = await languageModel.create({
-        systemPrompt: `${this.systemInstruction()}\nDevuelve solo JSON valido.`
-      });
-      const text = await session.prompt(JSON.stringify({ instruction, context }));
-      session.destroy?.();
-      return this.parser.parse(text);
-    } catch {
-      return null;
-    }
-  }
-
-  private localLanguageModel(): LocalLanguageModel | null {
-    const candidate = globalThis as typeof globalThis & {
-      LanguageModel?: LocalLanguageModel;
-      ai?: { languageModel?: LocalLanguageModel };
+  async sendPrompt(instruction: string, context: AiSceneContext, messages: readonly AiMessage[] = []): Promise<AiResponse> {
+    const request = {
+      instruction,
+      contextJson: JSON.stringify({
+        instruction,
+        now: {
+          iso: new Date().toISOString(),
+          locale: Intl.DateTimeFormat().resolvedOptions().locale,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        },
+        context,
+        conversation: this.conversationForPrompt(messages)
+      }),
+      systemInstruction: this.systemInstruction(),
+      options: this.settingsService.settings()
     };
 
-    return candidate.LanguageModel ?? candidate.ai?.languageModel ?? null;
-  }
-
-  private initializeAnalytics(): void {
-    void isAnalyticsSupported().then((supported) => {
-      if (supported) {
-        getAnalytics(this.app);
+    const result = await this.providerSelector.generateText(request);
+    try {
+      return this.responseFromTextResult(result);
+    } catch (error) {
+      if (result.mode === 'cloud') {
+        throw error;
       }
-    });
+
+      const cloudResult = await this.providerSelector.generateWithCloud(request);
+      return this.responseFromTextResult(cloudResult);
+    }
   }
 
-  private initializeAppCheck(): void {
-    if (!FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY) {
-      return;
-    }
+  private responseFromTextResult(result: { readonly mode: 'local' | 'cloud'; readonly modelName: string; readonly text: string }): AiResponse {
+    const response = this.parser.parse(result.text);
+    this.lastProviderMode.set(result.mode);
+    this.lastModelName.set(result.modelName);
+    return {
+      ...response,
+      aiMode: result.mode,
+      aiModelName: result.modelName
+    };
+  }
 
-    initializeAppCheck(this.app, {
-      provider: new ReCaptchaEnterpriseProvider(FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
-      isTokenAutoRefreshEnabled: true
-    });
+  private conversationForPrompt(messages: readonly AiMessage[]): readonly { readonly role: string; readonly text: string }[] {
+    return messages
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .slice(-10)
+      .map((message) => ({
+        role: message.role,
+        text: message.text
+      }));
   }
 
   private systemInstruction(): string {
     return [
       'Eres el asistente contextual de Tikz Drawer.',
-      'Responde siempre en JSON siguiendo el esquema.',
-      'Puedes explicar, generar TikZ o proponer patches de escena editables.',
+      'Responde siempre con un unico objeto JSON valido, sin markdown ni texto fuera del JSON.',
+      'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
+      'Si el usuario conversa o pregunta datos generales, responde con type="message". Usa el campo now para fechas y horas.',
+      'Si el usuario pide dibujar, ordenar, etiquetar o editar, propone scenePatch editable y explica brevemente el cambio en message.',
+      'Si el usuario pide TikZ o correccion de codigo, responde con tikzCode y una explicacion corta.',
+      'No mutas el canvas directamente: todos los cambios deben ir como patch para previsualizar y aplicar manualmente.',
+      'Puedes usar el historial de conversation para mantener contexto, pero no inventes cambios no solicitados.',
       'No elimines ni modifiques elementos bloqueados.',
-      'Para scenePatch, usa solo tipos nativos: rectangle, circle, ellipse, line, text, triangle.',
+      'Para scenePatch usa solo tipos nativos: rectangle, circle, ellipse, line, text, triangle.',
+      'Prefiere patches pequenos, validables y con nombres claros; conserva IDs existentes al actualizar.',
       'La app validara todo y el usuario aplicara manualmente los cambios.'
     ].join('\n');
   }
-
-  private responseSchema(): Schema {
-    const shapeProperties = {
-      kind: Schema.enumString({ enum: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'triangle'] }),
-      name: Schema.string(),
-      x: Schema.number(),
-      y: Schema.number(),
-      width: Schema.number(),
-      height: Schema.number(),
-      cx: Schema.number(),
-      cy: Schema.number(),
-      r: Schema.number(),
-      rx: Schema.number(),
-      ry: Schema.number(),
-      fromX: Schema.number(),
-      fromY: Schema.number(),
-      toX: Schema.number(),
-      toY: Schema.number(),
-      text: Schema.string(),
-      stroke: Schema.string(),
-      fill: Schema.string(),
-      color: Schema.string(),
-      strokeWidth: Schema.number(),
-      fontSize: Schema.number(),
-      arrowStart: Schema.boolean(),
-      arrowEnd: Schema.boolean()
-    };
-    const optionalShapeProperties = [
-      'name',
-      'x',
-      'y',
-      'width',
-      'height',
-      'cx',
-      'cy',
-      'r',
-      'rx',
-      'ry',
-      'fromX',
-      'fromY',
-      'toX',
-      'toY',
-      'text',
-      'stroke',
-      'fill',
-      'color',
-      'strokeWidth',
-      'fontSize',
-      'arrowStart',
-      'arrowEnd'
-    ];
-    const patchShape = Schema.object({
-      properties: shapeProperties,
-      optionalProperties: optionalShapeProperties
-    });
-    const patchShapeUpdate = Schema.object({
-      properties: shapeProperties,
-      optionalProperties: ['kind', ...optionalShapeProperties]
-    });
-
-    return Schema.object({
-      properties: {
-        type: Schema.enumString({ enum: ['message', 'scenePatch', 'tikzCode'] }),
-        message: Schema.string(),
-        patch: Schema.object({
-          properties: {
-            create: Schema.array({ items: patchShape }),
-            update: Schema.array({
-              items: Schema.object({
-                properties: {
-                  id: Schema.string(),
-                  changes: patchShapeUpdate
-                },
-                optionalProperties: []
-              })
-            }),
-            remove: Schema.array({ items: Schema.string() })
-          },
-          optionalProperties: ['create', 'update', 'remove']
-        }),
-        tikzCode: Schema.string()
-      },
-      optionalProperties: ['patch', 'tikzCode']
-    });
-  }
-}
-
-interface LocalLanguageModel {
-  readonly availability?: () => Promise<string>;
-  readonly create?: (options: { readonly systemPrompt: string }) => Promise<{
-    readonly prompt: (input: string) => Promise<string>;
-    readonly destroy?: () => void;
-  }>;
 }

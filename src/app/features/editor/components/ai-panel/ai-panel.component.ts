@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
@@ -11,6 +11,8 @@ import type { AiResponse } from '../../ai/ai-message.model';
 import { ScenePatchService } from '../../ai/scene-patch.service';
 import { FIREBASE_AI_MODEL } from '../../ai/firebase-ai.config';
 import { AiAssistantStateService } from '../../ai/ai-assistant-state.service';
+import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
+import { AiSettingsService } from '../../ai/ai-settings.service';
 
 @Component({
   selector: 'app-ai-panel',
@@ -25,10 +27,35 @@ export class AiPanelComponent {
   private readonly aiClient = inject(AiClientService);
   private readonly contextBuilder = inject(AiContextBuilderService);
   private readonly scenePatch = inject(ScenePatchService);
+  private readonly localAiProvider = inject(WebLlmLocalAiProvider);
+  private readonly aiSettingsService = inject(AiSettingsService);
   readonly assistantState = inject(AiAssistantStateService);
 
   readonly iconMap = iconPaths;
-  readonly modelName = FIREBASE_AI_MODEL;
+  readonly cloudModelName = FIREBASE_AI_MODEL;
+  readonly aiSettings = this.aiSettingsService.settings;
+  readonly localAiStatus = this.localAiProvider.status;
+  readonly activeAiMode = computed(() => {
+    if (this.aiSettings().providerType === 'remote') {
+      return 'cloud';
+    }
+
+    return 'local';
+  });
+  readonly activeModelName = computed(() => {
+    if (this.aiClient.lastProviderMode() === this.activeAiMode() && this.aiClient.lastModelName()) {
+      return this.aiClient.lastModelName();
+    }
+
+    return this.defaultModelName();
+  });
+  readonly aiModeLabelKey = computed(() => {
+    if (this.aiSettings().providerType === 'webllm' && !this.localAiStatus().supported) {
+      return this.activeAiMode() === 'local' ? 'ai.modeLocal' : 'ai.modeCloud';
+    }
+
+    return this.activeAiMode() === 'local' ? 'ai.modeLocal' : 'ai.modeCloud';
+  });
   readonly quickActions = AI_QUICK_ACTIONS;
 
   setDraft(value: string): void {
@@ -66,7 +93,7 @@ export class AiPanelComponent {
 
     try {
       const context = this.contextBuilder.build(this.store.scene().name, this.store.scene().shapes, this.store.selectedShapeIds());
-      const response = await this.aiClient.sendPrompt(instruction, context);
+      const response = await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages());
       if (response.patch) {
         this.scenePatch.setPendingPatch(response.patch);
       }
@@ -76,6 +103,10 @@ export class AiPanelComponent {
     } finally {
       this.assistantState.loading.set(false);
     }
+  }
+
+  resetConversation(): void {
+    this.assistantState.resetConversation();
   }
 
   applyResponse(response: AiResponse): void {
@@ -97,5 +128,21 @@ export class AiPanelComponent {
 
   patchSummary(response: AiResponse): string {
     return response.patch ? this.scenePatch.summarize(response.patch) : '';
+  }
+
+  responseModeLabel(response: AiResponse): string {
+    if (!response.aiMode) {
+      return '';
+    }
+
+    return response.aiMode === 'local' ? this.languageService.t('ai.modeLocal') : this.languageService.t('ai.modeCloud');
+  }
+
+  private defaultModelName(): string {
+    if (this.aiSettings().providerType === 'remote') {
+      return this.aiSettings().remoteModel;
+    }
+
+    return this.aiSettings().webLlmModel;
   }
 }
