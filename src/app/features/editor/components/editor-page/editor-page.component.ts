@@ -211,6 +211,7 @@ import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
+import { ScenePatchService } from '../../ai/scene-patch.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
@@ -300,7 +301,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EditorStore, EditorConfigurationService],
+  providers: [EditorStore, EditorConfigurationService, ScenePatchService],
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
     '[attr.data-tooltip-disabled]': 'configuration.generalConfig().showHelpTooltips ? null : ""',
@@ -323,6 +324,7 @@ export class EditorPageComponent {
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
+  readonly aiPatch = inject(ScenePatchService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly appThemeService = inject(AppThemeService);
   private readonly document = inject(DOCUMENT);
@@ -980,16 +982,20 @@ export class EditorPageComponent {
     };
   });
   readonly insertionPreviewShapes = computed<readonly CanvasShape[]>(() => {
+    const aiPreviewShapes = this.aiPatch.previewShapes();
     const interactionState = this.interactionState();
     if (interactionState?.kind !== 'insert') {
       if (interactionState?.kind === 'freehand') {
         const line = this.buildFreehandLine(interactionState.points, 'preview-freehand');
-        return line ? [line] : [];
+        return line ? [...aiPreviewShapes, line] : aiPreviewShapes;
       }
-      return [];
+      return aiPreviewShapes;
     }
 
-    return this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint);
+    return [
+      ...aiPreviewShapes,
+      ...this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint)
+    ];
   });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode

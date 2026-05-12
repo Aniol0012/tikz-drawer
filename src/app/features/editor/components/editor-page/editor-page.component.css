@@ -1354,7 +1354,7 @@ kbd {
 .canvas-empty {
   position: absolute;
   left: 16px;
-  top: 16px;
+  top: 62px;
   max-width: 260px;
   padding: 14px;
   border: 1px solid var(--tool-border);
@@ -1386,8 +1386,14 @@ kbd {
 
 .canvas-corner--top {
   top: 14px;
+  left: 14px;
   right: 14px;
-  justify-content: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.canvas-corner--top .canvas-chip {
+  pointer-events: auto;
 }
 
 .canvas-chip {
@@ -1410,7 +1416,7 @@ kbd {
 }
 
 .canvas-chip--objects {
-  min-height: 24px;
+  min-height: 30px;
   padding: 0 8px;
   gap: 6px;
 }
@@ -1450,17 +1456,7 @@ kbd {
     inset: -1px;
     z-index: -2;
     border-radius: inherit;
-    background: conic-gradient(
-      from var(--assistant-angle, 0deg),
-      #7c3aed,
-      #2563eb,
-      #06b6d4,
-      #22c55e,
-      #facc15,
-      #f97316,
-      #ec4899,
-      #7c3aed
-    );
+    background: conic-gradient(from var(--assistant-angle, 0deg), #7c3aed, #2563eb, #06b6d4, #22c55e, #facc15, #f97316, #ec4899, #7c3aed);
     opacity: 0;
     transition: opacity 180ms ease;
   }
@@ -1521,9 +1517,7 @@ kbd {
     }
 
     .assistant-sparkles-icon {
-      filter:
-        drop-shadow(0 1px 1px rgb(15 23 42 / 10%))
-        drop-shadow(0 0 8px rgb(99 102 241 / 18%));
+      filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 8px rgb(99 102 241 / 18%));
       animation: assistant-icon-twinkle 620ms ease both;
 
       .sparkle-main {
@@ -1600,9 +1594,7 @@ kbd {
     --assistant-ring: rgb(96 165 250 / 18%);
 
     .assistant-sparkles-icon {
-      filter:
-        drop-shadow(0 1px 1px rgb(0 0 0 / 28%))
-        drop-shadow(0 0 5px rgb(96 165 250 / 12%));
+      filter: drop-shadow(0 1px 1px rgb(0 0 0 / 28%)) drop-shadow(0 0 5px rgb(96 165 250 / 12%));
     }
 
     &:hover {
@@ -1717,6 +1709,53 @@ kbd {
       transform: none;
     }
   }
+}
+
+.ai-canvas-preview {
+  position: absolute;
+  left: 14px;
+  top: 58px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  max-width: min(520px, calc(100% - 28px));
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--tool-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
+  box-shadow: var(--floating-shadow);
+}
+
+.ai-canvas-preview div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.ai-canvas-preview strong {
+  color: var(--foreground);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.ai-canvas-preview span {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-canvas-preview .primary-button,
+.ai-canvas-preview .secondary-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 
 .secondary-button--toolbar {
@@ -3557,7 +3596,7 @@ button:disabled {
   .canvas-corner--top {
     left: 12px;
     right: 12px;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 
   .minimap {
