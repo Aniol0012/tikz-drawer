@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
@@ -7,17 +7,17 @@ import { sceneToTikz } from '../../tikz/tikz.codegen';
 import { AiClientService } from '../../ai/ai-client.service';
 import { AiContextBuilderService } from '../../ai/ai-context-builder.service';
 import { AI_QUICK_ACTIONS, type AiQuickAction } from '../../ai/ai-action.model';
-import type { AiMessage, AiResponse } from '../../ai/ai-message.model';
+import type { AiResponse } from '../../ai/ai-message.model';
 import { ScenePatchService } from '../../ai/scene-patch.service';
 import { FIREBASE_AI_MODEL } from '../../ai/firebase-ai.config';
+import { AiAssistantStateService } from '../../ai/ai-assistant-state.service';
 
 @Component({
   selector: 'app-ai-panel',
   imports: [EditorTranslatePipe],
   templateUrl: './ai-panel.component.html',
   styleUrl: './ai-panel.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [ScenePatchService]
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AiPanelComponent {
   private readonly store = inject(EditorStore);
@@ -25,28 +25,18 @@ export class AiPanelComponent {
   private readonly aiClient = inject(AiClientService);
   private readonly contextBuilder = inject(AiContextBuilderService);
   private readonly scenePatch = inject(ScenePatchService);
+  readonly assistantState = inject(AiAssistantStateService);
 
   readonly iconMap = iconPaths;
   readonly modelName = FIREBASE_AI_MODEL;
   readonly quickActions = AI_QUICK_ACTIONS;
-  readonly draft = signal('');
-  readonly loading = signal(false);
-  readonly error = signal('');
-  readonly messages = signal<readonly AiMessage[]>([
-    {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      text: this.languageService.t('ai.welcome'),
-      createdAt: Date.now()
-    }
-  ]);
 
   setDraft(value: string): void {
-    this.draft.set(value);
+    this.assistantState.draft.set(value);
   }
 
   useQuickAction(action: AiQuickAction): void {
-    this.draft.set(this.languageService.t(action.promptKey));
+    this.assistantState.draft.set(this.languageService.t(action.promptKey));
   }
 
   iconForAction(action: AiQuickAction): string {
@@ -64,24 +54,27 @@ export class AiPanelComponent {
   }
 
   async submit(): Promise<void> {
-    const instruction = this.draft().trim();
-    if (!instruction || this.loading()) {
+    const instruction = this.assistantState.draft().trim();
+    if (!instruction || this.assistantState.loading()) {
       return;
     }
 
-    this.error.set('');
-    this.draft.set('');
-    this.appendMessage({ role: 'user', text: instruction });
-    this.loading.set(true);
+    this.assistantState.error.set('');
+    this.assistantState.draft.set('');
+    this.assistantState.appendMessage({ role: 'user', text: instruction });
+    this.assistantState.loading.set(true);
 
     try {
       const context = this.contextBuilder.build(this.store.scene().name, this.store.scene().shapes, this.store.selectedShapeIds());
       const response = await this.aiClient.sendPrompt(instruction, context);
-      this.appendMessage({ role: 'assistant', text: response.message, response });
+      if (response.patch) {
+        this.scenePatch.setPendingPatch(response.patch);
+      }
+      this.assistantState.appendMessage({ role: 'assistant', text: response.message, response });
     } catch (error) {
-      this.error.set(error instanceof Error ? error.message : this.languageService.t('ai.errorGeneric'));
+      this.assistantState.error.set(error instanceof Error ? error.message : this.languageService.t('ai.errorGeneric'));
     } finally {
-      this.loading.set(false);
+      this.assistantState.loading.set(false);
     }
   }
 
@@ -90,10 +83,10 @@ export class AiPanelComponent {
       return;
     }
 
-    this.scenePatch.apply(response.patch);
-    this.appendMessage({
+    this.scenePatch.setPendingPatch(response.patch);
+    this.assistantState.appendMessage({
       role: 'system',
-      text: `${this.languageService.t('ai.patchApplied')} ${this.scenePatch.summarize(response.patch)}.`
+      text: `${this.languageService.t('ai.patchPreviewReady')} ${this.scenePatch.summarize(response.patch)}.`
     });
   }
 
@@ -104,16 +97,5 @@ export class AiPanelComponent {
 
   patchSummary(response: AiResponse): string {
     return response.patch ? this.scenePatch.summarize(response.patch) : '';
-  }
-
-  private appendMessage(message: Omit<AiMessage, 'id' | 'createdAt'>): void {
-    this.messages.update((messages) => [
-      ...messages,
-      {
-        ...message,
-        id: crypto.randomUUID(),
-        createdAt: Date.now()
-      }
-    ]);
   }
 }

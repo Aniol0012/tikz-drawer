@@ -20,6 +20,11 @@ export class AiClientService {
   }
 
   async sendPrompt(instruction: string, context: AiSceneContext): Promise<AiResponse> {
+    const localResponse = await this.tryLocalModel(instruction, context);
+    if (localResponse) {
+      return localResponse;
+    }
+
     const ai = getAI(this.app, { backend: new GoogleAIBackend() });
     const model = getGenerativeModel(ai, {
       model: FIREBASE_AI_MODEL,
@@ -33,6 +38,38 @@ export class AiClientService {
     const response = await model.generateContent(JSON.stringify({ instruction, context }));
     const text = response.response.text();
     return this.parser.parse(text);
+  }
+
+  private async tryLocalModel(instruction: string, context: AiSceneContext): Promise<AiResponse | null> {
+    const languageModel = this.localLanguageModel();
+    if (!languageModel?.create) {
+      return null;
+    }
+
+    try {
+      const availability = languageModel.availability ? await languageModel.availability() : 'available';
+      if (availability === 'unavailable') {
+        return null;
+      }
+
+      const session = await languageModel.create({
+        systemPrompt: `${this.systemInstruction()}\nDevuelve solo JSON valido.`
+      });
+      const text = await session.prompt(JSON.stringify({ instruction, context }));
+      session.destroy?.();
+      return this.parser.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  private localLanguageModel(): LocalLanguageModel | null {
+    const candidate = globalThis as typeof globalThis & {
+      LanguageModel?: LocalLanguageModel;
+      ai?: { languageModel?: LocalLanguageModel };
+    };
+
+    return candidate.LanguageModel ?? candidate.ai?.languageModel ?? null;
   }
 
   private initializeAnalytics(): void {
@@ -149,4 +186,12 @@ export class AiClientService {
       optionalProperties: ['patch', 'tikzCode']
     });
   }
+}
+
+interface LocalLanguageModel {
+  readonly availability?: () => Promise<string>;
+  readonly create?: (options: { readonly systemPrompt: string }) => Promise<{
+    readonly prompt: (input: string) => Promise<string>;
+    readonly destroy?: () => void;
+  }>;
 }

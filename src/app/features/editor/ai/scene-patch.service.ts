@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_COLOR, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
 import type { CanvasShape, EditorPreferences, LineStrokeStyle, TikzScene } from '../models/tikz.models';
 import { sceneToTikz } from '../tikz/tikz.codegen';
@@ -8,6 +8,19 @@ import type { ScenePatch } from './ai-message.model';
 @Injectable()
 export class ScenePatchService {
   private readonly store = inject(EditorStore);
+  readonly pendingPatch = signal<ScenePatch | null>(null);
+  readonly pendingSummary = computed(() => {
+    const patch = this.pendingPatch();
+    return patch ? this.summarize(patch) : '';
+  });
+  readonly previewShapes = computed<readonly CanvasShape[]>(() => {
+    const patch = this.pendingPatch();
+    if (!patch) {
+      return [];
+    }
+
+    return this.preview(patch);
+  });
 
   apply(patch: ScenePatch): readonly CanvasShape[] {
     const currentScene = this.store.scene();
@@ -25,6 +38,34 @@ export class ScenePatchService {
     this.store.selectedShapeIds.set(createdShapes.length ? createdShapes.map((shape) => shape.id) : updatedShapes.map((shape) => shape.id));
     this.store.importCode.set(sceneToTikz(this.store.scene()));
     return createdShapes;
+  }
+
+  setPendingPatch(patch: ScenePatch | null): void {
+    this.pendingPatch.set(patch);
+  }
+
+  applyPendingPatch(): readonly CanvasShape[] {
+    const patch = this.pendingPatch();
+    if (!patch) {
+      return [];
+    }
+
+    const createdShapes = this.apply(patch);
+    this.pendingPatch.set(null);
+    return createdShapes;
+  }
+
+  discardPendingPatch(): void {
+    this.pendingPatch.set(null);
+  }
+
+  preview(patch: ScenePatch): readonly CanvasShape[] {
+    const currentScene = this.store.scene();
+    const preferences = this.store.preferences();
+    return [
+      ...this.updatedShapes(currentScene, patch, preferences),
+      ...patch.create.map((shape) => this.createShape(shape, preferences)).filter((shape): shape is CanvasShape => !!shape)
+    ];
   }
 
   summarize(patch: ScenePatch): string {

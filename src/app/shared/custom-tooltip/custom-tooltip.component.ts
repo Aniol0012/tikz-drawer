@@ -213,13 +213,13 @@ export class CustomTooltipComponent {
       return null;
     }
 
-    if (target.closest('[data-tooltip-disabled]')) {
-      return null;
-    }
-
     const explicitCandidate = target.closest<HTMLElement>('[data-tooltip]');
     if (explicitCandidate && !explicitCandidate.closest('app-custom-tooltip')) {
       return this.tooltipText(explicitCandidate) ? explicitCandidate : null;
+    }
+
+    if (target.closest('[data-tooltip-disabled]')) {
+      return null;
     }
 
     if (this.isNativeControlEventTarget(target) || this.isShoelaceDropdownTarget(target)) {

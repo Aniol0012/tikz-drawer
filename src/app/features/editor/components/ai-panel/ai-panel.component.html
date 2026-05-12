@@ -32,7 +32,7 @@
   </div>
 
   <div class="ai-chat" aria-live="polite">
-    @for (message of messages(); track message.id) {
+    @for (message of assistantState.messages(); track message.id) {
       <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
         <p>{{ message.text }}</p>
         @if (message.response; as response) {
@@ -41,7 +41,7 @@
               <span>{{ patchSummary(response) }}</span>
               <div>
                 <button type="button" (click)="applyResponse(response)">
-                  {{ 'ai.apply' | translate }}
+                  {{ 'ai.previewOnCanvas' | translate }}
                 </button>
                 <button type="button" (click)="copyTikz(response)">
                   {{ 'copyTikz' | translate }}
@@ -62,15 +62,15 @@
         }
       </article>
     }
-    @if (loading()) {
+    @if (assistantState.loading()) {
       <article class="message message--system">
         <p>{{ 'ai.loading' | translate }}</p>
       </article>
     }
   </div>
 
-  @if (error()) {
-    <div class="ai-error">{{ error() }}</div>
+  @if (assistantState.error()) {
+    <div class="ai-error">{{ assistantState.error() }}</div>
   }
 
   <form class="composer" (submit)="$event.preventDefault(); submit()">
@@ -79,10 +79,13 @@
         rows="3"
         [attr.aria-label]="'ai.placeholder' | translate"
         [placeholder]="'ai.placeholder' | translate"
-        [value]="draft()"
+        [value]="assistantState.draft()"
         (input)="setDraft($any($event.target).value)"
         (keydown.enter)="handleComposerKeydown($event)"></textarea>
-      <button type="submit" [disabled]="loading() || !draft().trim()" [attr.aria-label]="'ai.send' | translate">
+      <button
+        type="submit"
+        [disabled]="assistantState.loading() || !assistantState.draft().trim()"
+        [attr.aria-label]="'ai.send' | translate">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>
         </svg>
