@@ -37,11 +37,7 @@ export class AiProviderSelectorService {
   };
 
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(
-      this.browserLocalProvider.generateText(request),
-      BROWSER_LOCAL_GENERATION_TIMEOUT_MS,
-      'Browser local AI has timed out.'
-    );
+    return await this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'Browser local AI has timed out.');
   };
 
   private async generateWithPriority(

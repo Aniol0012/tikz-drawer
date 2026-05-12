@@ -51,9 +51,7 @@
         <p>{{ message.text }}</p>
         @if (message.response; as response) {
           @if (response.aiMode) {
-            <small class="message__mode">
-              {{ responseModeLabel(response) }} · {{ response.aiModelName || activeModelName() }}
-            </small>
+            <small class="message__mode"> {{ responseModeLabel(response) }} · {{ response.aiModelName || activeModelName() }} </small>
           }
           @if (response.type === 'scenePatch') {
             <div class="ai-proposal">
