@@ -4,9 +4,9 @@ import { FirebaseAiProvider } from './firebase-ai.provider';
 import { WebLlmLocalAiProvider } from './web-llm-local-ai.provider';
 import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
 
-const WEB_LLM_GENERATION_TIMEOUT_MS = 25000;
-const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 20000;
-const CLOUD_GENERATION_TIMEOUT_MS = 45000;
+const WEB_LLM_GENERATION_TIMEOUT_MS = 4500;
+const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 4500;
+const CLOUD_GENERATION_TIMEOUT_MS = 5000;
 
 @Injectable({ providedIn: 'root' })
 export class AiProviderSelectorService {
@@ -19,18 +19,18 @@ export class AiProviderSelectorService {
 
   async generateText(request: AiProviderRequest): Promise<AiProviderTextResult> {
     switch (request.options.providerType) {
-      case 'webllm':
-        return await this.generateWithPriority([this.generateWithWebLlm, this.generateWithBrowserLocal, this.generateWithCloud], request);
       case 'local':
-        return await this.generateWithPriority([this.generateWithBrowserLocal, this.generateWithCloud], request);
+        return await this.generateWithAutomaticLocal(request);
+      case 'webllm':
+        return await this.generateWithWebLlmFallback(request);
       case 'remote':
         return await this.generateWithCloud(request);
     }
   }
 
-  async generateWithCloud(request: AiProviderRequest): Promise<AiProviderTextResult> {
+  readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
     return await this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'Firebase AI has timed out.');
-  }
+  };
 
   private readonly generateWithWebLlm = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
     return await this.withTimeout(this.localProvider.generateText(request), WEB_LLM_GENERATION_TIMEOUT_MS, 'WebLLM has timed out.');
@@ -40,11 +40,31 @@ export class AiProviderSelectorService {
     return await this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'Browser local AI has timed out.');
   };
 
-  private async generateWithPriority(
+  private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
+    if (this.localProvider.isReady(request.options.webLlmModel)) {
+      return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithBrowserLocal, this.generateWithCloud], request);
+    }
+
+    if (this.browserLocalSupported()) {
+      return await this.generateWithFallback([this.generateWithBrowserLocal, this.generateWithCloud], request);
+    }
+
+    return await this.generateWithCloud(request);
+  }
+
+  private async generateWithWebLlmFallback(request: AiProviderRequest): Promise<AiProviderTextResult> {
+    if (!this.localProvider.isSupported() || !this.localProvider.isReady(request.options.webLlmModel)) {
+      return await this.generateWithCloud(request);
+    }
+
+    return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithCloud], request);
+  }
+
+  private async generateWithFallback(
     providers: readonly ((request: AiProviderRequest) => Promise<AiProviderTextResult>)[],
     request: AiProviderRequest
   ): Promise<AiProviderTextResult> {
-    let lastError: unknown;
+    let lastError: unknown = null;
 
     for (const provider of providers) {
       try {

@@ -57,6 +57,7 @@ export class EditorTopbarComponent {
   readonly overlayLibraryLayout = input.required<boolean>();
   readonly viewportWidth = input.required<number>();
   readonly fileMenuOpen = input.required<boolean>();
+  readonly devMode = input(false);
   readonly activeTool = input.required<string>();
   readonly defaultToolbarTools = input.required<readonly TopbarTool[]>();
   readonly pinnedToolbarTools = input.required<readonly TopbarTool[]>();

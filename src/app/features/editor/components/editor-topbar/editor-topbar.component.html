@@ -5,6 +5,10 @@
       <span>{{ t('version') }} {{ appVersion() }}</span>
     </div>
 
+    @if (devMode()) {
+      <span class="dev-mode-badge">{{ t('devMode') }}</span>
+    }
+
     <label class="scene-input" for="scene-name-input">
       <input id="scene-name-input" type="text" [attr.aria-label]="t('name')" [value]="sceneName()" (input)="onSceneNameInput($event)" />
     </label>

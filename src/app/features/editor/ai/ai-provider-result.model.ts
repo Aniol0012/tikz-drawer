@@ -1,5 +1,5 @@
 export type AiProviderMode = 'local' | 'cloud';
-export type AiProviderType = 'webllm' | 'local' | 'remote';
+export type AiProviderType = 'local' | 'webllm' | 'remote';
 
 export interface AiGenerationOptions {
   readonly temperature: number;

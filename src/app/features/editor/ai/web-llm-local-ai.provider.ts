@@ -71,6 +71,7 @@ export class WebLlmLocalAiProvider {
       ],
       max_tokens: request.options.maxTokens,
       temperature: request.options.temperature,
+      top_p: 0.82,
       response_format: { type: 'json_object' },
       stream: false
     });

@@ -102,7 +102,7 @@
                   </div>
                 </section>
 
-                @if (showDevAiConfiguration) {
+                @if (showDevAiConfiguration()) {
                   <section class="settings-card">
                     <div class="settings-card__header">
                       <h3>{{ 'ai.settingsTitle' | translate }}</h3>
@@ -114,20 +114,6 @@
                           [value]="aiSettings().providerType"
                           [options]="aiProviderTypeOptions()"
                           (valueChange)="setAiProviderType($event)"></app-select>
-                      </label>
-                      <label class="field">
-                        <span>{{ 'ai.localModel' | translate }}</span>
-                        <app-select
-                          [value]="aiSettings().webLlmModel"
-                          [options]="webLlmModelOptions()"
-                          (valueChange)="setWebLlmModel($event)"></app-select>
-                      </label>
-                      <label class="field">
-                        <span>{{ 'ai.cloudModel' | translate }}</span>
-                        <app-select
-                          [value]="aiSettings().remoteModel"
-                          [options]="remoteModelOptions()"
-                          (valueChange)="setRemoteModel($event)"></app-select>
                       </label>
                       <label class="field">
                         <span>{{ 'ai.temperature' | translate }}</span>

@@ -4,8 +4,13 @@ import { EditorLocalStorageService } from '../state/editor-local-storage.service
 import { FIREBASE_AI_MODEL } from './firebase-ai.config';
 import type { AiProviderType } from './ai-provider-result.model';
 
-export const WEB_LLM_MODEL_OPTIONS = ['Llama-3.2-1B-Instruct-q4f16_1-MLC'] as const;
+export const WEB_LLM_MODEL_OPTIONS = [
+  'SmolLM2-360M-Instruct-q0f16-MLC',
+  'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+  'SmolLM2-1.7B-Instruct-q4f16_1-MLC'
+] as const;
 export const REMOTE_AI_MODEL_OPTIONS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash'] as const;
+const LEGACY_DEFAULT_WEB_LLM_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 
 export interface AiSettings {
   readonly temperature: number;
@@ -17,8 +22,8 @@ export interface AiSettings {
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   temperature: 0.2,
-  maxTokens: 900,
-  providerType: 'webllm',
+  maxTokens: 520,
+  providerType: 'local',
   webLlmModel: WEB_LLM_MODEL_OPTIONS[0],
   remoteModel: FIREBASE_AI_MODEL
 };
@@ -85,13 +90,13 @@ export class AiSettingsService {
       temperature: this.clampNumber(settings?.temperature, DEFAULT_AI_SETTINGS.temperature, 0, 1.2),
       maxTokens: Math.round(this.clampNumber(settings?.maxTokens, DEFAULT_AI_SETTINGS.maxTokens, 250, 2000)),
       providerType: this.normalizeProviderType(settings?.providerType),
-      webLlmModel: this.normalizeOption(settings?.webLlmModel, WEB_LLM_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.webLlmModel),
+      webLlmModel: this.normalizeWebLlmModel(settings?.webLlmModel),
       remoteModel: this.normalizeOption(settings?.remoteModel, REMOTE_AI_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.remoteModel)
     };
   }
 
   private normalizeProviderType(value: unknown): AiProviderType {
-    if (value === 'webllm' || value === 'local' || value === 'remote') {
+    if (value === 'local' || value === 'webllm' || value === 'remote') {
       return value;
     }
 
@@ -100,6 +105,14 @@ export class AiSettingsService {
 
   private normalizeOption<T extends string>(value: unknown, options: readonly T[], fallback: T): T {
     return typeof value === 'string' && options.includes(value as T) ? (value as T) : fallback;
+  }
+
+  private normalizeWebLlmModel(value: unknown): string {
+    if (value === LEGACY_DEFAULT_WEB_LLM_MODEL) {
+      return DEFAULT_AI_SETTINGS.webLlmModel;
+    }
+
+    return this.normalizeOption(value, WEB_LLM_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.webLlmModel);
   }
 
   private clampNumber(value: unknown, fallback: number, min: number, max: number): number {

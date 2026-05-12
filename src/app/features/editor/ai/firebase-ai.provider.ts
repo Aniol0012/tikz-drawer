@@ -27,6 +27,7 @@ export class FirebaseAiProvider {
       generationConfig: {
         maxOutputTokens: request.options.maxTokens,
         temperature: request.options.temperature,
+        topP: 0.82,
         responseMimeType: 'application/json',
         responseSchema: this.responseSchema()
       },

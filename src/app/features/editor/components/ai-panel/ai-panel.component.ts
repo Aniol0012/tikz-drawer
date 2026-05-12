@@ -13,6 +13,7 @@ import { FIREBASE_AI_MODEL } from '../../ai/firebase-ai.config';
 import { AiAssistantStateService } from '../../ai/ai-assistant-state.service';
 import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { AiSettingsService } from '../../ai/ai-settings.service';
+import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 
 @Component({
   selector: 'app-ai-panel',
@@ -28,6 +29,7 @@ export class AiPanelComponent {
   private readonly contextBuilder = inject(AiContextBuilderService);
   private readonly scenePatch = inject(ScenePatchService);
   private readonly localAiProvider = inject(WebLlmLocalAiProvider);
+  private readonly browserLocalAiProvider = inject(BrowserLocalAiProvider);
   private readonly aiSettingsService = inject(AiSettingsService);
   readonly assistantState = inject(AiAssistantStateService);
 
@@ -40,21 +42,28 @@ export class AiPanelComponent {
       return 'cloud';
     }
 
+    if (this.aiSettings().providerType === 'webllm') {
+      return 'webllm';
+    }
+
     return 'local';
   });
   readonly activeModelName = computed(() => {
-    if (this.aiClient.lastProviderMode() === this.activeAiMode() && this.aiClient.lastModelName()) {
+    if (this.activeAiMode() !== 'webllm' && this.aiClient.lastProviderMode() === this.activeAiMode() && this.aiClient.lastModelName()) {
       return this.aiClient.lastModelName();
     }
 
     return this.defaultModelName();
   });
   readonly aiModeLabelKey = computed(() => {
-    if (this.aiSettings().providerType === 'webllm' && !this.localAiStatus().supported) {
-      return this.activeAiMode() === 'local' ? 'ai.modeLocal' : 'ai.modeCloud';
+    switch (this.activeAiMode()) {
+      case 'local':
+        return 'ai.modeLocal';
+      case 'webllm':
+        return 'ai.modeWebLlm';
+      case 'cloud':
+        return 'ai.modeCloud';
     }
-
-    return this.activeAiMode() === 'local' ? 'ai.modeLocal' : 'ai.modeCloud';
   });
   readonly quickActions = AI_QUICK_ACTIONS;
 
@@ -140,6 +149,18 @@ export class AiPanelComponent {
 
   private defaultModelName(): string {
     if (this.aiSettings().providerType === 'remote') {
+      return this.aiSettings().remoteModel;
+    }
+
+    if (this.aiSettings().providerType === 'local' && this.localAiProvider.isReady(this.aiSettings().webLlmModel)) {
+      return this.aiSettings().webLlmModel;
+    }
+
+    if (this.aiSettings().providerType === 'local' && this.browserLocalAiProvider.supported()) {
+      return this.browserLocalAiProvider.modelName;
+    }
+
+    if (this.aiSettings().providerType === 'local') {
       return this.aiSettings().remoteModel;
     }
 

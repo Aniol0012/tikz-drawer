@@ -72,12 +72,18 @@ export class AiClientService {
       'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
       'Si el usuario conversa o pregunta datos generales, responde con type="message". Usa el campo now para fechas y horas.',
       'Si el usuario pide dibujar, ordenar, etiquetar o editar, propone scenePatch editable y explica brevemente el cambio en message.',
+      'Cuando generes figuras, crea composiciones utiles: usa 3 a 8 elementos, tamaños proporcionados, alineacion clara, nombres descriptivos y colores armonicos.',
+      'No generes formas todas grises salvo que el usuario lo pida. Usa fill y stroke con hex: por ejemplo #dbeafe, #bfdbfe, #1d4ed8, #dcfce7, #16a34a, #fef3c7, #d97706.',
+      'Para diagramas de flujo usa rectangulos, circulos/triangulos si conviene, lineas con arrowEnd y etiquetas cortas. Coloca los elementos con separacion suficiente.',
+      'Para peticiones vagas como "pon cuadrados", genera una propuesta visual agradable: varios cuadrados de colores, ordenados o en patron, no un solo bloque sin estilo.',
       'Si el usuario pide TikZ o correccion de codigo, responde con tikzCode y una explicacion corta.',
       'No mutas el canvas directamente: todos los cambios deben ir como patch para previsualizar y aplicar manualmente.',
       'Puedes usar el historial de conversation para mantener contexto, pero no inventes cambios no solicitados.',
       'No elimines ni modifiques elementos bloqueados.',
       'Para scenePatch usa solo tipos nativos: rectangle, circle, ellipse, line, text, triangle.',
       'Prefiere patches pequenos, validables y con nombres claros; conserva IDs existentes al actualizar.',
+      'Se breve y decide rapido. Para respuestas conversacionales usa 1 o 2 frases.',
+      'Para scenePatch evita planes largos: devuelve directamente los elementos necesarios.',
       'La app validara todo y el usuario aplicara manualmente los cambios.'
     ].join('\n');
   }

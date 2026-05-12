@@ -211,6 +211,7 @@ import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
+import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import { ScenePatchService } from '../../ai/scene-patch.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
@@ -325,6 +326,7 @@ export class EditorPageComponent {
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
   readonly aiPatch = inject(ScenePatchService);
+  readonly devMode = inject(EditorDevModeService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly appThemeService = inject(AppThemeService);
   private readonly document = inject(DOCUMENT);
@@ -5025,6 +5027,13 @@ export class EditorPageComponent {
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {
+    if (this.isDevModeToggleShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.devMode.toggle();
+      return;
+    }
+
     this.handleModifierKeydown(event);
 
     if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
@@ -5087,6 +5096,10 @@ export class EditorPageComponent {
       this.zoomOut();
       return;
     }
+  }
+
+  private isDevModeToggleShortcut(event: KeyboardEvent): boolean {
+    return event.ctrlKey && !event.altKey && !event.metaKey && event.key === 'F12' && !event.repeat;
   }
 
   private handleModifierKeydown(event: KeyboardEvent): void {
@@ -5431,6 +5444,10 @@ export class EditorPageComponent {
     }
 
     if (this.configuration.restoreFromStorageEvent(key, newValue)) {
+      return;
+    }
+
+    if (this.devMode.restoreFromStorageEvent(key, newValue)) {
       return;
     }
 
