@@ -5769,13 +5769,22 @@ export class EditorPageComponent {
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
   }
 
-  private centerViewportOnShape(shapeId: string): void {
+  centerViewportOnShape(shapeId: string): void {
     const shape = this.scene().shapes.find((entry) => entry.id === shapeId);
     if (!shape) {
       return;
     }
 
     this.viewportCenter.set(this.shapeCenter(shape));
+  }
+
+  centerViewportOnPendingPatch(): void {
+    const previewShape = this.aiPatch.previewShapes()[0];
+    if (!previewShape) {
+      return;
+    }
+
+    this.viewportCenter.set(this.shapeCenter(previewShape));
   }
 
   private touchDistance(firstTouch: Touch, secondTouch: Touch): number {

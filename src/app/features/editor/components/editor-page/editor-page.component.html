@@ -822,21 +822,6 @@
           </button>
         </div>
 
-        @if (aiPatch.pendingPatch()) {
-          <div class="ai-canvas-preview" (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
-            <div>
-              <strong>{{ 'ai.canvasPreviewTitle' | translate }}</strong>
-              <span>{{ aiPatch.pendingSummary() }}</span>
-            </div>
-            <button type="button" class="primary-button primary-button--accept" (click)="aiPatch.applyPendingPatch()">
-              {{ 'ai.apply' | translate }}
-            </button>
-            <button type="button" class="secondary-button secondary-button--reject" (click)="aiPatch.discardPendingPatch()">
-              {{ 'cancel' | translate }}
-            </button>
-          </div>
-        }
-
         <app-editor-canvas-toolbar
           [canUndo]="canUndo()"
           [canRedo]="canRedo()"
@@ -3015,7 +3000,7 @@
           }
         </section>
       } @else if (inspectorTab() === 'assistant') {
-        <app-ai-panel></app-ai-panel>
+        <app-ai-panel (patchPreviewed)="centerViewportOnPendingPatch()" (patchApplied)="centerViewportOnShape($event)"></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">
           <div class="scene-layers-header">

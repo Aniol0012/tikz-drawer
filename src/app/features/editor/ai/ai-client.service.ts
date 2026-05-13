@@ -75,10 +75,13 @@ export class AiClientService {
     return patchShape
       ? {
           type: 'scenePatch',
-          message: 'He preparat una proposta al llenç.',
+          message: 'He preparado una figura en el lienzo.',
           patch: { create: [patchShape], update: [], remove: [] }
         }
-      : response;
+      : {
+          ...response,
+          message: 'No he podido generar una respuesta local clara.'
+        };
   }
 
   private simpleShapeFromInstruction(instruction: string): Partial<CanvasShape> | null {
@@ -141,6 +144,20 @@ export class AiClientService {
         y: -0.6,
         width: square ? 1.2 : 2,
         height: square ? 1.2 : 1.2,
+        stroke: colors.stroke,
+        fill: colors.fill,
+        strokeWidth: 0.06
+      };
+    }
+
+    if (/(figura|forma|shape|element)/.test(normalized)) {
+      return {
+        kind: 'ellipse',
+        name: colors.name ? `Figura ${colors.name}` : 'Figura',
+        cx: 0,
+        cy: 0,
+        rx: 1.4,
+        ry: 0.85,
         stroke: colors.stroke,
         fill: colors.fill,
         strokeWidth: 0.06

@@ -192,18 +192,18 @@
 
 .conversation-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-items: end;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 10px;
   margin-top: -2px;
 }
 
 .conversation-actions__patch {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: flex;
+  flex: 1 1 260px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -211,10 +211,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  padding: 0 11px;
+  min-height: 36px;
+  padding: 0 14px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--ai-line));
-  border-radius: 999px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--accent-soft) 34%, var(--panel-background));
   color: var(--accent-strong);
   font: inherit;
@@ -230,12 +230,13 @@
 
 .patch-action {
   display: inline-flex;
+  flex: 1 1 0;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  padding: 0 11px;
+  min-height: 36px;
+  padding: 0 16px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 12px;
   font: inherit;
   font-size: 0.7rem;
   font-weight: 850;
@@ -415,31 +416,9 @@
 
 .ai-proposal {
   display: grid;
-  gap: 8px;
-  padding-top: 8px;
+  gap: 0;
+  padding-top: 9px;
   border-top: 1px solid var(--ai-line);
-}
-
-.ai-proposal div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.ai-proposal button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 5px 9px;
-  border: 1px solid var(--tool-border);
-  border-radius: 8px;
-  background: var(--tool-surface);
-  color: var(--foreground);
-  font: inherit;
-  font-size: 0.74rem;
-  font-weight: 800;
-  cursor: pointer;
 }
 
 .composer {
@@ -452,10 +431,12 @@
   align-items: end;
   gap: 8px;
   padding: 7px;
-  border: 1px solid var(--ai-line);
-  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--ai-line));
+  border-radius: 16px;
   background: var(--ai-elevated);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .composer textarea {
@@ -483,7 +464,7 @@
   width: 34px;
   height: 34px;
   border: 1px solid color-mix(in srgb, var(--accent) 62%, var(--tool-border));
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--accent);
   color: var(--accent-contrast);
   cursor: pointer;
@@ -538,6 +519,53 @@
   .composer button:not(:disabled):hover {
     transform: translateY(-1px);
   }
+}
+
+@media (max-width: 520px) {
+  .conversation-actions {
+    flex-wrap: wrap;
+  }
+
+  .conversation-actions__patch,
+  .ghost-action {
+    flex: 1 1 100%;
+  }
+}
+
+:host-context([data-theme='dark']) .composer__box {
+  border-color: color-mix(in srgb, var(--accent) 26%, #334155);
+  background: color-mix(in srgb, var(--tool-surface) 88%, #0b1220);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+    0 0 0 1px color-mix(in srgb, black 30%, transparent);
+}
+
+:host-context([data-theme='dark']) .composer__box:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 58%, #475569);
+  background: color-mix(in srgb, var(--tool-surface) 78%, #111827);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent);
+}
+
+:host-context([data-theme='dark']) .composer textarea {
+  color: color-mix(in srgb, var(--foreground) 96%, white);
+}
+
+:host-context([data-theme='dark']) .composer textarea::placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 76%, white 10%);
+}
+
+:host-context([data-theme='dark']) .patch-action--accept {
+  border-color: color-mix(in srgb, #22c55e 40%, #14532d);
+  background: color-mix(in srgb, #22c55e 16%, var(--panel-background));
+  color: #86efac;
+}
+
+:host-context([data-theme='dark']) .patch-action--reject {
+  border-color: color-mix(in srgb, #ef4444 40%, #7f1d1d);
+  background: color-mix(in srgb, #ef4444 14%, var(--panel-background));
+  color: #fca5a5;
 }
 
 @keyframes ai-dot-pulse {

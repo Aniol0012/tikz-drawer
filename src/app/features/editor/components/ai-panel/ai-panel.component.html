@@ -48,7 +48,7 @@
     </div>
   </div>
 
-  <div class="ai-chat" aria-live="polite">
+  <div #chatScroll class="ai-chat" aria-live="polite">
     @for (message of assistantState.messages(); track message.id) {
       <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
         <p>{{ message.text }}</p>
@@ -62,24 +62,11 @@
           @if (response.type === 'scenePatch') {
             <div class="ai-proposal">
               <span>{{ patchSummary(response) }}</span>
-              <div>
-                <button type="button" (click)="applyResponse(response)">
-                  {{ 'ai.previewOnCanvas' | translate }}
-                </button>
-                <button type="button" (click)="copyTikz(response)">
-                  {{ 'copyTikz' | translate }}
-                </button>
-              </div>
             </div>
           }
           @if (response.type === 'tikzCode') {
             <div class="ai-proposal">
               <span>{{ 'ai.tikzReady' | translate }}</span>
-              <div>
-                <button type="button" (click)="copyTikz(response)">
-                  {{ 'copyTikz' | translate }}
-                </button>
-              </div>
             </div>
           }
         }

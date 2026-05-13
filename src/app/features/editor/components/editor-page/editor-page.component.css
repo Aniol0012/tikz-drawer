@@ -1711,65 +1711,6 @@ kbd {
   }
 }
 
-.ai-canvas-preview {
-  position: absolute;
-  left: 14px;
-  top: 58px;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 8px;
-  max-width: min(520px, calc(100% - 28px));
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--tool-border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
-  box-shadow: var(--floating-shadow);
-}
-
-.ai-canvas-preview div {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.ai-canvas-preview strong {
-  color: var(--foreground);
-  font-size: 0.82rem;
-  line-height: 1.2;
-}
-
-.ai-canvas-preview span {
-  color: var(--muted-foreground);
-  font-size: 0.74rem;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ai-canvas-preview .primary-button,
-.ai-canvas-preview .secondary-button {
-  min-height: 30px;
-  padding: 0 10px;
-  border-radius: 8px;
-  font-size: 0.76rem;
-  font-weight: 800;
-}
-
-.ai-canvas-preview .primary-button--accept {
-  border-color: color-mix(in srgb, #15803d 58%, var(--tool-border));
-  background: #16a34a;
-  color: #ffffff;
-}
-
-.ai-canvas-preview .secondary-button--reject {
-  border-color: color-mix(in srgb, #dc2626 58%, var(--tool-border));
-  background: color-mix(in srgb, #ef4444 12%, var(--panel-background));
-  color: #991b1b;
-}
-
 .secondary-button--toolbar {
   min-height: 34px;
   padding: 0 10px;

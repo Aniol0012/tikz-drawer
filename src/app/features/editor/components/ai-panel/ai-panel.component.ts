@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { EditorStore } from '../../state/editor.store';
-import { sceneToTikz } from '../../tikz/tikz.codegen';
 import { AiClientService } from '../../ai/ai-client.service';
 import { AiContextBuilderService } from '../../ai/ai-context-builder.service';
 import { AI_QUICK_ACTIONS, type AiQuickAction } from '../../ai/ai-action.model';
-import type { AiResponse } from '../../ai/ai-message.model';
+import type { AiMessageDebugInfo, AiResponse } from '../../ai/ai-message.model';
 import { ScenePatchService } from '../../ai/scene-patch.service';
 import { FIREBASE_AI_MODEL } from '../../ai/firebase-ai.config';
 import { AiAssistantStateService } from '../../ai/ai-assistant-state.service';
@@ -15,7 +15,6 @@ import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
-import type { AiMessageDebugInfo } from '../../ai/ai-message.model';
 import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../../ai/ai-provider-result.model';
 
 @Component({
@@ -34,6 +33,10 @@ export class AiPanelComponent {
   private readonly localAiProvider = inject(WebLlmLocalAiProvider);
   private readonly browserLocalAiProvider = inject(BrowserLocalAiProvider);
   private readonly aiSettingsService = inject(AiSettingsService);
+  private readonly chatScroll = viewChild<ElementRef<HTMLElement>>('chatScroll');
+  @Output() readonly patchApplied = new EventEmitter<string>();
+  @Output() readonly patchPreviewed = new EventEmitter<void>();
+
   readonly devMode = inject(EditorDevModeService).enabled;
   readonly assistantState = inject(AiAssistantStateService);
   readonly aiPatch = this.scenePatch;
@@ -114,18 +117,23 @@ export class AiPanelComponent {
     this.assistantState.draft.set('');
     this.assistantState.appendMessage({ role: 'user', text: instruction, debugInfo: this.requestDebugInfo() });
     this.assistantState.loading.set(true);
+    this.scrollChatToBottom();
 
     try {
       const context = this.contextBuilder.build(this.store.scene().name, this.store.scene().shapes, this.store.selectedShapeIds());
       const response = await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages());
       if (response.patch) {
         this.scenePatch.setPendingPatch(response.patch);
+        this.patchPreviewed.emit();
       }
       this.assistantState.appendMessage({ role: 'assistant', text: response.message, response });
+      this.scrollChatToBottom();
     } catch (error) {
       this.assistantState.error.set(this.errorMessage(error));
+      this.scrollChatToBottom();
     } finally {
       this.assistantState.loading.set(false);
+      this.scrollChatToBottom();
     }
   }
 
@@ -134,28 +142,15 @@ export class AiPanelComponent {
   }
 
   acceptPendingPatch(): void {
-    this.scenePatch.applyPendingPatch();
+    const createdShapes = this.scenePatch.applyPendingPatch();
+    const firstCreatedShape = createdShapes[0];
+    if (firstCreatedShape) {
+      this.patchApplied.emit(firstCreatedShape.id);
+    }
   }
 
   rejectPendingPatch(): void {
     this.scenePatch.discardPendingPatch();
-  }
-
-  applyResponse(response: AiResponse): void {
-    if (!response.patch) {
-      return;
-    }
-
-    this.scenePatch.setPendingPatch(response.patch);
-    this.assistantState.appendMessage({
-      role: 'system',
-      text: `${this.languageService.t('ai.patchPreviewReady')} ${this.scenePatch.summarize(response.patch)}.`
-    });
-  }
-
-  copyTikz(response: AiResponse): void {
-    const text = response.tikzCode || sceneToTikz(this.store.scene());
-    void navigator.clipboard?.writeText(text);
   }
 
   patchSummary(response: AiResponse): string {
@@ -238,6 +233,15 @@ export class AiPanelComponent {
 
   private interpolate(template: string, values: Record<string, string>): string {
     return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
+  }
+
+  private scrollChatToBottom(): void {
+    requestAnimationFrame(() => {
+      const element = this.chatScroll()?.nativeElement;
+      if (element) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
   }
 
   private defaultModelName(): string {
