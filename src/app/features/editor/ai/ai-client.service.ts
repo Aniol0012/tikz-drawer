@@ -36,7 +36,14 @@ export class AiClientService {
     try {
       return this.responseFromTextResult(result);
     } catch (error) {
-      if (result.providerType === 'remote') {
+      console.warn('[Tikz Drawer AI]', 'parse:failed', {
+        runtime: result.providerType,
+        model: result.modelName,
+        error: error instanceof Error ? error.message : String(error),
+        rawPreview: result.text.slice(0, 2000)
+      });
+
+      if (result.providerType === 'remote' || !request.options.allowRemoteFallback) {
         throw error;
       }
 
@@ -75,7 +82,10 @@ export class AiClientService {
       'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
       'Si el usuario conversa o pregunta datos generales, responde con type="message". Usa el campo now para fechas y horas.',
       'Si el usuario pide dibujar, ordenar, etiquetar o editar, propone scenePatch editable y explica brevemente el cambio en message.',
+      'Si el usuario pide poner, añadir o crear una figura en el canvas/lienzo, responde siempre con type="scenePatch" y al menos un elemento en patch.create.',
       'Cuando generes figuras, crea composiciones utiles: usa 3 a 8 elementos, tamaños proporcionados, alineacion clara, nombres descriptivos y colores armonicos.',
+      'Ejemplo de patch.create valido: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
+      'Usa coordenadas y tamaños cortos, con maximo 2 decimales. No generes numeros largos.',
       'No generes formas todas grises salvo que el usuario lo pida. Usa fill y stroke con hex: por ejemplo #dbeafe, #bfdbfe, #1d4ed8, #dcfce7, #16a34a, #fef3c7, #d97706.',
       'Para diagramas de flujo usa rectangulos, circulos/triangulos si conviene, lineas con arrowEnd y etiquetas cortas. Coloca los elementos con separacion suficiente.',
       'Para peticiones vagas como "pon cuadrados", genera una propuesta visual agradable: varios cuadrados de colores, ordenados o en patron, no un solo bloque sin estilo.',

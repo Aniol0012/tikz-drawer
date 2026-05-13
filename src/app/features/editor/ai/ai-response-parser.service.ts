@@ -4,7 +4,7 @@ import type { AiResponse, ScenePatch } from './ai-message.model';
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
   parse(rawText: string): AiResponse {
-    const parsed = JSON.parse(this.extractJson(rawText)) as Partial<AiResponse>;
+    const parsed = this.parseJson(this.extractJson(rawText)) as Partial<AiResponse>;
     const type = parsed.type === 'scenePatch' || parsed.type === 'tikzCode' ? parsed.type : 'message';
     const message = typeof parsed.message === 'string' && parsed.message.trim() ? parsed.message.trim() : 'Respuesta generada.';
 
@@ -14,6 +14,14 @@ export class AiResponseParserService {
       patch: type === 'scenePatch' ? this.normalizePatch(parsed.patch) : undefined,
       tikzCode: typeof parsed.tikzCode === 'string' ? parsed.tikzCode : undefined
     };
+  }
+
+  private parseJson(jsonText: string): unknown {
+    try {
+      return JSON.parse(jsonText);
+    } catch {
+      return JSON.parse(this.repairJson(jsonText));
+    }
   }
 
   private extractJson(rawText: string): string {
@@ -34,6 +42,63 @@ export class AiResponseParserService {
     }
 
     return trimmed;
+  }
+
+  private repairJson(jsonText: string): string {
+    const balanced = this.balanceJsonObject(jsonText)
+      .replace(/,\s*([}\]])/g, '$1')
+      .replace(/-?\d+\.\d{6,}/g, (value: string) => {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? String(Number(numericValue.toFixed(3))) : value;
+      });
+
+    return balanced;
+  }
+
+  private balanceJsonObject(jsonText: string): string {
+    const firstBrace = jsonText.indexOf('{');
+    if (firstBrace < 0) {
+      return jsonText;
+    }
+
+    let inString = false;
+    let escaping = false;
+    const stack: string[] = [];
+    for (let index = firstBrace; index < jsonText.length; index++) {
+      const character = jsonText[index];
+      if (escaping) {
+        escaping = false;
+        continue;
+      }
+
+      if (character === '\\') {
+        escaping = true;
+        continue;
+      }
+
+      if (character === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (inString) {
+        continue;
+      }
+
+      if (character === '{' || character === '[') {
+        stack.push(character);
+      } else if (character === '}' || character === ']') {
+        stack.pop();
+        if (!stack.length) {
+          return jsonText.slice(firstBrace, index + 1);
+        }
+      }
+    }
+
+    return `${jsonText.slice(firstBrace)}${stack
+      .reverse()
+      .map((character) => (character === '[' ? ']' : '}'))
+      .join('')}`;
   }
 
   private normalizePatch(patch: unknown): ScenePatch {

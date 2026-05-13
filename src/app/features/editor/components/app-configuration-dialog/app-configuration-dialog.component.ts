@@ -330,6 +330,10 @@ export class AppConfigurationDialogComponent {
     this.aiSettingsService.patchSettings({ automaticWebLlmTimeoutMs: Number((event.target as HTMLInputElement).value) * 1000 });
   }
 
+  updateAiAllowRemoteFallback(checked: boolean): void {
+    this.aiSettingsService.patchSettings({ allowRemoteFallback: checked });
+  }
+
   setAiProviderType(value: string): void {
     if (value === 'local' || value === 'webllm' || value === 'remote') {
       this.aiSettingsService.patchSettings({ providerType: value satisfies AiProviderType });

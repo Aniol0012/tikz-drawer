@@ -77,7 +77,7 @@ export class AiPanelComponent {
       return true;
     }
 
-    return this.webLlmReady();
+    return this.webLlmReady() || (this.aiSettings().allowRemoteFallback && !this.localAiProvider.isSupported());
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
   readonly quickActions = AI_QUICK_ACTIONS;

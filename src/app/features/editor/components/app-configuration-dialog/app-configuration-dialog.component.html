@@ -51,6 +51,57 @@
               role="tabpanel"
               aria-labelledby="configuration-tab-general">
               <div class="configuration-grid configuration-grid--general">
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'interface' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'theme' | translate }}</span>
+                      <app-select [value]="preferences().theme" [options]="themeOptions()" (valueChange)="setTheme($event)"></app-select>
+                    </label>
+                    <label class="field">
+                      <span>{{ 'language' | translate }}</span>
+                      <app-select
+                        [value]="language()"
+                        [options]="languageSelectOptions()"
+                        [ariaLabel]="'language' | translate"
+                        (valueChange)="setLanguage($event)"></app-select>
+                    </label>
+                    <app-toggle-field
+                      [checked]="generalConfig().showHelpTooltips"
+                      [label]="'showHelpTooltips' | translate"
+                      (checkedChange)="updateGeneralBoolean('showHelpTooltips', $event)"></app-toggle-field>
+                    <button class="settings-action-row" type="button" (click)="openShortcutSettings()">
+                      <span>
+                        <strong>{{ 'keyboardShortcuts' | translate }}</strong>
+                        <small>{{ 'keyboardShortcutsDescription' | translate }}</small>
+                      </span>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="shortcutSettingsIconPath"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </section>
+
+                <section class="settings-card">
+                  <div class="settings-card__header">
+                    <h3>{{ 'codePreview' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'codeTheme' | translate }}</span>
+                      <app-select
+                        [value]="codeTheme()"
+                        [options]="codeThemeSelectOptions()"
+                        (valueChange)="setCodeHighlightTheme($event)"></app-select>
+                    </label>
+                    <div class="code-stack code-stack--theme-preview tikz-code-theme" [attr.style]="codeThemeStyle()">
+                      <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
+                    </div>
+                  </div>
+                </section>
+
                 @if (showDevAiConfiguration()) {
                   <section class="settings-card settings-card--ai">
                     <div class="settings-card__header">
@@ -119,61 +170,15 @@
                           [value]="aiSettings().automaticWebLlmTimeoutMs / 1000"
                           (input)="updateAiAutomaticWebLlmTimeout($event)" />
                       </label>
+                      <app-toggle-field
+                        class="field--full"
+                        [checked]="aiSettings().allowRemoteFallback"
+                        [label]="'ai.allowRemoteFallback' | translate"
+                        (checkedChange)="updateAiAllowRemoteFallback($event)"></app-toggle-field>
                       <p class="settings-note settings-note--ai">{{ 'ai.settingsDescription' | translate }}</p>
                     </div>
                   </section>
                 }
-
-                <section class="settings-card">
-                  <div class="settings-card__header">
-                    <h3>{{ 'interface' | translate }}</h3>
-                  </div>
-                  <div class="form-grid form-grid--single">
-                    <label class="field">
-                      <span>{{ 'theme' | translate }}</span>
-                      <app-select [value]="preferences().theme" [options]="themeOptions()" (valueChange)="setTheme($event)"></app-select>
-                    </label>
-                    <label class="field">
-                      <span>{{ 'language' | translate }}</span>
-                      <app-select
-                        [value]="language()"
-                        [options]="languageSelectOptions()"
-                        [ariaLabel]="'language' | translate"
-                        (valueChange)="setLanguage($event)"></app-select>
-                    </label>
-                    <app-toggle-field
-                      [checked]="generalConfig().showHelpTooltips"
-                      [label]="'showHelpTooltips' | translate"
-                      (checkedChange)="updateGeneralBoolean('showHelpTooltips', $event)"></app-toggle-field>
-                    <button class="settings-action-row" type="button" (click)="openShortcutSettings()">
-                      <span>
-                        <strong>{{ 'keyboardShortcuts' | translate }}</strong>
-                        <small>{{ 'keyboardShortcutsDescription' | translate }}</small>
-                      </span>
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="shortcutSettingsIconPath"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </section>
-
-                <section class="settings-card">
-                  <div class="settings-card__header">
-                    <h3>{{ 'codePreview' | translate }}</h3>
-                  </div>
-                  <div class="form-grid form-grid--single">
-                    <label class="field">
-                      <span>{{ 'codeTheme' | translate }}</span>
-                      <app-select
-                        [value]="codeTheme()"
-                        [options]="codeThemeSelectOptions()"
-                        (valueChange)="setCodeHighlightTheme($event)"></app-select>
-                    </label>
-                    <div class="code-stack code-stack--theme-preview tikz-code-theme" [attr.style]="codeThemeStyle()">
-                      <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
-                    </div>
-                  </div>
-                </section>
               </div>
             </section>
           }

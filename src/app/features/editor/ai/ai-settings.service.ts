@@ -17,6 +17,7 @@ export interface AiSettings {
   readonly remoteModel: string;
   readonly webLlmTimeoutMs: number;
   readonly automaticWebLlmTimeoutMs: number;
+  readonly allowRemoteFallback: boolean;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -26,7 +27,8 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   webLlmModel: WEB_LLM_MODEL_OPTIONS[0],
   remoteModel: FIREBASE_AI_MODEL,
   webLlmTimeoutMs: 180000,
-  automaticWebLlmTimeoutMs: 20000
+  automaticWebLlmTimeoutMs: 20000,
+  allowRemoteFallback: true
 };
 
 @Injectable({ providedIn: 'root' })
@@ -59,7 +61,8 @@ export class AiSettingsService {
       settings.webLlmModel === DEFAULT_AI_SETTINGS.webLlmModel &&
       settings.remoteModel === DEFAULT_AI_SETTINGS.remoteModel &&
       settings.webLlmTimeoutMs === DEFAULT_AI_SETTINGS.webLlmTimeoutMs &&
-      settings.automaticWebLlmTimeoutMs === DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs
+      settings.automaticWebLlmTimeoutMs === DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs &&
+      settings.allowRemoteFallback === DEFAULT_AI_SETTINGS.allowRemoteFallback
     );
   }
 
@@ -96,7 +99,8 @@ export class AiSettingsService {
       webLlmModel: this.normalizeWebLlmModel(settings?.webLlmModel),
       remoteModel: this.normalizeOption(settings?.remoteModel, REMOTE_AI_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.remoteModel),
       webLlmTimeoutMs: Math.round(this.clampNumber(settings?.webLlmTimeoutMs, DEFAULT_AI_SETTINGS.webLlmTimeoutMs, 5000, 300000)),
-      automaticWebLlmTimeoutMs: Math.round(this.clampNumber(settings?.automaticWebLlmTimeoutMs, DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs, 1000, 120000))
+      automaticWebLlmTimeoutMs: Math.round(this.clampNumber(settings?.automaticWebLlmTimeoutMs, DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs, 1000, 120000)),
+      allowRemoteFallback: typeof settings?.allowRemoteFallback === 'boolean' ? settings.allowRemoteFallback : DEFAULT_AI_SETTINGS.allowRemoteFallback
     };
   }
 

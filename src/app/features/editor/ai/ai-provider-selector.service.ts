@@ -28,14 +28,17 @@ export class AiProviderSelectorService {
   }
 
   readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
+    this.log('remote:start', { model: request.options.remoteModel });
     return await this.timeProvider(this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout'));
   };
 
   private readonly generateWithWebLlm = async (request: AiProviderRequest, timeoutMs = request.options.webLlmTimeoutMs): Promise<AiProviderTextResult> => {
-    return await this.timeProvider(this.withTimeout(this.localProvider.generateText(request), timeoutMs, 'ai.errorWebLlmTimeout'));
+    this.log('webllm:start', { model: request.options.webLlmModel, timeoutMs });
+    return await this.timeProvider(this.localProvider.generateText(request, timeoutMs));
   };
 
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
+    this.log('browser-local:start', { timeoutMs: BROWSER_LOCAL_GENERATION_TIMEOUT_MS });
     return await this.timeProvider(
       this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout')
     );
@@ -43,29 +46,35 @@ export class AiProviderSelectorService {
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (this.localProvider.isReady(request.options.webLlmModel)) {
-      return await this.generateWithFallback(
-        [
-          (providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs),
-          this.generateWithBrowserLocal,
-          this.generateWithCloud
-        ],
-        request
-      );
+      const providers = [
+        (providerRequest: AiProviderRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs),
+        this.generateWithBrowserLocal,
+        ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])
+      ];
+      return await this.generateWithFallback(providers, request);
     }
 
     if (this.browserLocalSupported()) {
-      return await this.generateWithBrowserLocal(request);
+      return await this.generateWithFallback([this.generateWithBrowserLocal, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])], request);
     }
 
-    return await this.generateWithCloud(request);
+    if (request.options.allowRemoteFallback) {
+      return await this.generateWithCloud(request);
+    }
+
+    throw new Error('ai.errorLocalUnavailableNoFallback');
   }
 
   private async generateWithWebLlmFallback(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (!this.localProvider.isSupported()) {
-      return await this.generateWithCloud(request);
+      if (request.options.allowRemoteFallback) {
+        return await this.generateWithCloud(request);
+      }
+
+      throw new Error('ai.errorWebLlmUnsupported');
     }
 
-    return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithCloud], request);
+    return await this.generateWithFallback([this.generateWithWebLlm, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])], request);
   }
 
   private async generateWithFallback(
@@ -79,6 +88,7 @@ export class AiProviderSelectorService {
         return await provider(request);
       } catch (error) {
         lastError = error;
+        this.log('provider:failed', { error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -101,9 +111,15 @@ export class AiProviderSelectorService {
   private async timeProvider(task: Promise<AiProviderTextResult>): Promise<AiProviderTextResult> {
     const startedAt = performance.now();
     const result = await task;
+    const durationMs = Math.round(performance.now() - startedAt);
+    this.log('provider:done', { runtime: result.providerType, model: result.modelName, durationMs });
     return {
       ...result,
-      durationMs: Math.round(performance.now() - startedAt)
+      durationMs
     };
+  }
+
+  private log(event: string, details: Record<string, unknown>): void {
+    console.info('[Tikz Drawer AI]', event, details);
   }
 }

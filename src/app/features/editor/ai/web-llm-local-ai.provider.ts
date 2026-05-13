@@ -1,6 +1,14 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
-import { CreateWebWorkerMLCEngine, prebuiltAppConfig, type InitProgressReport, type MLCEngineInterface } from '@mlc-ai/web-llm';
-import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
+import {
+  CreateWebWorkerMLCEngine,
+  prebuiltAppConfig,
+  type ChatCompletionChunk,
+  type CompletionUsage,
+  type InitProgressReport,
+  type MLCEngineInterface,
+  WebWorkerMLCEngine
+} from '@mlc-ai/web-llm';
+import type { AiProviderRequest, AiProviderTextResult, AiProviderUsage } from './ai-provider-result.model';
 import type { LocalAiStatus } from './local-ai-status.model';
 import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
@@ -11,6 +19,7 @@ const WEB_LLM_MAX_CONTEXT_ELEMENTS = 24;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
+let serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
 let preloadStarted = false;
 
 export function preloadWebLlmLocalAi(): void {
@@ -59,48 +68,21 @@ export class WebLlmLocalAiProvider {
     await ensureEngine(this.aiSettingsService.settings().webLlmModel);
   }
 
-  async generateText(request: AiProviderRequest): Promise<AiProviderTextResult> {
+  async generateText(request: AiProviderRequest, timeoutMs = request.options.webLlmTimeoutMs): Promise<AiProviderTextResult> {
     const modelName = request.options.webLlmModel;
     if (!this.isSupported()) {
       throw new Error('ai.errorWebLlmUnsupported');
     }
 
     const engine = await ensureEngine(modelName);
-    const response = await engine.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: localSystemInstruction()
-        },
-        {
-          role: 'user',
-          content: compactPromptPayload(request)
-        }
-      ],
-      max_tokens: Math.min(request.options.maxTokens, WEB_LLM_MAX_OUTPUT_TOKENS),
-      temperature: request.options.temperature,
-      top_p: 0.82,
-      repetition_penalty: 1.05,
-      extra_body: {
-        enable_latency_breakdown: true
-      },
-      stream: false
-    });
+    const generated = await generateWithInterruptingTimeout(engine, request, timeoutMs);
 
     return {
       mode: this.mode,
       providerType: 'webllm',
       modelName,
-      text: response.choices[0]?.message.content ?? '',
-      usage: {
-        promptTokens: response.usage?.prompt_tokens,
-        completionTokens: response.usage?.completion_tokens,
-        totalTokens: response.usage?.total_tokens,
-        prefillTokensPerSecond: response.usage?.extra?.prefill_tokens_per_s,
-        decodeTokensPerSecond: response.usage?.extra?.decode_tokens_per_s,
-        timeToFirstTokenSeconds: response.usage?.extra?.time_to_first_token_s,
-        endToEndLatencySeconds: response.usage?.extra?.e2e_latency_s
-      }
+      text: generated.text,
+      usage: generated.usage
     };
   }
 
@@ -117,6 +99,110 @@ export class WebLlmLocalAiProvider {
   }
 }
 
+async function generateWithInterruptingTimeout(
+  engine: MLCEngineInterface,
+  request: AiProviderRequest,
+  timeoutMs: number
+): Promise<{ readonly text: string; readonly usage?: AiProviderUsage }> {
+  let timedOut = false;
+  let timeoutId = 0;
+  const startedAt = performance.now();
+  const generation = generateStreamingResponse(engine, request).then((result) => {
+    logWebLlm('generate:done', {
+      durationMs: Math.round(performance.now() - startedAt),
+      chars: result.text.length,
+      tokens: result.usage?.totalTokens
+    });
+    return result;
+  });
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = globalThis.setTimeout(() => {
+      timedOut = true;
+      logWebLlm('generate:timeout-interrupt', { timeoutMs });
+      void engine.interruptGenerate();
+      reject(new Error('ai.errorWebLlmTimeout'));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([generation, timeout]);
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+    if (timedOut) {
+      generation.catch((error) => logWebLlm('generate:interrupted', { error: error instanceof Error ? error.message : String(error) }));
+    }
+  }
+}
+
+async function generateStreamingResponse(
+  engine: MLCEngineInterface,
+  request: AiProviderRequest
+): Promise<{ readonly text: string; readonly usage?: AiProviderUsage }> {
+  const prompt = compactPromptPayload(request);
+  const maxTokens = Math.min(request.options.maxTokens, WEB_LLM_MAX_OUTPUT_TOKENS);
+  logWebLlm('generate:start', {
+    model: request.options.webLlmModel,
+    maxTokens,
+    promptChars: prompt.length
+  });
+
+  const chunks = await engine.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
+        content: localSystemInstruction()
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    max_tokens: maxTokens,
+    temperature: request.options.temperature,
+    top_p: 0.8,
+    repetition_penalty: 1.03,
+    response_format: { type: 'json_object' },
+    extra_body: {
+      enable_latency_breakdown: true
+    },
+    stream: true,
+    stream_options: { include_usage: true }
+  });
+
+  let text = '';
+  const startedAt = performance.now();
+  let firstTokenMs = 0;
+  let usage: AiProviderUsage | undefined;
+  for await (const chunk of chunks) {
+    const delta = chunk.choices[0]?.delta.content ?? '';
+    if (delta && !firstTokenMs) {
+      firstTokenMs = Math.round(performance.now() - startedAt);
+      logWebLlm('generate:first-token', { elapsedMs: firstTokenMs });
+    }
+    text += delta;
+    usage = usageFromChunk(chunk) ?? usage;
+  }
+
+  const finalText = text.trim() || (await engine.getMessage()).trim();
+  return { text: finalText, usage };
+}
+
+function usageFromChunk(chunk: ChatCompletionChunk): AiProviderUsage | undefined {
+  return chunk.usage ? usageFromCompletionUsage(chunk.usage) : undefined;
+}
+
+function usageFromCompletionUsage(usage: CompletionUsage): AiProviderUsage {
+  return {
+    promptTokens: usage.prompt_tokens,
+    completionTokens: usage.completion_tokens,
+    totalTokens: usage.total_tokens,
+    prefillTokensPerSecond: usage.extra?.prefill_tokens_per_s,
+    decodeTokensPerSecond: usage.extra?.decode_tokens_per_s,
+    timeToFirstTokenSeconds: usage.extra?.time_to_first_token_s,
+    endToEndLatencySeconds: usage.extra?.e2e_latency_s
+  };
+}
+
 function localSystemInstruction(): string {
   return [
     'Eres el asistente de Tikz Drawer.',
@@ -124,6 +210,9 @@ function localSystemInstruction(): string {
     'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
     'Para charla usa type="message" y 1 frase.',
     'Para dibujar o editar usa scenePatch con pocos elementos claros.',
+    'Si piden una figura en el canvas, crea patch.create con al menos una figura.',
+    'Ejemplo figura: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
+    'Usa numeros cortos, maximo 2 decimales.',
     'Tipos permitidos: rectangle, circle, ellipse, line, text, triangle.',
     'El usuario previsualiza y aplica manualmente los cambios.'
   ].join('\n');
@@ -186,9 +275,12 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
   patchStatus({ loadingState: 'loading', modelName, progress: 0, progressText: 'Preparing local model...', error: '' });
 
   try {
-    const engine = await CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
-      appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
-      initProgressCallback: updateProgress
+    const engine = await createPersistentEngine(modelName).catch((error) => {
+      logWebLlm('service-worker:fallback-to-web-worker', { error: error instanceof Error ? error.message : String(error) });
+      return CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
+        appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
+        initProgressCallback: updateProgress
+      });
     });
 
     patchStatus({
@@ -209,6 +301,62 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
     });
     throw error;
   }
+}
+
+async function createPersistentEngine(modelName: string): Promise<MLCEngineInterface> {
+  const registration = await registerWebLlmServiceWorker();
+  const engine = new WebWorkerMLCEngine(new RegisteredServiceWorkerBridge(registration), {
+    appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
+    initProgressCallback: updateProgress
+  });
+  await engine.reload(modelName);
+  logWebLlm('service-worker:ready', { model: modelName, scope: registration.scope });
+  return engine;
+}
+
+async function registerWebLlmServiceWorker(): Promise<ServiceWorkerRegistration> {
+  if (!canUseWebLlmServiceWorker()) {
+    throw new Error('WebLLM persistent service worker is not available.');
+  }
+
+  serviceWorkerRegistrationPromise ??= navigator.serviceWorker
+    .register('/web-llm.service-worker.js', {
+      type: 'module',
+      scope: './webllm/'
+    })
+    .then(async (registration) => {
+      await navigator.serviceWorker.ready;
+      await waitForActiveServiceWorker(registration);
+      return registration;
+    });
+
+  return await serviceWorkerRegistrationPromise;
+}
+
+function canUseWebLlmServiceWorker(): boolean {
+  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined' && window.isSecureContext;
+}
+
+async function waitForActiveServiceWorker(registration: ServiceWorkerRegistration): Promise<void> {
+  if (registration.active) {
+    return;
+  }
+
+  const worker = registration.installing ?? registration.waiting;
+  if (!worker) {
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 250));
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const timeoutId = globalThis.setTimeout(() => reject(new Error('WebLLM service worker activation timed out.')), 12000);
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'activated') {
+        globalThis.clearTimeout(timeoutId);
+        resolve();
+      }
+    });
+  });
 }
 
 function updateProgress(report: InitProgressReport): void {
@@ -262,6 +410,35 @@ function patchStatus(patch: Partial<LocalAiStatus>): void {
     ...status,
     ...patch
   }));
+}
+
+function logWebLlm(event: string, details: Record<string, unknown>): void {
+  console.info('[Tikz Drawer AI][WebLLM]', event, details);
+}
+
+class RegisteredServiceWorkerBridge {
+  private messageHandler: (event: MessageEvent) => void = () => {};
+
+  constructor(private readonly registration: ServiceWorkerRegistration) {
+    navigator.serviceWorker.addEventListener('message', (event) => this.messageHandler(event));
+  }
+
+  get onmessage(): (event: MessageEvent) => void {
+    return this.messageHandler;
+  }
+
+  set onmessage(handler: (event: MessageEvent) => void) {
+    this.messageHandler = handler;
+  }
+
+  postMessage(message: unknown): void {
+    const worker = this.registration.active ?? this.registration.waiting ?? this.registration.installing;
+    if (!worker) {
+      throw new Error('WebLLM service worker is not active.');
+    }
+
+    worker.postMessage(message);
+  }
 }
 
 interface WebLlmPromptPayload {

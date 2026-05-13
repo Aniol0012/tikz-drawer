@@ -22,6 +22,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "index.js",
+                "input": "node_modules/@mlc-ai/web-llm/lib",
+                "output": "/web-llm"
               }
             ],
             "styles": ["src/styles.css", "node_modules/@shoelace-style/shoelace/dist/themes/light.css"],
