@@ -14,8 +14,8 @@ import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service'
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
-const WEB_LLM_MAX_OUTPUT_TOKENS = 220;
-const WEB_LLM_MAX_CONTEXT_ELEMENTS = 24;
+const WEB_LLM_MAX_OUTPUT_TOKENS = 180;
+const WEB_LLM_MAX_CONTEXT_ELEMENTS = 12;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
@@ -111,7 +111,8 @@ async function generateWithInterruptingTimeout(
     logWebLlm('generate:done', {
       durationMs: Math.round(performance.now() - startedAt),
       chars: result.text.length,
-      tokens: result.usage?.totalTokens
+      tokens: result.usage?.totalTokens,
+      preview: result.text.slice(0, 500)
     });
     return result;
   });
@@ -120,6 +121,7 @@ async function generateWithInterruptingTimeout(
       timedOut = true;
       logWebLlm('generate:timeout-interrupt', { timeoutMs });
       void engine.interruptGenerate();
+      void engine.resetChat();
       reject(new Error('ai.errorWebLlmTimeout'));
     }, timeoutMs);
   });
@@ -161,7 +163,6 @@ async function generateStreamingResponse(
     temperature: request.options.temperature,
     top_p: 0.8,
     repetition_penalty: 1.03,
-    response_format: { type: 'json_object' },
     extra_body: {
       enable_latency_breakdown: true
     },
@@ -208,10 +209,12 @@ function localSystemInstruction(): string {
     'Eres el asistente de Tikz Drawer.',
     'Devuelve solo JSON valido, sin markdown.',
     'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
+    'Nunca devuelvas {} ni un objeto vacio.',
     'Para charla usa type="message" y 1 frase.',
     'Para dibujar o editar usa scenePatch con pocos elementos claros.',
-    'Si piden una figura en el canvas, crea patch.create con al menos una figura.',
+    'Si piden una figura en el canvas, devuelve type="scenePatch" y crea patch.create con al menos una figura.',
     'Ejemplo figura: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
+    'Ejemplo respuesta completa: {"type":"scenePatch","message":"He preparado un rectangulo azul.","patch":{"create":[{"kind":"rectangle","name":"Rectangulo azul","x":-1,"y":-0.5,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}]}}',
     'Usa numeros cortos, maximo 2 decimales.',
     'Tipos permitidos: rectangle, circle, ellipse, line, text, triangle.',
     'El usuario previsualiza y aplica manualmente los cambios.'

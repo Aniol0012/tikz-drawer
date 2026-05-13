@@ -23,4 +23,28 @@ describe('AiResponseParserService', () => {
       y: -0.5
     });
   });
+
+  it('treats responses with patch changes as scene patches even when type is missing', () => {
+    const parser = new AiResponseParserService();
+    const response = parser.parse(`{
+      "message": "He preparado un rectángulo azul.",
+      "patch": {
+        "create": [
+          {
+            "kind": "rectangle",
+            "name": "RectanguloAzul",
+            "x": -1,
+            "y": -0.5,
+            "width": 2,
+            "height": 1,
+            "stroke": "#1d4ed8",
+            "fill": "#dbeafe"
+          }
+        ]
+      }
+    }`);
+
+    expect(response.type).toBe('scenePatch');
+    expect(response.patch?.create).toHaveLength(1);
+  });
 });

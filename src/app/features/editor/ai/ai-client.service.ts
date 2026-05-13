@@ -5,6 +5,7 @@ import type { AiSceneContext } from './ai-scene-context.model';
 import type { AiMessage, AiResponse } from './ai-message.model';
 import { AiProviderSelectorService } from './ai-provider-selector.service';
 import { AiSettingsService } from './ai-settings.service';
+import type { CanvasShape } from '../models/tikz.models';
 
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
@@ -34,7 +35,7 @@ export class AiClientService {
 
     const result = await this.providerSelector.generateText(request);
     try {
-      return this.responseFromTextResult(result);
+      return this.responseFromTextResult(result, instruction);
     } catch (error) {
       console.warn('[Tikz Drawer AI]', 'parse:failed', {
         runtime: result.providerType,
@@ -47,12 +48,12 @@ export class AiClientService {
         throw error;
       }
 
-      return this.responseFromTextResult(await this.providerSelector.generateWithCloud(request));
+      return this.responseFromTextResult(await this.providerSelector.generateWithCloud(request), instruction);
     }
   }
 
-  private responseFromTextResult(result: AiProviderTextResult): AiResponse {
-    const response = this.parser.parse(result.text);
+  private responseFromTextResult(result: AiProviderTextResult, instruction: string): AiResponse {
+    const response = this.withLocalDrawingFallback(this.parser.parse(result.text), result, instruction);
     this.lastProviderMode.set(result.mode);
     this.lastModelName.set(result.modelName);
     return {
@@ -63,6 +64,107 @@ export class AiClientService {
       aiDurationMs: result.durationMs,
       aiUsage: result.usage
     };
+  }
+
+  private withLocalDrawingFallback(response: AiResponse, result: AiProviderTextResult, instruction: string): AiResponse {
+    if (result.providerType !== 'webllm' || response.type !== 'message' || response.message !== 'Respuesta generada.') {
+      return response;
+    }
+
+    const patchShape = this.simpleShapeFromInstruction(instruction);
+    return patchShape
+      ? {
+          type: 'scenePatch',
+          message: 'He preparat una proposta al llenç.',
+          patch: { create: [patchShape], update: [], remove: [] }
+        }
+      : response;
+  }
+
+  private simpleShapeFromInstruction(instruction: string): Partial<CanvasShape> | null {
+    const normalized = instruction
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    if (!/(afegeix|afegir|posa|pon|crear|crea|anade|añade|dibuixa|dibuja)/.test(normalized)) {
+      return null;
+    }
+
+    const colors = this.colorFromInstruction(normalized);
+    if (/(cercle|circulo|circle)/.test(normalized)) {
+      return {
+        kind: 'circle',
+        name: colors.name ? `Cercle ${colors.name}` : 'Cercle',
+        cx: 0,
+        cy: 0,
+        r: /petit|pequeno|pequeño|small/.test(normalized) ? 0.7 : 1,
+        stroke: colors.stroke,
+        fill: colors.fill,
+        strokeWidth: 0.06
+      };
+    }
+
+    if (/(triangle)/.test(normalized)) {
+      return {
+        kind: 'triangle',
+        name: colors.name ? `Triangle ${colors.name}` : 'Triangle',
+        x: -1,
+        y: -0.8,
+        width: 2,
+        height: 1.6,
+        stroke: colors.stroke,
+        fill: colors.fill,
+        strokeWidth: 0.06
+      };
+    }
+
+    if (/(elipse|ellipse)/.test(normalized)) {
+      return {
+        kind: 'ellipse',
+        name: colors.name ? `Elipse ${colors.name}` : 'Elipse',
+        cx: 0,
+        cy: 0,
+        rx: 1.3,
+        ry: 0.75,
+        stroke: colors.stroke,
+        fill: colors.fill,
+        strokeWidth: 0.06
+      };
+    }
+
+    if (/(rectangle|rectangulo|rectangel|quadrat|cuadrado|square)/.test(normalized)) {
+      const square = /(quadrat|cuadrado|square)/.test(normalized);
+      return {
+        kind: 'rectangle',
+        name: colors.name ? `${square ? 'Quadrat' : 'Rectangle'} ${colors.name}` : square ? 'Quadrat' : 'Rectangle',
+        x: -1,
+        y: -0.6,
+        width: square ? 1.2 : 2,
+        height: square ? 1.2 : 1.2,
+        stroke: colors.stroke,
+        fill: colors.fill,
+        strokeWidth: 0.06
+      };
+    }
+
+    return null;
+  }
+
+  private colorFromInstruction(instruction: string): { readonly name: string; readonly stroke: string; readonly fill: string } {
+    if (/(verd|verde|green)/.test(instruction)) {
+      return { name: 'verd', stroke: '#16a34a', fill: '#dcfce7' };
+    }
+    if (/(vermell|rojo|red)/.test(instruction)) {
+      return { name: 'vermell', stroke: '#dc2626', fill: '#fee2e2' };
+    }
+    if (/(groc|amarillo|yellow)/.test(instruction)) {
+      return { name: 'groc', stroke: '#d97706', fill: '#fef3c7' };
+    }
+    if (/(blau|azul|blue)/.test(instruction)) {
+      return { name: 'blau', stroke: '#1d4ed8', fill: '#dbeafe' };
+    }
+
+    return { name: '', stroke: '#1f2937', fill: '#f1f5f9' };
   }
 
   private conversationForPrompt(messages: readonly AiMessage[]): readonly { readonly role: string; readonly text: string }[] {

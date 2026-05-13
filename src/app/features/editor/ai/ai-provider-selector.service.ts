@@ -45,7 +45,7 @@ export class AiProviderSelectorService {
   };
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
-    if (this.localProvider.isReady(request.options.webLlmModel)) {
+    if (this.localProvider.isSupported()) {
       const providers = [
         (providerRequest: AiProviderRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs),
         this.generateWithBrowserLocal,

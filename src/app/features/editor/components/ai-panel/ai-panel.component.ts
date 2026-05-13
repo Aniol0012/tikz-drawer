@@ -245,7 +245,7 @@ export class AiPanelComponent {
       return this.aiSettings().remoteModel;
     }
 
-    if (this.aiSettings().providerType === 'local' && this.localAiProvider.isReady(this.aiSettings().webLlmModel)) {
+    if (this.aiSettings().providerType === 'local' && this.localAiProvider.isSupported()) {
       return this.aiSettings().webLlmModel;
     }
 

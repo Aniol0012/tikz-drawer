@@ -5,13 +5,15 @@ import type { AiResponse, ScenePatch } from './ai-message.model';
 export class AiResponseParserService {
   parse(rawText: string): AiResponse {
     const parsed = this.parseJson(this.extractJson(rawText)) as Partial<AiResponse>;
-    const type = parsed.type === 'scenePatch' || parsed.type === 'tikzCode' ? parsed.type : 'message';
+    const patch = this.normalizePatch(parsed.patch);
+    const hasPatchChanges = patch.create.length > 0 || patch.update.length > 0 || patch.remove.length > 0;
+    const type = parsed.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : parsed.type === 'tikzCode' ? 'tikzCode' : 'message';
     const message = typeof parsed.message === 'string' && parsed.message.trim() ? parsed.message.trim() : 'Respuesta generada.';
 
     return {
       type,
       message,
-      patch: type === 'scenePatch' ? this.normalizePatch(parsed.patch) : undefined,
+      patch: type === 'scenePatch' ? patch : undefined,
       tikzCode: typeof parsed.tikzCode === 'string' ? parsed.tikzCode : undefined
     };
   }
