@@ -144,7 +144,12 @@ export class AppConfigurationDialogComponent {
     const webLlmUnavailable = this.webLlmUnavailable();
     return [
       { value: 'local', label: this.t('ai.providerLocal'), longLabel: this.providerLongLabel('ai.providerLocal', localUnavailable), danger: localUnavailable },
-      { value: 'webllm', label: this.t('ai.providerWebLlm'), longLabel: this.providerLongLabel('ai.providerWebLlm', webLlmUnavailable), danger: webLlmUnavailable },
+      {
+        value: 'webllm',
+        label: this.t('ai.providerWebLlm'),
+        longLabel: this.providerLongLabel('ai.providerWebLlm', webLlmUnavailable),
+        danger: webLlmUnavailable
+      },
       { value: 'remote', label: this.t('ai.providerRemote') }
     ];
   });

@@ -36,13 +36,19 @@ export class AiProviderSelectorService {
   };
 
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.timeProvider(this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout'));
+    return await this.timeProvider(
+      this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout')
+    );
   };
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (this.localProvider.isReady(request.options.webLlmModel)) {
       return await this.generateWithFallback(
-        [(providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs), this.generateWithBrowserLocal, this.generateWithCloud],
+        [
+          (providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs),
+          this.generateWithBrowserLocal,
+          this.generateWithCloud
+        ],
         request
       );
     }

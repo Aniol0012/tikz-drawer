@@ -228,7 +228,9 @@ export class AiPanelComponent {
       usage.decodeTokensPerSecond
         ? this.interpolate(this.languageService.t('ai.debug.tokensPerSecond'), { value: usage.decodeTokensPerSecond.toFixed(1) })
         : '',
-      usage.timeToFirstTokenSeconds ? this.interpolate(this.languageService.t('ai.debug.timeToFirstToken'), { value: usage.timeToFirstTokenSeconds.toFixed(1) }) : ''
+      usage.timeToFirstTokenSeconds
+        ? this.interpolate(this.languageService.t('ai.debug.timeToFirstToken'), { value: usage.timeToFirstTokenSeconds.toFixed(1) })
+        : ''
     ].filter(Boolean);
 
     return parts.join(' · ');

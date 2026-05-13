@@ -186,14 +186,10 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
   patchStatus({ loadingState: 'loading', modelName, progress: 0, progressText: 'Preparing local model...', error: '' });
 
   try {
-    const engine = await CreateWebWorkerMLCEngine(
-      new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }),
-      modelName,
-      {
-        appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
-        initProgressCallback: updateProgress
-      }
-    );
+    const engine = await CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
+      appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
+      initProgressCallback: updateProgress
+    });
 
     patchStatus({
       installed: true,
