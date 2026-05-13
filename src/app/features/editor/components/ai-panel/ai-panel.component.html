@@ -123,10 +123,7 @@
         [value]="assistantState.draft()"
         (input)="setDraft($any($event.target).value)"
         (keydown.enter)="handleComposerKeydown($event)"></textarea>
-      <button
-        type="submit"
-        [disabled]="composerDisabled()"
-        [attr.aria-label]="'ai.send' | translate">
+      <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>
         </svg>
