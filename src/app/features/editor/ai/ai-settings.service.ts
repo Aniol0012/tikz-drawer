@@ -4,11 +4,7 @@ import { EditorLocalStorageService } from '../state/editor-local-storage.service
 import { FIREBASE_AI_MODEL } from './firebase-ai.config';
 import type { AiProviderType } from './ai-provider-result.model';
 
-export const WEB_LLM_MODEL_OPTIONS = [
-  'SmolLM2-360M-Instruct-q0f16-MLC',
-  'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-  'SmolLM2-1.7B-Instruct-q4f16_1-MLC'
-] as const;
+export const WEB_LLM_MODEL_OPTIONS = ['SmolLM2-360M-Instruct-q0f16-MLC', 'Llama-3.2-1B-Instruct-q4f16_1-MLC', 'SmolLM2-1.7B-Instruct-q4f16_1-MLC'] as const;
 export const REMOTE_AI_MODEL_OPTIONS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash'] as const;
 const LEGACY_DEFAULT_WEB_LLM_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 
