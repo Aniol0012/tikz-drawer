@@ -37,6 +37,7 @@ export class FirebaseAiProvider {
     const response = await model.generateContent(request.contextJson);
     return {
       mode: this.mode,
+      providerType: 'remote',
       modelName,
       text: response.response.text()
     };

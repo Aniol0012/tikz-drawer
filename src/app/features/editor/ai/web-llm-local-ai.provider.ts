@@ -1,14 +1,16 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
-import { CreateMLCEngine, type InitProgressReport, type MLCEngine } from '@mlc-ai/web-llm';
+import { CreateWebWorkerMLCEngine, prebuiltAppConfig, type InitProgressReport, type MLCEngineInterface } from '@mlc-ai/web-llm';
 import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
 import type { LocalAiStatus } from './local-ai-status.model';
 import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
+const WEB_LLM_MAX_OUTPUT_TOKENS = 220;
+const WEB_LLM_MAX_CONTEXT_ELEMENTS = 24;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
-const WEB_LLM_ENGINES = new Map<string, MLCEngine>();
-const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngine>>();
+const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
+const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
 let preloadStarted = false;
 
 export function preloadWebLlmLocalAi(): void {
@@ -63,34 +65,42 @@ export class WebLlmLocalAiProvider {
       throw new Error('ai.errorWebLlmUnsupported');
     }
 
-    if (!this.isReady(modelName)) {
-      throw new Error('ai.errorWebLlmNotReady');
-    }
-
     const engine = await ensureEngine(modelName);
     const response = await engine.chat.completions.create({
-      model: modelName,
       messages: [
         {
           role: 'system',
-          content: `${request.systemInstruction}\nReturn only valid JSON.`
+          content: localSystemInstruction()
         },
         {
           role: 'user',
-          content: request.contextJson
+          content: compactPromptPayload(request)
         }
       ],
-      max_tokens: request.options.maxTokens,
+      max_tokens: Math.min(request.options.maxTokens, WEB_LLM_MAX_OUTPUT_TOKENS),
       temperature: request.options.temperature,
       top_p: 0.82,
-      response_format: { type: 'json_object' },
+      repetition_penalty: 1.05,
+      extra_body: {
+        enable_latency_breakdown: true
+      },
       stream: false
     });
 
     return {
       mode: this.mode,
+      providerType: 'webllm',
       modelName,
-      text: response.choices[0]?.message.content ?? ''
+      text: response.choices[0]?.message.content ?? '',
+      usage: {
+        promptTokens: response.usage?.prompt_tokens,
+        completionTokens: response.usage?.completion_tokens,
+        totalTokens: response.usage?.total_tokens,
+        prefillTokensPerSecond: response.usage?.extra?.prefill_tokens_per_s,
+        decodeTokensPerSecond: response.usage?.extra?.decode_tokens_per_s,
+        timeToFirstTokenSeconds: response.usage?.extra?.time_to_first_token_s,
+        endToEndLatencySeconds: response.usage?.extra?.e2e_latency_s
+      }
     };
   }
 
@@ -107,7 +117,50 @@ export class WebLlmLocalAiProvider {
   }
 }
 
-async function ensureEngine(modelName: string): Promise<MLCEngine> {
+function localSystemInstruction(): string {
+  return [
+    'Eres el asistente de Tikz Drawer.',
+    'Devuelve solo JSON valido, sin markdown.',
+    'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
+    'Para charla usa type="message" y 1 frase.',
+    'Para dibujar o editar usa scenePatch con pocos elementos claros.',
+    'Tipos permitidos: rectangle, circle, ellipse, line, text, triangle.',
+    'El usuario previsualiza y aplica manualmente los cambios.'
+  ].join('\n');
+}
+
+function compactPromptPayload(request: AiProviderRequest): string {
+  try {
+    const payload = JSON.parse(request.contextJson) as WebLlmPromptPayload;
+    const elements = payload.context?.elements ?? [];
+    return JSON.stringify({
+      instruction: payload.instruction ?? request.instruction,
+      now: payload.now,
+      scene: {
+        name: payload.context?.sceneName,
+        selected: payload.context?.selectedElementIds ?? [],
+        elements: elements.slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS).map(compactElement)
+      },
+      conversation: (payload.conversation ?? []).slice(-4)
+    });
+  } catch {
+    return request.contextJson;
+  }
+}
+
+function compactElement(element: WebLlmPromptElement): WebLlmPromptElement {
+  return {
+    id: element.id,
+    name: element.name,
+    kind: element.kind,
+    locked: element.locked,
+    geometry: element.geometry,
+    style: element.style,
+    text: element.text
+  };
+}
+
+async function ensureEngine(modelName: string): Promise<MLCEngineInterface> {
   const existingEngine = WEB_LLM_ENGINES.get(modelName);
   if (existingEngine) {
     return existingEngine;
@@ -129,13 +182,18 @@ async function ensureEngine(modelName: string): Promise<MLCEngine> {
   }
 }
 
-async function createEngine(modelName: string): Promise<MLCEngine> {
+async function createEngine(modelName: string): Promise<MLCEngineInterface> {
   patchStatus({ loadingState: 'loading', modelName, progress: 0, progressText: 'Preparing local model...', error: '' });
 
   try {
-    const engine = await CreateMLCEngine(modelName, {
-      initProgressCallback: updateProgress
-    });
+    const engine = await CreateWebWorkerMLCEngine(
+      new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }),
+      modelName,
+      {
+        appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
+        initProgressCallback: updateProgress
+      }
+    );
 
     patchStatus({
       installed: true,
@@ -208,4 +266,25 @@ function patchStatus(patch: Partial<LocalAiStatus>): void {
     ...status,
     ...patch
   }));
+}
+
+interface WebLlmPromptPayload {
+  readonly instruction?: string;
+  readonly now?: unknown;
+  readonly context?: {
+    readonly sceneName?: string;
+    readonly selectedElementIds?: readonly string[];
+    readonly elements?: readonly WebLlmPromptElement[];
+  };
+  readonly conversation?: readonly { readonly role: string; readonly text: string }[];
+}
+
+interface WebLlmPromptElement {
+  readonly id?: string;
+  readonly name?: string;
+  readonly kind?: string;
+  readonly locked?: boolean;
+  readonly geometry?: unknown;
+  readonly style?: unknown;
+  readonly text?: string;
 }

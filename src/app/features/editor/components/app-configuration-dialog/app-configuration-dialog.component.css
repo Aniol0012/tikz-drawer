@@ -15,9 +15,9 @@
 
 .configuration-modal {
   position: relative;
-  width: min(1180px, calc(100vw - 40px));
-  height: min(880px, calc(100dvh - 48px));
-  max-height: min(880px, calc(100dvh - 48px));
+  width: min(1320px, calc(100vw - 32px));
+  height: min(920px, calc(100dvh - 32px));
+  max-height: min(920px, calc(100dvh - 32px));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   overflow: hidden;
@@ -169,7 +169,7 @@
 }
 
 .configuration-grid--general {
-  grid-template-columns: minmax(260px, 0.78fr) minmax(340px, 1fr);
+  grid-template-columns: minmax(300px, 0.82fr) minmax(420px, 1fr);
 }
 
 .configuration-grid--scene {
@@ -196,6 +196,10 @@
 }
 
 .settings-card--wide {
+  grid-column: 1 / -1;
+}
+
+.settings-card--ai {
   grid-column: 1 / -1;
 }
 
@@ -244,6 +248,11 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.form-grid--ai {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+}
+
 .field {
   min-width: 0;
   display: grid;
@@ -255,6 +264,23 @@
 
 .field--full {
   grid-column: 1 / -1;
+}
+
+.settings-note--ai {
+  grid-column: 1 / -1;
+  max-width: 780px;
+}
+
+.field-status {
+  min-height: 16px;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.field-status--danger {
+  color: color-mix(in srgb, var(--danger) 84%, var(--app-foreground));
 }
 
 .settings-card--style .field--full {
@@ -783,7 +809,8 @@
 @media (max-width: 980px) {
   .configuration-grid--general,
   .configuration-grid--scene,
-  .configuration-grid--latex {
+  .configuration-grid--latex,
+  .form-grid--ai {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -795,7 +822,8 @@
       'preview';
   }
 
-  .settings-card--wide {
+  .settings-card--wide,
+  .settings-card--ai {
     grid-column: auto;
   }
 

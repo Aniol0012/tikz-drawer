@@ -2,7 +2,8 @@
   class="app-select-shell"
   [class.is-open]="isOpen()"
   [class.has-flag]="selectedOption()?.flagSrc"
-  [class.has-icon]="selectedOption()?.iconPath">
+  [class.has-icon]="selectedOption()?.iconPath"
+  [class.app-select-shell--danger]="selectedOption()?.danger">
   @if (selectedOption()?.flagSrc; as flagSrc) {
     <img class="app-select-shell__flag" [src]="flagSrc" alt="" aria-hidden="true" />
   }
@@ -27,7 +28,7 @@
     (sl-show)="setOpen(true)"
     (sl-hide)="setOpen(false)">
     @for (option of options(); track option.value) {
-      <sl-option [value]="option.value" [disabled]="option.disabled ? true : null">
+      <sl-option [class.option--danger]="option.danger" [value]="option.value" [disabled]="option.disabled ? true : null">
         @if (option.flagSrc) {
           <img class="app-select__option-flag" [src]="option.flagSrc" alt="" aria-hidden="true" />
         }

@@ -4,9 +4,8 @@ import { FirebaseAiProvider } from './firebase-ai.provider';
 import { WebLlmLocalAiProvider } from './web-llm-local-ai.provider';
 import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
 
-const WEB_LLM_GENERATION_TIMEOUT_MS = 4500;
-const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 4500;
-const CLOUD_GENERATION_TIMEOUT_MS = 5000;
+const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 30000;
+const CLOUD_GENERATION_TIMEOUT_MS = 30000;
 
 @Injectable({ providedIn: 'root' })
 export class AiProviderSelectorService {
@@ -29,20 +28,23 @@ export class AiProviderSelectorService {
   }
 
   readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout');
+    return await this.timeProvider(this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout'));
   };
 
-  private readonly generateWithWebLlm = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.localProvider.generateText(request), WEB_LLM_GENERATION_TIMEOUT_MS, 'ai.errorWebLlmTimeout');
+  private readonly generateWithWebLlm = async (request: AiProviderRequest, timeoutMs = request.options.webLlmTimeoutMs): Promise<AiProviderTextResult> => {
+    return await this.timeProvider(this.withTimeout(this.localProvider.generateText(request), timeoutMs, 'ai.errorWebLlmTimeout'));
   };
 
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
-    return await this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout');
+    return await this.timeProvider(this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout'));
   };
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (this.localProvider.isReady(request.options.webLlmModel)) {
-      return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithBrowserLocal], request);
+      return await this.generateWithFallback(
+        [(providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs), this.generateWithBrowserLocal, this.generateWithCloud],
+        request
+      );
     }
 
     if (this.browserLocalSupported()) {
@@ -53,7 +55,7 @@ export class AiProviderSelectorService {
   }
 
   private async generateWithWebLlmFallback(request: AiProviderRequest): Promise<AiProviderTextResult> {
-    if (!this.localProvider.isSupported() || !this.localProvider.isReady(request.options.webLlmModel)) {
+    if (!this.localProvider.isSupported()) {
       return await this.generateWithCloud(request);
     }
 
@@ -88,5 +90,14 @@ export class AiProviderSelectorService {
     } finally {
       globalThis.clearTimeout(timeoutId);
     }
+  }
+
+  private async timeProvider(task: Promise<AiProviderTextResult>): Promise<AiProviderTextResult> {
+    const startedAt = performance.now();
+    const result = await task;
+    return {
+      ...result,
+      durationMs: Math.round(performance.now() - startedAt)
+    };
   }
 }

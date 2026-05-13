@@ -27,6 +27,7 @@ export class BrowserLocalAiProvider {
     try {
       return {
         mode: this.mode,
+        providerType: 'browser-local',
         modelName: this.modelName,
         text: await session.prompt(request.contextJson)
       };

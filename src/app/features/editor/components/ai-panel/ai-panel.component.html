@@ -52,9 +52,12 @@
     @for (message of assistantState.messages(); track message.id) {
       <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
         <p>{{ message.text }}</p>
+        @if (devMode() && message.debugInfo; as debugInfo) {
+          <small class="message__mode">{{ requestDebugLabel(debugInfo) }}</small>
+        }
         @if (message.response; as response) {
           @if (devMode() && response.aiMode) {
-            <small class="message__mode"> {{ responseModeLabel(response) }} · {{ response.aiModelName || activeModelName() }} </small>
+            <small class="message__mode">{{ responseDebugLabel(response) }}</small>
           }
           @if (response.type === 'scenePatch') {
             <div class="ai-proposal">
@@ -122,8 +125,12 @@
         [placeholder]="'ai.placeholder' | translate"
         [value]="assistantState.draft()"
         (input)="setDraft($any($event.target).value)"
-        (keydown.enter)="handleComposerKeydown($event)"></textarea>
-      <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate">
+        (keydown)="handleComposerKeydown($event)"></textarea>
+      <button
+        type="submit"
+        [disabled]="composerDisabled()"
+        [attr.aria-label]="'ai.send' | translate"
+        data-tooltip-disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>
         </svg>

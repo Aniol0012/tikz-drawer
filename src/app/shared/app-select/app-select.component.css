@@ -131,6 +131,16 @@
   background: var(--input-background);
 }
 
+.app-select-shell--danger .app-select::part(combobox) {
+  border-color: color-mix(in srgb, var(--danger) 58%, var(--tool-border));
+  background: color-mix(in srgb, var(--danger) 7%, var(--input-background));
+}
+
+.app-select-shell--danger .app-select::part(display-input),
+.app-select-shell--danger .app-select-shell__arrow {
+  color: color-mix(in srgb, var(--danger) 82%, var(--app-foreground));
+}
+
 .app-select::part(listbox) {
   padding: 4px;
   border: 1px solid var(--tool-border);
@@ -184,6 +194,14 @@
 
 .app-select sl-option::part(base):hover {
   background: color-mix(in srgb, var(--accent) 4%, var(--panel-background));
+}
+
+.app-select sl-option.option--danger::part(base) {
+  color: color-mix(in srgb, var(--danger) 86%, var(--app-foreground));
+}
+
+.app-select sl-option.option--danger::part(base):hover {
+  background: color-mix(in srgb, var(--danger) 8%, var(--panel-background));
 }
 
 .app-select sl-option[aria-selected='true']::part(base),

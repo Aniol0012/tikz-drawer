@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AiResponseParserService } from './ai-response-parser.service';
+import type { AiProviderTextResult } from './ai-provider-result.model';
 import type { AiSceneContext } from './ai-scene-context.model';
 import type { AiMessage, AiResponse } from './ai-message.model';
 import { AiProviderSelectorService } from './ai-provider-selector.service';
@@ -32,17 +33,28 @@ export class AiClientService {
     };
 
     const result = await this.providerSelector.generateText(request);
-    return this.responseFromTextResult(result);
+    try {
+      return this.responseFromTextResult(result);
+    } catch (error) {
+      if (result.providerType === 'remote') {
+        throw error;
+      }
+
+      return this.responseFromTextResult(await this.providerSelector.generateWithCloud(request));
+    }
   }
 
-  private responseFromTextResult(result: { readonly mode: 'local' | 'cloud'; readonly modelName: string; readonly text: string }): AiResponse {
+  private responseFromTextResult(result: AiProviderTextResult): AiResponse {
     const response = this.parser.parse(result.text);
     this.lastProviderMode.set(result.mode);
     this.lastModelName.set(result.modelName);
     return {
       ...response,
       aiMode: result.mode,
-      aiModelName: result.modelName
+      aiProviderType: result.providerType,
+      aiModelName: result.modelName,
+      aiDurationMs: result.durationMs,
+      aiUsage: result.usage
     };
   }
 

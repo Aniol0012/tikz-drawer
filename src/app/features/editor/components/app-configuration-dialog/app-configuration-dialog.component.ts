@@ -34,9 +34,11 @@ import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-fie
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { KeyboardShortcutCaptureComponent, type KeyboardShortcutAssignment } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
 import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
-import { AiSettingsService } from '../../ai/ai-settings.service';
+import { AiSettingsService, REMOTE_AI_MODEL_OPTIONS, WEB_LLM_MODEL_OPTIONS } from '../../ai/ai-settings.service';
 import type { AiProviderType } from '../../ai/ai-provider-result.model';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
+import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
+import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
 
@@ -78,6 +80,8 @@ export class AppConfigurationDialogComponent {
   private readonly appThemeService = inject(AppThemeService);
   private readonly aiSettingsService = inject(AiSettingsService);
   private readonly devModeService = inject(EditorDevModeService);
+  private readonly webLlmProvider = inject(WebLlmLocalAiProvider);
+  private readonly browserLocalProvider = inject(BrowserLocalAiProvider);
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
@@ -111,6 +115,7 @@ export class AppConfigurationDialogComponent {
   readonly generalConfig = this.configuration.generalConfig;
   readonly codeTheme = this.configuration.codeHighlightTheme;
   readonly aiSettings = this.aiSettingsService.settings;
+  readonly localAiStatus = this.webLlmProvider.status;
   readonly showDevAiConfiguration = this.devModeService.enabled;
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
@@ -135,12 +140,26 @@ export class AppConfigurationDialogComponent {
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
   readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
+    const localUnavailable = this.localProviderUnavailable();
+    const webLlmUnavailable = this.webLlmUnavailable();
     return [
-      { value: 'local', label: this.t('ai.providerLocal') },
-      { value: 'webllm', label: this.t('ai.providerWebLlm') },
+      { value: 'local', label: this.t('ai.providerLocal'), longLabel: this.providerLongLabel('ai.providerLocal', localUnavailable), danger: localUnavailable },
+      { value: 'webllm', label: this.t('ai.providerWebLlm'), longLabel: this.providerLongLabel('ai.providerWebLlm', webLlmUnavailable), danger: webLlmUnavailable },
       { value: 'remote', label: this.t('ai.providerRemote') }
     ];
   });
+  readonly webLlmModelOptions = computed<readonly AppSelectOption[]>(() =>
+    WEB_LLM_MODEL_OPTIONS.map((model) => {
+      const danger = this.webLlmModelUnavailable(model);
+      return {
+        value: model,
+        label: model,
+        longLabel: danger ? `${model} · ${this.t('ai.unavailable')}` : model,
+        danger
+      };
+    })
+  );
+  readonly remoteModelOptions = computed<readonly AppSelectOption[]>(() => REMOTE_AI_MODEL_OPTIONS.map((model) => ({ value: model, label: model })));
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
     { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
@@ -298,10 +317,70 @@ export class AppConfigurationDialogComponent {
     this.aiSettingsService.patchSettings({ maxTokens });
   }
 
+  updateAiWebLlmTimeout(event: Event): void {
+    this.aiSettingsService.patchSettings({ webLlmTimeoutMs: Number((event.target as HTMLInputElement).value) * 1000 });
+  }
+
+  updateAiAutomaticWebLlmTimeout(event: Event): void {
+    this.aiSettingsService.patchSettings({ automaticWebLlmTimeoutMs: Number((event.target as HTMLInputElement).value) * 1000 });
+  }
+
   setAiProviderType(value: string): void {
     if (value === 'local' || value === 'webllm' || value === 'remote') {
       this.aiSettingsService.patchSettings({ providerType: value satisfies AiProviderType });
     }
+  }
+
+  setAiWebLlmModel(value: string): void {
+    if (WEB_LLM_MODEL_OPTIONS.includes(value as (typeof WEB_LLM_MODEL_OPTIONS)[number])) {
+      this.aiSettingsService.patchSettings({ webLlmModel: value });
+    }
+  }
+
+  setAiRemoteModel(value: string): void {
+    if (REMOTE_AI_MODEL_OPTIONS.includes(value as (typeof REMOTE_AI_MODEL_OPTIONS)[number])) {
+      this.aiSettingsService.patchSettings({ remoteModel: value });
+    }
+  }
+
+  aiLocalStatusLabel(): string {
+    if (!this.localAiStatus().supported) {
+      return this.t('ai.localUnavailable');
+    }
+
+    if (this.webLlmProvider.isReady(this.aiSettings().webLlmModel)) {
+      return this.t('ai.localReady');
+    }
+
+    if (this.webLlmProvider.isLoading(this.aiSettings().webLlmModel)) {
+      return this.t('ai.localLoading');
+    }
+
+    if (this.localAiStatus().loadingState === 'failed') {
+      return this.t('ai.localUnavailable');
+    }
+
+    return this.t('ai.localNotLoaded');
+  }
+
+  private localProviderUnavailable(): boolean {
+    return !this.browserLocalProvider.supported() && this.webLlmUnavailable();
+  }
+
+  webLlmUnavailable(): boolean {
+    return !this.localAiStatus().supported || this.localAiStatus().loadingState === 'failed';
+  }
+
+  private webLlmModelUnavailable(model: string): boolean {
+    if (!this.localAiStatus().supported) {
+      return true;
+    }
+
+    return this.aiSettings().webLlmModel === model && this.localAiStatus().loadingState === 'failed';
+  }
+
+  private providerLongLabel(labelKey: string, unavailable: boolean): string {
+    return unavailable ? `${this.t(labelKey)} · ${this.t('ai.unavailable')}` : this.t(labelKey);
   }
 
   openShortcutSettings(): void {

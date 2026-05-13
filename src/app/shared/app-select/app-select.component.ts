@@ -10,6 +10,7 @@ export interface AppSelectOption {
   readonly iconPath?: string;
   readonly iconFilled?: boolean;
   readonly disabled?: boolean;
+  readonly danger?: boolean;
 }
 
 @Component({

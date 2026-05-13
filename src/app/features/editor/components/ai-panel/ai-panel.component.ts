@@ -15,6 +15,8 @@ import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
+import type { AiMessageDebugInfo } from '../../ai/ai-message.model';
+import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../../ai/ai-provider-result.model';
 
 @Component({
   selector: 'app-ai-panel',
@@ -94,7 +96,7 @@ export class AiPanelComponent {
 
   handleComposerKeydown(event: Event): void {
     const keyboardEvent = event as KeyboardEvent;
-    if (keyboardEvent.shiftKey || keyboardEvent.isComposing) {
+    if (keyboardEvent.key !== 'Enter' || keyboardEvent.shiftKey || keyboardEvent.isComposing) {
       return;
     }
 
@@ -110,7 +112,7 @@ export class AiPanelComponent {
 
     this.assistantState.error.set('');
     this.assistantState.draft.set('');
-    this.assistantState.appendMessage({ role: 'user', text: instruction });
+    this.assistantState.appendMessage({ role: 'user', text: instruction, debugInfo: this.requestDebugInfo() });
     this.assistantState.loading.set(true);
 
     try {
@@ -166,6 +168,74 @@ export class AiPanelComponent {
     }
 
     return response.aiMode === 'local' ? this.languageService.t('ai.modeLocal') : this.languageService.t('ai.modeCloud');
+  }
+
+  requestDebugLabel(debugInfo: AiMessageDebugInfo): string {
+    return this.interpolate(this.languageService.t('ai.debug.sentTo'), {
+      provider: this.requestProviderLabel(debugInfo.providerType),
+      model: debugInfo.modelName
+    });
+  }
+
+  responseDebugLabel(response: AiResponse): string {
+    const provider = response.aiProviderType ? this.runtimeProviderLabel(response.aiProviderType) : this.responseModeLabel(response);
+    const details = [
+      this.interpolate(this.languageService.t('ai.debug.responseFrom'), { provider }),
+      response.aiModelName || this.activeModelName(),
+      response.aiDurationMs ? `${(response.aiDurationMs / 1000).toFixed(1)}s` : '',
+      this.usageDebugLabel(response.aiUsage)
+    ].filter(Boolean);
+
+    return details.join(' · ');
+  }
+
+  private requestDebugInfo(): AiMessageDebugInfo {
+    return {
+      providerType: this.aiSettings().providerType,
+      modelName: this.defaultModelName()
+    };
+  }
+
+  private requestProviderLabel(providerType: AiProviderType): string {
+    switch (providerType) {
+      case 'local':
+        return this.languageService.t('ai.debug.providerAutomaticLocal');
+      case 'webllm':
+        return this.languageService.t('ai.debug.providerWebLlm');
+      case 'remote':
+        return this.languageService.t('ai.debug.providerRemote');
+    }
+  }
+
+  private runtimeProviderLabel(providerType: AiProviderRuntimeType): string {
+    switch (providerType) {
+      case 'browser-local':
+        return this.languageService.t('ai.debug.runtimeBrowserLocal');
+      case 'webllm':
+        return this.languageService.t('ai.debug.runtimeWebLlm');
+      case 'remote':
+        return this.languageService.t('ai.debug.runtimeRemote');
+    }
+  }
+
+  private usageDebugLabel(usage: AiProviderUsage | undefined): string {
+    if (!usage) {
+      return '';
+    }
+
+    const parts = [
+      usage.totalTokens ? this.interpolate(this.languageService.t('ai.debug.tokens'), { count: String(usage.totalTokens) }) : '',
+      usage.decodeTokensPerSecond
+        ? this.interpolate(this.languageService.t('ai.debug.tokensPerSecond'), { value: usage.decodeTokensPerSecond.toFixed(1) })
+        : '',
+      usage.timeToFirstTokenSeconds ? this.interpolate(this.languageService.t('ai.debug.timeToFirstToken'), { value: usage.timeToFirstTokenSeconds.toFixed(1) }) : ''
+    ].filter(Boolean);
+
+    return parts.join(' · ');
+  }
+
+  private interpolate(template: string, values: Record<string, string>): string {
+    return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
   }
 
   private defaultModelName(): string {
