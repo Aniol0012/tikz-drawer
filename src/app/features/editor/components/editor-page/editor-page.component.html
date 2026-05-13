@@ -828,10 +828,10 @@
               <strong>{{ 'ai.canvasPreviewTitle' | translate }}</strong>
               <span>{{ aiPatch.pendingSummary() }}</span>
             </div>
-            <button type="button" class="primary-button" (click)="aiPatch.applyPendingPatch()">
+            <button type="button" class="primary-button primary-button--accept" (click)="aiPatch.applyPendingPatch()">
               {{ 'ai.apply' | translate }}
             </button>
-            <button type="button" class="secondary-button" (click)="aiPatch.discardPendingPatch()">
+            <button type="button" class="secondary-button secondary-button--reject" (click)="aiPatch.discardPendingPatch()">
               {{ 'cancel' | translate }}
             </button>
           </div>

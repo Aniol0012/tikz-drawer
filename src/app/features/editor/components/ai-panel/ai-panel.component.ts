@@ -14,6 +14,7 @@ import { AiAssistantStateService } from '../../ai/ai-assistant-state.service';
 import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
+import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 
 @Component({
   selector: 'app-ai-panel',
@@ -31,7 +32,9 @@ export class AiPanelComponent {
   private readonly localAiProvider = inject(WebLlmLocalAiProvider);
   private readonly browserLocalAiProvider = inject(BrowserLocalAiProvider);
   private readonly aiSettingsService = inject(AiSettingsService);
+  readonly devMode = inject(EditorDevModeService).enabled;
   readonly assistantState = inject(AiAssistantStateService);
+  readonly aiPatch = this.scenePatch;
 
   readonly iconMap = iconPaths;
   readonly cloudModelName = FIREBASE_AI_MODEL;
@@ -74,7 +77,7 @@ export class AiPanelComponent {
 
     return this.webLlmReady();
   });
-  readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim() || !this.aiReady());
+  readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
   readonly quickActions = AI_QUICK_ACTIONS;
 
   setDraft(value: string): void {
@@ -126,6 +129,14 @@ export class AiPanelComponent {
 
   resetConversation(): void {
     this.assistantState.resetConversation();
+  }
+
+  acceptPendingPatch(): void {
+    this.scenePatch.applyPendingPatch();
+  }
+
+  rejectPendingPatch(): void {
+    this.scenePatch.discardPendingPatch();
   }
 
   applyResponse(response: AiResponse): void {

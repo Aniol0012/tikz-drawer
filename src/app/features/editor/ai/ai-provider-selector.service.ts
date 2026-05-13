@@ -54,10 +54,10 @@ export class AiProviderSelectorService {
 
   private async generateWithWebLlmFallback(request: AiProviderRequest): Promise<AiProviderTextResult> {
     if (!this.localProvider.isSupported() || !this.localProvider.isReady(request.options.webLlmModel)) {
-      throw new Error('ai.errorWebLlmNotReady');
+      return await this.generateWithCloud(request);
     }
 
-    return await this.generateWithWebLlm(request);
+    return await this.generateWithFallback([this.generateWithWebLlm, this.generateWithCloud], request);
   }
 
   private async generateWithFallback(
