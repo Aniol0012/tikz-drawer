@@ -55,7 +55,10 @@ export class AiProviderSelectorService {
     }
 
     if (this.browserLocalSupported()) {
-      return await this.generateWithFallback([this.generateWithBrowserLocal, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])], request);
+      return await this.generateWithFallback(
+        [this.generateWithBrowserLocal, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])],
+        request
+      );
     }
 
     if (request.options.allowRemoteFallback) {
