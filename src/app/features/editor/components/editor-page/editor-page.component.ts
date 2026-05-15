@@ -160,6 +160,7 @@ import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-se
 import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
+import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -297,6 +298,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     AiPanelComponent,
     ImportReplaceDialogComponent,
     AppSelectComponent,
+    BadgeComponent,
     ToggleFieldComponent,
     EditorTranslatePipe
   ],

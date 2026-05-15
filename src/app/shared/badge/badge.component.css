@@ -1,0 +1,140 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.badge {
+  --badge-color: var(--app-foreground);
+  --badge-border: var(--tool-border);
+  --badge-background: var(--tool-surface);
+  --badge-shadow-color: color-mix(in srgb, var(--app-foreground) 7%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--badge-border);
+  border-radius: 999px;
+  background: var(--badge-background);
+  color: var(--badge-color);
+  font-family: var(--font-sans);
+  font-weight: 820;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 36%, transparent),
+    0 1px 2px var(--badge-shadow-color);
+}
+
+.badge--sm {
+  min-height: 24px;
+  padding: 0 9px;
+  font-size: 0.68rem;
+}
+
+.badge--md {
+  min-height: 28px;
+  padding: 0 11px;
+  font-size: 0.74rem;
+}
+
+.badge--brand {
+  --badge-color: var(--accent-strong);
+  --badge-border: color-mix(in srgb, var(--accent) 36%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--accent) 13%, var(--panel-background));
+}
+
+.badge--gray {
+  --badge-color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
+  --badge-border: color-mix(in srgb, var(--muted-foreground) 30%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--muted-foreground) 9%, var(--panel-background));
+}
+
+.badge--danger {
+  --badge-color: color-mix(in srgb, var(--danger) 88%, var(--app-foreground));
+  --badge-border: color-mix(in srgb, var(--danger) 34%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--danger) 10%, var(--panel-background));
+}
+
+.badge--success {
+  --badge-color: color-mix(in srgb, var(--success, #15845c) 84%, var(--app-foreground));
+  --badge-border: color-mix(in srgb, var(--success, #15845c) 34%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--success, #15845c) 10%, var(--panel-background));
+}
+
+.badge--warning {
+  --badge-color: color-mix(in srgb, var(--warning) 86%, var(--app-foreground));
+  --badge-border: color-mix(in srgb, var(--warning) 38%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--warning) 12%, var(--panel-background));
+}
+
+.badge--dev {
+  --badge-color: color-mix(in srgb, var(--warning) 80%, var(--app-foreground));
+  --badge-border: color-mix(in srgb, var(--warning) 40%, var(--tool-border));
+  --badge-background: color-mix(in srgb, var(--warning) 12%, var(--panel-background));
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.badge__icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.badge__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button.badge {
+  cursor: pointer;
+  appearance: none;
+  transition:
+    transform 150ms var(--ease-out),
+    border-color 150ms var(--ease-out),
+    background-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out),
+    color 150ms var(--ease-out);
+}
+
+button.badge:hover {
+  border-color: color-mix(in srgb, var(--badge-border) 72%, var(--app-foreground));
+  background: color-mix(in srgb, var(--badge-background) 86%, var(--toolbar-background-hover));
+}
+
+button.badge:active {
+  transform: scale(0.97);
+}
+
+button.badge:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--badge-border));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 36%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+button.badge:disabled {
+  cursor: default;
+  opacity: 0.46;
+}
+
+:host-context([data-theme='dark']) .badge {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 1px 2px color-mix(in srgb, black 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.badge {
+    transition-duration: 0ms !important;
+  }
+}

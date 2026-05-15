@@ -482,8 +482,6 @@
   transform: rotate(-90deg);
 }
 
-.stat-pill,
-.badge,
 .canvas-chip {
   display: inline-flex;
   align-items: center;

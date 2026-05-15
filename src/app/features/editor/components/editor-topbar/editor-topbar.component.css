@@ -63,34 +63,6 @@
   text-transform: none;
 }
 
-.dev-mode-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 26px;
-  padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--muted-foreground) 34%, var(--tool-border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted-foreground) 10%, var(--panel-background));
-  color: color-mix(in srgb, var(--foreground) 74%, var(--muted-foreground));
-  font-size: 0.68rem;
-  font-weight: 850;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
-    0 1px 2px color-mix(in srgb, var(--foreground) 6%, transparent);
-}
-
-.dev-mode-badge::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted-foreground) 72%, var(--foreground));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--muted-foreground) 14%, transparent);
-}
-
 .scene-input {
   display: grid;
   gap: 6px;

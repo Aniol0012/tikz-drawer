@@ -182,7 +182,7 @@
   @if (!mobileLayout()) {
     <div class="topbar__right">
       @if (devMode()) {
-        <span class="dev-mode-badge">{{ t('devMode') }}</span>
+        <app-badge tone="dev" size="sm" [iconPath]="icon('code')">{{ t('devMode') }}</app-badge>
       }
 
       <sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
