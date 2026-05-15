@@ -529,10 +529,10 @@ export class EditorPageComponent {
     { value: 'curved', label: this.t('lineModeCurved'), iconPath: 'M5 16C8 7 16 17 19 8' }
   ]);
   readonly arrowBendModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
-    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M5 12h14' },
-    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M5 15C9 7 15 7 19 15' },
-    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M5 9C9 17 15 17 19 9' },
-    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M5 16Q12 5 19 16' }
+    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M4 12h16' },
+    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M4 16C8 7 16 7 20 16' },
+    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M4 8C8 17 16 17 20 8' },
+    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M4 16Q12 4 20 16' }
   ]);
   readonly templateIconOptions = [
     'pencil',
@@ -2857,8 +2857,17 @@ export class EditorPageComponent {
   }
 
   setLineArrowType(value: string): void {
+    const arrowType = value as ArrowTipKind;
     this.patchInspectorSelection((shape) =>
-      shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind, arrowOpen: false, arrowRound: false } as LineShape) : shape
+      shape.kind === 'line'
+        ? ({
+            ...shape,
+            arrowType,
+            arrowOpen: false,
+            arrowRound: false,
+            arrowBendMode: this.arrowTipSupportsBending(arrowType) ? shape.arrowBendMode : 'none'
+          } as LineShape)
+        : shape
     );
   }
 
@@ -2869,7 +2878,8 @@ export class EditorPageComponent {
             ...shape,
             lineMode: value,
             anchors:
-              value === 'curved' && shape.anchors.length === 0 ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }] : shape.anchors
+              value === 'curved' && shape.anchors.length === 0 ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }] : shape.anchors,
+            arrowBendMode: value === 'curved' && shape.arrowBendMode === 'none' && this.arrowTipSupportsBending(shape.arrowType) ? 'flex' : shape.arrowBendMode
           } as LineShape)
         : shape
     );
@@ -4402,6 +4412,10 @@ export class EditorPageComponent {
     return this.t(this.arrowTipOptions.find((option) => option.id === arrowType)?.labelKey ?? 'arrowTypeLatex');
   }
 
+  arrowTipSupportsBending(arrowType: ArrowTipKind): boolean {
+    return arrowType === 'straight-barb' || arrowType === 'triangle' || arrowType === 'latex' || arrowType === 'stealth';
+  }
+
   selectionOutline(): {
     readonly x: number;
     readonly y: number;
@@ -4844,7 +4858,7 @@ export class EditorPageComponent {
   }
 
   arrowMarkerId(shape: LineShape, side: ArrowEndpoint): string {
-    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${side}`;
+    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${shape.lineMode}-${shape.arrowBendMode}-${side}`;
   }
 
   arrowMarkerWidth(shape: LineShape): number {
@@ -4909,18 +4923,30 @@ export class EditorPageComponent {
     const width = this.arrowTipWidth(shape);
     const halfWidth = width / 2;
     const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
+    const bendsTip = shape.lineMode === 'curved' && shape.arrowBendMode !== 'none';
+    const bendOffset =
+      shape.arrowBendMode === 'flex'
+        ? halfWidth * 0.32
+        : shape.arrowBendMode === 'flex-prime'
+          ? -halfWidth * 0.32
+          : shape.arrowBendMode === 'bend'
+            ? halfWidth * 0.52
+            : 0;
+    const bendControlX = shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46;
+    const curvedOpenTipPath = `M0,0 Q${bendControlX},${Math.max(0.1, halfWidth * 0.18 + bendOffset)} ${length},${halfWidth} Q${bendControlX},${Math.max(0.9, width - halfWidth * 0.18 + bendOffset)} 0,${width}`;
+    const curvedFilledTipPath = `${curvedOpenTipPath} z`;
     let refX = length;
     let path = '';
 
     switch (shape.arrowType) {
       case 'triangle':
-        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
+        path = bendsTip ? curvedFilledTipPath : `M0,0 L0,${width} L${length},${halfWidth} z`;
         break;
       case 'latex':
-        path = `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
+        path = bendsTip ? curvedOpenTipPath : `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
         break;
       case 'stealth':
-        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18, 0.9)} 0.45,${halfWidth} z`;
+        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18 + bendOffset, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18 + bendOffset, 0.9)} 0.45,${halfWidth} z`;
         break;
       case 'diamond':
         path = `M0,0 L0,${width} L${length},${halfWidth} z`;
@@ -4956,7 +4982,7 @@ export class EditorPageComponent {
         path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
         break;
       case 'straight-barb':
-        path = `M0,0 L${length},${halfWidth} L0,${width} M0,${halfWidth} L${length},${halfWidth}`;
+        path = bendsTip ? curvedOpenTipPath : `M0,0 L${length},${halfWidth} L0,${width}`;
         break;
     }
 
@@ -5007,12 +5033,14 @@ export class EditorPageComponent {
     const alongPixels = Math.max(-(offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
     const acrossPixels = Math.abs((offset.x * normal.x + offset.y * normal.y) * this.preferences().scale);
     const strokeUnit = Math.max(zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale, 0.5);
+    const controlScaleMin = 0.45;
+    const controlScaleMax = 8;
 
     if (kind === 'length') {
-      return Math.min(3.6, Math.max(0.45, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
+      return Math.min(controlScaleMax, Math.max(controlScaleMin, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
     }
 
-    return Math.min(3.6, Math.max(0.45, (acrossPixels * 2) / (DEFAULT_ARROW_TIP_WIDTH * strokeUnit)));
+    return Math.min(controlScaleMax, Math.max(controlScaleMin, (acrossPixels * 2) / (DEFAULT_ARROW_TIP_WIDTH * strokeUnit)));
   }
 
   arrowMarkerFill(shape: LineShape): string {

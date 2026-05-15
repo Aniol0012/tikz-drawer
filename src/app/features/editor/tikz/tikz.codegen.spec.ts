@@ -132,6 +132,33 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('-{Square[');
   });
 
+  it('exports latex arrow tips as open strokes to match the editor preview', () => {
+    const scene: TikzScene = {
+      name: 'Latex arrow tip scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [{ ...baseLine, arrowType: 'latex', arrowOpen: false }]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toMatch(/-\{Latex\[[^\]]*\bopen\b/);
+    expect(bundle.code).not.toMatch(/Latex\[[^\]]*\bfill=/);
+    expect(bundle.code).not.toContain('draw opacity=0,');
+  });
+
+  it('ignores curve behavior for arrow tips that do not support bending', () => {
+    const scene: TikzScene = {
+      name: 'Unsupported bending arrow scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [{ ...baseLine, arrowType: 'bar', arrowBendMode: 'bend' }]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.imports).not.toContain(String.raw`\usetikzlibrary{bending}`);
+    expect(bundle.code).not.toMatch(/\bflex'?|\bbend\b/);
+  });
+
   it('exports arrow tip dimensions from rendered line and arrow scales', () => {
     const scene: TikzScene = {
       name: 'Scaled arrow scene',

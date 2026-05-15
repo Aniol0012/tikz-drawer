@@ -2508,6 +2508,22 @@ kbd {
 .arrow-style-grid .color-chip-field {
   min-width: 0;
   grid-column: 1 / -1;
+  grid-template-columns: 36px minmax(0, 1fr) max-content;
+  grid-template-areas:
+    'swatch label value'
+    'swatch range range';
+  gap: 4px 10px;
+  align-items: center;
+  max-width: 360px;
+}
+
+.arrow-style-grid .color-chip-field small {
+  align-self: center;
+  line-height: 1.1;
+}
+
+.arrow-style-grid .color-opacity-input {
+  max-width: 260px;
 }
 
 .arrow-style-grid .toggle-field {

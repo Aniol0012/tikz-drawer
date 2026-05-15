@@ -1253,14 +1253,17 @@
                               [value]="shape.arrowScale"
                               (input)="updateLineArrowScale($event)" /></div
                         ></label>
-                        <div class="field">
-                          <span>{{ 'arrowBendMode' | translate }}</span
-                          ><app-select
-                            [ariaLabel]="'arrowBendMode' | translate"
-                            [value]="shape.arrowBendMode"
-                            [options]="arrowBendModeSelectOptions()"
-                            (valueChange)="setLineArrowBendMode($event)"></app-select>
-                        </div>
+                        @if (arrowTipSupportsBending(shape.arrowType)) {
+                          <div class="field">
+                            <span>{{ 'arrowBendMode' | translate }}</span
+                            ><app-select
+                              class="arrow-bend-select"
+                              [ariaLabel]="'arrowBendMode' | translate"
+                              [value]="shape.arrowBendMode"
+                              [options]="arrowBendModeSelectOptions()"
+                              (valueChange)="setLineArrowBendMode($event)"></app-select>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
@@ -2331,14 +2334,17 @@
                                   [value]="shape.arrowScale"
                                   (input)="updateLineArrowScale($event)" /></div
                             ></label>
-                            <div class="field">
-                              <span>{{ 'arrowBendMode' | translate }}</span
-                              ><app-select
-                                [ariaLabel]="'arrowBendMode' | translate"
-                                [value]="shape.arrowBendMode"
-                                [options]="arrowBendModeSelectOptions()"
-                                (valueChange)="setLineArrowBendMode($event)"></app-select>
-                            </div>
+                            @if (arrowTipSupportsBending(shape.arrowType)) {
+                              <div class="field">
+                                <span>{{ 'arrowBendMode' | translate }}</span
+                                ><app-select
+                                  class="arrow-bend-select"
+                                  [ariaLabel]="'arrowBendMode' | translate"
+                                  [value]="shape.arrowBendMode"
+                                  [options]="arrowBendModeSelectOptions()"
+                                  (valueChange)="setLineArrowBendMode($event)"></app-select>
+                              </div>
+                            }
                           </div>
                         }
                       </div>
