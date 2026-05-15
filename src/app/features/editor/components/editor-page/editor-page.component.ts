@@ -6922,12 +6922,7 @@ export class EditorPageComponent {
     }
   }
 
-  private minimapArrowTipPath(
-    shape: LineShape,
-    endpoint: LineEndpoint,
-    toMapX: (x: number) => number,
-    toMapY: (y: number) => number
-  ): string | undefined {
+  private minimapArrowTipPath(shape: LineShape, endpoint: LineEndpoint, toMapX: (x: number) => number, toMapY: (y: number) => number): string | undefined {
     const points = this.lineArrowTipVisualPoints(shape, endpoint);
     if (!points) {
       return undefined;
