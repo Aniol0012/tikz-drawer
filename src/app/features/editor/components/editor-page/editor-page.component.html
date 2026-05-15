@@ -859,6 +859,22 @@
                       [attr.stroke]="shape.stroke"
                       [attr.stroke-width]="shape.strokeWidth"
                       [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
+                    @if (shape.arrowStartPath) {
+                      <path
+                        class="minimap__shape"
+                        [attr.d]="shape.arrowStartPath"
+                        [attr.fill]="shape.arrowFill"
+                        [attr.stroke]="shape.arrowStroke"
+                        [attr.stroke-width]="shape.arrowStrokeWidth"></path>
+                    }
+                    @if (shape.arrowEndPath) {
+                      <path
+                        class="minimap__shape"
+                        [attr.d]="shape.arrowEndPath"
+                        [attr.fill]="shape.arrowFill"
+                        [attr.stroke]="shape.arrowStroke"
+                        [attr.stroke-width]="shape.arrowStrokeWidth"></path>
+                    }
                   }
                   @case ('rectangle') {
                     <rect

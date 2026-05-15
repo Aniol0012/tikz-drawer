@@ -6830,6 +6830,11 @@ export class EditorPageComponent {
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
           dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
+          arrowStartPath: this.minimapArrowTipPath(shape, 'from', toMapX, toMapY),
+          arrowEndPath: this.minimapArrowTipPath(shape, 'to', toMapX, toMapY),
+          arrowFill: this.arrowMarkerFill(shape),
+          arrowStroke: shape.arrowColor,
+          arrowStrokeWidth: Math.max(minimapStrokeWidth(shape.strokeWidth), 0.28),
           path: this.buildLinePath(shape, (point) => ({
             x: toMapX(point.x),
             y: toMapY(point.y)
@@ -6915,6 +6920,61 @@ export class EditorPageComponent {
           href: shape.src
         };
     }
+  }
+
+  private minimapArrowTipPath(
+    shape: LineShape,
+    endpoint: LineEndpoint,
+    toMapX: (x: number) => number,
+    toMapY: (y: number) => number
+  ): string | undefined {
+    const points = this.lineArrowTipVisualPoints(shape, endpoint);
+    if (!points) {
+      return undefined;
+    }
+
+    return `${points
+      .map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command} ${toMapX(point.x)} ${toMapY(point.y)}`;
+      })
+      .join(' ')} Z`;
+  }
+
+  private lineArrowTipVisualPoints(shape: LineShape, endpoint: LineEndpoint): readonly Point[] | null {
+    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
+    if (!showsArrow) {
+      return null;
+    }
+
+    const points = this.linePoints(shape);
+    if (points.length < 2) {
+      return null;
+    }
+
+    const target = endpoint === 'from' ? shape.from : shape.to;
+    const adjacent = endpoint === 'from' ? points[1] : (points.at(-2) ?? shape.from);
+    const deltaX = target.x - adjacent.x;
+    const deltaY = target.y - adjacent.y;
+    const segmentLength = Math.hypot(deltaX, deltaY);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
+      return null;
+    }
+
+    const unit = { x: deltaX / segmentLength, y: deltaY / segmentLength };
+    const normal = { x: -unit.y, y: unit.x };
+    const length = Math.min(this.arrowRenderedLength(shape) / this.preferences().scale, segmentLength * 0.6);
+    const halfWidth = this.arrowRenderedHalfWidth(shape) / this.preferences().scale;
+    const baseCenter = {
+      x: target.x - unit.x * length,
+      y: target.y - unit.y * length
+    };
+
+    return [
+      target,
+      { x: baseCenter.x + normal.x * halfWidth, y: baseCenter.y + normal.y * halfWidth },
+      { x: baseCenter.x - normal.x * halfWidth, y: baseCenter.y - normal.y * halfWidth }
+    ];
   }
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {

@@ -306,6 +306,11 @@ export interface MinimapLineShape extends MinimapShapeBase {
   readonly kind: 'line';
   readonly path: string;
   readonly dashArray?: string;
+  readonly arrowStartPath?: string;
+  readonly arrowEndPath?: string;
+  readonly arrowFill: string;
+  readonly arrowStroke: string;
+  readonly arrowStrokeWidth: number;
 }
 
 export interface MinimapRectangleShape extends MinimapShapeBase {
