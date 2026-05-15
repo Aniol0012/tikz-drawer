@@ -3203,6 +3203,14 @@
     </div>
   }
 
+  <app-import-replace-dialog
+    [iconMap]="iconMap"
+    (downloadBackup)="downloadProjectJson()"
+    (importAccepted)="applyImportDialogResultConfirmed($event)"
+    (importCancelled)="handleImportReplacementCancelled()"
+    (shareAccepted)="applySharedSceneStateConfirmed($event)"
+    (shareCancelled)="handleShareReplacementCancelled()"></app-import-replace-dialog>
+
   @if (importModalOpen()) {
     <app-import-code-modal
       [title]="'importCode' | translate"

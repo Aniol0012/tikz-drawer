@@ -157,6 +157,7 @@ import { RangeInputCardComponent } from '../range-input-card/range-input-card.co
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
+import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
@@ -290,6 +291,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     RegularPolygonDialogComponent,
     GraphDialogComponent,
     FigureSearchOverlayComponent,
+    ImportReplaceDialogComponent,
     AppSelectComponent,
     ToggleFieldComponent,
     EditorTranslatePipe
@@ -334,6 +336,7 @@ export class EditorPageComponent {
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
   readonly rightSidebar = viewChild(EditorRightSidebarComponent);
+  readonly importReplaceDialog = viewChild.required(ImportReplaceDialogComponent);
 
   readonly appVersion = packageManifest.version;
   readonly editorApi = this;
@@ -2354,6 +2357,29 @@ export class EditorPageComponent {
   }
 
   applyImportDialogResult(result: ImportDialogResult): void {
+    if (result.clearScene === true && this.scene().shapes.length > 0) {
+      this.importModalOpen.set(false);
+      this.importReplaceDialog().requestImportReplacement(result);
+      return;
+    }
+
+    this.applyImportDialogResultConfirmed(result);
+  }
+
+  handleImportReplacementCancelled(): void {
+    this.importModalOpen.set(true);
+  }
+
+  handleShareReplacementCancelled(): void {
+    this.clearSharedSceneFromUrl();
+  }
+
+  applySharedSceneStateConfirmed(sharedState: SharedScenePayload): void {
+    this.applySharedSceneState(sharedState);
+    this.clearSharedSceneFromUrl();
+  }
+
+  applyImportDialogResultConfirmed(result: ImportDialogResult): void {
     this.runSceneMutation(() => {
       this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true);
       this.viewportCenter.set({ x: 0, y: 0 });
@@ -5275,6 +5301,7 @@ export class EditorPageComponent {
       { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },
       { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
       { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
+      { isOpen: () => this.importReplaceDialog().isOpen(), close: () => this.importReplaceDialog().close() },
       { isOpen: () => this.fileMenuOpen(), close: () => this.closeFileMenu() },
       { isOpen: () => this.mobileLibraryPanelOpen(), close: () => this.closeMobileLibraryPanel() },
       { isOpen: () => !!this.contextMenu(), close: () => this.closeContextMenu() }
@@ -5655,12 +5682,21 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.scene().shapes.length > 0) {
+      this.importReplaceDialog().requestSharedReplacement(sharedState);
+      return;
+    }
+
+    this.applySharedSceneState(sharedState);
+    this.clearSharedSceneFromUrl();
+  }
+
+  private applySharedSceneState(sharedState: SharedScenePayload): void {
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
     if (sharedState.latexExportConfig) {
       this.configuration.setLatexExportConfig(sharedState.latexExportConfig);
     }
-    this.clearSharedSceneFromUrl();
   }
 
   private clearSharedSceneFromUrl(): void {
@@ -6957,6 +6993,7 @@ export class EditorPageComponent {
       !!this.regularPolygonDialogState() ||
       !!this.graphDialogState() ||
       !!this.sceneReplaceDialog() ||
+      this.importReplaceDialog().isOpen() ||
       !!this.contextMenu() ||
       this.textSymbolPaletteOpen()
     );

@@ -1,0 +1,36 @@
+@if (request()) {
+  <div class="modal-backdrop">
+    <section class="import-replace-dialog" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+      <header class="import-replace-dialog__header">
+        <div>
+          <p>{{ 'importReplaceDialogEyebrow' | translate }}</p>
+          <h2>{{ 'importReplaceDialogTitle' | translate }}</h2>
+          <span>{{ 'importReplaceDialogDescription' | translate }}</span>
+        </div>
+        <button class="icon-button" type="button" (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconMap().close"></path></svg>
+        </button>
+      </header>
+      <div class="warning-box import-replace-warning">
+        <div>
+          <strong>{{ 'importReplaceDialogWarningTitle' | translate }}</strong>
+          <p>{{ 'importReplaceDialogWarningDescription' | translate }}</p>
+        </div>
+        <button class="secondary-button" type="button" (click)="downloadBackup.emit()">
+          {{ 'importReplaceDialogDownloadBackup' | translate }}
+        </button>
+      </div>
+      <div class="selection-title">
+        <strong>{{ sourceLabelKey() | translate }}</strong>
+      </div>
+      <div class="inline-actions">
+        <button class="secondary-button" type="button" (click)="close()">
+          {{ 'cancel' | translate }}
+        </button>
+        <button class="primary-button" type="button" (click)="confirm()">
+          {{ 'continue' | translate }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

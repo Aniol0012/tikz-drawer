@@ -76,6 +76,33 @@ describe('parseTikz', () => {
     expect(rectangle.height).toBeCloseTo(5.094);
   });
 
+  it('imports TikZ text style commands as editor styles instead of visible text', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}
+\node[text=#161616, text opacity=1, scale=1.714, anchor=center] at (-0.25, 11.25) {\bfseries Tiras de tela};
+\node[anchor=center] at (0, 0) {\itshape \underline{Cierre del arnés}};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes).toHaveLength(2);
+
+    const boldText = result.scene.shapes[0];
+    expect(boldText.kind).toBe('text');
+    if (boldText.kind !== 'text') {
+      throw new Error('Expected text shape');
+    }
+    expect(boldText.text).toBe('Tiras de tela');
+    expect(boldText.fontWeight).toBe('bold');
+
+    const styledText = result.scene.shapes[1];
+    expect(styledText.kind).toBe('text');
+    if (styledText.kind !== 'text') {
+      throw new Error('Expected text shape');
+    }
+    expect(styledText.text).toBe('Cierre del arnés');
+    expect(styledText.fontStyle).toBe('italic');
+    expect(styledText.textDecoration).toBe('underline');
+  });
+
   it('ignores figure and adjustbox wrappers around a tikzpicture', () => {
     const result = parseTikz(String.raw`\begin{figure}[H]
 \centering
