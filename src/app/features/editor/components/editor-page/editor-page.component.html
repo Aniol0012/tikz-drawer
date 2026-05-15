@@ -838,139 +838,16 @@
           (centerRequested)="resetViewport()"
           (scaleRequested)="setCanvasToolbarScale($event)"></app-editor-canvas-toolbar>
 
-        @if (showMinimap() && minimapOverview(); as minimap) {
-          <div
-            class="minimap"
-            [style.width.px]="minimapFrame().width"
-            [style.height.px]="minimapFrame().height"
-            (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
-            <svg
-              class="minimap__svg"
-              [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
-              (pointerdown)="startMinimapPan($event, minimap)"
-              aria-hidden="true">
-              @for (shape of minimap.shapes; track $index) {
-                @switch (shape.kind) {
-                  @case ('line') {
-                    <path
-                      class="minimap__shape"
-                      [attr.d]="shape.path"
-                      fill="none"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"
-                      [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
-                    @if (shape.arrowStartPath) {
-                      <path
-                        class="minimap__shape"
-                        [attr.d]="shape.arrowStartPath"
-                        [attr.fill]="shape.arrowFill"
-                        [attr.stroke]="shape.arrowStroke"
-                        [attr.stroke-width]="shape.arrowStrokeWidth"></path>
-                    }
-                    @if (shape.arrowEndPath) {
-                      <path
-                        class="minimap__shape"
-                        [attr.d]="shape.arrowEndPath"
-                        [attr.fill]="shape.arrowFill"
-                        [attr.stroke]="shape.arrowStroke"
-                        [attr.stroke-width]="shape.arrowStrokeWidth"></path>
-                    }
-                  }
-                  @case ('rectangle') {
-                    <rect
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.rx]="shape.rx"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></rect>
-                  }
-                  @case ('triangle') {
-                    <path
-                      class="minimap__shape"
-                      [attr.d]="shape.path"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></path>
-                  }
-                  @case ('circle') {
-                    <circle
-                      class="minimap__shape"
-                      [attr.cx]="shape.cx"
-                      [attr.cy]="shape.cy"
-                      [attr.r]="shape.r"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></circle>
-                  }
-                  @case ('ellipse') {
-                    <ellipse
-                      class="minimap__shape"
-                      [attr.cx]="shape.cx"
-                      [attr.cy]="shape.cy"
-                      [attr.rx]="shape.rx"
-                      [attr.ry]="shape.ry"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></ellipse>
-                  }
-                  @case ('text') {
-                    <text
-                      class="minimap__shape minimap__shape--text"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.fill]="shape.fill"
-                      [attr.fill-opacity]="shape.fillOpacity"
-                      [attr.font-size]="shape.fontSize"
-                      [attr.font-weight]="shape.fontWeight"
-                      [attr.font-style]="shape.fontStyle"
-                      [attr.text-decoration]="shape.textDecoration"
-                      [attr.text-anchor]="shape.textAnchor"
-                      [attr.transform]="shape.transform">
-                      @for (line of shape.lines; track $index) {
-                        <tspan
-                          [attr.x]="shape.x"
-                          [attr.text-anchor]="shape.textAnchor"
-                          [attr.dy]="$index === 0 ? 0 : shape.fontSize * 1.14">
-                          {{ line }}
-                        </tspan>
-                      }
-                    </text>
-                  }
-                  @case ('image') {
-                    <image
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.opacity]="shape.opacity"
-                      [attr.href]="shape.href"
-                      preserveAspectRatio="xMidYMid meet"></image>
-                    <rect
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.fill]="'none'"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></rect>
-                  }
-                }
-              }
-              <rect
-                class="minimap__viewport"
-                [attr.x]="minimap.viewportRect.x"
-                [attr.y]="minimap.viewportRect.y"
-                [attr.width]="minimap.viewportRect.width"
-                [attr.height]="minimap.viewportRect.height"></rect>
-            </svg>
-          </div>
-        }
+        <app-editor-minimap
+          [shapes]="scene().shapes"
+          [visibleBounds]="visibleWorldBounds()"
+          [canvasWidth]="canvasWidth()"
+          [canvasHeight]="canvasHeight()"
+          [scale]="preferences().scale"
+          [defaultScale]="defaultScale"
+          [mobileLayout]="mobileLayout()"
+          [overlayLayout]="sidebarsOverlayLayout()"
+          (viewportCenterChange)="viewportCenter.set($event)"></app-editor-minimap>
       </div>
     </section>
 

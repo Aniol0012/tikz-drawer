@@ -80,9 +80,6 @@ import {
   MIN_TEXT_FONT_SIZE,
   MIN_TEXT_RESIZE_HEIGHT,
   MIN_TEXT_RESIZE_WIDTH,
-  MINIMAP_MIN_IMAGE_DIMENSION,
-  MINIMAP_MIN_RADIUS,
-  MINIMAP_MIN_TEXT_HEIGHT,
   OPACITY_MAX,
   OPACITY_MIN,
   SLIDER_DECIMAL_PLACES,
@@ -116,9 +113,6 @@ import {
   type LineBooleanKey,
   type LineCanvasShape,
   type LineEndpoint,
-  type MinimapOverview,
-  type MinimapRect,
-  type MinimapShape,
   type MultiEditSelectionInfo,
   type NotificationTone,
   type PinchZoomState,
@@ -159,6 +153,7 @@ import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
+import { EditorMinimapComponent } from '../editor-minimap/editor-minimap.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
@@ -235,10 +230,19 @@ import {
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
-import { arrowMarkerViewportScale, renderedStrokeWidthForScale, zoomScaledArrowStrokeWidth } from '../../utils/editor-arrow.utils';
+import {
+  arrowMarkerFill as arrowMarkerFillUtil,
+  arrowMarkerGeometry as arrowMarkerGeometryUtil,
+  arrowMarkerViewportScale,
+  arrowRenderedHalfWidth as arrowRenderedHalfWidthUtil,
+  arrowRenderedLength as arrowRenderedLengthUtil,
+  arrowTipLength as arrowTipLengthUtil,
+  arrowTipWidth as arrowTipWidthUtil,
+  renderedStrokeWidthForScale,
+  zoomScaledArrowStrokeWidth
+} from '../../utils/editor-arrow.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
-  ArrowMarkerGeometry,
   ArrowTipKind,
   CanvasShape,
   EditorSyncMessage,
@@ -297,6 +301,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     FigureSearchOverlayComponent,
     AiPanelComponent,
     ImportReplaceDialogComponent,
+    EditorMinimapComponent,
     AppSelectComponent,
     BadgeComponent,
     ToggleFieldComponent,
@@ -439,7 +444,6 @@ export class EditorPageComponent {
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
   readonly rightSidebarCollapsed = signal(false);
-  readonly minimapPanPointerId = signal<number | null>(null);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
@@ -642,71 +646,6 @@ export class EditorPageComponent {
   readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
   readonly xSliderRange = computed(() => this.sliderRange('x'));
   readonly ySliderRange = computed(() => this.sliderRange('y'));
-  readonly minimapFrame = computed(() => {
-    const aspectRatio = this.canvasWidth() / Math.max(this.canvasHeight(), 1);
-    const width = Math.min(240, Math.max(132, Math.round(this.canvasWidth() * 0.12)));
-    const height = Math.min(180, Math.max(96, Math.round(width / Math.max(aspectRatio, 0.35))));
-    return { width, height };
-  });
-  readonly minimapOverview = computed<MinimapOverview | null>(() => {
-    const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) {
-      return null;
-    }
-
-    const visibleBounds = this.visibleWorldBounds();
-    const padding = 1.5;
-    const left = Math.min(sceneBounds.left, visibleBounds.left) - padding;
-    const right = Math.max(sceneBounds.right, visibleBounds.right) + padding;
-    const bottom = Math.min(sceneBounds.bottom, visibleBounds.bottom) - padding;
-    const top = Math.max(sceneBounds.top, visibleBounds.top) + padding;
-    const width = Math.max(right - left, 1);
-    const height = Math.max(top - bottom, 1);
-    const frame = this.minimapFrame();
-    const scaleX = frame.width / width;
-    const scaleY = frame.height / height;
-    const scale = Math.min(scaleX, scaleY);
-    const contentWidth = width * scale;
-    const contentHeight = height * scale;
-    const offsetX = (frame.width - contentWidth) / 2;
-    const offsetY = (frame.height - contentHeight) / 2;
-    const toMapX = (x: number): number => offsetX + (x - left) * scale;
-    const toMapY = (y: number): number => offsetY + (top - y) * scale;
-    const toMapRect = (bounds: SelectionBounds): MinimapRect => ({
-      x: toMapX(bounds.left),
-      y: toMapY(bounds.top),
-      width: Math.max((bounds.right - bounds.left) * scale, 1.6),
-      height: Math.max((bounds.top - bounds.bottom) * scale, 1.6)
-    });
-
-    return {
-      viewBoxWidth: frame.width,
-      viewBoxHeight: frame.height,
-      worldLeft: left,
-      worldTop: top,
-      mapScale: scale,
-      offsetX,
-      offsetY,
-      viewportRect: toMapRect(visibleBounds),
-      shapes: this.scene().shapes.map((shape) => this.toMinimapShape(shape, toMapX, toMapY, scale))
-    };
-  });
-  readonly showMinimap = computed(() => {
-    if (this.mobileLayout() || this.sidebarsOverlayLayout()) {
-      return false;
-    }
-    const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) {
-      return false;
-    }
-    const visibleBounds = this.visibleWorldBounds();
-    const sceneFitsInView =
-      sceneBounds.left >= visibleBounds.left &&
-      sceneBounds.right <= visibleBounds.right &&
-      sceneBounds.bottom >= visibleBounds.bottom &&
-      sceneBounds.top <= visibleBounds.top;
-    return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
-  });
   readonly effectiveLeftSidebarWidth = computed(() => this.desktopSidebarWidth('left'));
   readonly effectiveRightSidebarWidth = computed(() => this.desktopSidebarWidth('right'));
   readonly effectiveMobileRightSidebarHeight = computed(() => this.rightSidebarHeight());
@@ -1059,8 +998,6 @@ export class EditorPageComponent {
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
   private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
-  private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
-
   constructor() {
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
@@ -2214,13 +2151,6 @@ export class EditorPageComponent {
 
   handleCopyError(): void {
     this.showNotification(this.t('copyError'), 'warning');
-  }
-
-  startMinimapPan(event: PointerEvent, minimap: MinimapOverview): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.minimapPanPointerId.set(event.pointerId);
-    this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
   }
 
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
@@ -4929,104 +4859,23 @@ export class EditorPageComponent {
   }
 
   arrowTipLength(shape: LineShape): number {
-    return DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale;
+    return arrowTipLengthUtil(shape);
   }
 
   arrowTipWidth(shape: LineShape): number {
-    return DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale;
+    return arrowTipWidthUtil(shape);
   }
 
   arrowRenderedLength(shape: LineShape): number {
-    return this.arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
+    return arrowRenderedLengthUtil(shape, this.preferences().scale);
   }
 
   arrowRenderedHalfWidth(shape: LineShape): number {
-    return (this.arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
+    return arrowRenderedHalfWidthUtil(shape, this.preferences().scale);
   }
 
-  arrowMarkerGeometry(shape: LineShape): ArrowMarkerGeometry {
-    const cachedGeometry = this.arrowMarkerGeometryCache.get(shape);
-    if (cachedGeometry) {
-      return cachedGeometry;
-    }
-
-    const length = this.arrowTipLength(shape);
-    const width = this.arrowTipWidth(shape);
-    const halfWidth = width / 2;
-    const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
-    const bendsTip = shape.lineMode === 'curved' && shape.arrowBendMode !== 'none';
-    const bendOffset =
-      shape.arrowBendMode === 'flex'
-        ? halfWidth * 0.32
-        : shape.arrowBendMode === 'flex-prime'
-          ? -halfWidth * 0.32
-          : shape.arrowBendMode === 'bend'
-            ? halfWidth * 0.52
-            : 0;
-    const bendControlX = shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46;
-    const curvedOpenTipPath = `M0,0 Q${bendControlX},${Math.max(0.1, halfWidth * 0.18 + bendOffset)} ${length},${halfWidth} Q${bendControlX},${Math.max(0.9, width - halfWidth * 0.18 + bendOffset)} 0,${width}`;
-    const curvedFilledTipPath = `${curvedOpenTipPath} z`;
-    let refX = length;
-    let path = '';
-
-    switch (shape.arrowType) {
-      case 'triangle':
-        path = bendsTip ? curvedFilledTipPath : `M0,0 L0,${width} L${length},${halfWidth} z`;
-        break;
-      case 'latex':
-        path = bendsTip ? curvedOpenTipPath : `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
-        break;
-      case 'stealth':
-        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18 + bendOffset, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18 + bendOffset, 0.9)} 0.45,${halfWidth} z`;
-        break;
-      case 'diamond':
-        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
-        break;
-      case 'circle':
-        {
-          const radius = Math.max(Math.min(length, width) * 0.32, 1.2);
-          const centerX = Math.max(length - radius - 0.8, radius + 0.8);
-          refX = centerX + radius;
-          path = `M${centerX},${halfWidth - radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth + radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth - radius} z`;
-        }
-        break;
-      case 'bar':
-        path = `M${length},0 L${length},${width}`;
-        break;
-      case 'hooks':
-        path = `M${length},0.6 C${length * 0.62},0.6 ${length * 0.62},${Math.max(width - 0.6, 0.8)} ${length},${Math.max(width - 0.6, 0.8)} M${length * 0.55},0.6 C${Math.max(length * 0.18, 0.8)},0.6 ${Math.max(length * 0.18, 0.8)},${Math.max(width - 0.6, 0.8)} ${length * 0.55},${Math.max(width - 0.6, 0.8)}`;
-        break;
-      case 'bracket':
-        path = `M${length},0 L${length * 0.5},0 L${length * 0.5},${width} L${length},${width}`;
-        break;
-      case 'kite':
-        path = `M0,${halfWidth} L${length * 0.62},0 L${length},${halfWidth} L${length * 0.62},${width} z`;
-        break;
-      case 'square':
-        {
-          const side = Math.min(length, width);
-          const left = Math.max(length - side, 0);
-          path = `M${left},${halfWidth - side / 2} L${length},${halfWidth - side / 2} L${length},${halfWidth + side / 2} L${left},${halfWidth + side / 2} z`;
-        }
-        break;
-      case 'parenthesis':
-        path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
-        break;
-      case 'straight-barb':
-        path = bendsTip ? curvedOpenTipPath : `M0,0 L${length},${halfWidth} L0,${width}`;
-        break;
-    }
-
-    const geometry = {
-      markerWidth: (length + padding * 2) * shape.arrowScale,
-      markerHeight: (width + padding * 2) * shape.arrowScale,
-      viewBox: `${-padding} ${-padding} ${length + padding * 2} ${width + padding * 2}`,
-      refX,
-      refY: halfWidth,
-      path
-    };
-    this.arrowMarkerGeometryCache.set(shape, geometry);
-    return geometry;
+  arrowMarkerGeometry(shape: LineShape) {
+    return arrowMarkerGeometryUtil(shape);
   }
 
   lineEndpointVectors(
@@ -5075,16 +4924,7 @@ export class EditorPageComponent {
   }
 
   arrowMarkerFill(shape: LineShape): string {
-    return shape.arrowOpen ||
-      shape.arrowType === 'latex' ||
-      shape.arrowType === 'diamond' ||
-      shape.arrowType === 'bar' ||
-      shape.arrowType === 'hooks' ||
-      shape.arrowType === 'bracket' ||
-      shape.arrowType === 'parenthesis' ||
-      shape.arrowType === 'straight-barb'
-      ? 'none'
-      : shape.arrowColor;
+    return arrowMarkerFillUtil(shape);
   }
 
   arrowMarkerStrokeLineJoin(shape: LineShape): 'round' | 'miter' {
@@ -5437,21 +5277,11 @@ export class EditorPageComponent {
     this.ignoreNextShapeClickId.set(null);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
-    this.minimapPanPointerId.set(null);
     this.mobileLibraryPanelOpen.set(false);
     this.finishInspectorEditHistory();
   }
 
   handleWindowPointerMove(event: PointerEvent): void {
-    const minimapPanPointerId = this.minimapPanPointerId();
-    if (minimapPanPointerId === event.pointerId) {
-      const minimap = this.minimapOverview();
-      if (minimap) {
-        this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
-      }
-      return;
-    }
-
     const resizeState = this.sidebarResizeState();
     if (!resizeState) {
       return;
@@ -5487,7 +5317,6 @@ export class EditorPageComponent {
     this.sidebarResizeState.set(null);
     this.sidebarResizeMoved = false;
     this.sidebarResizeStartedFromToggle = false;
-    this.minimapPanPointerId.set(null);
   }
 
   handleFocusOut(event: FocusEvent): void {
@@ -5889,29 +5718,6 @@ export class EditorPageComponent {
       canvasSvg.releasePointerCapture(interactionState.pointerId);
     }
     this.interactionState.set(null);
-  }
-
-  private updateViewportFromMinimapPointer(clientX: number, clientY: number, minimap: MinimapOverview): void {
-    const target = this.document.elementFromPoint(clientX, clientY);
-    if (!(target instanceof SVGElement)) {
-      return;
-    }
-
-    const minimapSvg = target.closest('.minimap__svg');
-    if (!(minimapSvg instanceof SVGSVGElement)) {
-      return;
-    }
-
-    const rect = minimapSvg.getBoundingClientRect();
-    if (!rect.width || !rect.height) {
-      return;
-    }
-
-    const localX = ((clientX - rect.left) / rect.width) * minimap.viewBoxWidth;
-    const localY = ((clientY - rect.top) / rect.height) * minimap.viewBoxHeight;
-    const worldX = minimap.worldLeft + (localX - minimap.offsetX) / minimap.mapScale;
-    const worldY = minimap.worldTop - (localY - minimap.offsetY) / minimap.mapScale;
-    this.viewportCenter.set({ x: worldX, y: worldY });
   }
 
   private toScenePoint(clientX: number, clientY: number): Point {
@@ -6819,157 +6625,6 @@ export class EditorPageComponent {
 
   private buildLinePath(shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string {
     return buildLinePathUtil(shape, projectPoint);
-  }
-
-  private toMinimapShape(shape: CanvasShape, toMapX: (x: number) => number, toMapY: (y: number) => number, scale: number): MinimapShape {
-    const minimapStrokeWidth = (strokeWidth: number): number => Math.min(Math.max(strokeWidth * scale * 0.42, 0.16), 0.95);
-    switch (shape.kind) {
-      case 'line':
-        return {
-          kind: 'line',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
-          arrowStartPath: this.minimapArrowTipPath(shape, 'from', toMapX, toMapY),
-          arrowEndPath: this.minimapArrowTipPath(shape, 'to', toMapX, toMapY),
-          arrowFill: this.arrowMarkerFill(shape),
-          arrowStroke: shape.arrowColor,
-          arrowStrokeWidth: Math.max(minimapStrokeWidth(shape.strokeWidth), 0.28),
-          path: this.buildLinePath(shape, (point) => ({
-            x: toMapX(point.x),
-            y: toMapY(point.y)
-          }))
-        };
-      case 'rectangle':
-        return {
-          kind: 'rectangle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          x: toMapX(shape.x),
-          y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          rx: Math.max(effectiveRectangleCornerRadiusUtil(shape) * scale, 0.6)
-        };
-      case 'triangle':
-        return {
-          kind: 'triangle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          path: this.buildTrianglePath(
-            shape,
-            (point) => ({
-              x: toMapX(point.x),
-              y: toMapY(point.y)
-            }),
-            effectiveTriangleCornerRadiusUtil(shape) * scale
-          )
-        };
-      case 'circle':
-        return {
-          kind: 'circle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          cx: toMapX(shape.cx),
-          cy: toMapY(shape.cy),
-          r: Math.max(shape.r * scale, MINIMAP_MIN_RADIUS)
-        };
-      case 'ellipse':
-        return {
-          kind: 'ellipse',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          cx: toMapX(shape.cx),
-          cy: toMapY(shape.cy),
-          rx: Math.max(shape.rx * scale, MINIMAP_MIN_RADIUS),
-          ry: Math.max(shape.ry * scale, MINIMAP_MIN_RADIUS)
-        };
-      case 'text': {
-        const lines = this.displayTextLinesForShape(shape);
-        return {
-          kind: 'text',
-          stroke: 'transparent',
-          strokeWidth: 0,
-          fill: shape.color,
-          fillOpacity: shape.colorOpacity,
-          x: this.textRenderXAt(shape, toMapX, scale),
-          y: toMapY(shape.y),
-          lines,
-          fontSize: Math.max(shape.fontSize * scale, MINIMAP_MIN_TEXT_HEIGHT),
-          textAnchor: this.textAnchor(shape.textAlign),
-          fontWeight: shape.fontWeight,
-          fontStyle: shape.fontStyle,
-          textDecoration: shape.textDecoration,
-          transform: shape.rotation ? `rotate(${shape.rotation} ${toMapX(shape.x)} ${toMapY(shape.y)})` : null
-        };
-      }
-      case 'image':
-        return {
-          kind: 'image',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          x: toMapX(shape.x),
-          y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          opacity: shape.strokeOpacity,
-          href: shape.src
-        };
-    }
-  }
-
-  private minimapArrowTipPath(shape: LineShape, endpoint: LineEndpoint, toMapX: (x: number) => number, toMapY: (y: number) => number): string | undefined {
-    const points = this.lineArrowTipVisualPoints(shape, endpoint);
-    if (!points) {
-      return undefined;
-    }
-
-    return `${points
-      .map((point, index) => {
-        const command = index === 0 ? 'M' : 'L';
-        return `${command} ${toMapX(point.x)} ${toMapY(point.y)}`;
-      })
-      .join(' ')} Z`;
-  }
-
-  private lineArrowTipVisualPoints(shape: LineShape, endpoint: LineEndpoint): readonly Point[] | null {
-    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
-    if (!showsArrow) {
-      return null;
-    }
-
-    const points = this.linePoints(shape);
-    if (points.length < 2) {
-      return null;
-    }
-
-    const target = endpoint === 'from' ? shape.from : shape.to;
-    const adjacent = endpoint === 'from' ? points[1] : (points.at(-2) ?? shape.from);
-    const deltaX = target.x - adjacent.x;
-    const deltaY = target.y - adjacent.y;
-    const segmentLength = Math.hypot(deltaX, deltaY);
-    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
-      return null;
-    }
-
-    const unit = { x: deltaX / segmentLength, y: deltaY / segmentLength };
-    const normal = { x: -unit.y, y: unit.x };
-    const length = Math.min(this.arrowRenderedLength(shape) / this.preferences().scale, segmentLength * 0.6);
-    const halfWidth = this.arrowRenderedHalfWidth(shape) / this.preferences().scale;
-    const baseCenter = {
-      x: target.x - unit.x * length,
-      y: target.y - unit.y * length
-    };
-
-    return [
-      target,
-      { x: baseCenter.x + normal.x * halfWidth, y: baseCenter.y + normal.y * halfWidth },
-      { x: baseCenter.x - normal.x * halfWidth, y: baseCenter.y - normal.y * halfWidth }
-    ];
   }
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {

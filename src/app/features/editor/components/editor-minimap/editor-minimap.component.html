@@ -1,0 +1,137 @@
+@if (visible() && overview(); as minimap) {
+  <div
+    class="minimap"
+    [style.width.px]="frame().width"
+    [style.height.px]="frame().height"
+    (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
+    <svg
+      #minimapSvg
+      class="minimap__svg"
+      [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
+      (pointerdown)="startMinimapPan($event, minimap)"
+      aria-hidden="true">
+      @for (shape of minimap.shapes; track $index) {
+        @switch (shape.kind) {
+          @case ('line') {
+            <path
+              class="minimap__shape"
+              [attr.d]="shape.path"
+              fill="none"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
+            @if (shape.arrowStart) {
+              <path
+                class="minimap__shape"
+                [attr.d]="shape.arrowStart.path"
+                [attr.transform]="shape.arrowStart.transform"
+                [attr.fill]="shape.arrowStart.fill"
+                [attr.stroke]="shape.arrowStart.stroke"
+                [attr.stroke-width]="shape.arrowStart.strokeWidth"
+                [attr.stroke-linejoin]="shape.arrowStart.lineJoin"
+                [attr.stroke-linecap]="shape.arrowStart.lineCap"></path>
+            }
+            @if (shape.arrowEnd) {
+              <path
+                class="minimap__shape"
+                [attr.d]="shape.arrowEnd.path"
+                [attr.transform]="shape.arrowEnd.transform"
+                [attr.fill]="shape.arrowEnd.fill"
+                [attr.stroke]="shape.arrowEnd.stroke"
+                [attr.stroke-width]="shape.arrowEnd.strokeWidth"
+                [attr.stroke-linejoin]="shape.arrowEnd.lineJoin"
+                [attr.stroke-linecap]="shape.arrowEnd.lineCap"></path>
+            }
+          }
+          @case ('rectangle') {
+            <rect
+              class="minimap__shape"
+              [attr.x]="shape.x"
+              [attr.y]="shape.y"
+              [attr.width]="shape.width"
+              [attr.height]="shape.height"
+              [attr.rx]="shape.rx"
+              [attr.fill]="shape.fill"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"></rect>
+          }
+          @case ('triangle') {
+            <path
+              class="minimap__shape"
+              [attr.d]="shape.path"
+              [attr.fill]="shape.fill"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"></path>
+          }
+          @case ('circle') {
+            <circle
+              class="minimap__shape"
+              [attr.cx]="shape.cx"
+              [attr.cy]="shape.cy"
+              [attr.r]="shape.r"
+              [attr.fill]="shape.fill"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"></circle>
+          }
+          @case ('ellipse') {
+            <ellipse
+              class="minimap__shape"
+              [attr.cx]="shape.cx"
+              [attr.cy]="shape.cy"
+              [attr.rx]="shape.rx"
+              [attr.ry]="shape.ry"
+              [attr.fill]="shape.fill"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"></ellipse>
+          }
+          @case ('text') {
+            <text
+              class="minimap__shape minimap__shape--text"
+              [attr.x]="shape.x"
+              [attr.y]="shape.y"
+              [attr.fill]="shape.fill"
+              [attr.fill-opacity]="shape.fillOpacity"
+              [attr.font-size]="shape.fontSize"
+              [attr.font-weight]="shape.fontWeight"
+              [attr.font-style]="shape.fontStyle"
+              [attr.text-decoration]="shape.textDecoration"
+              [attr.text-anchor]="shape.textAnchor"
+              [attr.transform]="shape.transform">
+              @for (line of shape.lines; track $index) {
+                <tspan [attr.x]="shape.x" [attr.text-anchor]="shape.textAnchor" [attr.dy]="$index === 0 ? 0 : shape.fontSize * 1.14">
+                  {{ line }}
+                </tspan>
+              }
+            </text>
+          }
+          @case ('image') {
+            <image
+              class="minimap__shape"
+              [attr.x]="shape.x"
+              [attr.y]="shape.y"
+              [attr.width]="shape.width"
+              [attr.height]="shape.height"
+              [attr.opacity]="shape.opacity"
+              [attr.href]="shape.href"
+              preserveAspectRatio="xMidYMid meet"></image>
+            <rect
+              class="minimap__shape"
+              [attr.x]="shape.x"
+              [attr.y]="shape.y"
+              [attr.width]="shape.width"
+              [attr.height]="shape.height"
+              [attr.fill]="'none'"
+              [attr.stroke]="shape.stroke"
+              [attr.stroke-width]="shape.strokeWidth"></rect>
+          }
+        }
+      }
+      <rect
+        class="minimap__viewport"
+        [attr.x]="minimap.viewportRect.x"
+        [attr.y]="minimap.viewportRect.y"
+        [attr.width]="minimap.viewportRect.width"
+        [attr.height]="minimap.viewportRect.height"></rect>
+    </svg>
+  </div>
+}

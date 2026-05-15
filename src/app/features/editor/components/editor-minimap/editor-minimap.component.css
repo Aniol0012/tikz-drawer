@@ -1,0 +1,46 @@
+:host {
+  display: contents;
+}
+
+.minimap {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  padding: 6px;
+  border: 1px solid var(--tool-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-background) 96%, transparent);
+  box-shadow: var(--floating-shadow);
+}
+
+.minimap__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.minimap__shape {
+  vector-effect: non-scaling-stroke;
+}
+
+.minimap__shape--text {
+  opacity: 0.8;
+  font-family: Geist, Arial, sans-serif;
+}
+
+.minimap__viewport {
+  fill: transparent;
+  stroke: var(--app-foreground);
+  stroke-width: 1.4;
+}
+
+@media (max-width: 760px) {
+  .minimap {
+    display: none;
+  }
+}
