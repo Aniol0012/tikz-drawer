@@ -4777,6 +4777,20 @@ export class EditorPageComponent {
     }));
   }
 
+  lineArrowHitPath(shape: LineShape, endpoint: LineEndpoint): string | null {
+    const points = this.lineArrowTipHitPoints(shape, endpoint);
+    if (!points) {
+      return null;
+    }
+
+    return `${points
+      .map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command} ${this.toSvgX(point.x)} ${this.toSvgY(point.y)}`;
+      })
+      .join(' ')} Z`;
+  }
+
   triangleSvgPath(shape: TriangleCanvasShape): string {
     return this.buildTrianglePath(
       shape,
@@ -6664,8 +6678,71 @@ export class EditorPageComponent {
       points.slice(0, -1).some((point, index) => {
         const nextPoint = points[index + 1];
         return nextPoint ? this.segmentIntersectsBounds(point, nextPoint, expandedBounds) : false;
-      })
+      }) ||
+      this.lineArrowTipIntersectsBounds(shape, 'from', expandedBounds) ||
+      this.lineArrowTipIntersectsBounds(shape, 'to', expandedBounds)
     );
+  }
+
+  private lineArrowTipIntersectsBounds(shape: LineShape, endpoint: LineEndpoint, bounds: SelectionBounds): boolean {
+    const points = this.lineArrowTipHitPoints(shape, endpoint);
+    if (!points) {
+      return false;
+    }
+
+    const corners = [
+      { x: bounds.left, y: bounds.bottom },
+      { x: bounds.right, y: bounds.bottom },
+      { x: bounds.right, y: bounds.top },
+      { x: bounds.left, y: bounds.top }
+    ];
+
+    return (
+      points.some((point) => this.pointInsideBounds(point, bounds)) ||
+      corners.some((corner) => this.pointInPolygon(corner, points)) ||
+      points.some((point, index) => this.segmentIntersectsBounds(point, points[(index + 1) % points.length] as Point, bounds))
+    );
+  }
+
+  private lineArrowTipHitPoints(shape: LineShape, endpoint: LineEndpoint): readonly Point[] | null {
+    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
+    if (!showsArrow) {
+      return null;
+    }
+
+    const points = this.linePoints(shape);
+    if (points.length < 2) {
+      return null;
+    }
+
+    const target = endpoint === 'from' ? shape.from : shape.to;
+    const adjacent = endpoint === 'from' ? points[1] : (points.at(-2) ?? shape.from);
+    const deltaX = target.x - adjacent.x;
+    const deltaY = target.y - adjacent.y;
+    const segmentLength = Math.hypot(deltaX, deltaY);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
+      return null;
+    }
+
+    const unit = { x: deltaX / segmentLength, y: deltaY / segmentLength };
+    const normal = { x: -unit.y, y: unit.x };
+    const hitPadding = Math.max(this.lineHitStrokeWidth(shape.strokeWidth) / this.preferences().scale / 2, 0.06);
+    const length = Math.min(this.arrowRenderedLength(shape) / this.preferences().scale + hitPadding, segmentLength * 0.6);
+    const halfWidth = this.arrowRenderedHalfWidth(shape) / this.preferences().scale + hitPadding;
+    const tip = {
+      x: target.x + unit.x * hitPadding,
+      y: target.y + unit.y * hitPadding
+    };
+    const baseCenter = {
+      x: target.x - unit.x * length,
+      y: target.y - unit.y * length
+    };
+
+    return [
+      tip,
+      { x: baseCenter.x + normal.x * halfWidth, y: baseCenter.y + normal.y * halfWidth },
+      { x: baseCenter.x - normal.x * halfWidth, y: baseCenter.y - normal.y * halfWidth }
+    ];
   }
 
   private pointInsideBounds(point: Point, bounds: SelectionBounds): boolean {
@@ -6705,6 +6782,23 @@ export class EditorPageComponent {
     const secondDirectionStart = direction(secondStart, secondEnd, firstStart);
     const secondDirectionEnd = direction(secondStart, secondEnd, firstEnd);
     return firstDirectionStart * firstDirectionEnd <= 0 && secondDirectionStart * secondDirectionEnd <= 0;
+  }
+
+  private pointInPolygon(point: Point, polygon: readonly Point[]): boolean {
+    let inside = false;
+    for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index, index += 1) {
+      const current = polygon[index] as Point;
+      const previous = polygon[previousIndex] as Point;
+      const crossesY = current.y > point.y !== previous.y > point.y;
+      if (!crossesY) {
+        continue;
+      }
+      const intersectionX = ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y) + current.x;
+      if (point.x < intersectionX) {
+        inside = !inside;
+      }
+    }
+    return inside;
   }
 
   private computeBounds(shapes: readonly CanvasShape[]): SelectionBounds | null {

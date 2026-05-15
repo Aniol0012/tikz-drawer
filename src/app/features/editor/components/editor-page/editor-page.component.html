@@ -372,6 +372,12 @@
                     [attr.d]="lineSvgPath(shape)"
                     [attr.stroke-width]="lineHitStrokeWidth(shape.strokeWidth)"
                     fill="none"></path>
+                  @if (lineArrowHitPath(shape, 'from'); as arrowStartHitPath) {
+                    <path class="line-arrow-hit-target" [attr.d]="arrowStartHitPath"></path>
+                  }
+                  @if (lineArrowHitPath(shape, 'to'); as arrowEndHitPath) {
+                    <path class="line-arrow-hit-target" [attr.d]="arrowEndHitPath"></path>
+                  }
                   <path
                     [attr.d]="lineSvgPath(shape)"
                     [attr.stroke]="shape.stroke"
@@ -1245,6 +1251,7 @@
                               [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              data-tooltip-disabled
                               (click)="setLineArrowType(arrowType.id)">
                               <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>

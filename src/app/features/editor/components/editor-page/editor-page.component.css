@@ -1203,6 +1203,12 @@ kbd {
   pointer-events: stroke;
 }
 
+.shape-layer .line-arrow-hit-target {
+  stroke: transparent;
+  fill: transparent;
+  pointer-events: all;
+}
+
 .shape-layer text {
   font-family: var(--font-sans);
   dominant-baseline: middle;
