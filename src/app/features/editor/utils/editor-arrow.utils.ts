@@ -1,4 +1,10 @@
-import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH, DEFAULT_EDITOR_SCALE, MIN_RENDER_STROKE_WIDTH, SHAPE_STROKE_SCALE_FACTOR } from '../constants/editor.constants';
+import {
+  DEFAULT_ARROW_TIP_LENGTH,
+  DEFAULT_ARROW_TIP_WIDTH,
+  DEFAULT_EDITOR_SCALE,
+  MIN_RENDER_STROKE_WIDTH,
+  SHAPE_STROKE_SCALE_FACTOR
+} from '../constants/editor.constants';
 import type { ArrowMarkerGeometry, LineShape } from '../models/tikz.models';
 
 export const renderedStrokeWidthForScale = (strokeWidth: number, scale: number): number =>
@@ -14,7 +20,8 @@ export const arrowTipLength = (shape: LineShape): number => DEFAULT_ARROW_TIP_LE
 
 export const arrowTipWidth = (shape: LineShape): number => DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale;
 
-export const arrowRenderedLength = (shape: LineShape, scale: number): number => arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, scale) * shape.arrowScale;
+export const arrowRenderedLength = (shape: LineShape, scale: number): number =>
+  arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, scale) * shape.arrowScale;
 
 export const arrowRenderedHalfWidth = (shape: LineShape, scale: number): number =>
   (arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, scale) * shape.arrowScale;

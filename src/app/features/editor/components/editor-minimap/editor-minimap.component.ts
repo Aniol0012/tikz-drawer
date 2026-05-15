@@ -11,7 +11,13 @@ import {
 import type { CanvasShape, LineShape, LineStrokeStyle, Point, TextAlign, TextShape } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
 import { arrowMarkerFill, arrowMarkerGeometry, zoomScaledArrowStrokeWidth } from '../../utils/editor-arrow.utils';
-import { buildLinePath, buildTrianglePath, computeBounds, effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from '../../utils/editor-geometry.utils';
+import {
+  buildLinePath,
+  buildTrianglePath,
+  computeBounds,
+  effectiveRectangleCornerRadius,
+  effectiveTriangleCornerRadius
+} from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
 
 type SvgTextAnchor = 'start' | 'middle' | 'end';
