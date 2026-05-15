@@ -9,7 +9,7 @@ export interface ArrowTipOptionDescriptor {
 }
 
 const ARROW_TIP_IDS = [
-  'latex',
+  'straight-barb',
   'triangle',
   'stealth',
   'diamond',
@@ -19,8 +19,7 @@ const ARROW_TIP_IDS = [
   'bracket',
   'kite',
   'square',
-  'parenthesis',
-  'straight-barb'
+  'parenthesis'
 ] as const satisfies readonly ArrowTipKind[];
 
 const arrowTipLabelKey = (arrowType: ArrowTipKind): string => {
@@ -77,7 +76,7 @@ const arrowTipIconName = (arrowType: ArrowTipKind): Parameters<typeof getIconPat
     case 'parenthesis':
       return 'arrowTipParenthesis';
     case 'straight-barb':
-      return 'arrowTipStraightBarb';
+      return 'arrowTipLatex';
   }
 };
 

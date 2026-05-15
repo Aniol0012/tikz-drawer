@@ -248,7 +248,9 @@ const arrowTipName = (arrowType: ArrowTipKind): string => {
 
 const arrowTipSpec = (shape: LineShape): string => {
   const options = [`color=${shape.arrowColor}`];
-  if (
+  if (shape.arrowType === 'latex') {
+    options.push('open');
+  } else if (
     shape.arrowType === 'bar' ||
     shape.arrowType === 'hooks' ||
     shape.arrowType === 'bracket' ||
@@ -268,11 +270,11 @@ const arrowTipSpec = (shape: LineShape): string => {
     `length=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_LENGTH, shape, shape.arrowLengthScale))}pt`,
     `width=${formatNumber(arrowDimensionPt(DEFAULT_ARROW_TIP_WIDTH, shape, shape.arrowWidthScale))}pt`
   );
-  if (shape.arrowBendMode === 'flex') {
+  if (supportsArrowBending(shape) && shape.arrowBendMode === 'flex') {
     options.push('flex');
-  } else if (shape.arrowBendMode === 'flex-prime') {
+  } else if (supportsArrowBending(shape) && shape.arrowBendMode === 'flex-prime') {
     options.push("flex'");
-  } else if (shape.arrowBendMode === 'bend') {
+  } else if (supportsArrowBending(shape) && shape.arrowBendMode === 'bend') {
     options.push('bend');
   }
   return `{${arrowTipName(shape.arrowType)}[${options.join(', ')}]}`;
@@ -280,11 +282,15 @@ const arrowTipSpec = (shape: LineShape): string => {
 
 const isStrokedArrowTip = (shape: LineShape): boolean =>
   shape.arrowOpen ||
+  shape.arrowType === 'latex' ||
   shape.arrowType === 'bar' ||
   shape.arrowType === 'hooks' ||
   shape.arrowType === 'bracket' ||
   shape.arrowType === 'parenthesis' ||
   shape.arrowType === 'straight-barb';
+
+const supportsArrowBending = (shape: LineShape): boolean =>
+  shape.arrowType === 'straight-barb' || shape.arrowType === 'triangle' || shape.arrowType === 'latex' || shape.arrowType === 'stealth';
 
 const transparentArrowEntries = (shape: LineShape): string[] => {
   const entries = [`draw=${shape.arrowColor}`, `line width=${formatNumber(shape.strokeWidth)}pt`, `fill opacity=${formatNumber(shape.arrowOpacity)}`];
@@ -487,7 +493,9 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
   const imports = [
     String.raw`\usepackage{tikz}`,
     ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? [String.raw`\usetikzlibrary{arrows.meta}`] : []),
-    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none') ? [String.raw`\usetikzlibrary{bending}`] : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none' && supportsArrowBending(shape))
+      ? [String.raw`\usetikzlibrary{bending}`]
+      : []),
     ...(scene.shapes.some((shape) => shape.kind === 'image') ? [String.raw`\usepackage{graphicx}`] : []),
     ...(context.colorMode === 'define-colors'
       ? Array.from(context.colorMap.entries()).map(([hex, name]) => String.raw`\definecolor{${name}}{HTML}{${hex}}`)

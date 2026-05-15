@@ -75,7 +75,6 @@ import {
   LINE_LOOSELY_DASHED_PATTERN,
   MIN_IMAGE_DIMENSION,
   MIN_POINTER_DRAG_DELTA,
-  MIN_RENDER_STROKE_WIDTH,
   MIN_SHAPE_DIMENSION,
   MIN_TEXT_BOX_WIDTH,
   MIN_TEXT_FONT_SIZE,
@@ -86,7 +85,6 @@ import {
   MINIMAP_MIN_TEXT_HEIGHT,
   OPACITY_MAX,
   OPACITY_MIN,
-  SHAPE_STROKE_SCALE_FACTOR,
   SLIDER_DECIMAL_PLACES,
   TEXT_DOUBLE_TAP_WINDOW_MS,
   TEXT_MIN_HEIGHT_FACTOR
@@ -160,6 +158,7 @@ import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
 import { AiPanelComponent } from '../ai-panel/ai-panel.component';
+import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
@@ -235,6 +234,7 @@ import {
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
+import { arrowMarkerViewportScale, renderedStrokeWidthForScale, zoomScaledArrowStrokeWidth } from '../../utils/editor-arrow.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
   ArrowMarkerGeometry,
@@ -295,6 +295,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     GraphDialogComponent,
     FigureSearchOverlayComponent,
     AiPanelComponent,
+    ImportReplaceDialogComponent,
     AppSelectComponent,
     ToggleFieldComponent,
     EditorTranslatePipe
@@ -341,6 +342,7 @@ export class EditorPageComponent {
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
   readonly layersSection = viewChild<ElementRef<HTMLElement>>('layersSection');
   readonly rightSidebar = viewChild(EditorRightSidebarComponent);
+  readonly importReplaceDialog = viewChild.required(ImportReplaceDialogComponent);
 
   readonly appVersion = packageManifest.version;
   readonly editorApi = this;
@@ -533,10 +535,10 @@ export class EditorPageComponent {
     { value: 'curved', label: this.t('lineModeCurved'), iconPath: 'M5 16C8 7 16 17 19 8' }
   ]);
   readonly arrowBendModeSelectOptions = computed<readonly AppSelectOption[]>(() => [
-    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M5 12h14' },
-    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M5 15C9 7 15 7 19 15' },
-    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M5 9C9 17 15 17 19 9' },
-    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M5 16Q12 5 19 16' }
+    { value: 'none', label: this.t('arrowBendNone'), iconPath: 'M4 12h16' },
+    { value: 'flex', label: this.t('arrowBendFlex'), iconPath: 'M4 16C8 7 16 7 20 16' },
+    { value: 'flex-prime', label: this.t('arrowBendFlexPrime'), iconPath: 'M4 8C8 17 16 17 20 8' },
+    { value: 'bend', label: this.t('arrowBendBend'), iconPath: 'M4 16Q12 4 20 16' }
   ]);
   readonly templateIconOptions = [
     'pencil',
@@ -2370,6 +2372,29 @@ export class EditorPageComponent {
   }
 
   applyImportDialogResult(result: ImportDialogResult): void {
+    if (result.clearScene === true && this.scene().shapes.length > 0) {
+      this.importModalOpen.set(false);
+      this.importReplaceDialog().requestImportReplacement(result);
+      return;
+    }
+
+    this.applyImportDialogResultConfirmed(result);
+  }
+
+  handleImportReplacementCancelled(): void {
+    this.importModalOpen.set(true);
+  }
+
+  handleShareReplacementCancelled(): void {
+    this.clearSharedSceneFromUrl();
+  }
+
+  applySharedSceneStateConfirmed(sharedState: SharedScenePayload): void {
+    this.applySharedSceneState(sharedState);
+    this.clearSharedSceneFromUrl();
+  }
+
+  applyImportDialogResultConfirmed(result: ImportDialogResult): void {
     this.runSceneMutation(() => {
       this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true);
       this.viewportCenter.set({ x: 0, y: 0 });
@@ -2847,8 +2872,17 @@ export class EditorPageComponent {
   }
 
   setLineArrowType(value: string): void {
+    const arrowType = value as ArrowTipKind;
     this.patchInspectorSelection((shape) =>
-      shape.kind === 'line' ? ({ ...shape, arrowType: value as ArrowTipKind, arrowOpen: false, arrowRound: false } as LineShape) : shape
+      shape.kind === 'line'
+        ? ({
+            ...shape,
+            arrowType,
+            arrowOpen: false,
+            arrowRound: false,
+            arrowBendMode: this.arrowTipSupportsBending(arrowType) ? shape.arrowBendMode : 'none'
+          } as LineShape)
+        : shape
     );
   }
 
@@ -2859,7 +2893,8 @@ export class EditorPageComponent {
             ...shape,
             lineMode: value,
             anchors:
-              value === 'curved' && shape.anchors.length === 0 ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }] : shape.anchors
+              value === 'curved' && shape.anchors.length === 0 ? [{ x: (shape.from.x + shape.to.x) / 2, y: (shape.from.y + shape.to.y) / 2 }] : shape.anchors,
+            arrowBendMode: value === 'curved' && shape.arrowBendMode === 'none' && this.arrowTipSupportsBending(shape.arrowType) ? 'flex' : shape.arrowBendMode
           } as LineShape)
         : shape
     );
@@ -4288,7 +4323,7 @@ export class EditorPageComponent {
   }
 
   scaledStrokeWidth(strokeWidth: number): number {
-    return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+    return renderedStrokeWidthForScale(strokeWidth, this.preferences().scale);
   }
 
   lineStrokeDashArray(shape: LineShape): string | null {
@@ -4390,6 +4425,10 @@ export class EditorPageComponent {
 
   arrowTipLabel(arrowType: ArrowTipKind): string {
     return this.t(this.arrowTipOptions.find((option) => option.id === arrowType)?.labelKey ?? 'arrowTypeLatex');
+  }
+
+  arrowTipSupportsBending(arrowType: ArrowTipKind): boolean {
+    return arrowType === 'straight-barb' || arrowType === 'triangle' || arrowType === 'latex' || arrowType === 'stealth';
   }
 
   selectionOutline(): {
@@ -4834,15 +4873,23 @@ export class EditorPageComponent {
   }
 
   arrowMarkerId(shape: LineShape, side: ArrowEndpoint): string {
-    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${side}`;
+    return `${shape.id}-${shape.arrowType}-${shape.arrowOpen ? 'open' : 'fill'}-${shape.arrowRound ? 'round' : 'sharp'}-${shape.arrowScale}-${shape.arrowLengthScale}-${shape.arrowWidthScale}-${shape.lineMode}-${shape.arrowBendMode}-${side}`;
   }
 
   arrowMarkerWidth(shape: LineShape): number {
     return this.arrowMarkerGeometry(shape).markerWidth;
   }
 
+  arrowCanvasMarkerWidth(shape: LineShape): number {
+    return this.arrowMarkerWidth(shape) * arrowMarkerViewportScale(shape.strokeWidth, this.preferences().scale);
+  }
+
   arrowMarkerHeight(shape: LineShape): number {
     return this.arrowMarkerGeometry(shape).markerHeight;
+  }
+
+  arrowCanvasMarkerHeight(shape: LineShape): number {
+    return this.arrowMarkerHeight(shape) * arrowMarkerViewportScale(shape.strokeWidth, this.preferences().scale);
   }
 
   arrowMarkerViewBox(shape: LineShape): string {
@@ -4874,11 +4921,11 @@ export class EditorPageComponent {
   }
 
   arrowRenderedLength(shape: LineShape): number {
-    return this.arrowTipLength(shape) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+    return this.arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
   }
 
   arrowRenderedHalfWidth(shape: LineShape): number {
-    return (this.arrowTipWidth(shape) / 2) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+    return (this.arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
   }
 
   arrowMarkerGeometry(shape: LineShape): ArrowMarkerGeometry {
@@ -4891,18 +4938,30 @@ export class EditorPageComponent {
     const width = this.arrowTipWidth(shape);
     const halfWidth = width / 2;
     const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
+    const bendsTip = shape.lineMode === 'curved' && shape.arrowBendMode !== 'none';
+    const bendOffset =
+      shape.arrowBendMode === 'flex'
+        ? halfWidth * 0.32
+        : shape.arrowBendMode === 'flex-prime'
+          ? -halfWidth * 0.32
+          : shape.arrowBendMode === 'bend'
+            ? halfWidth * 0.52
+            : 0;
+    const bendControlX = shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46;
+    const curvedOpenTipPath = `M0,0 Q${bendControlX},${Math.max(0.1, halfWidth * 0.18 + bendOffset)} ${length},${halfWidth} Q${bendControlX},${Math.max(0.9, width - halfWidth * 0.18 + bendOffset)} 0,${width}`;
+    const curvedFilledTipPath = `${curvedOpenTipPath} z`;
     let refX = length;
     let path = '';
 
     switch (shape.arrowType) {
       case 'triangle':
-        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
+        path = bendsTip ? curvedFilledTipPath : `M0,0 L0,${width} L${length},${halfWidth} z`;
         break;
       case 'latex':
-        path = `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
+        path = bendsTip ? curvedOpenTipPath : `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
         break;
       case 'stealth':
-        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18, 0.9)} 0.45,${halfWidth} z`;
+        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18 + bendOffset, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18 + bendOffset, 0.9)} 0.45,${halfWidth} z`;
         break;
       case 'diamond':
         path = `M0,0 L0,${width} L${length},${halfWidth} z`;
@@ -4938,7 +4997,7 @@ export class EditorPageComponent {
         path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
         break;
       case 'straight-barb':
-        path = `M0,0 L${length},${halfWidth} L0,${width} M0,${halfWidth} L${length},${halfWidth}`;
+        path = bendsTip ? curvedOpenTipPath : `M0,0 L${length},${halfWidth} L0,${width}`;
         break;
     }
 
@@ -4988,13 +5047,15 @@ export class EditorPageComponent {
     const offset = { x: point.x - targetPoint.x, y: point.y - targetPoint.y };
     const alongPixels = Math.max(-(offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
     const acrossPixels = Math.abs((offset.x * normal.x + offset.y * normal.y) * this.preferences().scale);
-    const strokeUnit = Math.max(this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale, 0.5);
+    const strokeUnit = Math.max(zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale, 0.5);
+    const controlScaleMin = 0.45;
+    const controlScaleMax = 8;
 
     if (kind === 'length') {
-      return Math.min(3.6, Math.max(0.45, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
+      return Math.min(controlScaleMax, Math.max(controlScaleMin, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
     }
 
-    return Math.min(3.6, Math.max(0.45, (acrossPixels * 2) / (DEFAULT_ARROW_TIP_WIDTH * strokeUnit)));
+    return Math.min(controlScaleMax, Math.max(controlScaleMin, (acrossPixels * 2) / (DEFAULT_ARROW_TIP_WIDTH * strokeUnit)));
   }
 
   arrowMarkerFill(shape: LineShape): string {
@@ -5294,6 +5355,7 @@ export class EditorPageComponent {
       { isOpen: () => this.importModalOpen(), close: () => this.closeImportModal() },
       { isOpen: () => this.exportModalOpen(), close: () => this.closeExportModal() },
       { isOpen: () => !!this.sceneReplaceDialog(), close: () => this.closeSceneReplaceDialog() },
+      { isOpen: () => this.importReplaceDialog().isOpen(), close: () => this.importReplaceDialog().close() },
       { isOpen: () => this.fileMenuOpen(), close: () => this.closeFileMenu() },
       { isOpen: () => this.mobileLibraryPanelOpen(), close: () => this.closeMobileLibraryPanel() },
       { isOpen: () => !!this.contextMenu(), close: () => this.closeContextMenu() }
@@ -5678,12 +5740,21 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.scene().shapes.length > 0) {
+      this.importReplaceDialog().requestSharedReplacement(sharedState);
+      return;
+    }
+
+    this.applySharedSceneState(sharedState);
+    this.clearSharedSceneFromUrl();
+  }
+
+  private applySharedSceneState(sharedState: SharedScenePayload): void {
     this.store.restoreSharedState(sharedState);
     this.viewportCenter.set(sharedState.viewportCenter ?? { x: 0, y: 0 });
     if (sharedState.latexExportConfig) {
       this.configuration.setLatexExportConfig(sharedState.latexExportConfig);
     }
-    this.clearSharedSceneFromUrl();
   }
 
   private clearSharedSceneFromUrl(): void {
@@ -6989,6 +7060,7 @@ export class EditorPageComponent {
       !!this.regularPolygonDialogState() ||
       !!this.graphDialogState() ||
       !!this.sceneReplaceDialog() ||
+      this.importReplaceDialog().isOpen() ||
       !!this.contextMenu() ||
       this.textSymbolPaletteOpen()
     );

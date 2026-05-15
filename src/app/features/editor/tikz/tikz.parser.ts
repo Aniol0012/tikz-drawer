@@ -629,6 +629,32 @@ const textAlignFromAnchor = (anchor: string): TextShape['textAlign'] => {
   return 'center';
 };
 
+const parseTextNodeContent = (
+  rawText: string
+): {
+  readonly text: string;
+  readonly fontWeight: TextShape['fontWeight'];
+  readonly fontStyle: TextShape['fontStyle'];
+  readonly textDecoration: TextShape['textDecoration'];
+} => {
+  const trimmedText = removeOuterBraces(rawText.trim());
+  const fontWeight = trimmedText.includes(String.raw`\bfseries`) ? 'bold' : 'normal';
+  const fontStyle = trimmedText.includes(String.raw`\itshape`) ? 'italic' : 'normal';
+  const textDecoration = trimmedText.includes(String.raw`\underline{`) ? 'underline' : 'none';
+  const textWithoutFontCommands = trimmedText
+    .replaceAll(String.raw`\bfseries`, '')
+    .replaceAll(String.raw`\itshape`, '')
+    .trim();
+  const underlineMatch = /^\\underline\{(?<text>.*)\}$/.exec(textWithoutFontCommands);
+
+  return {
+    text: (underlineMatch?.groups?.['text'] ?? textWithoutFontCommands).trim(),
+    fontWeight,
+    fontStyle,
+    textDecoration
+  };
+};
+
 const parseNode = (line: string): CanvasShape | null => {
   const match = TEXT_NODE_PATTERN.exec(line);
 
@@ -645,6 +671,7 @@ const parseNode = (line: string): CanvasShape | null => {
   const styles = parseStyleMap(match.groups['styles']);
   const scale = Number.parseFloat(styles['scale'] ?? '1') || 1;
   const anchor = styles['anchor'] ?? 'center';
+  const textContent = parseTextNodeContent(match.groups['text']);
 
   const shape: TextShape = {
     id: createId(),
@@ -655,15 +682,15 @@ const parseNode = (line: string): CanvasShape | null => {
     strokeWidth: 0,
     x: point.x,
     y: point.y,
-    text: match.groups['text'].trim(),
+    text: textContent.text,
     textBox: /text width=/.test(match.groups['styles'] ?? ''),
     boxWidth: Number.parseFloat((styles['text width'] ?? DEFAULT_TEXT_BOX_WIDTH.toString()).replaceAll('cm', '').trim()) || DEFAULT_TEXT_BOX_WIDTH,
     fontSize: DEFAULT_TEXT_FONT_SIZE * scale,
     color: normalizeTikzColor(styles['text'], '#0f172a'),
     colorOpacity: styleOpacity(styles, 'text opacity'),
-    fontWeight: match.groups['text'].includes(String.raw`\bfseries`) ? 'bold' : 'normal',
-    fontStyle: match.groups['text'].includes(String.raw`\itshape`) ? 'italic' : 'normal',
-    textDecoration: match.groups['text'].includes(String.raw`\underline{`) ? 'underline' : 'none',
+    fontWeight: textContent.fontWeight,
+    fontStyle: textContent.fontStyle,
+    textDecoration: textContent.textDecoration,
     textAlign: textAlignFromAnchor(anchor),
     rotation: styleRotation(styles)
   };
