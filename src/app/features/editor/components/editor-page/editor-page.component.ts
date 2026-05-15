@@ -75,7 +75,6 @@ import {
   LINE_LOOSELY_DASHED_PATTERN,
   MIN_IMAGE_DIMENSION,
   MIN_POINTER_DRAG_DELTA,
-  MIN_RENDER_STROKE_WIDTH,
   MIN_SHAPE_DIMENSION,
   MIN_TEXT_BOX_WIDTH,
   MIN_TEXT_FONT_SIZE,
@@ -86,7 +85,6 @@ import {
   MINIMAP_MIN_TEXT_HEIGHT,
   OPACITY_MAX,
   OPACITY_MIN,
-  SHAPE_STROKE_SCALE_FACTOR,
   SLIDER_DECIMAL_PLACES,
   TEXT_DOUBLE_TAP_WINDOW_MS,
   TEXT_MIN_HEIGHT_FACTOR
@@ -232,6 +230,7 @@ import {
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
+import { arrowMarkerViewportScale, renderedStrokeWidthForScale, zoomScaledArrowStrokeWidth } from '../../utils/editor-arrow.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
   ArrowMarkerGeometry,
@@ -4273,7 +4272,7 @@ export class EditorPageComponent {
   }
 
   scaledStrokeWidth(strokeWidth: number): number {
-    return Math.max(strokeWidth * this.preferences().scale * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
+    return renderedStrokeWidthForScale(strokeWidth, this.preferences().scale);
   }
 
   lineStrokeDashArray(shape: LineShape): string | null {
@@ -4826,8 +4825,16 @@ export class EditorPageComponent {
     return this.arrowMarkerGeometry(shape).markerWidth;
   }
 
+  arrowCanvasMarkerWidth(shape: LineShape): number {
+    return this.arrowMarkerWidth(shape) * arrowMarkerViewportScale(shape.strokeWidth, this.preferences().scale);
+  }
+
   arrowMarkerHeight(shape: LineShape): number {
     return this.arrowMarkerGeometry(shape).markerHeight;
+  }
+
+  arrowCanvasMarkerHeight(shape: LineShape): number {
+    return this.arrowMarkerHeight(shape) * arrowMarkerViewportScale(shape.strokeWidth, this.preferences().scale);
   }
 
   arrowMarkerViewBox(shape: LineShape): string {
@@ -4859,11 +4866,11 @@ export class EditorPageComponent {
   }
 
   arrowRenderedLength(shape: LineShape): number {
-    return this.arrowTipLength(shape) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+    return this.arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
   }
 
   arrowRenderedHalfWidth(shape: LineShape): number {
-    return (this.arrowTipWidth(shape) / 2) * this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale;
+    return (this.arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
   }
 
   arrowMarkerGeometry(shape: LineShape): ArrowMarkerGeometry {
@@ -4973,7 +4980,7 @@ export class EditorPageComponent {
     const offset = { x: point.x - targetPoint.x, y: point.y - targetPoint.y };
     const alongPixels = Math.max(-(offset.x * unit.x + offset.y * unit.y) * this.preferences().scale, 4);
     const acrossPixels = Math.abs((offset.x * normal.x + offset.y * normal.y) * this.preferences().scale);
-    const strokeUnit = Math.max(this.scaledStrokeWidth(shape.strokeWidth) * shape.arrowScale, 0.5);
+    const strokeUnit = Math.max(zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale, 0.5);
 
     if (kind === 'length') {
       return Math.min(3.6, Math.max(0.45, alongPixels / (DEFAULT_ARROW_TIP_LENGTH * strokeUnit)));
