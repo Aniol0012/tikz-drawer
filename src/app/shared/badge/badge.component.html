@@ -3,13 +3,13 @@
     [class]="classes()"
     type="button"
     [disabled]="disabled()"
-    [title]="title() || null"
-    [attr.aria-label]="ariaLabel() || null"
+    [title]="title()"
+    [attr.aria-label]="ariaLabel()"
     (click)="onClick($event)">
     <ng-container [ngTemplateOutlet]="badgeContent"></ng-container>
   </button>
 } @else {
-  <span [class]="classes()" [title]="title() || null" [attr.aria-label]="ariaLabel() || null">
+  <span [class]="classes()" [title]="title()" [attr.aria-label]="ariaLabel()">
     <ng-container [ngTemplateOutlet]="badgeContent"></ng-container>
   </span>
 }
