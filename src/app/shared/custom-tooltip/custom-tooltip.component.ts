@@ -50,6 +50,12 @@ export class CustomTooltipComponent {
 
   @HostListener('document:pointerover', ['$event'])
   onPointerOver(event: PointerEvent): void {
+    const disabledTarget = this.disabledTooltipTarget(event.target);
+    if (disabledTarget) {
+      this.suppressTooltip(disabledTarget);
+      return;
+    }
+
     const target = this.tooltipTarget(event.target);
     if (!target) {
       return;
@@ -76,6 +82,12 @@ export class CustomTooltipComponent {
 
   @HostListener('document:focusin', ['$event'])
   onFocusIn(event: FocusEvent): void {
+    const disabledTarget = this.disabledTooltipTarget(event.target);
+    if (disabledTarget) {
+      this.suppressTooltip(disabledTarget);
+      return;
+    }
+
     const target = this.tooltipTarget(event.target);
     if (!target) {
       return;
@@ -132,6 +144,16 @@ export class CustomTooltipComponent {
     }
 
     this.showHandle = setTimeout(show, TOOLTIP_SHOW_DELAY_MS);
+  }
+
+  private suppressTooltip(target: HTMLElement): void {
+    this.clearTimers();
+    this.disconnectMutationObserver();
+    this.clearPositionHandle();
+    this.restoreTitle(this.activeTarget);
+    this.activeTarget = target;
+    this.removeNativeTitle(target);
+    this.tooltip.set(null);
   }
 
   private show(target: HTMLElement): void {
@@ -213,13 +235,13 @@ export class CustomTooltipComponent {
       return null;
     }
 
+    if (this.disabledTooltipTarget(target)) {
+      return null;
+    }
+
     const explicitCandidate = target.closest<HTMLElement>('[data-tooltip]');
     if (explicitCandidate && !explicitCandidate.closest('app-custom-tooltip')) {
       return this.tooltipText(explicitCandidate) ? explicitCandidate : null;
-    }
-
-    if (target.closest('[data-tooltip-disabled]')) {
-      return null;
     }
 
     if (this.isNativeControlEventTarget(target) || this.isShoelaceDropdownTarget(target)) {
@@ -232,6 +254,15 @@ export class CustomTooltipComponent {
     }
 
     return this.tooltipText(candidate) ? candidate : null;
+  }
+
+  private disabledTooltipTarget(target: EventTarget | null): HTMLElement | null {
+    if (!(target instanceof Element)) {
+      return null;
+    }
+
+    const candidate = target.closest<HTMLElement>('[data-tooltip-disabled]');
+    return candidate && !candidate.closest('app-custom-tooltip') ? candidate : null;
   }
 
   private isNativeControlEventTarget(target: EventTarget | null): boolean {
