@@ -5,8 +5,7 @@ import {
   type ChatCompletionChunk,
   type CompletionUsage,
   type InitProgressReport,
-  type MLCEngineInterface,
-  WebWorkerMLCEngine
+  type MLCEngineInterface
 } from '@mlc-ai/web-llm';
 import type { AiProviderRequest, AiProviderTextResult, AiProviderUsage } from './ai-provider-result.model';
 import type { LocalAiStatus } from './local-ai-status.model';
@@ -19,7 +18,6 @@ const WEB_LLM_MAX_CONTEXT_ELEMENTS = 12;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
-let serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
 let preloadStarted = false;
 
 export function preloadWebLlmLocalAi(): void {
@@ -28,7 +26,7 @@ export function preloadWebLlmLocalAi(): void {
   }
 
   preloadStarted = true;
-  void ensureEngine(preloadModelName());
+  void ensureEngine(preloadModelName()).catch((error) => logWebLlm('preload:failed', { error: errorMessage(error) }));
 }
 
 @Injectable({ providedIn: 'root' })
@@ -46,7 +44,7 @@ export class WebLlmLocalAiProvider {
       const modelName = this.aiSettingsService.settings().webLlmModel;
       if (this.status().supported && this.autoRequestedModel !== modelName) {
         this.autoRequestedModel = modelName;
-        void ensureEngine(modelName);
+        void ensureEngine(modelName).catch((error) => logWebLlm('settings-preload:failed', { error: errorMessage(error) }));
       }
     });
   }
@@ -278,13 +276,7 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
   patchStatus({ loadingState: 'loading', modelName, progress: 0, progressText: 'Preparing local model...', error: '' });
 
   try {
-    const engine = await createPersistentEngine(modelName).catch((error) => {
-      logWebLlm('service-worker:fallback-to-web-worker', { error: error instanceof Error ? error.message : String(error) });
-      return CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
-        appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
-        initProgressCallback: updateProgress
-      });
-    });
+    const engine = await createBrowserWorkerEngine(modelName);
 
     patchStatus({
       installed: true,
@@ -306,59 +298,10 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
   }
 }
 
-async function createPersistentEngine(modelName: string): Promise<MLCEngineInterface> {
-  const registration = await registerWebLlmServiceWorker();
-  const engine = new WebWorkerMLCEngine(new RegisteredServiceWorkerBridge(registration), {
+async function createBrowserWorkerEngine(modelName: string): Promise<MLCEngineInterface> {
+  return await CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
     appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
     initProgressCallback: updateProgress
-  });
-  await engine.reload(modelName);
-  logWebLlm('service-worker:ready', { model: modelName, scope: registration.scope });
-  return engine;
-}
-
-async function registerWebLlmServiceWorker(): Promise<ServiceWorkerRegistration> {
-  if (!canUseWebLlmServiceWorker()) {
-    throw new Error('WebLLM persistent service worker is not available.');
-  }
-
-  serviceWorkerRegistrationPromise ??= navigator.serviceWorker
-    .register('/web-llm.service-worker.js', {
-      type: 'module',
-      scope: './webllm/'
-    })
-    .then(async (registration) => {
-      await navigator.serviceWorker.ready;
-      await waitForActiveServiceWorker(registration);
-      return registration;
-    });
-
-  return await serviceWorkerRegistrationPromise;
-}
-
-function canUseWebLlmServiceWorker(): boolean {
-  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined' && window.isSecureContext;
-}
-
-async function waitForActiveServiceWorker(registration: ServiceWorkerRegistration): Promise<void> {
-  if (registration.active) {
-    return;
-  }
-
-  const worker = registration.installing ?? registration.waiting;
-  if (!worker) {
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 250));
-    return;
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const timeoutId = globalThis.setTimeout(() => reject(new Error('WebLLM service worker activation timed out.')), 12000);
-    worker.addEventListener('statechange', () => {
-      if (worker.state === 'activated') {
-        globalThis.clearTimeout(timeoutId);
-        resolve();
-      }
-    });
   });
 }
 
@@ -419,29 +362,8 @@ function logWebLlm(event: string, details: Record<string, unknown>): void {
   console.info('[Tikz Drawer AI][WebLLM]', event, details);
 }
 
-class RegisteredServiceWorkerBridge {
-  private messageHandler: (event: MessageEvent) => void = () => {};
-
-  constructor(private readonly registration: ServiceWorkerRegistration) {
-    navigator.serviceWorker.addEventListener('message', (event) => this.messageHandler(event));
-  }
-
-  get onmessage(): (event: MessageEvent) => void {
-    return this.messageHandler;
-  }
-
-  set onmessage(handler: (event: MessageEvent) => void) {
-    this.messageHandler = handler;
-  }
-
-  postMessage(message: unknown): void {
-    const worker = this.registration.active ?? this.registration.waiting ?? this.registration.installing;
-    if (!worker) {
-      throw new Error('WebLLM service worker is not active.');
-    }
-
-    worker.postMessage(message);
-  }
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 interface WebLlmPromptPayload {
