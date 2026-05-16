@@ -775,43 +775,14 @@
 
         <div class="canvas-corner canvas-corner--top">
           <button
-            class="canvas-chip canvas-chip--assistant"
+            class="canvas-chip canvas-chip--assistant ai-sparkles-trigger"
             type="button"
             [title]="'ai.tab' | translate"
             [attr.aria-label]="'ai.tab' | translate"
             [attr.data-tooltip]="'ai.tab' | translate"
             (pointerdown)="$event.stopPropagation()"
             (click)="openAssistant(); $event.stopPropagation()">
-            <svg class="assistant-sparkles-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="assistant-sparkle-main" x1="2" y1="3" x2="16" y2="17" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#7c3aed" />
-                  <stop offset="38%" stop-color="#2563eb" />
-                  <stop offset="72%" stop-color="#06b6d4" />
-                  <stop offset="100%" stop-color="#22c55e" />
-                </linearGradient>
-                <linearGradient id="assistant-sparkle-hot" x1="14" y1="2" x2="22" y2="10" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#f97316" />
-                  <stop offset="48%" stop-color="#ec4899" />
-                  <stop offset="100%" stop-color="#8b5cf6" />
-                </linearGradient>
-                <linearGradient id="assistant-sparkle-soft" x1="14" y1="14" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#06b6d4" />
-                  <stop offset="48%" stop-color="#6366f1" />
-                  <stop offset="100%" stop-color="#ec4899" />
-                </linearGradient>
-              </defs>
-
-              <path
-                class="sparkle sparkle-main"
-                d="M8.3 3.1C8.55 2.45 9.45 2.45 9.7 3.1L11.25 7.2C11.33 7.42 11.5 7.59 11.72 7.67L15.9 9.3C16.55 9.55 16.55 10.45 15.9 10.7L11.72 12.33C11.5 12.41 11.33 12.58 11.25 12.8L9.7 16.9C9.45 17.55 8.55 17.55 8.3 16.9L6.75 12.8C6.67 12.58 6.5 12.41 6.28 12.33L2.1 10.7C1.45 10.45 1.45 9.55 2.1 9.3L6.28 7.67C6.5 7.59 6.67 7.42 6.75 7.2L8.3 3.1Z" />
-              <path
-                class="sparkle sparkle-top"
-                d="M17.4 2.35C17.58 1.88 18.24 1.88 18.42 2.35L19.23 4.45C19.31 4.65 19.47 4.81 19.67 4.89L21.85 5.74C22.32 5.92 22.32 6.58 21.85 6.76L19.67 7.61C19.47 7.69 19.31 7.85 19.23 8.05L18.42 10.15C18.24 10.62 17.58 10.62 17.4 10.15L16.59 8.05C16.51 7.85 16.35 7.69 16.15 7.61L13.97 6.76C13.5 6.58 13.5 5.92 13.97 5.74L16.15 4.89C16.35 4.81 16.51 4.65 16.59 4.45L17.4 2.35Z" />
-              <path
-                class="sparkle sparkle-bottom"
-                d="M17.35 14.1C17.54 13.6 18.25 13.6 18.44 14.1L19.1 15.85C19.18 16.07 19.35 16.24 19.57 16.32L21.4 17.03C21.9 17.22 21.9 17.93 21.4 18.12L19.57 18.83C19.35 18.91 19.18 19.08 19.1 19.3L18.44 21.05C18.25 21.55 17.54 21.55 17.35 21.05L16.69 19.3C16.61 19.08 16.44 18.91 16.22 18.83L14.39 18.12C13.89 17.93 13.89 17.22 14.39 17.03L16.22 16.32C16.44 16.24 16.61 16.07 16.69 15.85L17.35 14.1Z" />
-            </svg>
+            <app-ai-sparkles-icon></app-ai-sparkles-icon>
           </button>
           <button
             class="canvas-chip canvas-chip--objects"

@@ -12,10 +12,12 @@
       </svg>
       <span>{{ editor().t('sceneTab') }}</span>
     </button>
-    <button type="button" [class.is-active]="editor().inspectorTab() === 'assistant'" (click)="editor().openAssistant()">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="iconMap.sparkles"></path>
-      </svg>
+    <button
+      class="ai-sparkles-trigger"
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'assistant'"
+      (click)="editor().openAssistant()">
+      <app-ai-sparkles-icon></app-ai-sparkles-icon>
       <span>{{ editor().t('ai.tab') }}</span>
     </button>
   </div>

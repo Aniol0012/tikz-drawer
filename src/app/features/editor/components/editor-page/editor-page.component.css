@@ -1428,12 +1428,19 @@ kbd {
 .canvas-chip--assistant {
   --assistant-size: 32px;
   --assistant-radius: 10px;
-  --assistant-border: var(--tool-border);
-  --assistant-surface: var(--tool-surface);
-  --assistant-surface-hover: color-mix(in srgb, var(--tool-surface) 94%, #eef4ff);
+  --assistant-accent: #8f3f71;
+  --assistant-accent-warm: #d97706;
+  --assistant-accent-cool: #0f766e;
+  --assistant-border: color-mix(in srgb, var(--assistant-accent) 18%, var(--tool-border));
+  --assistant-surface: color-mix(in srgb, #fff7ed 24%, var(--tool-surface));
+  --assistant-surface-hover: color-mix(in srgb, #fdf2f8 46%, var(--tool-surface));
   --assistant-shadow: 0 1px 2px rgb(15 23 42 / 8%);
   --assistant-shadow-hover: 0 2px 8px rgb(15 23 42 / 12%);
-  --assistant-ring: rgb(99 102 241 / 16%);
+  --assistant-ring: rgb(143 63 113 / 15%);
+  --ai-sparkles-main: var(--assistant-accent);
+  --ai-sparkles-top: var(--assistant-accent-warm);
+  --ai-sparkles-bottom: var(--assistant-accent-cool);
+  --ai-sparkles-glow: rgb(143 63 113 / 16%);
 
   position: relative;
   isolation: isolate;
@@ -1454,62 +1461,27 @@ kbd {
     box-shadow 160ms ease,
     transform 160ms ease;
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    z-index: -2;
-    border-radius: inherit;
-    background: conic-gradient(from var(--assistant-angle, 0deg), #7c3aed, #2563eb, #06b6d4, #22c55e, #facc15, #f97316, #ec4899, #7c3aed);
-    opacity: 0;
-    transition: opacity 180ms ease;
-  }
-
   &::after {
     content: '';
     position: absolute;
-    inset: 1px;
+    inset: 0;
     z-index: -1;
-    border-radius: calc(var(--assistant-radius) - 2px);
+    border-radius: inherit;
     background: var(--assistant-surface);
     transition:
       background 160ms ease,
       inset 160ms ease;
   }
 
-  .assistant-sparkles-icon {
+  app-ai-sparkles-icon {
     position: relative;
     z-index: 1;
     width: 18px;
     height: 18px;
-    overflow: visible;
-    filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%));
-    transform-origin: 50% 50%;
-    transition:
-      transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      filter 180ms ease;
-
-    .sparkle {
-      stroke: none;
-      transform-box: fill-box;
-      transform-origin: center;
-    }
-
-    .sparkle-main {
-      fill: url('#assistant-sparkle-main');
-    }
-
-    .sparkle-top {
-      fill: url('#assistant-sparkle-hot');
-    }
-
-    .sparkle-bottom {
-      fill: url('#assistant-sparkle-soft');
-    }
   }
 
   &:hover {
-    border-color: color-mix(in srgb, #6366f1 38%, var(--assistant-border));
+    border-color: color-mix(in srgb, var(--assistant-accent) 42%, var(--assistant-border));
     background: var(--assistant-surface-hover);
     box-shadow:
       var(--assistant-shadow-hover),
@@ -1519,46 +1491,18 @@ kbd {
     &::after {
       background: var(--assistant-surface-hover);
     }
-
-    .assistant-sparkles-icon {
-      filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 8px rgb(99 102 241 / 18%));
-      animation: assistant-icon-twinkle 620ms ease both;
-
-      .sparkle-main {
-        animation: assistant-main-sparkle 620ms ease both;
-      }
-
-      .sparkle-top {
-        animation: assistant-small-sparkle 620ms ease 60ms both;
-      }
-
-      .sparkle-bottom {
-        animation: assistant-small-sparkle 620ms ease 120ms both;
-      }
-    }
   }
 
   &:active {
-    border-color: transparent;
+    border-color: color-mix(in srgb, var(--assistant-accent) 48%, var(--assistant-border));
     box-shadow:
       0 1px 2px rgb(15 23 42 / 14%),
-      0 0 0 3px rgb(236 72 153 / 14%);
+      0 0 0 3px rgb(217 119 6 / 13%);
     transform: scale(0.94);
 
-    &::before {
-      opacity: 1;
-      animation: assistant-party-border 520ms ease both;
-    }
-
     &::after {
-      inset: 2px;
-      background:
-        radial-gradient(circle at 30% 25%, rgb(255 255 255 / 94%), transparent 30%),
-        linear-gradient(135deg, rgb(239 246 255 / 98%), rgb(250 245 255 / 98%));
-    }
-
-    .assistant-sparkles-icon {
-      animation: assistant-click-pop 420ms cubic-bezier(0.2, 1.4, 0.2, 1) both;
+      inset: 1px;
+      background: color-mix(in srgb, #fff7ed 58%, var(--tool-surface));
     }
   }
 
@@ -1566,23 +1510,17 @@ kbd {
     outline: none;
     box-shadow:
       var(--assistant-shadow-hover),
-      0 0 0 3px rgb(99 102 241 / 24%);
+      0 0 0 3px rgb(143 63 113 / 22%);
   }
 
   &.is-active {
-    border-color: transparent;
+    border-color: color-mix(in srgb, var(--assistant-accent) 44%, var(--assistant-border));
     box-shadow:
       var(--assistant-shadow-hover),
-      0 0 0 3px rgb(99 102 241 / 14%);
-
-    &::before {
-      opacity: 1;
-    }
+      0 0 0 3px var(--assistant-ring);
 
     &::after {
-      background:
-        radial-gradient(circle at 30% 25%, rgb(255 255 255 / 96%), transparent 32%),
-        linear-gradient(135deg, rgb(239 246 255 / 98%), rgb(250 245 255 / 98%));
+      background: color-mix(in srgb, #fdf2f8 52%, var(--tool-surface));
     }
   }
 }
@@ -1591,108 +1529,22 @@ kbd {
 :host-context([data-theme='dark']),
 :host-context(.theme-dark) {
   .canvas-chip--assistant {
-    --assistant-surface: color-mix(in srgb, var(--tool-surface) 92%, #020617);
-    --assistant-surface-hover: color-mix(in srgb, var(--tool-surface) 82%, #111827);
+    --assistant-surface: color-mix(in srgb, var(--tool-surface) 88%, #2b1024);
+    --assistant-surface-hover: color-mix(in srgb, var(--tool-surface) 78%, #3b1230);
     --assistant-shadow: 0 1px 2px rgb(0 0 0 / 28%);
     --assistant-shadow-hover: 0 3px 10px rgb(0 0 0 / 34%);
-    --assistant-ring: rgb(96 165 250 / 18%);
-
-    .assistant-sparkles-icon {
-      filter: drop-shadow(0 1px 1px rgb(0 0 0 / 28%)) drop-shadow(0 0 5px rgb(96 165 250 / 12%));
-    }
+    --assistant-ring: rgb(244 114 182 / 15%);
 
     &:hover {
-      border-color: color-mix(in srgb, #60a5fa 42%, var(--assistant-border));
+      border-color: color-mix(in srgb, #f472b6 36%, var(--assistant-border));
     }
 
     &:active,
     &.is-active {
       &::after {
-        background:
-          radial-gradient(circle at 30% 25%, rgb(255 255 255 / 9%), transparent 32%),
-          linear-gradient(135deg, rgb(30 41 59 / 96%), rgb(46 16 101 / 88%));
+        background: color-mix(in srgb, var(--tool-surface) 70%, #4a1738);
       }
     }
-  }
-}
-
-@keyframes assistant-icon-twinkle {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-
-  38% {
-    transform: rotate(-8deg) scale(1.12);
-  }
-
-  68% {
-    transform: rotate(5deg) scale(1.04);
-  }
-
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-}
-
-@keyframes assistant-main-sparkle {
-  0% {
-    transform: scale(1);
-  }
-
-  46% {
-    transform: scale(1.11);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes assistant-small-sparkle {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-
-  45% {
-    transform: scale(1.22) rotate(12deg);
-  }
-
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes assistant-click-pop {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-
-  35% {
-    transform: scale(0.78) rotate(-10deg);
-  }
-
-  70% {
-    transform: scale(1.18) rotate(8deg);
-  }
-
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes assistant-party-border {
-  0% {
-    --assistant-angle: 0deg;
-    opacity: 0;
-  }
-
-  20% {
-    opacity: 1;
-  }
-
-  100% {
-    --assistant-angle: 240deg;
-    opacity: 1;
   }
 }
 
@@ -1700,10 +1552,8 @@ kbd {
   .canvas-chip--assistant {
     transition: none;
 
-    &::before,
     &::after,
-    .assistant-sparkles-icon,
-    .sparkle {
+    app-ai-sparkles-icon {
       animation: none;
       transition: none;
     }
@@ -3109,6 +2959,24 @@ kbd {
 .text-symbol-button:hover {
   border-color: var(--tool-border-strong);
   background: var(--toolbar-background-hover);
+}
+
+.canvas-chip.canvas-chip--assistant:hover {
+  border-color: color-mix(in srgb, var(--assistant-accent) 42%, var(--assistant-border));
+  background: var(--assistant-surface-hover);
+  box-shadow:
+    var(--assistant-shadow-hover),
+    0 0 0 3px var(--assistant-ring);
+  transform: scale(1.035);
+}
+
+.canvas-chip.canvas-chip--assistant:active {
+  border-color: color-mix(in srgb, var(--assistant-accent) 48%, var(--assistant-border));
+  background: var(--assistant-surface-hover);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 14%),
+    0 0 0 3px rgb(217 119 6 / 13%);
+  transform: scale(0.94);
 }
 
 .primary-button:hover {

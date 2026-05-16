@@ -82,6 +82,20 @@
   stroke-width: 2;
 }
 
+.sidebar-tabs button app-ai-sparkles-icon {
+  flex: 0 1 auto;
+  width: clamp(11px, 3.2vw, 15px);
+  height: clamp(11px, 3.2vw, 15px);
+  min-width: 0;
+}
+
+.sidebar-tabs button.ai-sparkles-trigger {
+  --ai-sparkles-main: #8f3f71;
+  --ai-sparkles-top: #d97706;
+  --ai-sparkles-bottom: #0f766e;
+  --ai-sparkles-glow: rgb(143 63 113 / 15%);
+}
+
 .sidebar-tabs button span {
   min-width: 0;
   overflow: hidden;

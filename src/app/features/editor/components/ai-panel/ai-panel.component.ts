@@ -16,10 +16,11 @@ import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../../ai/ai-provider-result.model';
+import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 
 @Component({
   selector: 'app-ai-panel',
-  imports: [EditorTranslatePipe],
+  imports: [EditorTranslatePipe, AiSparklesIconComponent],
   templateUrl: './ai-panel.component.html',
   styleUrl: './ai-panel.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
