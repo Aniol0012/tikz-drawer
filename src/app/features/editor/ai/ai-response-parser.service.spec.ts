@@ -1,8 +1,23 @@
+import { TestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { AiResponseParserService } from './ai-response-parser.service';
 
 describe('AiResponseParserService', () => {
+  let parser: AiResponseParserService;
+
+  beforeAll(() => {
+    TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+  });
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [AiResponseParserService]
+    });
+    parser = TestBed.inject(AiResponseParserService);
+  });
+
   it('repairs truncated scene patches with very long decimal numbers', () => {
-    const parser = new AiResponseParserService();
     const response = parser.parse(`{
       "type": "scenePatch",
       "message": "He añadido un rectángulo azul al lienzo.",
@@ -25,7 +40,6 @@ describe('AiResponseParserService', () => {
   });
 
   it('treats responses with patch changes as scene patches even when type is missing', () => {
-    const parser = new AiResponseParserService();
     const response = parser.parse(`{
       "message": "He preparado un rectángulo azul.",
       "patch": {

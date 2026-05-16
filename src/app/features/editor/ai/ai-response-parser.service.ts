@@ -1,11 +1,11 @@
-import { Injectable, Optional } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import { translate } from '../i18n/editor-page.i18n';
 import type { AiResponse, ScenePatch } from './ai-message.model';
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
-  constructor(@Optional() private readonly languageService?: EditorLanguageService) {}
+  private readonly languageService = inject(EditorLanguageService, { optional: true });
 
   parse(rawText: string): AiResponse {
     const parsed = this.parseJson(this.extractJson(rawText)) as Partial<AiResponse>;
