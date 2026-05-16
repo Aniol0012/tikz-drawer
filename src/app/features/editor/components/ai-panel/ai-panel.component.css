@@ -35,18 +35,18 @@
 }
 
 .ai-header__icon {
-  --ai-sparkles-main: #0891b2;
-  --ai-sparkles-top: #14b8a6;
-  --ai-sparkles-bottom: #f59e0b;
+  --ai-sparkles-main: #7c3aed;
+  --ai-sparkles-top: #2563eb;
+  --ai-sparkles-bottom: #a855f7;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid color-mix(in srgb, #0891b2 24%, var(--tool-border));
+  border: 1px solid color-mix(in srgb, #7c3aed 24%, var(--tool-border));
   border-radius: 9px;
-  background: color-mix(in srgb, #ecfeff 52%, var(--panel-background));
-  color: #0891b2;
+  background: color-mix(in srgb, #f8f7ff 52%, var(--panel-background));
+  color: #7c3aed;
 }
 
 .quick-actions svg,

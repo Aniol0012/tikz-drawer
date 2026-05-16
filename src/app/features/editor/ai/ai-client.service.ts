@@ -6,12 +6,14 @@ import type { AiMessage, AiResponse } from './ai-message.model';
 import { AiProviderSelectorService } from './ai-provider-selector.service';
 import { AiSettingsService } from './ai-settings.service';
 import type { CanvasShape } from '../models/tikz.models';
+import { EditorLanguageService } from '../i18n/editor-language.service';
 
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
   private readonly parser = inject(AiResponseParserService);
   private readonly providerSelector = inject(AiProviderSelectorService);
   private readonly settingsService = inject(AiSettingsService);
+  private readonly languageService = inject(EditorLanguageService);
 
   readonly lastProviderMode = signal<'local' | 'cloud'>('cloud');
   readonly lastModelName = signal('');
@@ -67,7 +69,7 @@ export class AiClientService {
   }
 
   private withLocalDrawingFallback(response: AiResponse, result: AiProviderTextResult, instruction: string): AiResponse {
-    if (result.providerType !== 'webllm' || response.type !== 'message' || response.message !== 'Respuesta generada.') {
+    if (result.providerType !== 'webllm' || response.type !== 'message' || response.message !== this.languageService.t('ai.responseGenerated')) {
       return response;
     }
 
@@ -75,12 +77,12 @@ export class AiClientService {
     return patchShape
       ? {
           type: 'scenePatch',
-          message: 'He preparado una figura en el lienzo.',
+          message: this.languageService.t('ai.simpleProposalReady'),
           patch: { create: [patchShape], update: [], remove: [] }
         }
       : {
           ...response,
-          message: 'No he podido generar una respuesta clara.'
+          message: this.languageService.t('ai.errorUnclearResponse')
         };
   }
 
@@ -97,7 +99,7 @@ export class AiClientService {
     if (/(cercle|circulo|circle)/.test(normalized)) {
       return {
         kind: 'circle',
-        name: colors.name ? `Cercle ${colors.name}` : 'Cercle',
+        name: this.languageService.localizedShapeKind('circle'),
         cx: 0,
         cy: 0,
         r: /petit|pequeno|pequeño|small/.test(normalized) ? 0.7 : 1,
@@ -110,7 +112,7 @@ export class AiClientService {
     if (/(triangle)/.test(normalized)) {
       return {
         kind: 'triangle',
-        name: colors.name ? `Triangle ${colors.name}` : 'Triangle',
+        name: this.languageService.localizedShapeKind('triangle'),
         x: -1,
         y: -0.8,
         width: 2,
@@ -124,7 +126,7 @@ export class AiClientService {
     if (/(elipse|ellipse)/.test(normalized)) {
       return {
         kind: 'ellipse',
-        name: colors.name ? `Elipse ${colors.name}` : 'Elipse',
+        name: this.languageService.localizedShapeKind('ellipse'),
         cx: 0,
         cy: 0,
         rx: 1.3,
@@ -139,7 +141,7 @@ export class AiClientService {
       const square = /(quadrat|cuadrado|square)/.test(normalized);
       return {
         kind: 'rectangle',
-        name: colors.name ? `${square ? 'Quadrat' : 'Rectangle'} ${colors.name}` : square ? 'Quadrat' : 'Rectangle',
+        name: this.languageService.localizedShapeKind('rectangle'),
         x: -1,
         y: -0.6,
         width: square ? 1.2 : 2,
@@ -153,7 +155,7 @@ export class AiClientService {
     if (/(figura|forma|shape|element)/.test(normalized)) {
       return {
         kind: 'ellipse',
-        name: colors.name ? `Figura ${colors.name}` : 'Figura',
+        name: this.languageService.localizedShapeKind('ellipse'),
         cx: 0,
         cy: 0,
         rx: 1.4,
@@ -167,21 +169,21 @@ export class AiClientService {
     return null;
   }
 
-  private colorFromInstruction(instruction: string): { readonly name: string; readonly stroke: string; readonly fill: string } {
+  private colorFromInstruction(instruction: string): { readonly stroke: string; readonly fill: string } {
     if (/(verd|verde|green)/.test(instruction)) {
-      return { name: 'verd', stroke: '#16a34a', fill: '#dcfce7' };
+      return { stroke: '#16a34a', fill: '#dcfce7' };
     }
     if (/(vermell|rojo|red)/.test(instruction)) {
-      return { name: 'vermell', stroke: '#dc2626', fill: '#fee2e2' };
+      return { stroke: '#dc2626', fill: '#fee2e2' };
     }
     if (/(groc|amarillo|yellow)/.test(instruction)) {
-      return { name: 'groc', stroke: '#d97706', fill: '#fef3c7' };
+      return { stroke: '#d97706', fill: '#fef3c7' };
     }
     if (/(blau|azul|blue)/.test(instruction)) {
-      return { name: 'blau', stroke: '#1d4ed8', fill: '#dbeafe' };
+      return { stroke: '#1d4ed8', fill: '#dbeafe' };
     }
 
-    return { name: '', stroke: '#1f2937', fill: '#f1f5f9' };
+    return { stroke: '#1f2937', fill: '#f1f5f9' };
   }
 
   private conversationForPrompt(messages: readonly AiMessage[]): readonly { readonly role: string; readonly text: string }[] {

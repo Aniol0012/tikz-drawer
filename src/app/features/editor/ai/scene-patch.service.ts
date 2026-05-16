@@ -3,11 +3,13 @@ import { DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_COLOR, DEFAULT_TEXT_FONT_SIZE } fr
 import type { CanvasShape, EditorPreferences, LineStrokeStyle, TikzScene } from '../models/tikz.models';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { EditorStore } from '../state/editor.store';
+import { EditorLanguageService } from '../i18n/editor-language.service';
 import type { ScenePatch } from './ai-message.model';
 
 @Injectable()
 export class ScenePatchService {
   private readonly store = inject(EditorStore);
+  private readonly languageService = inject(EditorLanguageService);
   readonly pendingPatch = signal<ScenePatch | null>(null);
   readonly pendingSummary = computed(() => {
     const patch = this.pendingPatch();
@@ -70,11 +72,15 @@ export class ScenePatchService {
 
   summarize(patch: ScenePatch): string {
     const pieces = [
-      patch.create.length ? `${patch.create.length} crear` : '',
-      patch.update.length ? `${patch.update.length} modificar` : '',
-      patch.remove.length ? `${patch.remove.length} eliminar` : ''
+      patch.create.length ? this.interpolate(this.languageService.t('ai.patchCreateCount'), { count: String(patch.create.length) }) : '',
+      patch.update.length ? this.interpolate(this.languageService.t('ai.patchUpdateCount'), { count: String(patch.update.length) }) : '',
+      patch.remove.length ? this.interpolate(this.languageService.t('ai.patchRemoveCount'), { count: String(patch.remove.length) }) : ''
     ].filter(Boolean);
-    return pieces.join(' · ') || 'Sin cambios aplicables';
+    return pieces.join(' · ') || this.languageService.t('ai.patchNoChanges');
+  }
+
+  private interpolate(template: string, values: Record<string, string>): string {
+    return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
   }
 
   private updatedShapes(scene: TikzScene, patch: ScenePatch, preferences: EditorPreferences): readonly CanvasShape[] {

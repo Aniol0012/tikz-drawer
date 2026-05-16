@@ -266,6 +266,10 @@ export class AiPanelComponent {
   }
 
   private errorMessage(error: unknown): string {
+    if (!this.devMode()) {
+      return this.languageService.t('ai.errorGeneric');
+    }
+
     if (!(error instanceof Error)) {
       return this.languageService.t('ai.errorGeneric');
     }

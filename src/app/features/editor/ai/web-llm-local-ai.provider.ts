@@ -213,7 +213,7 @@ function localSystemInstruction(): string {
     'Si piden una figura en el canvas, devuelve type="scenePatch" y crea patch.create con al menos una figura.',
     'Conocimiento de la app: Tikz Drawer crea diagramas TikZ editables en un canvas; los cambios de IA se proponen como patches y el usuario los aplica.',
     'Figuras nativas y campos: rectangle usa x,y,width,height; circle usa cx,cy,r; ellipse usa cx,cy,rx,ry; triangle usa x,y,width,height; line usa fromX,fromY,toX,toY,arrowStart,arrowEnd; text usa x,y,text,fontSize,color.',
-    'Para un triangulo crea {"kind":"triangle","x":-1,"y":-0.8,"width":2,"height":1.6,"stroke":"#0891b2","fill":"#ecfeff","strokeWidth":0.06}.',
+    'Para un triangulo crea {"kind":"triangle","x":-1,"y":-0.8,"width":2,"height":1.6,"stroke":"#7c3aed","fill":"#ede9fe","strokeWidth":0.06}.',
     'Para ordenar una escena, actualiza posiciones con patch.update y conserva ids. Para etiquetar, crea text cerca de los elementos. Para flujo, usa rectangles + lines con arrowEnd.',
     'Ejemplo figura: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
     'Ejemplo respuesta completa: {"type":"scenePatch","message":"He preparado un rectangulo azul.","patch":{"create":[{"kind":"rectangle","name":"Rectangulo azul","x":-1,"y":-0.5,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}]}}',

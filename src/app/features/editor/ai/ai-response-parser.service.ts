@@ -1,14 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
+import { EditorLanguageService } from '../i18n/editor-language.service';
+import { translate } from '../i18n/editor-page.i18n';
 import type { AiResponse, ScenePatch } from './ai-message.model';
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
+  constructor(@Optional() private readonly languageService?: EditorLanguageService) {}
+
   parse(rawText: string): AiResponse {
     const parsed = this.parseJson(this.extractJson(rawText)) as Partial<AiResponse>;
     const patch = this.normalizePatch(parsed.patch);
     const hasPatchChanges = patch.create.length > 0 || patch.update.length > 0 || patch.remove.length > 0;
     const type = parsed.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : parsed.type === 'tikzCode' ? 'tikzCode' : 'message';
-    const message = typeof parsed.message === 'string' && parsed.message.trim() ? parsed.message.trim() : 'Respuesta generada.';
+    const message =
+      typeof parsed.message === 'string' && parsed.message.trim()
+        ? parsed.message.trim()
+        : (this.languageService?.t('ai.responseGenerated') ?? translate('en', 'ai.responseGenerated'));
 
     return {
       type,

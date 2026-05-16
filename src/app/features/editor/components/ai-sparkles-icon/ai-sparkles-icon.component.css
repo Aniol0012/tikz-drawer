@@ -1,8 +1,8 @@
 :host {
-  --ai-sparkles-main: #0891b2;
-  --ai-sparkles-top: #14b8a6;
-  --ai-sparkles-bottom: #f59e0b;
-  --ai-sparkles-glow: rgb(8 145 178 / 20%);
+  --ai-sparkles-main: #7c3aed;
+  --ai-sparkles-top: #2563eb;
+  --ai-sparkles-bottom: #a855f7;
+  --ai-sparkles-glow: rgb(124 58 237 / 20%);
   position: relative;
   display: inline-grid;
   place-items: center;
