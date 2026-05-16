@@ -777,9 +777,9 @@
           <button
             class="canvas-chip canvas-chip--assistant ai-sparkles-trigger"
             type="button"
-            [title]="'ai.tab' | translate"
             [attr.aria-label]="'ai.tab' | translate"
             [attr.data-tooltip]="'ai.tab' | translate"
+            data-tooltip-enabled
             (pointerdown)="$event.stopPropagation()"
             (click)="openAssistant(); $event.stopPropagation()">
             <app-ai-sparkles-icon></app-ai-sparkles-icon>
@@ -787,9 +787,9 @@
           <button
             class="canvas-chip canvas-chip--objects"
             type="button"
-            [title]="'layers' | translate"
             [attr.aria-label]="'layers' | translate"
             [attr.data-tooltip]="'layers' | translate"
+            data-tooltip-enabled
             (pointerdown)="$event.stopPropagation()"
             (click)="openSceneLayers(); $event.stopPropagation()">
             <svg viewBox="0 0 24 24" aria-hidden="true">

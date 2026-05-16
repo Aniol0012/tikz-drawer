@@ -144,7 +144,9 @@
           class="tool-button"
           type="button"
           [class.is-active]="activeTool() === tool.id"
-          [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          [attr.aria-label]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          [attr.data-tooltip]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          data-tooltip-enabled
           (click)="activeToolChange.emit(tool.id)">
           <svg
             viewBox="0 0 24 24"
@@ -163,7 +165,9 @@
             class="tool-button tool-button--pinned"
             type="button"
             [class.is-active]="activeTool() === tool.id"
-            [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            [attr.aria-label]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            [attr.data-tooltip]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            data-tooltip-enabled
             (click)="activeToolChange.emit(tool.id)">
             <svg
               viewBox="0 0 24 24"

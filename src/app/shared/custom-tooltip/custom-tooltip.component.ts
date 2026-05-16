@@ -50,13 +50,14 @@ export class CustomTooltipComponent {
 
   @HostListener('document:pointerover', ['$event'])
   onPointerOver(event: PointerEvent): void {
-    const disabledTarget = this.disabledTooltipTarget(event.target);
+    const forcedTarget = this.forcedTooltipTarget(event.target);
+    const disabledTarget = forcedTarget ? null : this.disabledTooltipTarget(event.target);
     if (disabledTarget) {
       this.suppressTooltip(disabledTarget);
       return;
     }
 
-    const target = this.tooltipTarget(event.target);
+    const target = forcedTarget ?? this.tooltipTarget(event.target);
     if (!target) {
       return;
     }
@@ -82,13 +83,14 @@ export class CustomTooltipComponent {
 
   @HostListener('document:focusin', ['$event'])
   onFocusIn(event: FocusEvent): void {
-    const disabledTarget = this.disabledTooltipTarget(event.target);
+    const forcedTarget = this.forcedTooltipTarget(event.target);
+    const disabledTarget = forcedTarget ? null : this.disabledTooltipTarget(event.target);
     if (disabledTarget) {
       this.suppressTooltip(disabledTarget);
       return;
     }
 
-    const target = this.tooltipTarget(event.target);
+    const target = forcedTarget ?? this.tooltipTarget(event.target);
     if (!target) {
       return;
     }
@@ -249,6 +251,19 @@ export class CustomTooltipComponent {
     }
 
     const candidate = target.closest<HTMLElement>('[data-tooltip], [title], [aria-label]');
+    if (!candidate || candidate.closest('app-custom-tooltip')) {
+      return null;
+    }
+
+    return this.tooltipText(candidate) ? candidate : null;
+  }
+
+  private forcedTooltipTarget(target: EventTarget | null): HTMLElement | null {
+    if (!(target instanceof Element)) {
+      return null;
+    }
+
+    const candidate = target.closest<HTMLElement>('[data-tooltip-enabled][data-tooltip]');
     if (!candidate || candidate.closest('app-custom-tooltip')) {
       return null;
     }

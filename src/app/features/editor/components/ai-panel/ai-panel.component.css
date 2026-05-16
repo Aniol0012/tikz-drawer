@@ -35,18 +35,18 @@
 }
 
 .ai-header__icon {
-  --ai-sparkles-main: #8f3f71;
-  --ai-sparkles-top: #d97706;
-  --ai-sparkles-bottom: #0f766e;
+  --ai-sparkles-main: #0891b2;
+  --ai-sparkles-top: #14b8a6;
+  --ai-sparkles-bottom: #f59e0b;
   display: grid;
   flex: 0 0 auto;
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid color-mix(in srgb, #8f3f71 22%, var(--tool-border));
+  border: 1px solid color-mix(in srgb, #0891b2 24%, var(--tool-border));
   border-radius: 9px;
-  background: color-mix(in srgb, #fdf2f8 46%, var(--panel-background));
-  color: #8f3f71;
+  background: color-mix(in srgb, #ecfeff 52%, var(--panel-background));
+  color: #0891b2;
 }
 
 .quick-actions svg,

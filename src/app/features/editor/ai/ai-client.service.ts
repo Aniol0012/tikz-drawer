@@ -80,7 +80,7 @@ export class AiClientService {
         }
       : {
           ...response,
-          message: 'No he podido generar una respuesta local clara.'
+          message: 'No he podido generar una respuesta clara.'
         };
   }
 

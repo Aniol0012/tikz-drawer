@@ -1428,19 +1428,20 @@ kbd {
 .canvas-chip--assistant {
   --assistant-size: 32px;
   --assistant-radius: 10px;
-  --assistant-accent: #8f3f71;
-  --assistant-accent-warm: #d97706;
-  --assistant-accent-cool: #0f766e;
+  --assistant-accent: #0891b2;
+  --assistant-accent-warm: #14b8a6;
+  --assistant-accent-cool: #f59e0b;
+  --assistant-hover-accent: #14b8a6;
   --assistant-border: color-mix(in srgb, var(--assistant-accent) 18%, var(--tool-border));
-  --assistant-surface: color-mix(in srgb, #fff7ed 24%, var(--tool-surface));
-  --assistant-surface-hover: color-mix(in srgb, #fdf2f8 46%, var(--tool-surface));
+  --assistant-surface: color-mix(in srgb, #f8fafc 28%, var(--tool-surface));
+  --assistant-surface-hover: color-mix(in srgb, #ecfeff 46%, var(--tool-surface));
   --assistant-shadow: 0 1px 2px rgb(15 23 42 / 8%);
   --assistant-shadow-hover: 0 2px 8px rgb(15 23 42 / 12%);
-  --assistant-ring: rgb(143 63 113 / 15%);
+  --assistant-ring: rgb(20 184 166 / 16%);
   --ai-sparkles-main: var(--assistant-accent);
   --ai-sparkles-top: var(--assistant-accent-warm);
   --ai-sparkles-bottom: var(--assistant-accent-cool);
-  --ai-sparkles-glow: rgb(143 63 113 / 16%);
+  --ai-sparkles-glow: rgb(8 145 178 / 20%);
 
   position: relative;
   isolation: isolate;
@@ -1481,7 +1482,7 @@ kbd {
   }
 
   &:hover {
-    border-color: color-mix(in srgb, var(--assistant-accent) 42%, var(--assistant-border));
+    border-color: color-mix(in srgb, var(--assistant-hover-accent) 44%, var(--assistant-border));
     background: var(--assistant-surface-hover);
     box-shadow:
       var(--assistant-shadow-hover),
@@ -1497,12 +1498,12 @@ kbd {
     border-color: color-mix(in srgb, var(--assistant-accent) 48%, var(--assistant-border));
     box-shadow:
       0 1px 2px rgb(15 23 42 / 14%),
-      0 0 0 3px rgb(217 119 6 / 13%);
+      0 0 0 3px rgb(6 182 212 / 15%);
     transform: scale(0.94);
 
     &::after {
       inset: 1px;
-      background: color-mix(in srgb, #fff7ed 58%, var(--tool-surface));
+      background: color-mix(in srgb, #ecfeff 52%, var(--tool-surface));
     }
   }
 
@@ -1510,17 +1511,17 @@ kbd {
     outline: none;
     box-shadow:
       var(--assistant-shadow-hover),
-      0 0 0 3px rgb(143 63 113 / 22%);
+      0 0 0 3px rgb(6 182 212 / 22%);
   }
 
   &.is-active {
-    border-color: color-mix(in srgb, var(--assistant-accent) 44%, var(--assistant-border));
+    border-color: color-mix(in srgb, var(--assistant-hover-accent) 44%, var(--assistant-border));
     box-shadow:
       var(--assistant-shadow-hover),
       0 0 0 3px var(--assistant-ring);
 
     &::after {
-      background: color-mix(in srgb, #fdf2f8 52%, var(--tool-surface));
+      background: color-mix(in srgb, #ecfeff 54%, var(--tool-surface));
     }
   }
 }
@@ -1529,20 +1530,20 @@ kbd {
 :host-context([data-theme='dark']),
 :host-context(.theme-dark) {
   .canvas-chip--assistant {
-    --assistant-surface: color-mix(in srgb, var(--tool-surface) 88%, #2b1024);
-    --assistant-surface-hover: color-mix(in srgb, var(--tool-surface) 78%, #3b1230);
+    --assistant-surface: color-mix(in srgb, var(--tool-surface) 88%, #1e1b4b);
+    --assistant-surface-hover: color-mix(in srgb, var(--tool-surface) 78%, #312e81);
     --assistant-shadow: 0 1px 2px rgb(0 0 0 / 28%);
     --assistant-shadow-hover: 0 3px 10px rgb(0 0 0 / 34%);
-    --assistant-ring: rgb(244 114 182 / 15%);
+    --assistant-ring: rgb(34 211 238 / 14%);
 
     &:hover {
-      border-color: color-mix(in srgb, #f472b6 36%, var(--assistant-border));
+      border-color: color-mix(in srgb, #22d3ee 36%, var(--assistant-border));
     }
 
     &:active,
     &.is-active {
       &::after {
-        background: color-mix(in srgb, var(--tool-surface) 70%, #4a1738);
+        background: color-mix(in srgb, var(--tool-surface) 70%, #1e3a8a);
       }
     }
   }
@@ -2962,7 +2963,7 @@ kbd {
 }
 
 .canvas-chip.canvas-chip--assistant:hover {
-  border-color: color-mix(in srgb, var(--assistant-accent) 42%, var(--assistant-border));
+  border-color: color-mix(in srgb, var(--assistant-hover-accent) 44%, var(--assistant-border));
   background: var(--assistant-surface-hover);
   box-shadow:
     var(--assistant-shadow-hover),
@@ -2975,7 +2976,7 @@ kbd {
   background: var(--assistant-surface-hover);
   box-shadow:
     0 1px 2px rgb(15 23 42 / 14%),
-    0 0 0 3px rgb(217 119 6 / 13%);
+    0 0 0 3px var(--assistant-ring);
   transform: scale(0.94);
 }
 

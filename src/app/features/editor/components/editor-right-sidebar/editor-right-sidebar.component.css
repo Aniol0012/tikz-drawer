@@ -90,10 +90,10 @@
 }
 
 .sidebar-tabs button.ai-sparkles-trigger {
-  --ai-sparkles-main: #8f3f71;
-  --ai-sparkles-top: #d97706;
-  --ai-sparkles-bottom: #0f766e;
-  --ai-sparkles-glow: rgb(143 63 113 / 15%);
+  --ai-sparkles-main: #0891b2;
+  --ai-sparkles-top: #14b8a6;
+  --ai-sparkles-bottom: #f59e0b;
+  --ai-sparkles-glow: rgb(8 145 178 / 18%);
 }
 
 .sidebar-tabs button span {
