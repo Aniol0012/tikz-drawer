@@ -53,6 +53,8 @@
   "ai.errorLocalUnavailableNoFallback": "La IA local no está disponible y el fallback remoto está desactivado.",
   "ai.errorBrowserLocalTimeout": "La IA local del navegador ha tardado demasiado en responder.",
   "ai.errorBrowserLocalUnavailable": "La IA local del navegador no está disponible en este dispositivo.",
+  "ai.errorRemoteUnavailableFallback": "La IA remota no está disponible ahora mismo por cuota, facturación o modelo.",
+  "ai.errorNoAiProviderAvailable": "La IA no está disponible ahora mismo. Prueba más tarde o cambia el proveedor en modo dev.",
   "ai.errorWebLlmNotReady": "La IA local todavía se está preparando. Espera a que termine la carga del modelo.",
   "ai.modeLocal": "Modo IA: Local",
   "ai.modeWebLlm": "Modo IA: WebLLM",

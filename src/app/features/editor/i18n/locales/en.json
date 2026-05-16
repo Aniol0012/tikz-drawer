@@ -53,6 +53,8 @@
   "ai.errorLocalUnavailableNoFallback": "Local AI is unavailable and remote fallback is disabled.",
   "ai.errorBrowserLocalTimeout": "Browser local AI took too long to respond.",
   "ai.errorBrowserLocalUnavailable": "Browser local AI is not available on this device.",
+  "ai.errorRemoteUnavailableFallback": "Remote AI is unavailable right now because of quota, billing, or model availability.",
+  "ai.errorNoAiProviderAvailable": "AI is not available right now. Try again later or change the provider in dev mode.",
   "ai.errorWebLlmNotReady": "Local AI is still getting ready. Wait for the model to finish loading.",
   "ai.modeLocal": "AI mode: Local",
   "ai.modeWebLlm": "AI mode: WebLLM",

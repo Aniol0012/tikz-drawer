@@ -24,8 +24,9 @@
     }
   </header>
 
-  @if (localAiStatus().loadingState === 'loading') {
+  @if (devMode() && localAiStatus().loadingState === 'loading') {
     <div class="ai-status-row">
+      <small>{{ localAiStatus().progressText || ('ai.localLoading' | translate) }}</small>
       <div class="ai-progress" [style.--ai-progress]="localAiStatus().progress">
         <span></span>
       </div>

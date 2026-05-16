@@ -12,8 +12,8 @@
   --ai-elevated: color-mix(in srgb, var(--panel-background) 94%, var(--tool-surface));
   --ai-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent);
   position: relative;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   min-width: 0;
   min-height: 0;
@@ -139,17 +139,14 @@
 }
 
 .ai-status-row {
-  position: absolute;
-  top: 50px;
-  left: 0;
-  right: 0;
-  z-index: 2;
   display: grid;
-  gap: 8px;
-  padding: 0 2px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--ai-line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-soft) 18%, var(--panel-background));
+  box-shadow: var(--ai-shadow);
 }
 
 .ai-status-row small,
@@ -161,7 +158,9 @@
 }
 
 .ai-progress {
-  height: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 7px;
   overflow: hidden;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--ai-line));
@@ -171,7 +170,7 @@
 
 .ai-progress span {
   display: block;
-  width: calc(var(--ai-progress, 0) * 100%);
+  width: clamp(0%, calc(var(--ai-progress, 0) * 100%), 100%);
   height: 100%;
   border-radius: inherit;
   background: var(--accent);
@@ -324,6 +323,7 @@
 }
 
 .ai-chat {
+  flex: 1 1 auto;
   display: grid;
   align-content: start;
   gap: 9px;

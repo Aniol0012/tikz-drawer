@@ -6,6 +6,8 @@ import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-resu
 
 const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 30000;
 const CLOUD_GENERATION_TIMEOUT_MS = 30000;
+const NO_PROVIDER_AVAILABLE_ERROR_KEY = 'ai.errorNoAiProviderAvailable';
+const REMOTE_UNAVAILABLE_ERROR_KEY = 'ai.errorRemoteUnavailableFallback';
 
 @Injectable({ providedIn: 'root' })
 export class AiProviderSelectorService {
@@ -29,7 +31,15 @@ export class AiProviderSelectorService {
 
   readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
     this.log('remote:start', { model: request.options.remoteModel });
-    return await this.timeProvider(this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout'));
+    try {
+      return await this.timeProvider(this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout'));
+    } catch (error) {
+      if (this.isCloudConfigurationError(error)) {
+        throw new Error(REMOTE_UNAVAILABLE_ERROR_KEY);
+      }
+
+      throw error;
+    }
   };
 
   private readonly generateWithWebLlm = async (request: AiProviderRequest, timeoutMs = request.options.webLlmTimeoutMs): Promise<AiProviderTextResult> => {
@@ -45,24 +55,9 @@ export class AiProviderSelectorService {
   };
 
   private async generateWithAutomaticLocal(request: AiProviderRequest): Promise<AiProviderTextResult> {
-    if (this.localProvider.isSupported()) {
-      const providers = [
-        (providerRequest: AiProviderRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs),
-        this.generateWithBrowserLocal,
-        ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])
-      ];
+    const providers = this.automaticProviders(request);
+    if (providers.length) {
       return await this.generateWithFallback(providers, request);
-    }
-
-    if (this.browserLocalSupported()) {
-      return await this.generateWithFallback(
-        [this.generateWithBrowserLocal, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])],
-        request
-      );
-    }
-
-    if (request.options.allowRemoteFallback) {
-      return await this.generateWithCloud(request);
     }
 
     throw new Error('ai.errorLocalUnavailableNoFallback');
@@ -95,7 +90,38 @@ export class AiProviderSelectorService {
       }
     }
 
-    throw lastError instanceof Error ? lastError : new Error('No AI provider is available.');
+    if (request.options.allowRemoteFallback && this.isRemoteUnavailableError(lastError)) {
+      throw new Error(NO_PROVIDER_AVAILABLE_ERROR_KEY);
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(NO_PROVIDER_AVAILABLE_ERROR_KEY);
+  }
+
+  private automaticProviders(request: AiProviderRequest): readonly ((request: AiProviderRequest) => Promise<AiProviderTextResult>)[] {
+    const providers: ((request: AiProviderRequest) => Promise<AiProviderTextResult>)[] = [];
+    const webLlmModel = request.options.webLlmModel;
+
+    if (this.localProvider.isSupported()) {
+      if (this.localProvider.isReady(webLlmModel)) {
+        providers.push((providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs));
+      } else {
+        this.log('webllm:deferred', {
+          model: webLlmModel,
+          loading: this.localProvider.isLoading(webLlmModel),
+          reason: 'WebLLM is still preparing; this request can use the next available provider.'
+        });
+      }
+    }
+
+    if (this.browserLocalSupported()) {
+      providers.push(this.generateWithBrowserLocal);
+    }
+
+    if (request.options.allowRemoteFallback) {
+      providers.push(this.generateWithCloud);
+    }
+
+    return providers;
   }
 
   private async withTimeout<T>(task: Promise<T>, timeoutMs: number, message: string): Promise<T> {
@@ -124,5 +150,20 @@ export class AiProviderSelectorService {
 
   private log(event: string, details: Record<string, unknown>): void {
     console.info('[Tikz Drawer AI]', event, details);
+  }
+
+  private isRemoteUnavailableError(error: unknown): boolean {
+    return error instanceof Error && (error.message === REMOTE_UNAVAILABLE_ERROR_KEY || error.message === 'ai.errorFirebaseTimeout');
+  }
+
+  private isCloudConfigurationError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    const message = error.message.toLowerCase();
+    return ['billing', 'quota', 'resource_exhausted', 'permission_denied', 'model', 'not found', 'not_found', '404', '429', 'api key', 'disabled'].some(
+      (token) => message.includes(token)
+    );
   }
 }
