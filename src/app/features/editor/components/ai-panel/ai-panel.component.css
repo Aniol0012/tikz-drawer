@@ -23,7 +23,7 @@
 .ai-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 10px;
 }
 
@@ -53,7 +53,7 @@
   grid-template-columns: 8px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
-  flex: 1 1 240px;
+  flex: 0 1 280px;
   max-width: 280px;
   min-height: 44px;
   padding: 6px 10px;
@@ -66,6 +66,35 @@
   line-height: 1.15;
   overflow-wrap: anywhere;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+.ai-settings-button {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--tool-surface);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.ai-settings-button:hover,
+.ai-settings-button:focus-visible {
+  color: var(--foreground);
+  border-color: var(--tool-border-strong);
+}
+
+.ai-settings-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .model-pill > span {

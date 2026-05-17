@@ -36,6 +36,7 @@ export class AiPanelComponent {
   private readonly chatScroll = viewChild<ElementRef<HTMLElement>>('chatScroll');
   @Output() readonly patchApplied = new EventEmitter<string>();
   @Output() readonly patchPreviewed = new EventEmitter<void>();
+  @Output() readonly settingsRequested = new EventEmitter<void>();
 
   readonly devMode = inject(EditorDevModeService).enabled;
   readonly assistantState = inject(AiAssistantStateService);

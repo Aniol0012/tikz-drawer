@@ -2877,7 +2877,10 @@
           }
         </section>
       } @else if (inspectorTab() === 'assistant') {
-        <app-ai-panel (patchPreviewed)="centerViewportOnPendingPatch()" (patchApplied)="centerViewportOnShape($event)"></app-ai-panel>
+        <app-ai-panel
+          (patchPreviewed)="centerViewportOnPendingPatch()"
+          (patchApplied)="centerViewportOnShape($event)"
+          (settingsRequested)="openAppConfigurationDialog('general')"></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">
           <div class="scene-layers-header">

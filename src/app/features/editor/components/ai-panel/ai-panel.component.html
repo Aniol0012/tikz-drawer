@@ -10,6 +10,16 @@
         <strong>{{ aiModeLabelKey() | translate }}</strong>
         <em>{{ activeModelName() }}</em>
       </span>
+      <button
+        class="ai-settings-button"
+        type="button"
+        data-tooltip-disabled
+        [attr.aria-label]="'settings' | translate"
+        (click)="settingsRequested.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.settings"></path>
+        </svg>
+      </button>
     </header>
   }
 
