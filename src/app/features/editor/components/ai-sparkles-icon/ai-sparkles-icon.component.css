@@ -1,14 +1,10 @@
 :host {
-  --ai-sparkles-main: #7c3aed;
-  --ai-sparkles-top: #2563eb;
-  --ai-sparkles-bottom: #a855f7;
-  --ai-sparkles-glow: rgb(124 58 237 / 20%);
   position: relative;
   display: inline-grid;
   place-items: center;
   width: 1em;
   height: 1em;
-  color: var(--ai-sparkles-main);
+  color: var(--ai-sparkles-main, #7c3aed);
   line-height: 0;
 }
 
@@ -18,8 +14,8 @@
   inset: -22%;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 34% 34%, color-mix(in srgb, var(--ai-sparkles-top) 34%, transparent), transparent 36%),
-    radial-gradient(circle at 68% 64%, color-mix(in srgb, var(--ai-sparkles-bottom) 28%, transparent), transparent 40%);
+    radial-gradient(circle at 34% 34%, color-mix(in srgb, var(--ai-sparkles-top, #2563eb) 34%, transparent), transparent 36%),
+    radial-gradient(circle at 68% 64%, color-mix(in srgb, var(--ai-sparkles-bottom, #a855f7) 28%, transparent), transparent 40%);
   opacity: 0;
   transform: scale(0.72);
   transition:
@@ -58,15 +54,15 @@
 }
 
 .ai-sparkles-icon__sparkle--main {
-  fill: var(--ai-sparkles-main);
+  fill: var(--ai-sparkles-main, #7c3aed);
 }
 
 .ai-sparkles-icon__sparkle--top {
-  fill: var(--ai-sparkles-top);
+  fill: var(--ai-sparkles-top, #2563eb);
 }
 
 .ai-sparkles-icon__sparkle--bottom {
-  fill: var(--ai-sparkles-bottom);
+  fill: var(--ai-sparkles-bottom, #a855f7);
 }
 
 :host(:hover) .ai-sparkles-icon,
@@ -74,7 +70,7 @@
 :host-context(button:focus-visible) .ai-sparkles-icon,
 :host-context([role='button']:hover) .ai-sparkles-icon,
 :host-context([role='button']:focus-visible) .ai-sparkles-icon {
-  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 7px var(--ai-sparkles-glow));
+  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 7px var(--ai-sparkles-glow, rgb(124 58 237 / 20%)));
   animation: ai-sparkles-orbit 980ms ease-in-out infinite;
 }
 

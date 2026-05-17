@@ -1426,10 +1426,10 @@ kbd {
   --assistant-accent: #7c3aed;
   --assistant-accent-warm: #2563eb;
   --assistant-accent-cool: #a855f7;
-  --assistant-border: color-mix(in srgb, var(--assistant-accent) 18%, var(--tool-border));
-  --assistant-surface: color-mix(in srgb, #f8f7ff 34%, var(--tool-surface));
-  --assistant-shadow: 0 1px 2px rgb(15 23 42 / 8%);
-  --assistant-shadow-hover: 0 2px 8px rgb(15 23 42 / 12%);
+  --assistant-border: color-mix(in srgb, var(--assistant-accent) 34%, var(--tool-border));
+  --assistant-surface: color-mix(in srgb, var(--canvas-background) 88%, var(--panel-background));
+  --assistant-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  --assistant-shadow-hover: 0 2px 6px rgb(15 23 42 / 8%);
   --assistant-ring: rgb(124 58 237 / 16%);
   --ai-sparkles-main: var(--assistant-accent);
   --ai-sparkles-top: var(--assistant-accent-warm);
@@ -1505,13 +1505,11 @@ kbd {
   }
 
   &.is-active {
-    border-color: color-mix(in srgb, var(--assistant-accent) 44%, var(--assistant-border));
-    box-shadow:
-      var(--assistant-shadow-hover),
-      0 0 0 3px var(--assistant-ring);
+    border-color: color-mix(in srgb, var(--assistant-accent) 48%, var(--tool-border));
+    box-shadow: var(--assistant-shadow-hover);
 
     &::after {
-      background: color-mix(in srgb, #f8f7ff 54%, var(--tool-surface));
+      background: color-mix(in srgb, var(--canvas-background) 82%, var(--panel-background));
     }
   }
 }
@@ -1520,14 +1518,34 @@ kbd {
 :host-context([data-theme='dark']),
 :host-context(.theme-dark) {
   .canvas-chip--assistant {
-    --assistant-surface: color-mix(in srgb, var(--tool-surface) 88%, #1e1b4b);
-    --assistant-shadow: 0 1px 2px rgb(0 0 0 / 28%);
-    --assistant-shadow-hover: 0 3px 10px rgb(0 0 0 / 34%);
-    --assistant-ring: rgb(168 85 247 / 16%);
+    --assistant-accent: #8b5cf6;
+    --assistant-accent-warm: #3b82f6;
+    --assistant-accent-cool: #c084fc;
+    --assistant-border: color-mix(in srgb, var(--assistant-accent) 42%, #64748b);
+    --assistant-surface: color-mix(in srgb, var(--canvas-background) 90%, var(--panel-background));
+    --assistant-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+    --assistant-shadow-hover: 0 2px 7px rgb(0 0 0 / 24%);
+    --assistant-ring: rgb(139 92 246 / 18%);
+    --ai-sparkles-glow: rgb(192 132 252 / 24%);
+
+    &:hover,
+    &:active {
+      border-color: color-mix(in srgb, var(--assistant-accent) 56%, #94a3b8);
+      background: var(--assistant-surface);
+      box-shadow: var(--assistant-shadow-hover);
+    }
+
+    &:focus-visible {
+      box-shadow:
+        var(--assistant-shadow-hover),
+        0 0 0 3px var(--assistant-ring);
+    }
 
     &.is-active {
+      border-color: color-mix(in srgb, var(--assistant-accent) 64%, #94a3b8);
+
       &::after {
-        background: color-mix(in srgb, var(--tool-surface) 70%, #1e3a8a);
+        background: color-mix(in srgb, var(--canvas-background) 84%, var(--panel-background));
       }
     }
   }
