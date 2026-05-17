@@ -23,30 +23,8 @@
 .ai-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
-}
-
-.ai-header__title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.ai-header__icon {
-  --ai-sparkles-main: #7c3aed;
-  --ai-sparkles-top: #2563eb;
-  --ai-sparkles-bottom: #a855f7;
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid color-mix(in srgb, #7c3aed 24%, var(--tool-border));
-  border-radius: 9px;
-  background: color-mix(in srgb, #f8f7ff 52%, var(--panel-background));
-  color: #7c3aed;
 }
 
 .quick-actions svg,
@@ -60,12 +38,6 @@
   stroke-width: 2;
 }
 
-.ai-header__icon app-ai-sparkles-icon {
-  width: 17px;
-  height: 17px;
-}
-
-.ai-header p,
 .quick-section__header span,
 .ai-proposal span {
   margin: 0;
@@ -74,13 +46,6 @@
   font-weight: 800;
   line-height: 1.1;
   text-transform: uppercase;
-}
-
-.ai-header h3 {
-  margin: 2px 0 0;
-  color: var(--foreground);
-  font-size: 1rem;
-  line-height: 1.15;
 }
 
 .model-pill {
@@ -312,6 +277,14 @@
   --quick-border: #f59e0b;
 }
 
+.quick-actions button:nth-child(5) {
+  --quick-border: #06b6d4;
+}
+
+.quick-actions button:nth-child(6) {
+  --quick-border: #84cc16;
+}
+
 .quick-actions button:hover {
   border-color: var(--quick-border, var(--accent));
   background: color-mix(in srgb, var(--quick-border, var(--accent)) 14%, var(--panel-background));
@@ -433,6 +406,7 @@
 }
 
 .composer__box {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 34px;
   align-items: end;
@@ -449,8 +423,8 @@
 .composer textarea {
   width: 100%;
   min-width: 0;
-  max-height: 128px;
-  resize: vertical;
+  max-height: 180px;
+  resize: none;
   border: 0;
   outline: 0;
   background: transparent;
@@ -459,6 +433,14 @@
   font-size: 0.86rem;
   line-height: 1.35;
   padding: 5px 2px 5px 4px;
+}
+
+.composer__resize-handle {
+  position: absolute;
+  inset: -3px 44px auto 10px;
+  z-index: 1;
+  height: 8px;
+  cursor: ns-resize;
 }
 
 .composer textarea::placeholder {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject, signal, viewChild } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -16,11 +16,10 @@ import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../../ai/ai-provider-result.model';
-import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 
 @Component({
   selector: 'app-ai-panel',
-  imports: [EditorTranslatePipe, AiSparklesIconComponent],
+  imports: [EditorTranslatePipe],
   templateUrl: './ai-panel.component.html',
   styleUrl: './ai-panel.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -84,6 +83,7 @@ export class AiPanelComponent {
     return this.webLlmReady() || (this.aiSettings().allowRemoteFallback && !this.localAiProvider.isSupported());
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
+  readonly composerHeight = signal(64);
   readonly quickActions = AI_QUICK_ACTIONS;
 
   setDraft(value: string): void {
@@ -106,6 +106,29 @@ export class AiPanelComponent {
 
     event.preventDefault();
     void this.submit();
+  }
+
+  startComposerResize(event: PointerEvent): void {
+    event.preventDefault();
+
+    const startY = event.clientY;
+    const startHeight = this.composerHeight();
+    const minHeight = 64;
+    const maxHeight = 180;
+
+    const resize = (moveEvent: PointerEvent) => {
+      const nextHeight = startHeight + startY - moveEvent.clientY;
+      this.composerHeight.set(Math.min(maxHeight, Math.max(minHeight, nextHeight)));
+    };
+    const stopResize = () => {
+      window.removeEventListener('pointermove', resize);
+      window.removeEventListener('pointerup', stopResize);
+      window.removeEventListener('pointercancel', stopResize);
+    };
+
+    window.addEventListener('pointermove', resize);
+    window.addEventListener('pointerup', stopResize, { once: true });
+    window.addEventListener('pointercancel', stopResize, { once: true });
   }
 
   async submit(): Promise<void> {

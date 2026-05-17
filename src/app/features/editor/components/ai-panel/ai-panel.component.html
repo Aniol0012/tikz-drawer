@@ -1,15 +1,6 @@
-<section class="ai-panel" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-  <header class="ai-header">
-    <div class="ai-header__title">
-      <span class="ai-header__icon">
-        <app-ai-sparkles-icon></app-ai-sparkles-icon>
-      </span>
-      <div>
-        <p>{{ 'ai.title' | translate }}</p>
-        <h3>{{ 'ai.heading' | translate }}</h3>
-      </div>
-    </div>
-    @if (devMode()) {
+<section class="ai-panel" (click)="$event.stopPropagation()">
+  @if (devMode()) {
+    <header class="ai-header">
       <span
         class="model-pill"
         [class.model-pill--local]="activeAiMode() === 'local'"
@@ -19,8 +10,8 @@
         <strong>{{ aiModeLabelKey() | translate }}</strong>
         <em>{{ activeModelName() }}</em>
       </span>
-    }
-  </header>
+    </header>
+  }
 
   @if (devMode() && localAiStatus().loadingState === 'loading') {
     <div class="ai-status-row">
@@ -107,11 +98,13 @@
     <div class="composer__box">
       <textarea
         rows="3"
+        [style.height.px]="composerHeight()"
         [attr.aria-label]="'ai.placeholder' | translate"
         [placeholder]="'ai.placeholder' | translate"
         [value]="assistantState.draft()"
         (input)="setDraft($any($event.target).value)"
         (keydown)="handleComposerKeydown($event)"></textarea>
+      <span class="composer__resize-handle" (pointerdown)="startComposerResize($event)" aria-hidden="true"></span>
       <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate" data-tooltip-disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="iconMap.send"></path>
