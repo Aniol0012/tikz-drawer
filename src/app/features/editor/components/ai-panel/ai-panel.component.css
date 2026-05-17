@@ -266,7 +266,7 @@
 .quick-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
 }
 
 .quick-actions button {
@@ -276,7 +276,7 @@
   gap: 7px;
   min-width: 0;
   min-height: 32px;
-  padding: 6px 9px;
+  padding: 6px 10px;
   border: 1px solid var(--quick-border, var(--ai-line));
   border-radius: 999px;
   background: color-mix(in srgb, var(--quick-border, var(--ai-line)) 7%, var(--ai-elevated));
@@ -287,7 +287,9 @@
   line-height: 1.15;
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 5%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 .quick-actions button:nth-child(1) {
@@ -329,56 +331,59 @@
   flex: 0 0 auto;
   width: 14px;
   height: 14px;
+  opacity: 0.9;
 }
 
 .ai-chat {
   flex: 1 1 auto;
   display: grid;
   align-content: start;
-  gap: 9px;
+  gap: 11px;
   min-height: 0;
   height: 100%;
   overflow: auto;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--ai-line);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 92%, transparent), transparent 120px),
-    color-mix(in srgb, var(--panel-background) 76%, var(--tool-surface));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-background) 76%, var(--tool-surface));
   scrollbar-width: thin;
 }
 
 .message {
   display: grid;
   gap: 8px;
-  width: 100%;
-  max-width: 100%;
-  padding: 13px 14px;
+  justify-self: start;
+  width: fit-content;
+  max-width: min(92%, 390px);
+  padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--ai-line));
-  border-radius: 12px;
+  border-radius: 16px 16px 16px 5px;
   background: color-mix(in srgb, var(--panel-background) 88%, var(--tool-surface));
   box-shadow:
-    var(--ai-shadow),
-    inset 3px 0 0 color-mix(in srgb, var(--accent) 44%, transparent);
+    0 1px 1px color-mix(in srgb, var(--foreground) 4%, transparent),
+    0 8px 18px color-mix(in srgb, var(--foreground) 3%, transparent);
 }
 
 .message--user {
   justify-self: end;
-  width: fit-content;
-  max-width: min(88%, 360px);
+  max-width: min(84%, 360px);
   border-color: color-mix(in srgb, var(--accent) 48%, var(--tool-border));
+  border-radius: 16px 16px 5px 16px;
   background: color-mix(in srgb, var(--accent-soft) 86%, var(--panel-background));
   box-shadow:
-    var(--ai-shadow),
-    inset -3px 0 0 color-mix(in srgb, var(--accent) 54%, transparent);
+    0 1px 1px color-mix(in srgb, var(--foreground) 5%, transparent),
+    0 8px 18px color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .message--system {
+  justify-self: stretch;
+  width: auto;
   max-width: 100%;
-  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--ai-line));
+  border-radius: 13px;
   background: color-mix(in srgb, var(--tool-surface) 82%, var(--panel-background));
   color: var(--muted-foreground);
-  box-shadow: none;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent);
 }
 
 .message--loading {
@@ -414,8 +419,8 @@
 .message p {
   margin: 0;
   color: var(--foreground);
-  font-size: 0.86rem;
-  line-height: 1.46;
+  font-size: 0.84rem;
+  line-height: 1.48;
   white-space: pre-wrap;
 }
 
@@ -548,6 +553,70 @@
   .ghost-action {
     flex: 1 1 100%;
   }
+}
+
+:host-context([data-theme='dark']) .quick-section__header span {
+  color: color-mix(in srgb, white 72%, var(--muted-foreground));
+}
+
+:host-context([data-theme='dark']) .quick-actions button {
+  border-color: color-mix(in srgb, var(--quick-border) 84%, #0f172a);
+  color: color-mix(in srgb, white 90%, var(--quick-border));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 4%, transparent),
+    0 1px 0 color-mix(in srgb, black 34%, transparent);
+}
+
+:host-context([data-theme='dark']) .quick-actions button:hover,
+:host-context([data-theme='dark']) .quick-actions button:focus-visible {
+  border-color: color-mix(in srgb, var(--quick-border) 92%, white 8%);
+  color: #ffffff;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--quick-border) 13%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 6%, transparent);
+}
+
+:host-context([data-theme='dark']) .quick-actions svg {
+  opacity: 1;
+}
+
+:host-context([data-theme='dark']) .ai-chat {
+  border-color: color-mix(in srgb, #64748b 34%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 2%, transparent);
+}
+
+:host-context([data-theme='dark']) .message {
+  border-color: color-mix(in srgb, #64748b 38%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 3%, transparent),
+    0 8px 18px color-mix(in srgb, black 16%, transparent);
+}
+
+:host-context([data-theme='dark']) .message--user {
+  border-color: color-mix(in srgb, #7aa2ff 52%, #1e293b);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 3%, transparent),
+    0 8px 18px color-mix(in srgb, #1d4ed8 13%, transparent);
+}
+
+:host-context([data-theme='dark']) .message--system {
+  border-color: color-mix(in srgb, #60a5fa 24%, #334155);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 3%, transparent),
+    0 1px 2px color-mix(in srgb, black 20%, transparent);
+}
+
+:host-context([data-theme='dark']) .message p,
+:host-context([data-theme='dark']) .message--system p {
+  color: #f8fafc;
+}
+
+:host-context([data-theme='dark']) .message__mode {
+  color: color-mix(in srgb, #cbd5e1 74%, #94a3b8);
+}
+
+:host-context([data-theme='dark']) .ai-proposal {
+  border-top-color: color-mix(in srgb, #64748b 34%, transparent);
 }
 
 :host-context([data-theme='dark']) .composer__box {
