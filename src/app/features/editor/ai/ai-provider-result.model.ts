@@ -11,6 +11,7 @@ export interface AiGenerationOptions {
   readonly webLlmTimeoutMs: number;
   readonly automaticWebLlmTimeoutMs: number;
   readonly allowRemoteFallback: boolean;
+  readonly debugLogs: boolean;
 }
 
 export interface AiProviderRequest {

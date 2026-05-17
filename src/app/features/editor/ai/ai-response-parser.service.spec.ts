@@ -61,4 +61,57 @@ describe('AiResponseParserService', () => {
     expect(response.type).toBe('scenePatch');
     expect(response.patch?.create).toHaveLength(1);
   });
+
+  it('recovers plain text responses when the local model ignores the JSON format', () => {
+    const response = parser.parse('Hola! En què et puc ajudar amb el diagrama?');
+
+    expect(response.type).toBe('message');
+    expect(response.message).toBe('Hola! En què et puc ajudar amb el diagrama?');
+    expect(response.parseStatus).toBe('text-fallback');
+  });
+
+  it('recovers message text from common alternative JSON keys', () => {
+    const response = parser.parse('{"answer":"Puc ajudar-te a crear una figura."}');
+
+    expect(response.type).toBe('message');
+    expect(response.message).toBe('Puc ajudar-te a crear una figura.');
+    expect(response.parseStatus).toBe('json');
+  });
+
+  it('recovers top-level patch arrays without a patch wrapper', () => {
+    const response = parser.parse(`{
+      "message": "He preparat un cercle.",
+      "create": [
+        {
+          "kind": "circle",
+          "name": "Cercle",
+          "cx": 0,
+          "cy": 0,
+          "r": 1
+        }
+      ]
+    }`);
+
+    expect(response.type).toBe('scenePatch');
+    expect(response.patch?.create).toHaveLength(1);
+    expect(response.patch?.create[0]).toMatchObject({ kind: 'circle', name: 'Cercle' });
+  });
+
+  it('marks empty JSON so dev logs can identify unhelpful local-model output', () => {
+    const response = parser.parse('{}');
+
+    expect(response.type).toBe('message');
+    expect(response.parseStatus).toBe('empty-json');
+  });
+
+  it('marks prompt echoes when WebLLM copies the compact prompt payload', () => {
+    const response = parser.parse(`{
+      "instruction": "Hola",
+      "now": { "iso": "2026-05-17T08:00:00.000Z" },
+      "scene": { "name": "TikZ figure", "elements": [] }
+    }`);
+
+    expect(response.type).toBe('message');
+    expect(response.parseStatus).toBe('prompt-echo');
+  });
 });

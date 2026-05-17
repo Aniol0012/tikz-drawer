@@ -18,6 +18,7 @@ export interface AiSettings {
   readonly webLlmTimeoutMs: number;
   readonly automaticWebLlmTimeoutMs: number;
   readonly allowRemoteFallback: boolean;
+  readonly debugLogs: boolean;
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -28,7 +29,8 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   remoteModel: FIREBASE_AI_MODEL,
   webLlmTimeoutMs: 180000,
   automaticWebLlmTimeoutMs: 20000,
-  allowRemoteFallback: true
+  allowRemoteFallback: true,
+  debugLogs: false
 };
 
 @Injectable({ providedIn: 'root' })
@@ -62,7 +64,8 @@ export class AiSettingsService {
       settings.remoteModel === DEFAULT_AI_SETTINGS.remoteModel &&
       settings.webLlmTimeoutMs === DEFAULT_AI_SETTINGS.webLlmTimeoutMs &&
       settings.automaticWebLlmTimeoutMs === DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs &&
-      settings.allowRemoteFallback === DEFAULT_AI_SETTINGS.allowRemoteFallback
+      settings.allowRemoteFallback === DEFAULT_AI_SETTINGS.allowRemoteFallback &&
+      settings.debugLogs === DEFAULT_AI_SETTINGS.debugLogs
     );
   }
 
@@ -100,7 +103,8 @@ export class AiSettingsService {
       remoteModel: this.normalizeOption(settings?.remoteModel, REMOTE_AI_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.remoteModel),
       webLlmTimeoutMs: Math.round(this.clampNumber(settings?.webLlmTimeoutMs, DEFAULT_AI_SETTINGS.webLlmTimeoutMs, 5000, 300000)),
       automaticWebLlmTimeoutMs: Math.round(this.clampNumber(settings?.automaticWebLlmTimeoutMs, DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs, 1000, 120000)),
-      allowRemoteFallback: typeof settings?.allowRemoteFallback === 'boolean' ? settings.allowRemoteFallback : DEFAULT_AI_SETTINGS.allowRemoteFallback
+      allowRemoteFallback: typeof settings?.allowRemoteFallback === 'boolean' ? settings.allowRemoteFallback : DEFAULT_AI_SETTINGS.allowRemoteFallback,
+      debugLogs: typeof settings?.debugLogs === 'boolean' ? settings.debugLogs : DEFAULT_AI_SETTINGS.debugLogs
     };
   }
 

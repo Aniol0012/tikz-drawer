@@ -1,35 +1,54 @@
 import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import { translate } from '../i18n/editor-page.i18n';
-import type { AiResponse, ScenePatch } from './ai-message.model';
+import type { AiResponse, AiResponseParseStatus, ScenePatch } from './ai-message.model';
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
   private readonly languageService = inject(EditorLanguageService, { optional: true });
 
   parse(rawText: string): AiResponse {
-    const parsed = this.parseJson(this.extractJson(rawText)) as Partial<AiResponse>;
-    const patch = this.normalizePatch(parsed.patch);
+    const parsedResult = this.parseCandidate(rawText);
+    if (!parsedResult) {
+      return this.textFallback(rawText);
+    }
+
+    const parsed = parsedResult.value;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return this.textFallback(rawText);
+    }
+
+    const responseCandidate = parsed as Partial<AiResponse> & Record<string, unknown>;
+    const patch = this.normalizePatch(responseCandidate.patch ?? this.patchFromTopLevel(responseCandidate));
     const hasPatchChanges = patch.create.length > 0 || patch.update.length > 0 || patch.remove.length > 0;
-    const type = parsed.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : parsed.type === 'tikzCode' ? 'tikzCode' : 'message';
-    const message =
-      typeof parsed.message === 'string' && parsed.message.trim()
-        ? parsed.message.trim()
-        : (this.languageService?.t('ai.responseGenerated') ?? translate('en', 'ai.responseGenerated'));
+    const tikzCode = this.firstString(responseCandidate, ['tikzCode', 'tikz', 'latex', 'code']);
+    const message = this.firstString(responseCandidate, ['message', 'text', 'answer', 'content', 'response', 'explanation']);
+    const type = responseCandidate.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : responseCandidate.type === 'tikzCode' || tikzCode ? 'tikzCode' : 'message';
+    const parseStatus = this.responseParseStatus(responseCandidate, parsedResult.status, message, hasPatchChanges, tikzCode);
 
     return {
       type,
-      message,
+      message: message || (this.languageService?.t('ai.responseGenerated') ?? translate('en', 'ai.responseGenerated')),
       patch: type === 'scenePatch' ? patch : undefined,
-      tikzCode: typeof parsed.tikzCode === 'string' ? parsed.tikzCode : undefined
+      tikzCode,
+      parseStatus
     };
   }
 
-  private parseJson(jsonText: string): unknown {
+  private parseCandidate(rawText: string): { readonly value: unknown; readonly status: AiResponseParseStatus } | null {
+    const jsonText = this.extractJson(rawText);
+    if (!this.looksLikeJson(jsonText)) {
+      return null;
+    }
+
+    return this.parseJson(jsonText);
+  }
+
+  private parseJson(jsonText: string): { readonly value: unknown; readonly status: AiResponseParseStatus } {
     try {
-      return JSON.parse(jsonText);
+      return { value: JSON.parse(jsonText), status: 'json' };
     } catch {
-      return JSON.parse(this.repairJson(jsonText));
+      return { value: JSON.parse(this.repairJson(jsonText)), status: 'json-repaired' };
     }
   }
 
@@ -51,6 +70,11 @@ export class AiResponseParserService {
     }
 
     return trimmed;
+  }
+
+  private looksLikeJson(text: string): boolean {
+    const trimmed = text.trim();
+    return trimmed.startsWith('{') || trimmed.startsWith('[');
   }
 
   private repairJson(jsonText: string): string {
@@ -121,5 +145,77 @@ export class AiResponseParserService {
       update: Array.isArray(candidate.update) ? candidate.update.filter((entry) => !!entry?.id && typeof entry.id === 'string') : [],
       remove: Array.isArray(candidate.remove) ? candidate.remove.filter((id): id is string => typeof id === 'string') : []
     };
+  }
+
+  private patchFromTopLevel(candidate: Record<string, unknown>): Partial<ScenePatch> | null {
+    if (candidate['create'] || candidate['update'] || candidate['remove']) {
+      return {
+        create: candidate['create'] as ScenePatch['create'],
+        update: candidate['update'] as ScenePatch['update'],
+        remove: candidate['remove'] as ScenePatch['remove']
+      };
+    }
+
+    return null;
+  }
+
+  private firstString(candidate: Record<string, unknown>, keys: readonly string[]): string | undefined {
+    for (const key of keys) {
+      const value = candidate[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return undefined;
+  }
+
+  private emptyResponse(candidate: Record<string, unknown>, message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {
+    return !message && !hasPatchChanges && !tikzCode && Object.keys(candidate).length === 0;
+  }
+
+  private responseParseStatus(
+    candidate: Record<string, unknown>,
+    status: AiResponseParseStatus,
+    message: string | undefined,
+    hasPatchChanges: boolean,
+    tikzCode: string | undefined
+  ): AiResponseParseStatus {
+    if (this.emptyResponse(candidate, message, hasPatchChanges, tikzCode)) {
+      return 'empty-json';
+    }
+
+    if (this.promptEchoResponse(candidate, message, hasPatchChanges, tikzCode)) {
+      return 'prompt-echo';
+    }
+
+    return status;
+  }
+
+  private promptEchoResponse(candidate: Record<string, unknown>, message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {
+    return (
+      !message &&
+      !hasPatchChanges &&
+      !tikzCode &&
+      typeof candidate['instruction'] === 'string' &&
+      (candidate['now'] !== undefined || candidate['scene'] !== undefined || candidate['context'] !== undefined || candidate['conversation'] !== undefined)
+    );
+  }
+
+  private textFallback(rawText: string): AiResponse {
+    const cleaned = this.cleanTextFallback(rawText);
+    return {
+      type: 'message',
+      message: cleaned || (this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse')),
+      parseStatus: 'text-fallback'
+    };
+  }
+
+  private cleanTextFallback(rawText: string): string {
+    return rawText
+      .trim()
+      .replace(/^```(?:json|text)?/i, '')
+      .replace(/```$/i, '')
+      .trim();
   }
 }

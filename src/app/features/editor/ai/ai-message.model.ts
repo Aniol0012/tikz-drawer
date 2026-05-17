@@ -34,9 +34,13 @@ export interface AiResponse {
   readonly message: string;
   readonly patch?: ScenePatch;
   readonly tikzCode?: string;
+  readonly parseStatus?: AiResponseParseStatus;
+  readonly rawTextPreview?: string;
   readonly aiMode?: AiProviderMode;
   readonly aiProviderType?: AiProviderRuntimeType;
   readonly aiModelName?: string;
   readonly aiDurationMs?: number;
   readonly aiUsage?: AiProviderUsage;
 }
+
+export type AiResponseParseStatus = 'json' | 'json-repaired' | 'text-fallback' | 'empty-json' | 'prompt-echo' | 'local-conversation-fallback';

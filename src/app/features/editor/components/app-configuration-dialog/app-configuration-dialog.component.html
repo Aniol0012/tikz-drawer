@@ -175,6 +175,11 @@
                         [checked]="aiSettings().allowRemoteFallback"
                         [label]="'ai.allowRemoteFallback' | translate"
                         (checkedChange)="updateAiAllowRemoteFallback($event)"></app-toggle-field>
+                      <app-toggle-field
+                        class="field--full"
+                        [checked]="aiSettings().debugLogs"
+                        [label]="'ai.debugLogs' | translate"
+                        (checkedChange)="updateAiDebugLogs($event)"></app-toggle-field>
                       <p class="settings-note settings-note--ai">{{ 'ai.settingsDescription' | translate }}</p>
                     </div>
                   </section>

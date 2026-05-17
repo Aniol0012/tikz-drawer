@@ -334,6 +334,10 @@ export class AppConfigurationDialogComponent {
     this.aiSettingsService.patchSettings({ allowRemoteFallback: checked });
   }
 
+  updateAiDebugLogs(checked: boolean): void {
+    this.aiSettingsService.patchSettings({ debugLogs: checked });
+  }
+
   setAiProviderType(value: string): void {
     if (value === 'local' || value === 'webllm' || value === 'remote') {
       this.aiSettingsService.patchSettings({ providerType: value satisfies AiProviderType });

@@ -7,6 +7,7 @@ import { AiProviderSelectorService } from './ai-provider-selector.service';
 import { AiSettingsService } from './ai-settings.service';
 import type { CanvasShape } from '../models/tikz.models';
 import { EditorLanguageService } from '../i18n/editor-language.service';
+import { EditorDevModeService } from '../state/editor-dev-mode.service';
 
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
@@ -14,6 +15,7 @@ export class AiClientService {
   private readonly providerSelector = inject(AiProviderSelectorService);
   private readonly settingsService = inject(AiSettingsService);
   private readonly languageService = inject(EditorLanguageService);
+  private readonly devModeService = inject(EditorDevModeService);
 
   readonly lastProviderMode = signal<'local' | 'cloud'>('cloud');
   readonly lastModelName = signal('');
@@ -37,9 +39,20 @@ export class AiClientService {
 
     const result = await this.providerSelector.generateText(request);
     try {
-      return this.responseFromTextResult(result, instruction);
+      const response = this.responseFromTextResult(result, instruction);
+      if (this.shouldRetryPromptEchoWithCloud(response, result, instruction, request.options.allowRemoteFallback)) {
+        this.logWarning('prompt-echo:cloud-fallback', {
+          runtime: result.providerType,
+          model: result.modelName,
+          instruction,
+          rawPreview: this.previewText(result.text)
+        });
+        return this.responseFromTextResult(await this.providerSelector.generateWithCloud(request), instruction);
+      }
+
+      return response;
     } catch (error) {
-      console.warn('[Tikz Drawer AI]', 'parse:failed', {
+      this.logWarning('parse:failed', {
         runtime: result.providerType,
         model: result.modelName,
         error: error instanceof Error ? error.message : String(error),
@@ -56,10 +69,12 @@ export class AiClientService {
 
   private responseFromTextResult(result: AiProviderTextResult, instruction: string): AiResponse {
     const response = this.withLocalDrawingFallback(this.parser.parse(result.text), result, instruction);
+    this.logProviderResponse(result, response);
     this.lastProviderMode.set(result.mode);
     this.lastModelName.set(result.modelName);
     return {
       ...response,
+      rawTextPreview: this.previewText(result.text),
       aiMode: result.mode,
       aiProviderType: result.providerType,
       aiModelName: result.modelName,
@@ -68,7 +83,51 @@ export class AiClientService {
     };
   }
 
+  private logProviderResponse(result: AiProviderTextResult, response: AiResponse): void {
+    if (!this.debugLogsEnabled()) {
+      return;
+    }
+
+    console.debug('[Tikz Drawer AI]', 'provider:response', {
+      runtime: result.providerType,
+      mode: result.mode,
+      model: result.modelName,
+      durationMs: result.durationMs,
+      usage: result.usage,
+      parseStatus: response.parseStatus,
+      responseType: response.type,
+      hasPatch: !!response.patch,
+      hasTikzCode: !!response.tikzCode,
+      messagePreview: this.previewText(response.message),
+      rawPreview: this.previewText(result.text)
+    });
+  }
+
+  private logWarning(event: string, details: Record<string, unknown>): void {
+    if (!this.debugLogsEnabled()) {
+      return;
+    }
+
+    console.warn('[Tikz Drawer AI]', event, details);
+  }
+
+  private debugLogsEnabled(): boolean {
+    return this.devModeService.enabled() && this.settingsService.settings().debugLogs;
+  }
+
+  private previewText(text: string): string {
+    return text.trim().slice(0, 1200);
+  }
+
   private withLocalDrawingFallback(response: AiResponse, result: AiProviderTextResult, instruction: string): AiResponse {
+    if (result.providerType === 'webllm' && response.parseStatus === 'prompt-echo' && this.isConversationalInstruction(instruction)) {
+      return {
+        ...response,
+        message: this.conversationFallbackMessage(instruction),
+        parseStatus: 'local-conversation-fallback'
+      };
+    }
+
     if (result.providerType !== 'webllm' || response.type !== 'message' || response.message !== this.languageService.t('ai.responseGenerated')) {
       return response;
     }
@@ -86,11 +145,41 @@ export class AiClientService {
         };
   }
 
-  private simpleShapeFromInstruction(instruction: string): Partial<CanvasShape> | null {
-    const normalized = instruction
+  private shouldRetryPromptEchoWithCloud(response: AiResponse, result: AiProviderTextResult, instruction: string, allowRemoteFallback: boolean): boolean {
+    return (
+      result.providerType === 'webllm' &&
+      allowRemoteFallback &&
+      response.parseStatus === 'prompt-echo' &&
+      !this.isConversationalInstruction(instruction)
+    );
+  }
+
+  private isConversationalInstruction(instruction: string): boolean {
+    const normalized = this.normalizeInstruction(instruction);
+    return /^(hola|hello|hi|hey|bon dia|buenos dias|buenos días|bona tarda|buenas tardes|bona nit|buenas noches|que tal|què tal|com estas|como estas|gracies|gracias|merci)[!.? ]*$/.test(
+      normalized
+    );
+  }
+
+  private conversationFallbackMessage(instruction: string): string {
+    const normalized = this.normalizeInstruction(instruction);
+    if (/^(gracies|gracias|merci)/.test(normalized)) {
+      return this.languageService.tOrFallback('ai.localThanksFallback', 'De res. Digue’m què vols crear, corregir o millorar al llenç.');
+    }
+
+    return this.languageService.tOrFallback('ai.localGreetingFallback', 'Hola! Digue’m què vols crear, corregir o millorar al llenç.');
+  }
+
+  private normalizeInstruction(instruction: string): string {
+    return instruction
       .normalize('NFD')
       .replace(/\p{Diacritic}/gu, '')
-      .toLowerCase();
+      .toLowerCase()
+      .trim();
+  }
+
+  private simpleShapeFromInstruction(instruction: string): Partial<CanvasShape> | null {
+    const normalized = this.normalizeInstruction(instruction);
     if (!/(afegeix|afegir|posa|pon|crear|crea|anade|añade|dibuixa|dibuja)/.test(normalized)) {
       return null;
     }

@@ -202,6 +202,7 @@ export class AiPanelComponent {
     const details = [
       this.interpolate(this.languageService.t('ai.debug.responseFrom'), { provider }),
       response.aiModelName || this.activeModelName(),
+      response.parseStatus ? `parse ${response.parseStatus}` : '',
       response.aiDurationMs ? `${(response.aiDurationMs / 1000).toFixed(1)}s` : '',
       this.usageDebugLabel(response.aiUsage)
     ].filter(Boolean);

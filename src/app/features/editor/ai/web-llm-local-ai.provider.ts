@@ -11,6 +11,7 @@ import type { AiProviderRequest, AiProviderTextResult, AiProviderUsage } from '.
 import type { LocalAiStatus } from './local-ai-status.model';
 import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
+import { aiDebugLoggingEnabled } from './ai-debug-logging';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
 const WEB_LLM_MAX_OUTPUT_TOKENS = 180;
@@ -363,6 +364,10 @@ function patchStatus(patch: Partial<LocalAiStatus>): void {
 }
 
 function logWebLlm(event: string, details: Record<string, unknown>): void {
+  if (!aiDebugLoggingEnabled()) {
+    return;
+  }
+
   console.info('[Tikz Drawer AI][WebLLM]', event, details);
 }
 

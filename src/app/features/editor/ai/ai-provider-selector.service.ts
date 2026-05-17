@@ -3,6 +3,7 @@ import { BrowserLocalAiProvider } from './browser-local-ai.provider';
 import { FirebaseAiProvider } from './firebase-ai.provider';
 import { WebLlmLocalAiProvider } from './web-llm-local-ai.provider';
 import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
+import { aiDebugLoggingEnabled } from './ai-debug-logging';
 
 const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 30000;
 const CLOUD_GENERATION_TIMEOUT_MS = 30000;
@@ -149,6 +150,10 @@ export class AiProviderSelectorService {
   }
 
   private log(event: string, details: Record<string, unknown>): void {
+    if (!aiDebugLoggingEnabled()) {
+      return;
+    }
+
     console.info('[Tikz Drawer AI]', event, details);
   }
 
