@@ -138,9 +138,13 @@ export const detectLanguage = (): LanguageCode => {
 export const restoreLanguage = (raw: string | null | undefined, detectLanguageFallback: () => LanguageCode = detectLanguage): LanguageCode =>
   isLanguageCode(raw) ? raw : detectLanguageFallback();
 
-export const translate = (language: LanguageCode, key: string): string => languageByCode[language].translations[key] ?? key;
+const FALLBACK_LANGUAGE: LanguageCode = 'en';
 
-export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string => languageByCode[language].translations[key] ?? fallback;
+export const translate = (language: LanguageCode, key: string): string =>
+  languageByCode[language].translations[key] ?? languageByCode[FALLBACK_LANGUAGE].translations[key] ?? key;
+
+export const translateOrFallback = (language: LanguageCode, key: string, fallback: string): string =>
+  languageByCode[language].translations[key] ?? languageByCode[FALLBACK_LANGUAGE].translations[key] ?? fallback;
 
 export const getLanguageOptions = (language: LanguageCode): readonly LanguageOption[] =>
   languages.map(({ code, label, flagSrc, longLabel, longLabelKey }) => ({

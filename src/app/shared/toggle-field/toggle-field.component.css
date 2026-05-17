@@ -16,6 +16,10 @@
   min-height: 48px;
 }
 
+:host.toggle-field--compact {
+  min-height: 38px;
+}
+
 :host.graph-dialog__toggle {
   min-height: 42px;
 }
@@ -42,6 +46,10 @@ label {
   align-content: center;
 }
 
+:host.toggle-field--compact label {
+  padding-inline: 10px;
+}
+
 :host.graph-dialog__toggle label {
   padding-inline: 12px;
 }
@@ -58,6 +66,10 @@ span {
   font-size: 0.82rem;
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+:host.toggle-field--compact span {
+  font-size: 0.78rem;
 }
 
 :host-context(.export-settings-layout) span {

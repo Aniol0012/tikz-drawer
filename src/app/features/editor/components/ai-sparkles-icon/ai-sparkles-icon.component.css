@@ -69,31 +69,48 @@
   fill: var(--ai-sparkles-bottom);
 }
 
-:host-context(.ai-sparkles-trigger:hover) .ai-sparkles-icon,
-:host-context(.ai-sparkles-trigger:focus-visible) .ai-sparkles-icon {
+:host(:hover) .ai-sparkles-icon,
+:host-context(button:hover) .ai-sparkles-icon,
+:host-context(button:focus-visible) .ai-sparkles-icon,
+:host-context([role='button']:hover) .ai-sparkles-icon,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon {
   filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 7px var(--ai-sparkles-glow));
   animation: ai-sparkles-orbit 980ms ease-in-out infinite;
 }
 
-:host-context(.ai-sparkles-trigger:hover)::before,
-:host-context(.ai-sparkles-trigger:focus-visible)::before {
+:host(:hover)::before,
+:host-context(button:hover)::before,
+:host-context(button:focus-visible)::before,
+:host-context([role='button']:hover)::before,
+:host-context([role='button']:focus-visible)::before {
   opacity: 1;
   animation: ai-sparkles-halo 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-:host-context(.ai-sparkles-trigger:hover) .ai-sparkles-icon__sparkle--main,
-:host-context(.ai-sparkles-trigger:focus-visible) .ai-sparkles-icon__sparkle--main {
+:host(:hover) .ai-sparkles-icon__sparkle--main,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--main,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--main,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--main,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--main {
   animation: ai-sparkles-main-pulse 980ms ease-in-out infinite;
 }
 
-:host-context(.ai-sparkles-trigger:hover) .ai-sparkles-icon__sparkle--top,
-:host-context(.ai-sparkles-trigger:focus-visible) .ai-sparkles-icon__sparkle--top,
-:host-context(.ai-sparkles-trigger:hover) .ai-sparkles-icon__sparkle--bottom,
-:host-context(.ai-sparkles-trigger:focus-visible) .ai-sparkles-icon__sparkle--bottom {
+:host(:hover) .ai-sparkles-icon__sparkle--top,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--top,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--top,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--top,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--top,
+:host(:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--bottom,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--bottom {
   animation: ai-sparkles-small-drift 980ms ease-in-out infinite;
 }
 
-:host-context(.ai-sparkles-trigger:active) .ai-sparkles-icon {
+:host(:active) .ai-sparkles-icon,
+:host-context(button:active) .ai-sparkles-icon,
+:host-context([role='button']:active) .ai-sparkles-icon {
   transform: scale(0.88) rotate(4deg);
 }
 

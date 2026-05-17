@@ -26,12 +26,16 @@ describe('AppConfigurationDialogComponent', () => {
     ['app-configuration-dialog.component.css', componentDir],
     ['app-select.component.html', resolve(process.cwd(), 'src/app/shared/app-select')],
     ['app-select.component.css', resolve(process.cwd(), 'src/app/shared/app-select')],
+    ['badge.component.html', resolve(process.cwd(), 'src/app/shared/badge')],
+    ['badge.component.css', resolve(process.cwd(), 'src/app/shared/badge')],
     ['toggle-field.component.html', resolve(process.cwd(), 'src/app/shared/toggle-field')],
     ['toggle-field.component.css', resolve(process.cwd(), 'src/app/shared/toggle-field')],
     ['range-input-card.component.html', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')],
     ['range-input-card.component.css', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')],
     ['keyboard-shortcut-capture.component.html', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
-    ['keyboard-shortcut-capture.component.css', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')]
+    ['keyboard-shortcut-capture.component.css', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
+    ['ai-sparkles-icon.component.html', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')],
+    ['ai-sparkles-icon.component.css', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')]
   ]);
 
   beforeAll(async () => {

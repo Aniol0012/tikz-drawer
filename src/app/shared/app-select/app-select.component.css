@@ -34,7 +34,8 @@
 }
 
 .app-select-shell__flag,
-.app-select-shell__icon {
+.app-select-shell__icon,
+.app-select-shell__status {
   position: absolute;
   z-index: 1;
   top: 50%;
@@ -65,6 +66,35 @@
   fill: currentColor;
 }
 
+.app-select-shell__status,
+.app-select__option-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--select-status-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--select-status-color) 16%, transparent);
+}
+
+.app-select-shell__status[data-tone='ready'],
+.app-select__option-status[data-tone='ready'] {
+  --select-status-color: #12a150;
+}
+
+.app-select-shell__status[data-tone='loading'],
+.app-select__option-status[data-tone='loading'] {
+  --select-status-color: #f59e0b;
+}
+
+.app-select-shell__status[data-tone='unavailable'],
+.app-select__option-status[data-tone='unavailable'] {
+  --select-status-color: #dc2626;
+}
+
+.app-select-shell__status[data-tone='available'],
+.app-select__option-status[data-tone='available'] {
+  --select-status-color: #2563eb;
+}
+
 .app-select::part(combobox) {
   min-height: 34px;
   padding-inline: 10px 30px;
@@ -77,7 +107,8 @@
 }
 
 .app-select-shell.has-flag .app-select::part(combobox),
-.app-select-shell.has-icon .app-select::part(combobox) {
+.app-select-shell.has-icon .app-select::part(combobox),
+.app-select-shell.has-status .app-select::part(combobox) {
   padding-inline-start: 36px;
 }
 
@@ -162,11 +193,19 @@
 }
 
 .app-select__option-flag,
-.app-select__option-icon {
+.app-select__option-icon,
+.app-select__option-status {
+  display: inline-block;
   width: 16px;
   height: 16px;
   margin-inline-end: 8px;
   vertical-align: -3px;
+}
+
+.app-select__option-status {
+  width: 10px;
+  height: 10px;
+  vertical-align: -1px;
 }
 
 .app-select__option-flag {

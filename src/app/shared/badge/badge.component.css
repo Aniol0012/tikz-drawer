@@ -27,6 +27,13 @@
     0 1px 2px var(--badge-shadow-color);
 }
 
+.badge--xs {
+  min-height: 20px;
+  padding: 0 7px;
+  gap: 4px;
+  font-size: 0.56rem;
+}
+
 .badge--sm {
   min-height: 24px;
   padding: 0 9px;
@@ -70,9 +77,9 @@
 }
 
 .badge--dev {
-  --badge-color: color-mix(in srgb, var(--warning) 80%, var(--app-foreground));
-  --badge-border: color-mix(in srgb, var(--warning) 40%, var(--tool-border));
-  --badge-background: color-mix(in srgb, var(--warning) 12%, var(--panel-background));
+  --badge-color: color-mix(in srgb, #b45309 82%, var(--app-foreground));
+  --badge-border: color-mix(in srgb, #f59e0b 36%, var(--tool-border));
+  --badge-background: color-mix(in srgb, #f59e0b 12%, var(--panel-background));
   letter-spacing: 0.035em;
   text-transform: uppercase;
 }
@@ -86,6 +93,12 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.badge--xs .badge__icon {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.1;
 }
 
 .badge__label {

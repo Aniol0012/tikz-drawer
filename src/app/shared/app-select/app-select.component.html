@@ -3,6 +3,7 @@
   [class.is-open]="isOpen()"
   [class.has-flag]="selectedOption()?.flagSrc"
   [class.has-icon]="selectedOption()?.iconPath"
+  [class.has-status]="selectedOption()?.statusTone"
   [class.app-select-shell--danger]="selectedOption()?.danger">
   @if (selectedOption()?.flagSrc; as flagSrc) {
     <img class="app-select-shell__flag" [src]="flagSrc" alt="" aria-hidden="true" />
@@ -15,6 +16,15 @@
       aria-hidden="true">
       <path [attr.d]="iconPath"></path>
     </svg>
+  }
+  @if (selectedOption()?.statusTone; as statusTone) {
+    <span
+      class="app-select-shell__status"
+      data-tooltip-enabled
+      [attr.data-tone]="statusTone"
+      [attr.data-tooltip]="selectedOption() ? statusLabel(selectedOption()!) : null"
+      [style.--select-status-color]="selectedStatusColor()"
+      aria-hidden="true"></span>
   }
   <sl-select
     class="app-select"
@@ -40,6 +50,15 @@
             aria-hidden="true">
             <path [attr.d]="option.iconPath"></path>
           </svg>
+        }
+        @if (option.statusTone; as statusTone) {
+          <span
+            class="app-select__option-status"
+            data-tooltip-enabled
+            [attr.data-tone]="statusTone"
+            [attr.data-tooltip]="statusLabel(option)"
+            [style.--select-status-color]="statusColor(statusTone)"
+            aria-hidden="true"></span>
         }
         {{ isOpen() ? (option.longLabel ?? option.label) : option.label }}
       </sl-option>

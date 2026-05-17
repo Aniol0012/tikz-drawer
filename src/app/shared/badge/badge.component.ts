@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 export type BadgeTone = 'brand' | 'gray' | 'danger' | 'success' | 'warning' | 'dev';
-export type BadgeSize = 'sm' | 'md';
+export type BadgeSize = 'xs' | 'sm' | 'md';
 
 @Component({
   selector: 'app-badge',

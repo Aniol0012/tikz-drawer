@@ -155,19 +155,29 @@ export class AiClientService {
   }
 
   private isConversationalInstruction(instruction: string): boolean {
-    const normalized = this.normalizeInstruction(instruction);
-    return /^(hola|hello|hi|hey|bon dia|buenos dias|buenos días|bona tarda|buenas tardes|bona nit|buenas noches|que tal|què tal|com estas|como estas|gracies|gracias|merci)[!.? ]*$/.test(
-      normalized
-    );
+    const normalized = this.normalizeConversationInput(instruction);
+    return this.localizedConversationInputs('ai.localGreetingInputs').includes(normalized) || this.localizedConversationInputs('ai.localThanksInputs').includes(normalized);
   }
 
   private conversationFallbackMessage(instruction: string): string {
-    const normalized = this.normalizeInstruction(instruction);
-    if (/^(gracies|gracias|merci)/.test(normalized)) {
-      return this.languageService.tOrFallback('ai.localThanksFallback', 'De res. Digue’m què vols crear, corregir o millorar al llenç.');
+    const normalized = this.normalizeConversationInput(instruction);
+    if (this.localizedConversationInputs('ai.localThanksInputs').includes(normalized)) {
+      return this.languageService.t('ai.localThanksFallback');
     }
 
-    return this.languageService.tOrFallback('ai.localGreetingFallback', 'Hola! Digue’m què vols crear, corregir o millorar al llenç.');
+    return this.languageService.t('ai.localGreetingFallback');
+  }
+
+  private localizedConversationInputs(key: string): readonly string[] {
+    return this.languageService
+      .t(key)
+      .split('|')
+      .map((entry) => this.normalizeConversationInput(entry))
+      .filter(Boolean);
+  }
+
+  private normalizeConversationInput(instruction: string): string {
+    return this.normalizeInstruction(instruction).replace(/[!¡?¿.]+$/g, '').trim();
   }
 
   private normalizeInstruction(instruction: string): string {
