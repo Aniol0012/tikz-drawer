@@ -201,7 +201,13 @@ export class AppConfigurationDialogComponent {
     })
   );
   readonly remoteModelOptions = computed<readonly AppSelectOption[]>(() =>
-    REMOTE_AI_MODEL_OPTIONS.map((model) => ({ value: model, label: model, longLabel: model, statusTone: 'available', statusLabel: this.statusLabel('available') }))
+    REMOTE_AI_MODEL_OPTIONS.map((model) => ({
+      value: model,
+      label: model,
+      longLabel: model,
+      statusTone: 'available',
+      statusLabel: this.statusLabel('available')
+    }))
   );
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
@@ -315,7 +321,10 @@ export class AppConfigurationDialogComponent {
   }
 
   activeTabIndex(): number {
-    return Math.max(0, this.visibleTabs().findIndex((tab) => tab.id === this.activeTab()));
+    return Math.max(
+      0,
+      this.visibleTabs().findIndex((tab) => tab.id === this.activeTab())
+    );
   }
 
   private availableInitialTab(tab: ApplicationConfigurationTab): ApplicationConfigurationTab {

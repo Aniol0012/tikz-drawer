@@ -42,7 +42,9 @@
             @if (tab.aiIcon) {
               <span>{{ tab.labelKey | translate }}</span>
               <app-ai-sparkles-icon></app-ai-sparkles-icon>
-              <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{ 'devMode' | translate }}</app-badge>
+              <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{
+                'devMode' | translate
+              }}</app-badge>
             } @else {
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="tab.iconPath"></path>
@@ -126,28 +128,61 @@
                   <div class="form-grid form-grid--ai-model">
                     <label class="field">
                       <span>{{ 'ai.providerType' | translate }}</span>
-                      <app-select [value]="aiSettings().providerType" [options]="aiProviderTypeOptions()" (valueChange)="setAiProviderType($event)"></app-select>
+                      <app-select
+                        [value]="aiSettings().providerType"
+                        [options]="aiProviderTypeOptions()"
+                        (valueChange)="setAiProviderType($event)"></app-select>
                     </label>
                     <label class="field">
                       <span>{{ 'ai.localModel' | translate }}</span>
-                      <app-select [value]="aiSettings().webLlmModel" [options]="webLlmModelOptions()" (valueChange)="setAiWebLlmModel($event)"></app-select>
+                      <app-select
+                        [value]="aiSettings().webLlmModel"
+                        [options]="webLlmModelOptions()"
+                        (valueChange)="setAiWebLlmModel($event)"></app-select>
                       <small class="field-status" [class.field-status--danger]="webLlmUnavailable()">{{ aiLocalStatusLabel() }}</small>
                     </label>
                     <label class="field">
                       <span>{{ 'ai.cloudModel' | translate }}</span>
-                      <app-select [value]="aiSettings().remoteModel" [options]="remoteModelOptions()" (valueChange)="setAiRemoteModel($event)"></app-select>
+                      <app-select
+                        [value]="aiSettings().remoteModel"
+                        [options]="remoteModelOptions()"
+                        (valueChange)="setAiRemoteModel($event)"></app-select>
                     </label>
                     <label class="field">
-                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.temperatureTooltip' | translate">{{ 'ai.temperature' | translate }}</span>
-                      <input type="number" min="0" max="1.2" step="0.05" [value]="aiSettings().temperature" (input)="updateAiTemperature($event)" />
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.temperatureTooltip' | translate">{{
+                        'ai.temperature' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="1.2"
+                        step="0.05"
+                        [value]="aiSettings().temperature"
+                        (input)="updateAiTemperature($event)" />
                     </label>
                     <label class="field">
-                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.maxTokensTooltip' | translate">{{ 'ai.maxTokens' | translate }}</span>
-                      <input type="number" min="250" max="2000" step="50" [value]="aiSettings().maxTokens" (input)="updateAiMaxTokens($event)" />
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.maxTokensTooltip' | translate">{{
+                        'ai.maxTokens' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="250"
+                        max="2000"
+                        step="50"
+                        [value]="aiSettings().maxTokens"
+                        (input)="updateAiMaxTokens($event)" />
                     </label>
                     <label class="field">
-                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.webLlmTimeoutTooltip' | translate">{{ 'ai.webLlmTimeout' | translate }}</span>
-                      <input type="number" min="5" max="300" step="5" [value]="aiSettings().webLlmTimeoutMs / 1000" (input)="updateAiWebLlmTimeout($event)" />
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.webLlmTimeoutTooltip' | translate">{{
+                        'ai.webLlmTimeout' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        step="5"
+                        [value]="aiSettings().webLlmTimeoutMs / 1000"
+                        (input)="updateAiWebLlmTimeout($event)" />
                     </label>
                     <label class="field">
                       <span data-tooltip-enabled [attr.data-tooltip]="'ai.automaticWebLlmTimeoutTooltip' | translate">{{

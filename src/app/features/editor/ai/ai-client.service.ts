@@ -146,17 +146,15 @@ export class AiClientService {
   }
 
   private shouldRetryPromptEchoWithCloud(response: AiResponse, result: AiProviderTextResult, instruction: string, allowRemoteFallback: boolean): boolean {
-    return (
-      result.providerType === 'webllm' &&
-      allowRemoteFallback &&
-      response.parseStatus === 'prompt-echo' &&
-      !this.isConversationalInstruction(instruction)
-    );
+    return result.providerType === 'webllm' && allowRemoteFallback && response.parseStatus === 'prompt-echo' && !this.isConversationalInstruction(instruction);
   }
 
   private isConversationalInstruction(instruction: string): boolean {
     const normalized = this.normalizeConversationInput(instruction);
-    return this.localizedConversationInputs('ai.localGreetingInputs').includes(normalized) || this.localizedConversationInputs('ai.localThanksInputs').includes(normalized);
+    return (
+      this.localizedConversationInputs('ai.localGreetingInputs').includes(normalized) ||
+      this.localizedConversationInputs('ai.localThanksInputs').includes(normalized)
+    );
   }
 
   private conversationFallbackMessage(instruction: string): string {
@@ -177,7 +175,9 @@ export class AiClientService {
   }
 
   private normalizeConversationInput(instruction: string): string {
-    return this.normalizeInstruction(instruction).replace(/[!¡?¿.]+$/g, '').trim();
+    return this.normalizeInstruction(instruction)
+      .replace(/[!¡?¿.]+$/g, '')
+      .trim();
   }
 
   private normalizeInstruction(instruction: string): string {

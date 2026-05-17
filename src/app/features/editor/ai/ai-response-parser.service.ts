@@ -23,7 +23,8 @@ export class AiResponseParserService {
     const hasPatchChanges = patch.create.length > 0 || patch.update.length > 0 || patch.remove.length > 0;
     const tikzCode = this.firstString(responseCandidate, ['tikzCode', 'tikz', 'latex', 'code']);
     const message = this.firstString(responseCandidate, ['message', 'text', 'answer', 'content', 'response', 'explanation']);
-    const type = responseCandidate.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : responseCandidate.type === 'tikzCode' || tikzCode ? 'tikzCode' : 'message';
+    const type =
+      responseCandidate.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : responseCandidate.type === 'tikzCode' || tikzCode ? 'tikzCode' : 'message';
     const parseStatus = this.responseParseStatus(responseCandidate, parsedResult.status, message, hasPatchChanges, tikzCode);
 
     return {
