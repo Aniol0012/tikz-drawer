@@ -92,10 +92,7 @@ export class ScenePatchService {
   preview(patch: ScenePatch): readonly CanvasShape[] {
     const currentScene = this.store.scene();
     const preferences = this.store.preferences();
-    return [
-      ...this.updatedShapes(currentScene, patch, preferences),
-      ...(this.pendingCreatedShapeIds().length ? [] : this.createdShapes(patch, preferences))
-    ];
+    return [...this.updatedShapes(currentScene, patch, preferences), ...(this.pendingCreatedShapeIds().length ? [] : this.createdShapes(patch, preferences))];
   }
 
   summarize(patch: ScenePatch): string {

@@ -271,12 +271,7 @@ export class AiClientService {
 
   private repeatGeneratedShapes(
     count: number,
-    createShape: (
-      index: number,
-      x: number,
-      y: number,
-      color: { readonly stroke: string; readonly fill: string }
-    ) => Partial<CanvasShape>
+    createShape: (index: number, x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => Partial<CanvasShape>
   ): readonly Partial<CanvasShape>[] {
     const safeCount = Math.min(Math.max(count, 1), 8);
     const columns = Math.ceil(Math.sqrt(safeCount));
