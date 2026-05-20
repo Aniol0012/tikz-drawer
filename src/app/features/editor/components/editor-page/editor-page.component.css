@@ -7,6 +7,7 @@
 
 .editor-shell {
   --topbar-height: 64px;
+  --ai-selection-color: #7c3aed;
   height: 100dvh;
   background: var(--app-background);
   overflow: hidden;
@@ -1284,6 +1285,32 @@ kbd {
 .selection-outline--interactive {
   pointer-events: all;
   cursor: move;
+}
+
+.selection-outline--ai,
+.has-ai-selection .selection-line {
+  stroke: var(--ai-selection-color);
+  fill: color-mix(in srgb, var(--ai-selection-color) 10%, transparent);
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--ai-selection-color) 30%, transparent));
+}
+
+.has-ai-selection .selection-rotate-guide {
+  stroke: color-mix(in srgb, var(--ai-selection-color) 72%, transparent);
+}
+
+.has-ai-selection .selection-handle {
+  stroke: var(--ai-selection-color);
+}
+
+.has-ai-selection .selection-handle__icon {
+  stroke: color-mix(in srgb, var(--ai-selection-color) 84%, var(--app-foreground) 16%);
+}
+
+.ai-selection-icon {
+  overflow: visible;
+  fill: var(--ai-selection-color);
+  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 8px color-mix(in srgb, var(--ai-selection-color) 28%, transparent));
+  pointer-events: none;
 }
 
 .selection-handle {

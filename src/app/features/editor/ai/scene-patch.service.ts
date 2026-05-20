@@ -1,10 +1,20 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_COLOR, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
+import {
+  DEFAULT_TEXT_BOX_WIDTH,
+  DEFAULT_TEXT_COLOR,
+  DEFAULT_TEXT_FONT_SIZE,
+  EDITOR_AI_INSERT_MAX_RENDERED_LONG_EDGE_PX,
+  EDITOR_AI_INSERT_MIN_RENDERED_LONG_EDGE_PX,
+  EDITOR_AI_INSERT_TARGET_RENDERED_LONG_EDGE_PX,
+  MIN_SHAPE_DIMENSION
+} from '../constants/editor.constants';
 import type { CanvasShape, EditorPreferences, LineStrokeStyle, TikzScene } from '../models/tikz.models';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { EditorStore } from '../state/editor.store';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import type { ScenePatch } from './ai-message.model';
+import { computeBounds } from '../utils/editor-geometry.utils';
+import { transformCanvasShape } from '../utils/editor-page.utils';
 
 @Injectable()
 export class ScenePatchService {
@@ -15,6 +25,7 @@ export class ScenePatchService {
     const patch = this.pendingPatch();
     return patch ? this.summarize(patch) : '';
   });
+  readonly pendingCreatedShapeIds = signal<readonly string[]>([]);
   readonly previewShapes = computed<readonly CanvasShape[]>(() => {
     const patch = this.pendingPatch();
     if (!patch) {
@@ -29,7 +40,7 @@ export class ScenePatchService {
     const preferences = this.store.preferences();
     const removedShapeIds = new Set(patch.remove.filter((id) => this.canMutateShape(currentScene, id)));
     const updatedShapes = this.updatedShapes(currentScene, patch, preferences);
-    const createdShapes = patch.create.map((shape) => this.createShape(shape, preferences)).filter((shape): shape is CanvasShape => !!shape);
+    const createdShapes = this.createdShapes(patch, preferences);
     const updatedShapeMap = new Map(updatedShapes.map((shape) => [shape.id, shape]));
 
     this.store.recordHistoryCheckpoint();
@@ -43,7 +54,11 @@ export class ScenePatchService {
   }
 
   setPendingPatch(patch: ScenePatch | null): void {
+    this.removePendingCreatedShapes();
     this.pendingPatch.set(patch);
+    if (patch?.create.length) {
+      this.materializePendingCreatedShapes(patch);
+    }
   }
 
   applyPendingPatch(): readonly CanvasShape[] {
@@ -52,12 +67,25 @@ export class ScenePatchService {
       return [];
     }
 
+    const pendingCreatedShapeIds = this.pendingCreatedShapeIds();
+    if (pendingCreatedShapeIds.length) {
+      const createdShapeIds = new Set(pendingCreatedShapeIds);
+      const createdShapes = this.store.scene().shapes.filter((shape) => createdShapeIds.has(shape.id));
+      this.applyPendingNonCreateChanges(patch);
+      this.pendingPatch.set(null);
+      this.pendingCreatedShapeIds.set([]);
+      this.store.selectedShapeIds.set(createdShapes.map((shape) => shape.id));
+      this.store.importCode.set(sceneToTikz(this.store.scene()));
+      return createdShapes;
+    }
+
     const createdShapes = this.apply(patch);
     this.pendingPatch.set(null);
     return createdShapes;
   }
 
   discardPendingPatch(): void {
+    this.removePendingCreatedShapes();
     this.pendingPatch.set(null);
   }
 
@@ -66,7 +94,7 @@ export class ScenePatchService {
     const preferences = this.store.preferences();
     return [
       ...this.updatedShapes(currentScene, patch, preferences),
-      ...patch.create.map((shape) => this.createShape(shape, preferences)).filter((shape): shape is CanvasShape => !!shape)
+      ...(this.pendingCreatedShapeIds().length ? [] : this.createdShapes(patch, preferences))
     ];
   }
 
@@ -95,6 +123,56 @@ export class ScenePatchService {
         return this.mergeShape(currentShape, entry.changes, preferences);
       })
       .filter((shape): shape is CanvasShape => !!shape);
+  }
+
+  private applyPendingNonCreateChanges(patch: ScenePatch): void {
+    const currentScene = this.store.scene();
+    const preferences = this.store.preferences();
+    const removedShapeIds = new Set(patch.remove.filter((id) => this.canMutateShape(currentScene, id)));
+    const updatedShapes = this.updatedShapes(currentScene, patch, preferences);
+    const updatedShapeMap = new Map(updatedShapes.map((shape) => [shape.id, shape]));
+    if (!removedShapeIds.size && !updatedShapeMap.size) {
+      return;
+    }
+
+    this.store.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.filter((shape) => !removedShapeIds.has(shape.id)).map((shape) => updatedShapeMap.get(shape.id) ?? shape)
+    }));
+  }
+
+  private materializePendingCreatedShapes(patch: ScenePatch): void {
+    const createdShapes = this.createdShapes(patch, this.store.preferences());
+    if (!createdShapes.length) {
+      return;
+    }
+
+    this.store.scene.update((scene) => ({
+      ...scene,
+      shapes: [...scene.shapes, ...createdShapes]
+    }));
+    this.store.selectedShapeIds.set(createdShapes.map((shape) => shape.id));
+    this.pendingCreatedShapeIds.set(createdShapes.map((shape) => shape.id));
+  }
+
+  private removePendingCreatedShapes(): void {
+    const pendingCreatedShapeIds = this.pendingCreatedShapeIds();
+    if (!pendingCreatedShapeIds.length) {
+      return;
+    }
+
+    const pendingCreatedShapeIdSet = new Set(pendingCreatedShapeIds);
+    this.store.scene.update((scene) => ({
+      ...scene,
+      shapes: scene.shapes.filter((shape) => !pendingCreatedShapeIdSet.has(shape.id))
+    }));
+    this.store.selectedShapeIds.update((shapeIds) => shapeIds.filter((shapeId) => !pendingCreatedShapeIdSet.has(shapeId)));
+    this.pendingCreatedShapeIds.set([]);
+  }
+
+  private createdShapes(patch: ScenePatch, preferences: EditorPreferences): readonly CanvasShape[] {
+    const shapes = patch.create.map((shape) => this.createShape(shape, preferences)).filter((shape): shape is CanvasShape => !!shape);
+    return this.scaleCreatedShapesForViewport(shapes, preferences.scale);
   }
 
   private canMutateShape(scene: TikzScene, shapeId: string): boolean {
@@ -310,5 +388,42 @@ export class ScenePatchService {
 
   private textValue(value: unknown, fallback: string): string {
     return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+  }
+
+  private scaleCreatedShapesForViewport(shapes: readonly CanvasShape[], scale: number): readonly CanvasShape[] {
+    if (!shapes.length) {
+      return shapes;
+    }
+
+    const bounds = computeBounds(shapes);
+    if (!bounds) {
+      return shapes;
+    }
+
+    const longEdge = Math.max(bounds.right - bounds.left, bounds.top - bounds.bottom, MIN_SHAPE_DIMENSION);
+    const renderedLongEdge = longEdge * Math.max(scale, 1);
+    if (renderedLongEdge >= EDITOR_AI_INSERT_MIN_RENDERED_LONG_EDGE_PX && renderedLongEdge <= EDITOR_AI_INSERT_MAX_RENDERED_LONG_EDGE_PX) {
+      return shapes;
+    }
+
+    const targetRenderedLongEdge = Math.min(
+      EDITOR_AI_INSERT_MAX_RENDERED_LONG_EDGE_PX,
+      Math.max(EDITOR_AI_INSERT_MIN_RENDERED_LONG_EDGE_PX, EDITOR_AI_INSERT_TARGET_RENDERED_LONG_EDGE_PX)
+    );
+    const resizeScale = targetRenderedLongEdge / renderedLongEdge;
+    const centerX = (bounds.left + bounds.right) / 2;
+    const centerY = (bounds.bottom + bounds.top) / 2;
+
+    return shapes.map((shape) =>
+      transformCanvasShape(shape, {
+        deltaX: 0,
+        deltaY: 0,
+        scaleX: resizeScale,
+        scaleY: resizeScale,
+        originX: centerX,
+        originY: centerY,
+        id: shape.id
+      })
+    );
   }
 }

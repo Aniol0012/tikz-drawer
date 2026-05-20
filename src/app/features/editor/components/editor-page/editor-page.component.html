@@ -274,6 +274,8 @@
         <svg
           #canvasSvg
           class="canvas-surface"
+          [class.has-ai-selection]="aiSelectionActive()"
+          [style.--ai-selection-color]="aiSelectionColor"
           [attr.viewBox]="'0 0 ' + canvasWidth() + ' ' + canvasHeight()"
           (pointermove)="onCanvasPointerMove($event)"
           (pointerup)="endInteraction($event)"
@@ -669,16 +671,18 @@
           }
 
           @if (lineSelectionPath(); as selectionPath) {
-            <path class="selection-line" [attr.d]="selectionPath"></path>
+            <path class="selection-line" [class.selection-outline--ai]="aiSelectionActive()" [attr.d]="selectionPath"></path>
           } @else if (singleSelectedTriangle(); as triangle) {
             <path
               class="selection-outline selection-outline--shape"
+              [class.selection-outline--ai]="aiSelectionActive()"
               [attr.d]="triangleSvgPath(triangle)"
               [attr.transform]="shapeRotationTransform(triangle)"></path>
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"
               [class.selection-outline--interactive]="selectionCount() > 1 && !selectionModifierPressed()"
+              [class.selection-outline--ai]="aiSelectionActive()"
               [attr.x]="outline.x"
               [attr.y]="outline.y"
               [attr.width]="outline.width"
@@ -687,6 +691,19 @@
               [attr.fill]="selectionCount() > 1 ? 'transparent' : null"
               (dblclick)="onSelectionOutlineDoubleClick($event)"
               (pointerdown)="selectionCount() > 1 && startSelectionMove($event)"></rect>
+          }
+
+          @if (aiSelectionIconLayout(); as aiIcon) {
+            <svg
+              class="ai-selection-icon"
+              [attr.x]="aiIcon.x"
+              [attr.y]="aiIcon.y"
+              [attr.width]="aiIcon.size"
+              [attr.height]="aiIcon.size"
+              viewBox="0 0 24 24"
+              aria-hidden="true">
+              <path [attr.d]="iconMap.sparkles"></path>
+            </svg>
           }
 
           @if (marqueeBounds(); as marquee) {
@@ -2879,7 +2896,7 @@
       } @else if (inspectorTab() === 'assistant') {
         <app-ai-panel
           (patchPreviewed)="centerViewportOnPendingPatch()"
-          (patchApplied)="centerViewportOnShape($event)"
+          (patchApplied)="handleAiPatchApplied($event)"
           (settingsRequested)="openAppConfigurationDialog('ai')"></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">

@@ -5,6 +5,7 @@ import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
+  EDITOR_AI_SELECTION_COLOR,
   DEFAULT_EDITOR_SCALE,
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
@@ -401,6 +402,7 @@ export class EditorPageComponent {
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
+  readonly aiSelectionColor = EDITOR_AI_SELECTION_COLOR;
   readonly figureSearchOpen = signal(false);
   readonly figureSearchShortcutLabel = computed(() => this.shortcutLabel('figureSearch'));
   readonly selectedImageFilename = signal('');
@@ -778,6 +780,28 @@ export class EditorPageComponent {
     });
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
+  readonly aiSelectionActive = computed(() => {
+    const aiShapeIds = this.aiPatch.pendingCreatedShapeIds();
+    const selectedShapeIds = this.store.selectedShapeIds();
+    return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.includes(shapeId));
+  });
+  readonly aiSelectionIconLayout = computed(() => {
+    if (!this.aiSelectionActive()) {
+      return null;
+    }
+
+    const bounds = this.selectionBounds();
+    if (!bounds) {
+      return null;
+    }
+
+    const size = 22;
+    return {
+      x: this.toSvgX(bounds.right) - size - 6,
+      y: this.toSvgY(bounds.top) - size - 6,
+      size
+    };
+  });
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShapes = this.selectedShapes();
     const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
@@ -1820,6 +1844,13 @@ export class EditorPageComponent {
   selectSceneShape(shapeId: string): void {
     this.selectShape(shapeId);
     this.centerViewportOnShape(shapeId);
+  }
+
+  handleAiPatchApplied(shapeIds: readonly string[]): void {
+    const firstShapeId = shapeIds[0];
+    if (firstShapeId) {
+      this.centerViewportOnShape(firstShapeId);
+    }
   }
 
   applyScenePreset(presetId: string): void {
@@ -5697,6 +5728,12 @@ export class EditorPageComponent {
   }
 
   centerViewportOnPendingPatch(): void {
+    const pendingCreatedShapeId = this.aiPatch.pendingCreatedShapeIds()[0];
+    if (pendingCreatedShapeId) {
+      this.centerViewportOnShape(pendingCreatedShapeId);
+      return;
+    }
+
     const previewShape = this.aiPatch.previewShapes()[0];
     if (!previewShape) {
       return;

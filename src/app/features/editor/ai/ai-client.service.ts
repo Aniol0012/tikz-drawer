@@ -132,12 +132,12 @@ export class AiClientService {
       return response;
     }
 
-    const patchShape = this.simpleShapeFromInstruction(instruction);
-    return patchShape
+    const patchShapes = this.simpleShapesFromInstruction(instruction);
+    return patchShapes.length
       ? {
           type: 'scenePatch',
           message: this.languageService.t('ai.simpleProposalReady'),
-          patch: { create: [patchShape], update: [], remove: [] }
+          patch: { create: patchShapes, update: [], remove: [] }
         }
       : {
           ...response,
@@ -188,84 +188,133 @@ export class AiClientService {
       .trim();
   }
 
-  private simpleShapeFromInstruction(instruction: string): Partial<CanvasShape> | null {
+  private simpleShapesFromInstruction(instruction: string): readonly Partial<CanvasShape>[] {
     const normalized = this.normalizeInstruction(instruction);
     if (!/(afegeix|afegir|posa|pon|crear|crea|anade|añade|dibuixa|dibuja)/.test(normalized)) {
-      return null;
+      return [];
     }
 
     const colors = this.colorFromInstruction(normalized);
+    const count = this.shapeCountFromInstruction(normalized);
     if (/(cercle|circulo|circle)/.test(normalized)) {
-      return {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'circle',
         name: this.languageService.localizedShapeKind('circle'),
-        cx: 0,
-        cy: 0,
+        cx: x,
+        cy: y,
         r: /petit|pequeno|pequeño|small/.test(normalized) ? 0.7 : 1,
-        stroke: colors.stroke,
-        fill: colors.fill,
+        stroke: count > 1 ? color.stroke : colors.stroke,
+        fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
-      };
+      }));
     }
 
     if (/(triangle)/.test(normalized)) {
-      return {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'triangle',
         name: this.languageService.localizedShapeKind('triangle'),
-        x: -1,
-        y: -0.8,
+        x: x - 1,
+        y: y - 0.8,
         width: 2,
         height: 1.6,
-        stroke: colors.stroke,
-        fill: colors.fill,
+        stroke: count > 1 ? color.stroke : colors.stroke,
+        fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
-      };
+      }));
     }
 
     if (/(elipse|ellipse)/.test(normalized)) {
-      return {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'ellipse',
         name: this.languageService.localizedShapeKind('ellipse'),
-        cx: 0,
-        cy: 0,
+        cx: x,
+        cy: y,
         rx: 1.3,
         ry: 0.75,
-        stroke: colors.stroke,
-        fill: colors.fill,
+        stroke: count > 1 ? color.stroke : colors.stroke,
+        fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
-      };
+      }));
     }
 
     if (/(rectangle|rectangulo|rectangel|quadrat|cuadrado|square)/.test(normalized)) {
       const square = /(quadrat|cuadrado|square)/.test(normalized);
-      return {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'rectangle',
         name: this.languageService.localizedShapeKind('rectangle'),
-        x: -1,
-        y: -0.6,
+        x: x - (square ? 0.6 : 1),
+        y: y - 0.6,
         width: square ? 1.2 : 2,
         height: square ? 1.2 : 1.2,
-        stroke: colors.stroke,
-        fill: colors.fill,
+        stroke: count > 1 ? color.stroke : colors.stroke,
+        fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
-      };
+      }));
     }
 
     if (/(figura|forma|shape|element)/.test(normalized)) {
-      return {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'ellipse',
         name: this.languageService.localizedShapeKind('ellipse'),
-        cx: 0,
-        cy: 0,
+        cx: x,
+        cy: y,
         rx: 1.4,
         ry: 0.85,
-        stroke: colors.stroke,
-        fill: colors.fill,
+        stroke: count > 1 ? color.stroke : colors.stroke,
+        fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
-      };
+      }));
     }
 
-    return null;
+    return [];
+  }
+
+  private repeatGeneratedShapes(
+    count: number,
+    createShape: (
+      index: number,
+      x: number,
+      y: number,
+      color: { readonly stroke: string; readonly fill: string }
+    ) => Partial<CanvasShape>
+  ): readonly Partial<CanvasShape>[] {
+    const safeCount = Math.min(Math.max(count, 1), 8);
+    const columns = Math.ceil(Math.sqrt(safeCount));
+    const rows = Math.ceil(safeCount / columns);
+    const palette = [
+      { stroke: '#1d4ed8', fill: '#dbeafe' },
+      { stroke: '#16a34a', fill: '#dcfce7' },
+      { stroke: '#d97706', fill: '#fef3c7' },
+      { stroke: '#7c3aed', fill: '#ede9fe' },
+      { stroke: '#dc2626', fill: '#fee2e2' },
+      { stroke: '#0891b2', fill: '#cffafe' },
+      { stroke: '#4f46e5', fill: '#e0e7ff' },
+      { stroke: '#be123c', fill: '#ffe4e6' }
+    ] as const;
+
+    return Array.from({ length: safeCount }, (_, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      return createShape(index, (column - (columns - 1) / 2) * 2.25, ((rows - 1) / 2 - row) * 2, palette[index % palette.length]);
+    });
+  }
+
+  private shapeCountFromInstruction(instruction: string): number {
+    const digitMatch = /\b([2-8])\b/.exec(instruction);
+    if (digitMatch?.[1]) {
+      return Number(digitMatch[1]);
+    }
+
+    const countWords: readonly [RegExp, number][] = [
+      [/\b(dos|dues|two)\b/, 2],
+      [/\b(tres|three)\b/, 3],
+      [/\b(quatre|cuatro|four)\b/, 4],
+      [/\b(cinc|cinco|five)\b/, 5],
+      [/\b(sis|seis|six)\b/, 6],
+      [/\b(set|siete|seven)\b/, 7],
+      [/\b(vuit|ocho|eight)\b/, 8]
+    ];
+    return countWords.find(([pattern]) => pattern.test(instruction))?.[1] ?? 1;
   }
 
   private colorFromInstruction(instruction: string): { readonly stroke: string; readonly fill: string } {
@@ -302,7 +351,7 @@ export class AiClientService {
       'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
       'Si el usuario conversa o pregunta datos generales, responde con type="message". Usa el campo now para fechas y horas.',
       'Si el usuario pide dibujar, ordenar, etiquetar o editar, propone scenePatch editable y explica brevemente el cambio en message.',
-      'Si el usuario pide poner, añadir o crear una figura en el canvas/lienzo, responde siempre con type="scenePatch" y al menos un elemento en patch.create.',
+      'Si el usuario pide poner, añadir o crear una o varias figuras en el canvas/lienzo, responde siempre con type="scenePatch" y todos los elementos necesarios en patch.create.',
       'Cuando generes figuras, crea composiciones utiles: usa 3 a 8 elementos, tamaños proporcionados, alineacion clara, nombres descriptivos y colores armonicos.',
       'Ejemplo de patch.create valido: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
       'Usa coordenadas y tamaños cortos, con maximo 2 decimales. No generes numeros largos.',

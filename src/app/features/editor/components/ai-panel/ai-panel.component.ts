@@ -34,7 +34,7 @@ export class AiPanelComponent {
   private readonly browserLocalAiProvider = inject(BrowserLocalAiProvider);
   private readonly aiSettingsService = inject(AiSettingsService);
   private readonly chatScroll = viewChild<ElementRef<HTMLElement>>('chatScroll');
-  @Output() readonly patchApplied = new EventEmitter<string>();
+  @Output() readonly patchApplied = new EventEmitter<readonly string[]>();
   @Output() readonly patchPreviewed = new EventEmitter<void>();
   @Output() readonly settingsRequested = new EventEmitter<void>();
 
@@ -85,6 +85,8 @@ export class AiPanelComponent {
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
   readonly composerHeight = signal(64);
+  readonly pendingChangesDialogOpen = signal(false);
+  readonly pendingSubmitInstruction = signal('');
   readonly quickActions = AI_QUICK_ACTIONS;
 
   setDraft(value: string): void {
@@ -138,6 +140,45 @@ export class AiPanelComponent {
       return;
     }
 
+    if (this.shouldConfirmBeforeNewCreate(instruction)) {
+      this.pendingSubmitInstruction.set(instruction);
+      this.pendingChangesDialogOpen.set(true);
+      return;
+    }
+
+    await this.executeSubmit(instruction);
+  }
+
+  confirmPendingChangesApply(): void {
+    const createdShapes = this.scenePatch.applyPendingPatch();
+    this.patchApplied.emit(createdShapes.map((shape) => shape.id));
+    void this.continuePendingSubmit();
+  }
+
+  confirmPendingChangesDiscard(): void {
+    this.scenePatch.discardPendingPatch();
+    void this.continuePendingSubmit();
+  }
+
+  closePendingChangesDialog(): void {
+    this.pendingChangesDialogOpen.set(false);
+    this.pendingSubmitInstruction.set('');
+  }
+
+  private async continuePendingSubmit(): Promise<void> {
+    const instruction = this.pendingSubmitInstruction();
+    this.pendingChangesDialogOpen.set(false);
+    this.pendingSubmitInstruction.set('');
+    if (instruction) {
+      await this.executeSubmit(instruction);
+    }
+  }
+
+  private async executeSubmit(instruction: string): Promise<void> {
+    if (this.assistantState.loading() || !this.aiReady()) {
+      return;
+    }
+
     this.assistantState.error.set('');
     this.assistantState.draft.set('');
     this.assistantState.appendMessage({ role: 'user', text: instruction, debugInfo: this.requestDebugInfo() });
@@ -168,10 +209,7 @@ export class AiPanelComponent {
 
   acceptPendingPatch(): void {
     const createdShapes = this.scenePatch.applyPendingPatch();
-    const firstCreatedShape = createdShapes[0];
-    if (firstCreatedShape) {
-      this.patchApplied.emit(firstCreatedShape.id);
-    }
+    this.patchApplied.emit(createdShapes.map((shape) => shape.id));
   }
 
   rejectPendingPatch(): void {
@@ -304,5 +342,19 @@ export class AiPanelComponent {
     }
 
     return this.languageService.t('ai.errorGeneric');
+  }
+
+  private shouldConfirmBeforeNewCreate(instruction: string): boolean {
+    return this.scenePatch.pendingCreatedShapeIds().length > 0 && this.looksLikeCreateInstruction(instruction);
+  }
+
+  private looksLikeCreateInstruction(instruction: string): boolean {
+    const normalized = instruction
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    return /\b(afegeix|afegir|posa|posar|crea|crear|dibuixa|dibujar|anade|agrega|pon|create|add|draw|insert|figura|forma|diagrama|nou|nova|nuevo|nueva)\b/.test(
+      normalized
+    );
   }
 }

@@ -104,6 +104,35 @@
     <div class="ai-error">{{ assistantState.error() }}</div>
   }
 
+  @if (pendingChangesDialogOpen()) {
+    <div class="ai-pending-backdrop" role="presentation">
+      <section class="ai-pending-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
+        <header>
+          <span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.sparkles"></path>
+            </svg>
+          </span>
+          <div>
+            <h3>{{ 'ai.pendingChangesTitle' | translate }}</h3>
+            <p>{{ 'ai.pendingChangesDescription' | translate }}</p>
+          </div>
+        </header>
+        <div class="ai-pending-actions">
+          <button class="patch-action patch-action--accept" type="button" (click)="confirmPendingChangesApply()">
+            {{ 'ai.pendingChangesApply' | translate }}
+          </button>
+          <button class="patch-action patch-action--reject" type="button" (click)="confirmPendingChangesDiscard()">
+            {{ 'ai.pendingChangesDiscard' | translate }}
+          </button>
+          <button class="ghost-action" type="button" (click)="closePendingChangesDialog()">
+            {{ 'cancel' | translate }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
   <form class="composer" (submit)="$event.preventDefault(); submit()">
     <div class="composer__box">
       <textarea
