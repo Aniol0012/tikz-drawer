@@ -8,6 +8,7 @@ export const WEB_LLM_MODEL_OPTIONS = ['SmolLM2-360M-Instruct-q4f16_1-MLC', 'Llam
 export const REMOTE_AI_MODEL_OPTIONS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash'] as const;
 const LEGACY_DEFAULT_WEB_LLM_MODEL = 'Llama-3.2-1B-Instruct-q4f16_1-MLC';
 const LEGACY_SLOW_DEFAULT_WEB_LLM_MODEL = 'SmolLM2-360M-Instruct-q0f16-MLC';
+const LEGACY_DEFAULT_AUTOMATIC_WEB_LLM_TIMEOUT_MS = 20000;
 
 export interface AiSettings {
   readonly temperature: number;
@@ -28,7 +29,7 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   webLlmModel: WEB_LLM_MODEL_OPTIONS[0],
   remoteModel: FIREBASE_AI_MODEL,
   webLlmTimeoutMs: 180000,
-  automaticWebLlmTimeoutMs: 20000,
+  automaticWebLlmTimeoutMs: 45000,
   allowRemoteFallback: true,
   debugLogs: false
 };
@@ -102,7 +103,7 @@ export class AiSettingsService {
       webLlmModel: this.normalizeWebLlmModel(settings?.webLlmModel),
       remoteModel: this.normalizeOption(settings?.remoteModel, REMOTE_AI_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.remoteModel),
       webLlmTimeoutMs: Math.round(this.clampNumber(settings?.webLlmTimeoutMs, DEFAULT_AI_SETTINGS.webLlmTimeoutMs, 5000, 300000)),
-      automaticWebLlmTimeoutMs: Math.round(this.clampNumber(settings?.automaticWebLlmTimeoutMs, DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs, 1000, 120000)),
+      automaticWebLlmTimeoutMs: this.normalizeAutomaticWebLlmTimeout(settings?.automaticWebLlmTimeoutMs),
       allowRemoteFallback: typeof settings?.allowRemoteFallback === 'boolean' ? settings.allowRemoteFallback : DEFAULT_AI_SETTINGS.allowRemoteFallback,
       debugLogs: typeof settings?.debugLogs === 'boolean' ? settings.debugLogs : DEFAULT_AI_SETTINGS.debugLogs
     };
@@ -126,6 +127,11 @@ export class AiSettingsService {
     }
 
     return this.normalizeOption(value, WEB_LLM_MODEL_OPTIONS, DEFAULT_AI_SETTINGS.webLlmModel);
+  }
+
+  private normalizeAutomaticWebLlmTimeout(value: unknown): number {
+    const normalized = Math.round(this.clampNumber(value, DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs, 1000, 120000));
+    return normalized === LEGACY_DEFAULT_AUTOMATIC_WEB_LLM_TIMEOUT_MS ? DEFAULT_AI_SETTINGS.automaticWebLlmTimeoutMs : normalized;
   }
 
   private clampNumber(value: unknown, fallback: number, min: number, max: number): number {

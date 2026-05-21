@@ -2895,7 +2895,6 @@
         </section>
       } @else if (inspectorTab() === 'assistant') {
         <app-ai-panel
-          (patchPreviewed)="centerViewportOnPendingPatch()"
           (patchApplied)="handleAiPatchApplied($event)"
           (settingsRequested)="openAppConfigurationDialog('ai')"></app-ai-panel>
       } @else {

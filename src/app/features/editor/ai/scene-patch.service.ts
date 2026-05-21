@@ -97,11 +97,15 @@ export class ScenePatchService {
 
   summarize(patch: ScenePatch): string {
     const pieces = [
-      patch.create.length ? this.interpolate(this.languageService.t('ai.patchCreateCount'), { count: String(patch.create.length) }) : '',
-      patch.update.length ? this.interpolate(this.languageService.t('ai.patchUpdateCount'), { count: String(patch.update.length) }) : '',
-      patch.remove.length ? this.interpolate(this.languageService.t('ai.patchRemoveCount'), { count: String(patch.remove.length) }) : ''
+      patch.create.length ? this.countSummary('ai.patchCreateOne', 'ai.patchCreateMany', patch.create.length) : '',
+      patch.update.length ? this.countSummary('ai.patchUpdateOne', 'ai.patchUpdateMany', patch.update.length) : '',
+      patch.remove.length ? this.countSummary('ai.patchRemoveOne', 'ai.patchRemoveMany', patch.remove.length) : ''
     ].filter(Boolean);
     return pieces.join(' · ') || this.languageService.t('ai.patchNoChanges');
+  }
+
+  private countSummary(singularKey: string, pluralKey: string, count: number): string {
+    return this.interpolate(this.languageService.t(count === 1 ? singularKey : pluralKey), { count: String(count) });
   }
 
   private interpolate(template: string, values: Record<string, string>): string {
@@ -270,7 +274,8 @@ export class ScenePatchService {
           },
           preferences
         );
-      case 'line':
+      case 'line': {
+        const lineShape = shape as Partial<Extract<CanvasShape, { kind: 'line' }>> & Record<string, unknown>;
         return this.withDefaults(
           {
             id,
@@ -279,8 +284,8 @@ export class ScenePatchService {
             stroke,
             strokeOpacity: 1,
             strokeWidth,
-            from: { x: this.numberValue((shape as Record<string, unknown>)['fromX'], -2), y: this.numberValue((shape as Record<string, unknown>)['fromY'], 0) },
-            to: { x: this.numberValue((shape as Record<string, unknown>)['toX'], 2), y: this.numberValue((shape as Record<string, unknown>)['toY'], 0) },
+            from: { x: this.numberValue(lineShape['fromX'] ?? lineShape.from?.x, -2), y: this.numberValue(lineShape['fromY'] ?? lineShape.from?.y, 0) },
+            to: { x: this.numberValue(lineShape['toX'] ?? lineShape.to?.x, 2), y: this.numberValue(lineShape['toY'] ?? lineShape.to?.y, 0) },
             anchors: [],
             lineMode: 'straight',
             strokeStyle: preferences.defaultLineStrokeStyle as LineStrokeStyle,
@@ -298,6 +303,7 @@ export class ScenePatchService {
           },
           preferences
         );
+      }
       case 'text':
         return this.withDefaults(
           {

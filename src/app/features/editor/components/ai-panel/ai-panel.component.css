@@ -38,14 +38,22 @@
   stroke-width: 2;
 }
 
-.quick-section__header span,
-.ai-proposal span {
+.quick-section__header span {
   margin: 0;
   color: var(--muted-foreground);
   font-size: 0.68rem;
   font-weight: 800;
   line-height: 1.1;
   text-transform: uppercase;
+}
+
+.ai-proposal span {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-transform: none;
 }
 
 .model-pill {

@@ -228,31 +228,77 @@ function compactPromptPayload(request: AiProviderRequest): string {
   try {
     const payload = JSON.parse(request.contextJson) as WebLlmPromptPayload;
     const elements = payload.context?.elements ?? [];
-    return JSON.stringify({
-      instruction: payload.instruction ?? request.instruction,
-      now: payload.now,
-      scene: {
-        name: payload.context?.sceneName,
-        selected: payload.context?.selectedElementIds ?? [],
-        elements: elements.slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS).map(compactElement)
-      },
-      conversation: (payload.conversation ?? []).slice(-4)
-    });
+    return [
+      `TAREA DEL USUARIO: ${payload.instruction ?? request.instruction}`,
+      `FECHA: ${formatPromptValue(payload.now) || 'desconocida'}`,
+      `ESCENA: ${payload.context?.sceneName ?? 'sin nombre'}`,
+      `SELECCION: ${(payload.context?.selectedElementIds ?? []).join(', ') || 'ninguna'}`,
+      'ELEMENTOS EXISTENTES:',
+      ...(elements.length ? elements.slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS).map(formatPromptElement) : ['- ninguno']),
+      ...formatConversationLines(payload.conversation ?? []),
+      'RESPUESTA: devuelve solo un objeto JSON valido. Usa type="scenePatch" y patch.create si hay que crear figuras. No copies las lineas anteriores.'
+    ].join('\n');
   } catch {
     return request.contextJson;
   }
 }
 
-function compactElement(element: WebLlmPromptElement): WebLlmPromptElement {
-  return {
-    id: element.id,
-    name: element.name,
-    kind: element.kind,
-    locked: element.locked,
-    geometry: element.geometry,
-    style: element.style,
-    text: element.text
-  };
+function formatPromptElement(element: WebLlmPromptElement): string {
+  return [
+    `- id=${formatPromptValue(element.id)}`,
+    `name=${formatPromptValue(element.name)}`,
+    `kind=${formatPromptValue(element.kind)}`,
+    `locked=${formatPromptValue(element.locked)}`,
+    `geometry=${formatPromptRecord(element.geometry)}`,
+    `style=${formatPromptRecord(element.style)}`,
+    element.text ? `text=${formatPromptValue(element.text)}` : ''
+  ]
+    .filter(Boolean)
+    .join('; ');
+}
+
+function formatConversationLines(conversation: readonly { readonly role: string; readonly text: string }[]): readonly string[] {
+  const recentConversation = conversation.slice(-4);
+  if (!recentConversation.length) {
+    return [];
+  }
+
+  return ['CONVERSACION RECIENTE:', ...recentConversation.map((message) => `- ${formatPromptValue(message.role)}: ${formatPromptValue(message.text)}`)];
+}
+
+function formatPromptRecord(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return '';
+  }
+
+  return Object.entries(value as Record<string, unknown>)
+    .map(([key, entry]) => `${key}=${formatPromptValue(entry)}`)
+    .filter((entry) => !entry.endsWith('='))
+    .join(',');
+}
+
+function formatPromptValue(value: unknown): string {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(Number(value.toFixed(2))) : '';
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false';
+  }
+
+  if (typeof value === 'string') {
+    return value.replaceAll(/\s+/g, ' ').trim().slice(0, 160);
+  }
+
+  if (Array.isArray(value)) {
+    return value.length ? `${value.length} items` : 'none';
+  }
+
+  if (value && typeof value === 'object') {
+    return formatPromptRecord(value);
+  }
+
+  return '';
 }
 
 async function ensureEngine(modelName: string): Promise<MLCEngineInterface> {

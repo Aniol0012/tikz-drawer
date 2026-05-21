@@ -128,21 +128,29 @@ export class AiClientService {
       };
     }
 
-    if (result.providerType !== 'webllm' || response.type !== 'message' || response.message !== this.languageService.t('ai.responseGenerated')) {
+    if (result.providerType !== 'webllm' || response.type !== 'message') {
       return response;
     }
 
     const patchShapes = this.simpleShapesFromInstruction(instruction);
-    return patchShapes.length
+    if (patchShapes.length && this.shouldUseSimpleDrawingFallback(response)) {
+      return {
+        type: 'scenePatch',
+        message: this.languageService.t('ai.simpleProposalReady'),
+        patch: { create: patchShapes, update: [], remove: [] }
+      };
+    }
+
+    return response.message === this.languageService.t('ai.responseGenerated')
       ? {
-          type: 'scenePatch',
-          message: this.languageService.t('ai.simpleProposalReady'),
-          patch: { create: patchShapes, update: [], remove: [] }
-        }
-      : {
           ...response,
           message: this.languageService.t('ai.errorUnclearResponse')
-        };
+        }
+      : response;
+  }
+
+  private shouldUseSimpleDrawingFallback(response: AiResponse): boolean {
+    return response.message === this.languageService.t('ai.responseGenerated') || response.parseStatus === 'prompt-echo' || response.parseStatus === 'text-fallback';
   }
 
   private shouldRetryPromptEchoWithCloud(response: AiResponse, result: AiProviderTextResult, instruction: string, allowRemoteFallback: boolean): boolean {
@@ -151,19 +159,24 @@ export class AiClientService {
 
   private isConversationalInstruction(instruction: string): boolean {
     const normalized = this.normalizeConversationInput(instruction);
-    return (
-      this.localizedConversationInputs('ai.localGreetingInputs').includes(normalized) ||
-      this.localizedConversationInputs('ai.localThanksInputs').includes(normalized)
-    );
+    return this.greetingInputs().includes(normalized) || this.thanksInputs().includes(normalized);
   }
 
   private conversationFallbackMessage(instruction: string): string {
     const normalized = this.normalizeConversationInput(instruction);
-    if (this.localizedConversationInputs('ai.localThanksInputs').includes(normalized)) {
+    if (this.thanksInputs().includes(normalized)) {
       return this.languageService.t('ai.localThanksFallback');
     }
 
     return this.languageService.t('ai.localGreetingFallback');
+  }
+
+  private greetingInputs(): readonly string[] {
+    return [...this.localizedConversationInputs('ai.localGreetingInputs'), ...this.localizedConversationInputs('ai.commonGreetingInputs')];
+  }
+
+  private thanksInputs(): readonly string[] {
+    return [...this.localizedConversationInputs('ai.localThanksInputs'), ...this.localizedConversationInputs('ai.commonThanksInputs')];
   }
 
   private localizedConversationInputs(key: string): readonly string[] {
@@ -196,6 +209,11 @@ export class AiClientService {
 
     const colors = this.colorFromInstruction(normalized);
     const count = this.shapeCountFromInstruction(normalized);
+    const requestedKinds = this.requestedSimpleShapeKinds(normalized);
+    if (requestedKinds.length > 1) {
+      return this.composedSimpleShapes(requestedKinds, colors);
+    }
+
     if (/(cercle|circulo|circle)/.test(normalized)) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'circle',
@@ -237,8 +255,8 @@ export class AiClientService {
       }));
     }
 
-    if (/(rectangle|rectangulo|rectangel|quadrat|cuadrado|square)/.test(normalized)) {
-      const square = /(quadrat|cuadrado|square)/.test(normalized);
+    if (/(rectangle|rectangulo|rectangel|quadrat|cuadrat|cuadrado|square)/.test(normalized)) {
+      const square = /(quadrat|cuadrat|cuadrado|square)/.test(normalized);
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'rectangle',
         name: this.languageService.localizedShapeKind('rectangle'),
@@ -250,6 +268,10 @@ export class AiClientService {
         fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
       }));
+    }
+
+    if (/(fletxa|flecha|arrow)/.test(normalized)) {
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.simpleLineShape(x, y, color.stroke));
     }
 
     if (/(figura|forma|shape|element)/.test(normalized)) {
@@ -267,6 +289,114 @@ export class AiClientService {
     }
 
     return [];
+  }
+
+  private requestedSimpleShapeKinds(instruction: string): readonly ('circle' | 'triangle' | 'ellipse' | 'rectangle' | 'square' | 'line')[] {
+    const kinds: ('circle' | 'triangle' | 'ellipse' | 'rectangle' | 'square' | 'line')[] = [];
+    if (/(cercle|circulo|circle)/.test(instruction)) {
+      kinds.push('circle');
+    }
+    if (/(triangle)/.test(instruction)) {
+      kinds.push('triangle');
+    }
+    if (/(elipse|ellipse)/.test(instruction)) {
+      kinds.push('ellipse');
+    }
+    if (/(quadrat|cuadrat|cuadrado|square)/.test(instruction)) {
+      kinds.push('square');
+    } else if (/(rectangle|rectangulo|rectangel)/.test(instruction)) {
+      kinds.push('rectangle');
+    }
+    if (/(fletxa|flecha|arrow)/.test(instruction)) {
+      kinds.push('line');
+    }
+
+    return [...new Set(kinds)];
+  }
+
+  private composedSimpleShapes(
+    kinds: readonly ('circle' | 'triangle' | 'ellipse' | 'rectangle' | 'square' | 'line')[],
+    colors: { readonly stroke: string; readonly fill: string }
+  ): readonly Partial<CanvasShape>[] {
+    const safeKinds = kinds.slice(0, 8);
+    return safeKinds.map((kind, index) => {
+      const x = (index - (safeKinds.length - 1) / 2) * 2.4;
+      switch (kind) {
+        case 'circle':
+          return {
+            kind: 'circle',
+            name: this.languageService.localizedShapeKind('circle'),
+            cx: x,
+            cy: 0,
+            r: 0.75,
+            stroke: colors.stroke,
+            fill: colors.fill,
+            strokeWidth: 0.06
+          };
+        case 'triangle':
+          return {
+            kind: 'triangle',
+            name: this.languageService.localizedShapeKind('triangle'),
+            x: x - 0.85,
+            y: -0.7,
+            width: 1.7,
+            height: 1.4,
+            stroke: colors.stroke,
+            fill: colors.fill,
+            strokeWidth: 0.06
+          };
+        case 'ellipse':
+          return {
+            kind: 'ellipse',
+            name: this.languageService.localizedShapeKind('ellipse'),
+            cx: x,
+            cy: 0,
+            rx: 1.05,
+            ry: 0.65,
+            stroke: colors.stroke,
+            fill: colors.fill,
+            strokeWidth: 0.06
+          };
+        case 'square':
+          return {
+            kind: 'rectangle',
+            name: this.languageService.localizedShapeKind('rectangle'),
+            x: x - 0.65,
+            y: -0.65,
+            width: 1.3,
+            height: 1.3,
+            stroke: colors.stroke,
+            fill: colors.fill,
+            strokeWidth: 0.06
+          };
+        case 'rectangle':
+          return {
+            kind: 'rectangle',
+            name: this.languageService.localizedShapeKind('rectangle'),
+            x: x - 1,
+            y: -0.55,
+            width: 2,
+            height: 1.1,
+            stroke: colors.stroke,
+            fill: colors.fill,
+            strokeWidth: 0.06
+          };
+        case 'line':
+          return this.simpleLineShape(x, 0, colors.stroke);
+      }
+    });
+  }
+
+  private simpleLineShape(x: number, y: number, stroke: string): Partial<CanvasShape> {
+    return {
+      kind: 'line',
+      name: this.languageService.localizedShapeKind('line'),
+      from: { x: x - 0.9, y },
+      to: { x: x + 0.9, y },
+      stroke,
+      strokeWidth: 0.06,
+      arrowEnd: true
+    };
   }
 
   private repeatGeneratedShapes(
