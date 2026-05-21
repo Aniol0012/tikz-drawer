@@ -150,7 +150,9 @@ export class AiClientService {
   }
 
   private shouldUseSimpleDrawingFallback(response: AiResponse): boolean {
-    return response.message === this.languageService.t('ai.responseGenerated') || response.parseStatus === 'prompt-echo' || response.parseStatus === 'text-fallback';
+    return (
+      response.message === this.languageService.t('ai.responseGenerated') || response.parseStatus === 'prompt-echo' || response.parseStatus === 'text-fallback'
+    );
   }
 
   private shouldRetryPromptEchoWithCloud(response: AiResponse, result: AiProviderTextResult, instruction: string, allowRemoteFallback: boolean): boolean {
