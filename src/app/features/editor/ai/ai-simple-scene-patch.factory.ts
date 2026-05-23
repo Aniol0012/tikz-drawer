@@ -83,6 +83,10 @@ export class AiSimpleScenePatchFactory {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.simpleLineShape(x, y, color.stroke));
     }
 
+    if (/(diagrama|diagram|flow|flux|flujo)/.test(normalized)) {
+      return this.simpleFlowDiagram(colors);
+    }
+
     if (/(figura|forma|shape|element)/.test(normalized)) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'ellipse',
@@ -205,6 +209,49 @@ export class AiSimpleScenePatchFactory {
     };
   }
 
+  private simpleFlowDiagram(colors: { readonly stroke: string; readonly fill: string }): readonly Partial<CanvasShape>[] {
+    const palette = this.randomPalette(colors);
+    const spacing = this.randomFrom([2.35, 2.6, 2.85]);
+    const nodeWidth = this.randomFrom([1.55, 1.7, 1.9]);
+    const nodeHeight = this.randomFrom([0.82, 0.9, 1]);
+    const y = this.jitter(0.08);
+    const nodes = [-spacing, 0, spacing].map((x, index) => ({
+      kind: 'rectangle' as const,
+      name: this.languageService.localizedShapeKind('rectangle'),
+      x: this.round(x - nodeWidth / 2),
+      y: this.round(y - nodeHeight / 2 + this.jitter(0.04)),
+      width: nodeWidth,
+      height: nodeHeight,
+      stroke: palette[index % palette.length].stroke,
+      fill: palette[index % palette.length].fill,
+      strokeWidth: 0.06
+    }));
+    const firstRight = -spacing + nodeWidth / 2;
+    const middleLeft = -nodeWidth / 2;
+    const middleRight = nodeWidth / 2;
+    const lastLeft = spacing - nodeWidth / 2;
+
+    return [
+      nodes[0],
+      this.flowConnector(firstRight, middleLeft, y, colors.stroke),
+      nodes[1],
+      this.flowConnector(middleRight, lastLeft, y, colors.stroke),
+      nodes[2]
+    ];
+  }
+
+  private flowConnector(fromX: number, toX: number, y: number, stroke: string): Partial<CanvasShape> {
+    return {
+      kind: 'line',
+      name: this.languageService.localizedShapeKind('line'),
+      from: { x: this.round(fromX + this.jitter(0.03)), y: this.round(y) },
+      to: { x: this.round(toX + this.jitter(0.03)), y: this.round(y) },
+      stroke,
+      strokeWidth: 0.06,
+      arrowEnd: true
+    };
+  }
+
   private repeatGeneratedShapes(
     count: number,
     createShape: (index: number, x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => Partial<CanvasShape>
@@ -212,6 +259,23 @@ export class AiSimpleScenePatchFactory {
     const safeCount = Math.min(Math.max(count, 1), 8);
     const columns = Math.ceil(Math.sqrt(safeCount));
     const rows = Math.ceil(safeCount / columns);
+    const palette = this.randomPalette();
+    const spacingX = this.randomFrom([2.05, 2.25, 2.45]);
+    const spacingY = this.randomFrom([1.85, 2, 2.15]);
+
+    return Array.from({ length: safeCount }, (_, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      return createShape(
+        index,
+        (column - (columns - 1) / 2) * spacingX + this.jitter(0.08),
+        ((rows - 1) / 2 - row) * spacingY + this.jitter(0.08),
+        palette[index % palette.length]
+      );
+    });
+  }
+
+  private randomPalette(preferred?: { readonly stroke: string; readonly fill: string }): readonly { readonly stroke: string; readonly fill: string }[] {
     const palette = [
       { stroke: '#1d4ed8', fill: '#dbeafe' },
       { stroke: '#16a34a', fill: '#dcfce7' },
@@ -222,12 +286,21 @@ export class AiSimpleScenePatchFactory {
       { stroke: '#4f46e5', fill: '#e0e7ff' },
       { stroke: '#be123c', fill: '#ffe4e6' }
     ] as const;
+    const start = Math.floor(Math.random() * palette.length);
+    const rotated = [...palette.slice(start), ...palette.slice(0, start)];
+    return preferred ? [preferred, ...rotated.filter((entry) => entry.stroke !== preferred.stroke)] : rotated;
+  }
 
-    return Array.from({ length: safeCount }, (_, index) => {
-      const column = index % columns;
-      const row = Math.floor(index / columns);
-      return createShape(index, (column - (columns - 1) / 2) * 2.25, ((rows - 1) / 2 - row) * 2, palette[index % palette.length]);
-    });
+  private randomFrom(values: readonly number[]): number {
+    return values[Math.floor(Math.random() * values.length)] ?? values[0];
+  }
+
+  private jitter(amount: number): number {
+    return (Math.random() * 2 - 1) * amount;
+  }
+
+  private round(value: number): number {
+    return Number(value.toFixed(2));
   }
 
   private shapeCountFromInstruction(instruction: string): number {

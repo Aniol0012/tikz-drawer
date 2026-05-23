@@ -169,7 +169,57 @@ export class AiResponseParserService {
       };
     }
 
+    const topLevelShape = this.shapeFromTopLevel(candidate);
+    if (topLevelShape) {
+      return { create: [topLevelShape], update: [], remove: [] };
+    }
+
+    const shapes = this.shapesFromTopLevel(candidate['shapes'] ?? candidate['elements']);
+    if (shapes.length) {
+      return { create: shapes, update: [], remove: [] };
+    }
+
     return null;
+  }
+
+  private shapesFromTopLevel(value: unknown): readonly Record<string, unknown>[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((entry) => (entry && typeof entry === 'object' && !Array.isArray(entry) ? this.shapeFromTopLevel(entry as Record<string, unknown>) : null))
+      .filter((entry): entry is Record<string, unknown> => !!entry);
+  }
+
+  private shapeFromTopLevel(candidate: Record<string, unknown>): Record<string, unknown> | null {
+    const kind = candidate['kind'];
+    if (typeof kind !== 'string' || !this.nativeShapeKind(kind)) {
+      return null;
+    }
+
+    const shape: Record<string, unknown> = {
+      ...this.objectRecord(candidate['geometry']),
+      ...this.objectRecord(candidate['style']),
+      ...candidate,
+      kind
+    };
+    delete shape['geometry'];
+    delete shape['style'];
+    delete shape['type'];
+    delete shape['patch'];
+    delete shape['create'];
+    delete shape['update'];
+    delete shape['remove'];
+    return shape;
+  }
+
+  private objectRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  }
+
+  private nativeShapeKind(kind: string): boolean {
+    return kind === 'rectangle' || kind === 'circle' || kind === 'ellipse' || kind === 'line' || kind === 'text' || kind === 'triangle';
   }
 
   private firstString(candidate: Record<string, unknown>, keys: readonly string[]): string | undefined {

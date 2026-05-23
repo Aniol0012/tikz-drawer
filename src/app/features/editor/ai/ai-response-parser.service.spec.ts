@@ -97,6 +97,36 @@ describe('AiResponseParserService', () => {
     expect(response.patch?.create[0]).toMatchObject({ kind: 'circle', name: 'Cercle' });
   });
 
+  it('converts a raw top-level shape with nested geometry and style into a scene patch', () => {
+    const response = parser.parse(`{
+      "kind": "ellipse",
+      "geometry": {
+        "cx": -1.2,
+        "cy": 0.4,
+        "rx": 1.4,
+        "ry": 0.7
+      },
+      "style": {
+        "strokeWidth": 0.06,
+        "stroke": "#0a84ff",
+        "fill": "#dbeafe"
+      }
+    }`);
+
+    expect(response.type).toBe('scenePatch');
+    expect(response.patch?.create).toHaveLength(1);
+    expect(response.patch?.create[0]).toMatchObject({
+      kind: 'ellipse',
+      cx: -1.2,
+      cy: 0.4,
+      rx: 1.4,
+      ry: 0.7,
+      strokeWidth: 0.06,
+      stroke: '#0a84ff',
+      fill: '#dbeafe'
+    });
+  });
+
   it('marks empty JSON so dev logs can identify unhelpful local-model output', () => {
     const response = parser.parse('{}');
 

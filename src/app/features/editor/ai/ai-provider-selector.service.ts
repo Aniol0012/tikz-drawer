@@ -73,6 +73,14 @@ export class AiProviderSelectorService {
       throw new Error('ai.errorWebLlmUnsupported');
     }
 
+    if (!this.localProvider.isReady(request.options.webLlmModel)) {
+      if (request.options.allowRemoteFallback) {
+        return await this.generateWithCloud(request);
+      }
+
+      throw new Error('ai.errorWebLlmNotReady');
+    }
+
     return await this.generateWithFallback([this.generateWithWebLlm, ...(request.options.allowRemoteFallback ? [this.generateWithCloud] : [])], request);
   }
 
@@ -105,12 +113,6 @@ export class AiProviderSelectorService {
     if (this.localProvider.isSupported()) {
       if (this.localProvider.isReady(webLlmModel)) {
         providers.push((providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs));
-      } else if (this.localProvider.isLoading(webLlmModel)) {
-        providers.push((providerRequest) => this.generateWithWebLlm(providerRequest, providerRequest.options.automaticWebLlmTimeoutMs));
-        this.log('webllm:waiting-for-load', {
-          model: webLlmModel,
-          reason: 'WebLLM is still preparing; wait for the requested local model before trying fallback providers.'
-        });
       } else {
         this.log('webllm:deferred', {
           model: webLlmModel,

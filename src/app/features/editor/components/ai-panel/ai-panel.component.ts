@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject, signal, viewChild } from '@angular/core';
+import type { AfterViewInit } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -24,7 +25,7 @@ import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../
   styleUrl: './ai-panel.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AiPanelComponent {
+export class AiPanelComponent implements AfterViewInit {
   private readonly store = inject(EditorStore);
   private readonly languageService = inject(EditorLanguageService);
   private readonly aiClient = inject(AiClientService);
@@ -77,17 +78,25 @@ export class AiPanelComponent {
   readonly webLlmReady = computed(() => this.localAiProvider.isReady(this.aiSettings().webLlmModel));
   readonly webLlmLoading = computed(() => this.localAiProvider.isLoading(this.aiSettings().webLlmModel));
   readonly aiReady = computed(() => {
+    if (!this.devMode()) {
+      return true;
+    }
+
     if (this.aiSettings().providerType !== 'webllm') {
       return true;
     }
 
-    return this.webLlmReady() || (this.aiSettings().allowRemoteFallback && !this.localAiProvider.isSupported());
+    return this.webLlmReady() || this.aiSettings().allowRemoteFallback || this.browserLocalAiProvider.supported();
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
   readonly composerHeight = signal(this.defaultComposerHeight());
   readonly pendingChangesDialogOpen = signal(false);
   readonly pendingSubmitInstruction = signal('');
   readonly quickActions = AI_QUICK_ACTIONS;
+
+  ngAfterViewInit(): void {
+    this.scrollChatToBottom(3);
+  }
 
   setDraft(value: string): void {
     this.assistantState.draft.set(value);
@@ -301,11 +310,14 @@ export class AiPanelComponent {
     return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
   }
 
-  private scrollChatToBottom(): void {
+  private scrollChatToBottom(retries = 1): void {
     requestAnimationFrame(() => {
       const element = this.chatScroll()?.nativeElement;
       if (element) {
         element.scrollTop = element.scrollHeight;
+      }
+      if (retries > 1) {
+        this.scrollChatToBottom(retries - 1);
       }
     });
   }

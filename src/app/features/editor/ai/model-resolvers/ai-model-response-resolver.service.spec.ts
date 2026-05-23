@@ -59,6 +59,45 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.patch?.create[0]).toMatchObject({ kind: 'rectangle', width: 1.2, height: 1.2 });
   });
 
+  it('creates a simple editable diagram before calling a model', () => {
+    const response = resolver.resolvePreflight('Crea un diagrama editable sencillo a partir de esta escena.', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(5);
+    expect(response?.patch?.create.filter((shape) => shape.kind === 'rectangle')).toHaveLength(3);
+    expect(response?.patch?.create.filter((shape) => shape.kind === 'line')).toHaveLength(2);
+  });
+
+  it('orders the current scene before calling a model', () => {
+    const response = resolver.resolvePreflight('Ordena y mejora la escena actual manteniendo sus elementos principales.', sceneWithManyShapes());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.update.length).toBeGreaterThan(0);
+    expect(response?.patch?.create).toHaveLength(0);
+  });
+
+  it('adds labels before calling a model', () => {
+    const response = resolver.resolvePreflight('Añade etiquetas útiles y breves a los elementos principales de la escena.', sceneWithRectangle());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(1);
+    expect(response?.patch?.create[0]).toMatchObject({ kind: 'text' });
+  });
+
+  it('explains the scene before calling a model', () => {
+    const response = resolver.resolvePreflight('Explica la escena actual de forma clara y breve.', sceneWithRectangle());
+
+    expect(response?.type).toBe('message');
+    expect(response?.message).toContain('La escena tiene');
+  });
+
+  it('simplifies large scenes before calling a model', () => {
+    const response = resolver.resolvePreflight('Simplifica la escena actual manteniendo la idea principal.', sceneWithManyShapes());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.remove.length).toBeGreaterThan(0);
+  });
+
   it('turns a rectangle stroke-width edit into an update patch instead of creating rectangles', () => {
     const response = resolver.resolve('Canvia el grossor d algun quadrat', sceneWithRectangle(), rectanglePatchResponse(), webLlmResult());
 
@@ -196,5 +235,19 @@ function sceneWithTriangle(): AiSceneContext {
         style: { stroke: '#111111', strokeWidth: 0.08, fill: '#ffffff' }
       }
     ]
+  };
+}
+
+function sceneWithManyShapes(): AiSceneContext {
+  return {
+    ...emptyScene(),
+    elements: Array.from({ length: 7 }, (_, index) => ({
+      id: `rect-${index + 1}`,
+      name: `Rect ${index + 1}`,
+      kind: 'rectangle' as const,
+      locked: false,
+      geometry: { x: index, y: 0, width: 1, height: 1 },
+      style: { stroke: '#111111', strokeWidth: 0.08, fill: '#ffffff' }
+    }))
   };
 }
