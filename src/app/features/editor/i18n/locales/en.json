@@ -76,6 +76,7 @@
   "ai.localEditNeedsSelection": "To edit an existing shape, I need a selection or a clear reference to an element on the canvas.",
   "ai.localStrokeWidthEditReady": "I prepared the thickness change for the square.",
   "ai.localColorEditReady": "I prepared the color change for the triangle.",
+  "ai.localColorEditReadyGeneric": "I prepared the color change for the selection.",
   "ai.errorUnclearResponse": "I could not prepare a clear response.",
   "ai.errorGeneric": "The response could not be generated.",
   "ai.errorFirebaseTimeout": "The response took too long. Try again in a few seconds.",

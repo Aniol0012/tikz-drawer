@@ -298,6 +298,9 @@ export class AiResponseParserService {
     const normalized = text.trim();
     return (
       /^TAREA DEL USUARIO:/m.test(normalized) ||
+      /^SIN MARKS Y TEXTOS/m.test(normalized) ||
+      /\bPara que el usuario puede escribir una frase real\b/i.test(normalized) ||
+      /\bEs que no puede (crear|modificar|escribir)\b/i.test(normalized) ||
       /^Eres el asistente (contextual )?de Tikz Drawer\./m.test(normalized) ||
       /^Devuelve solo JSON valido/m.test(normalized) ||
       (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||

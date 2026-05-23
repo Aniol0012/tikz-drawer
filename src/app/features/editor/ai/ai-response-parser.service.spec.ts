@@ -167,6 +167,16 @@ RESPUESTA: devuelve solo un objeto JSON valido.`);
     expect(response.parseStatus).toBe('compact-prompt-echo');
   });
 
+  it('marks copied local system notes as prompt echoes', () => {
+    const response = parser.parse(`SIN MARKS Y TEXTOS
+Para que el usuario puede escribir una frase real, es que se debe escribir una frase real.
+Es que no puede modificar el color del rectangulo.`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain('SIN MARKS');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
   it('marks system prompt echoes without trying to parse example JSON from them', () => {
     const response = parser.parse(`Eres el asistente de Tikz Drawer.
 Devuelve solo JSON valido, sin markdown.

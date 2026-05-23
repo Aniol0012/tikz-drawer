@@ -65,7 +65,9 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.type).toBe('scenePatch');
     expect(response?.patch?.create).toHaveLength(5);
     expect(response?.patch?.create.filter((shape) => shape.kind === 'rectangle')).toHaveLength(3);
-    expect(response?.patch?.create.filter((shape) => shape.kind === 'line')).toHaveLength(2);
+    const lines = response?.patch?.create.filter((shape) => shape.kind === 'line') ?? [];
+    expect(lines).toHaveLength(2);
+    expect(lines.every((line) => !!line.fromAttachment && !!line.toAttachment && line.lineMode === 'curved' && line.arrowType === 'stealth')).toBe(true);
   });
 
   it('orders the current scene before calling a model', () => {
@@ -136,6 +138,21 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.type).toBe('scenePatch');
     expect(response?.patch?.create).toHaveLength(0);
     expect(response?.patch?.update).toEqual([{ id: 'tri-1', changes: { stroke: '#7c3aed', fill: '#ede9fe' } }]);
+  });
+
+  it('asks for a selection when a color edit has no target', () => {
+    const response = resolver.resolvePreflight('Canvia el color', emptyScene());
+
+    expect(response?.type).toBe('message');
+    expect(response?.patch).toBeUndefined();
+    expect(response?.message).toContain('selección');
+  });
+
+  it('changes selected shape colors before calling a model for vague color edits', () => {
+    const response = resolver.resolvePreflight('Canvia el color', sceneWithRectangle());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.update).toEqual([{ id: 'rect-1', changes: { stroke: '#7c3aed', fill: '#ede9fe' } }]);
   });
 
   it('does not call a model when a triangle color edit target is missing', () => {

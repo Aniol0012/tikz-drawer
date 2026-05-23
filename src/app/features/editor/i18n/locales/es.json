@@ -76,6 +76,7 @@
   "ai.localEditNeedsSelection": "Para editar una figura existente necesito una selección o una referencia clara a un elemento del lienzo.",
   "ai.localStrokeWidthEditReady": "He preparado el cambio de grosor para el cuadrado.",
   "ai.localColorEditReady": "He preparado el cambio de color para el triángulo.",
+  "ai.localColorEditReadyGeneric": "He preparado el cambio de color para la selección.",
   "ai.errorUnclearResponse": "No he podido preparar una respuesta clara.",
   "ai.errorGeneric": "No se ha podido generar la respuesta.",
   "ai.errorFirebaseTimeout": "La respuesta ha tardado demasiado. Vuelve a intentarlo en unos segundos.",

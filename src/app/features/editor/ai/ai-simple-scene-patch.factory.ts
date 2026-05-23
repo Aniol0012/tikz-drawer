@@ -215,7 +215,9 @@ export class AiSimpleScenePatchFactory {
     const nodeWidth = this.randomFrom([1.55, 1.7, 1.9]);
     const nodeHeight = this.randomFrom([0.82, 0.9, 1]);
     const y = this.jitter(0.08);
+    const nodeIds = [`ai-flow-${crypto.randomUUID()}`, `ai-flow-${crypto.randomUUID()}`, `ai-flow-${crypto.randomUUID()}`];
     const nodes = [-spacing, 0, spacing].map((x, index) => ({
+      id: nodeIds[index],
       kind: 'rectangle' as const,
       name: this.languageService.localizedShapeKind('rectangle'),
       x: this.round(x - nodeWidth / 2),
@@ -226,29 +228,35 @@ export class AiSimpleScenePatchFactory {
       fill: palette[index % palette.length].fill,
       strokeWidth: 0.06
     }));
-    const firstRight = -spacing + nodeWidth / 2;
-    const middleLeft = -nodeWidth / 2;
-    const middleRight = nodeWidth / 2;
-    const lastLeft = spacing - nodeWidth / 2;
 
-    return [
-      nodes[0],
-      this.flowConnector(firstRight, middleLeft, y, colors.stroke),
-      nodes[1],
-      this.flowConnector(middleRight, lastLeft, y, colors.stroke),
-      nodes[2]
-    ];
+    return [nodes[0], this.flowConnector(nodes[0], nodes[1], y, colors.stroke), nodes[1], this.flowConnector(nodes[1], nodes[2], y, colors.stroke), nodes[2]];
   }
 
-  private flowConnector(fromX: number, toX: number, y: number, stroke: string): Partial<CanvasShape> {
+  private flowConnector(
+    source: Partial<CanvasShape> & { readonly id?: string; readonly x?: number; readonly width?: number },
+    target: Partial<CanvasShape> & { readonly id?: string; readonly x?: number; readonly width?: number },
+    y: number,
+    stroke: string
+  ): Partial<CanvasShape> {
+    const sourceRight = (source.x ?? 0) + (source.width ?? 0);
+    const targetLeft = target.x ?? 0;
+    const bend = this.randomFrom([-0.12, 0, 0.12]);
     return {
       kind: 'line',
       name: this.languageService.localizedShapeKind('line'),
-      from: { x: this.round(fromX + this.jitter(0.03)), y: this.round(y) },
-      to: { x: this.round(toX + this.jitter(0.03)), y: this.round(y) },
+      from: { x: this.round(sourceRight), y: this.round(y) },
+      to: { x: this.round(targetLeft), y: this.round(y) },
+      anchors: [{ x: this.round((sourceRight + targetLeft) / 2), y: this.round(y + bend) }],
+      fromAttachment: { shapeId: source.id ?? '', anchor: { x: 1, y: 0 } },
+      toAttachment: { shapeId: target.id ?? '', anchor: { x: -1, y: 0 } },
       stroke,
-      strokeWidth: 0.06,
-      arrowEnd: true
+      strokeWidth: 0.07,
+      lineMode: 'curved',
+      strokeStyle: 'solid',
+      arrowEnd: true,
+      arrowType: 'stealth',
+      arrowRound: true,
+      arrowScale: 1.08
     };
   }
 

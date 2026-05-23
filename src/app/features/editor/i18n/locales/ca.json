@@ -76,6 +76,7 @@
   "ai.localEditNeedsSelection": "Per editar una figura existent necessito una selecció o una referència clara a un element del llenç.",
   "ai.localStrokeWidthEditReady": "He preparat el canvi de gruix per al quadrat.",
   "ai.localColorEditReady": "He preparat el canvi de color per al triangle.",
+  "ai.localColorEditReadyGeneric": "He preparat el canvi de color per a la selecció.",
   "ai.errorUnclearResponse": "No he pogut preparar una resposta clara.",
   "ai.errorGeneric": "No s'ha pogut generar la resposta.",
   "ai.errorFirebaseTimeout": "La resposta ha trigat massa. Torna-ho a provar d'aquí uns segons.",

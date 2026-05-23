@@ -781,7 +781,7 @@ export class EditorPageComponent {
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
   readonly aiSelectionActive = computed(() => {
-    const aiShapeIds = this.aiPatch.pendingCreatedShapeIds();
+    const aiShapeIds = this.aiPatch.pendingAffectedShapeIds();
     const selectedShapeIds = this.store.selectedShapeIds();
     return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.includes(shapeId));
   });

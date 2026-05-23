@@ -8,7 +8,7 @@ import {
   EDITOR_AI_INSERT_TARGET_RENDERED_LONG_EDGE_PX,
   MIN_SHAPE_DIMENSION
 } from '../constants/editor.constants';
-import type { CanvasShape, EditorPreferences, LineStrokeStyle, TikzScene } from '../models/tikz.models';
+import type { CanvasShape, EditorPreferences, LineEndpointAttachment, LineStrokeStyle, TikzScene } from '../models/tikz.models';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { EditorStore } from '../state/editor.store';
 import { EditorLanguageService } from '../i18n/editor-language.service';
@@ -26,6 +26,14 @@ export class ScenePatchService {
     return patch ? this.summarize(patch) : '';
   });
   readonly pendingCreatedShapeIds = signal<readonly string[]>([]);
+  readonly pendingAffectedShapeIds = computed<readonly string[]>(() => {
+    const patch = this.pendingPatch();
+    if (!patch) {
+      return [];
+    }
+
+    return [...new Set([...this.pendingCreatedShapeIds(), ...patch.update.map((entry) => entry.id), ...patch.remove])];
+  });
   readonly previewShapes = computed<readonly CanvasShape[]>(() => {
     const patch = this.pendingPatch();
     if (!patch) {
@@ -58,6 +66,12 @@ export class ScenePatchService {
     this.pendingPatch.set(patch);
     if (patch?.create.length) {
       this.materializePendingCreatedShapes(patch);
+      return;
+    }
+
+    const affectedShapeIds = patch ? [...new Set([...patch.update.map((entry) => entry.id), ...patch.remove])] : [];
+    if (affectedShapeIds.length) {
+      this.store.selectedShapeIds.set(affectedShapeIds);
     }
   }
 
@@ -172,8 +186,18 @@ export class ScenePatchService {
   }
 
   private createdShapes(patch: ScenePatch, preferences: EditorPreferences): readonly CanvasShape[] {
-    const shapes = patch.create.map((shape) => this.createShape(shape, preferences)).filter((shape): shape is CanvasShape => !!shape);
-    return this.scaleCreatedShapesForViewport(shapes, preferences.scale);
+    const idMap = new Map(
+      patch.create
+        .map((shape) => (typeof shape.id === 'string' && shape.id.trim() ? [shape.id, crypto.randomUUID()] : null))
+        .filter((entry): entry is [string, string] => !!entry)
+    );
+    const shapes = patch.create
+      .map((shape) => this.createShape(shape, preferences, this.createdShapeId(shape, idMap)))
+      .filter((shape): shape is CanvasShape => !!shape);
+    return this.scaleCreatedShapesForViewport(
+      shapes.map((shape) => this.remapCreatedShapeAttachments(shape, idMap)),
+      preferences.scale
+    );
   }
 
   private canMutateShape(scene: TikzScene, shapeId: string): boolean {
@@ -189,8 +213,11 @@ export class ScenePatchService {
     return this.withDefaults({ ...shape, ...changes, id: shape.id, kind: shape.kind } as CanvasShape, preferences);
   }
 
-  private createShape(shape: Partial<CanvasShape>, preferences: EditorPreferences): CanvasShape | null {
-    const id = crypto.randomUUID();
+  private createdShapeId(shape: Partial<CanvasShape>, idMap: ReadonlyMap<string, string>): string {
+    return typeof shape.id === 'string' && idMap.has(shape.id) ? (idMap.get(shape.id) ?? crypto.randomUUID()) : crypto.randomUUID();
+  }
+
+  private createShape(shape: Partial<CanvasShape>, preferences: EditorPreferences, id: string): CanvasShape | null {
     const name = this.textValue(shape.name, 'AI element');
     const stroke = this.textValue(shape.stroke, preferences.defaultStroke);
     const strokeWidth = this.numberValue(shape.strokeWidth, preferences.defaultStrokeWidth);
@@ -286,20 +313,22 @@ export class ScenePatchService {
             strokeWidth,
             from: { x: this.numberValue(lineShape['fromX'] ?? lineShape.from?.x, -2), y: this.numberValue(lineShape['fromY'] ?? lineShape.from?.y, 0) },
             to: { x: this.numberValue(lineShape['toX'] ?? lineShape.to?.x, 2), y: this.numberValue(lineShape['toY'] ?? lineShape.to?.y, 0) },
-            anchors: [],
-            lineMode: 'straight',
-            strokeStyle: preferences.defaultLineStrokeStyle as LineStrokeStyle,
+            anchors: Array.isArray(lineShape.anchors) ? lineShape.anchors : [],
+            lineMode: lineShape.lineMode === 'curved' ? 'curved' : 'straight',
+            strokeStyle: this.lineStrokeStyleValue(lineShape.strokeStyle, preferences.defaultLineStrokeStyle),
             arrowStart: !!shape.arrowStart,
             arrowEnd: shape.arrowEnd ?? true,
-            arrowType: preferences.defaultArrowType,
+            arrowType: lineShape.arrowType ?? preferences.defaultArrowType,
             arrowColor: stroke,
             arrowOpacity: 1,
-            arrowOpen: false,
-            arrowRound: false,
-            arrowScale: preferences.defaultArrowScale,
+            arrowOpen: !!lineShape.arrowOpen,
+            arrowRound: !!lineShape.arrowRound,
+            arrowScale: this.positiveNumber(lineShape.arrowScale, preferences.defaultArrowScale),
             arrowLengthScale: 1,
             arrowWidthScale: 1,
-            arrowBendMode: 'none'
+            arrowBendMode: lineShape.arrowBendMode ?? 'none',
+            fromAttachment: lineShape.fromAttachment,
+            toAttachment: lineShape.toAttachment
           },
           preferences
         );
@@ -332,6 +361,27 @@ export class ScenePatchService {
       default:
         return null;
     }
+  }
+
+  private remapCreatedShapeAttachments(shape: CanvasShape, idMap: ReadonlyMap<string, string>): CanvasShape {
+    if (shape.kind !== 'line') {
+      return shape;
+    }
+
+    return {
+      ...shape,
+      fromAttachment: this.remapLineAttachment(shape.fromAttachment, idMap),
+      toAttachment: this.remapLineAttachment(shape.toAttachment, idMap)
+    };
+  }
+
+  private remapLineAttachment(attachment: LineEndpointAttachment | undefined, idMap: ReadonlyMap<string, string>): LineEndpointAttachment | undefined {
+    if (!attachment) {
+      return undefined;
+    }
+
+    const shapeId = idMap.get(attachment.shapeId);
+    return shapeId ? { ...attachment, shapeId } : attachment;
   }
 
   private withDefaults(shape: CanvasShape, preferences: EditorPreferences): CanvasShape {
@@ -391,6 +441,10 @@ export class ScenePatchService {
 
   private textValue(value: unknown, fallback: string): string {
     return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+  }
+
+  private lineStrokeStyleValue(value: unknown, fallback: LineStrokeStyle): LineStrokeStyle {
+    return value === 'solid' || value === 'dashed' || value === 'dotted' || value === 'dash-dotted' || value === 'loosely-dashed' ? value : fallback;
   }
 
   private scaleCreatedShapesForViewport(shapes: readonly CanvasShape[], scale: number): readonly CanvasShape[] {

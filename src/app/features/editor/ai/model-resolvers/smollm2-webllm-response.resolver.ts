@@ -33,6 +33,10 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
       return this.resolveTriangleColorEdit(context);
     }
 
+    if (context.intent.editRequest && context.intent.colorTarget) {
+      return this.resolveSelectedColorEdit(context);
+    }
+
     return null;
   }
 
@@ -76,6 +80,10 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
 
     if (context.intent.colorTarget && context.intent.triangleTarget) {
       return this.resolveTriangleColorEdit(context);
+    }
+
+    if (context.intent.colorTarget) {
+      return this.resolveSelectedColorEdit(context);
     }
 
     if (context.response.type === 'scenePatch' && context.response.patch && this.patchCreatesWithoutUpdating(context.response.patch)) {
@@ -138,6 +146,37 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
       selectedMutableElements(context.scene).find((element) => element.kind === 'triangle') ??
       mutableElements(context.scene).find((element) => element.kind === 'triangle')
     );
+  }
+
+  private resolveSelectedColorEdit(context: AiPreflightResolutionContext): AiResponse {
+    const selected = selectedMutableElements(context.scene);
+    if (!selected.length) {
+      return this.localMessage(this.languageService.t('ai.localEditNeedsSelection'));
+    }
+
+    const changes = this.colorChanges(context.intent.normalized);
+    return {
+      type: 'scenePatch',
+      message: this.languageService.t('ai.localColorEditReadyGeneric'),
+      patch: {
+        create: [],
+        update: selected.map((element) => ({ id: element.id, changes: this.colorChangesForKind(element.kind, changes) })),
+        remove: []
+      },
+      parseStatus: 'local-conversation-fallback'
+    };
+  }
+
+  private colorChangesForKind(kind: string, changes: { readonly stroke: string; readonly fill: string }): Record<string, string> {
+    if (kind === 'line') {
+      return { stroke: changes.stroke, arrowColor: changes.stroke };
+    }
+
+    if (kind === 'text') {
+      return { color: changes.stroke };
+    }
+
+    return changes;
   }
 
   private colorChanges(instruction: string): { readonly stroke: string; readonly fill: string } {
