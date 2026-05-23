@@ -114,4 +114,27 @@ describe('AiResponseParserService', () => {
     expect(response.type).toBe('message');
     expect(response.parseStatus).toBe('prompt-echo');
   });
+
+  it('marks plain compact prompt echoes without exposing the prompt payload', () => {
+    const response = parser.parse(`Puc afegir grafs?
+FECHA: iso=2026-05-23T07:52:13.378Z,locale=es-ES,timeZone=Europe/Madrid
+ESCENA: Lienzo en blanco
+SELECCION: ninguna
+ELEMENTOS EXISTENTES:
+- id=1; name=Ellipse; kind=ellipse
+RESPUESTA: devuelve solo un objeto JSON valido.`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain('FECHA:');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
+  it('marks system prompt echoes without trying to parse example JSON from them', () => {
+    const response = parser.parse(`Eres el asistente de Tikz Drawer.
+Devuelve solo JSON valido, sin markdown.
+Formato: {"type":"message","message":"..."}`);
+
+    expect(response.type).toBe('message');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
 });

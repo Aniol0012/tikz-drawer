@@ -8,6 +8,10 @@ export class AiResponseParserService {
   private readonly languageService = inject(EditorLanguageService, { optional: true });
 
   parse(rawText: string): AiResponse {
+    if (this.compactPromptEcho(this.cleanTextFallback(rawText))) {
+      return this.textFallback(rawText);
+    }
+
     const parsedResult = this.parseCandidate(rawText);
     if (!parsedResult) {
       return this.textFallback(rawText);
@@ -45,11 +49,15 @@ export class AiResponseParserService {
     return this.parseJson(jsonText);
   }
 
-  private parseJson(jsonText: string): { readonly value: unknown; readonly status: AiResponseParseStatus } {
+  private parseJson(jsonText: string): { readonly value: unknown; readonly status: AiResponseParseStatus } | null {
     try {
       return { value: JSON.parse(jsonText), status: 'json' };
     } catch {
-      return { value: JSON.parse(this.repairJson(jsonText)), status: 'json-repaired' };
+      try {
+        return { value: JSON.parse(this.repairJson(jsonText)), status: 'json-repaired' };
+      } catch {
+        return null;
+      }
     }
   }
 
@@ -205,10 +213,14 @@ export class AiResponseParserService {
 
   private textFallback(rawText: string): AiResponse {
     const cleaned = this.cleanTextFallback(rawText);
+    const parseStatus = this.compactPromptEcho(cleaned) ? 'compact-prompt-echo' : 'text-fallback';
     return {
       type: 'message',
-      message: cleaned || (this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse')),
-      parseStatus: 'text-fallback'
+      message:
+        parseStatus === 'compact-prompt-echo'
+          ? (this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse'))
+          : cleaned || (this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse')),
+      parseStatus
     };
   }
 
@@ -218,5 +230,18 @@ export class AiResponseParserService {
       .replace(/^```(?:json|text)?/i, '')
       .replace(/```$/i, '')
       .trim();
+  }
+
+  private compactPromptEcho(text: string): boolean {
+    const normalized = text.trim();
+    return (
+      /^TAREA DEL USUARIO:/m.test(normalized) ||
+      /^Eres el asistente (contextual )?de Tikz Drawer\./m.test(normalized) ||
+      /^Devuelve solo JSON valido/m.test(normalized) ||
+      (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||
+      (/^FECTO:/m.test(normalized) && /^- id[:=]/m.test(normalized)) ||
+      (/^FECHA:/m.test(normalized) && /^ESCENA:/m.test(normalized) && /^ELEMENTOS EXISTENTES:/m.test(normalized)) ||
+      (/^.+\nFECHA:/s.test(normalized) && /^ESCENA:/m.test(normalized) && /^ELEMENTOS EXISTENTES:/m.test(normalized))
+    );
   }
 }

@@ -84,7 +84,7 @@ export class AiPanelComponent {
     return this.webLlmReady() || (this.aiSettings().allowRemoteFallback && !this.localAiProvider.isSupported());
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
-  readonly composerHeight = signal(64);
+  readonly composerHeight = signal(44);
   readonly pendingChangesDialogOpen = signal(false);
   readonly pendingSubmitInstruction = signal('');
   readonly quickActions = AI_QUICK_ACTIONS;
@@ -116,7 +116,7 @@ export class AiPanelComponent {
 
     const startY = event.clientY;
     const startHeight = this.composerHeight();
-    const minHeight = 64;
+    const minHeight = 40;
     const maxHeight = 180;
 
     const resize = (moveEvent: PointerEvent) => {
@@ -181,13 +181,15 @@ export class AiPanelComponent {
 
     this.assistantState.error.set('');
     this.assistantState.draft.set('');
-    this.assistantState.appendMessage({ role: 'user', text: instruction, debugInfo: this.requestDebugInfo() });
-    this.assistantState.loading.set(true);
-    this.scrollChatToBottom();
 
     try {
       const context = this.contextBuilder.build(this.store.scene().name, this.store.scene().shapes, this.store.selectedShapeIds());
-      const response = await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages());
+      const preflightResponse = this.aiClient.resolveBeforeProvider(instruction, context);
+      this.assistantState.appendMessage({ role: 'user', text: instruction, debugInfo: preflightResponse ? undefined : this.requestDebugInfo() });
+      this.assistantState.loading.set(true);
+      this.scrollChatToBottom();
+
+      const response = preflightResponse ?? (await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages()));
       if (response.patch) {
         this.scenePatch.setPendingPatch(response.patch);
         this.patchPreviewed.emit();

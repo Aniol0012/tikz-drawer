@@ -3124,9 +3124,9 @@ button:disabled {
     height: calc(100dvh - var(--topbar-height));
     grid-template-columns: 1fr;
     grid-template-rows:
-      minmax(420px, 1fr)
-      18px
-      minmax(var(--mobile-right-sidebar-min-height, 260px), var(--mobile-right-sidebar-height, 320px));
+      minmax(220px, 1fr)
+      16px
+      minmax(var(--mobile-right-sidebar-min-height, 260px), min(var(--mobile-right-sidebar-height, 360px), 54dvh));
   }
 
   .canvas-panel {
@@ -3340,9 +3340,9 @@ button:disabled {
   .workspace {
     grid-template-columns: 1fr;
     grid-template-rows:
-      minmax(300px, 1fr)
-      18px
-      minmax(var(--mobile-right-sidebar-min-height, 150px), var(--mobile-right-sidebar-height, 360px));
+      minmax(180px, 1fr)
+      14px
+      minmax(var(--mobile-right-sidebar-min-height, 150px), min(var(--mobile-right-sidebar-height, 360px), 54dvh));
   }
 
   .form-grid,

@@ -1,0 +1,151 @@
+import { TestBed } from '@angular/core/testing';
+import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+import { EditorLanguageService } from '../../i18n/editor-language.service';
+import type { AiSceneContext } from '../ai-scene-context.model';
+import type { AiResponse } from '../ai-message.model';
+import type { AiProviderTextResult } from '../ai-provider-result.model';
+import { AiModelResponseResolverService } from './ai-model-response-resolver.service';
+
+describe('AiModelResponseResolverService', () => {
+  let resolver: AiModelResponseResolverService;
+  let language: EditorLanguageService;
+
+  beforeAll(() => {
+    TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+  });
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [AiModelResponseResolverService]
+    });
+    resolver = TestBed.inject(AiModelResponseResolverService);
+    language = TestBed.inject(EditorLanguageService);
+    language.setLanguage('es');
+  });
+
+  it('answers graph capability questions instead of accepting leaked rectangle patches', () => {
+    const response = resolver.resolve('Puc usar grafs?', emptyScene(), rectanglePatchResponse(), webLlmResult());
+
+    expect(response.type).toBe('message');
+    expect(response.patch).toBeUndefined();
+    expect(response.message).toContain('Puedes añadir grafos');
+    expect(response.message).toContain('Ctrl + F');
+    expect(response.message).not.toContain('El usuario');
+  });
+
+  it('answers graph capability questions before calling a model', () => {
+    const response = resolver.resolvePreflight('Puc crear un graf?', emptyScene());
+
+    expect(response?.type).toBe('message');
+    expect(response?.patch).toBeUndefined();
+    expect(response?.message).toContain('Puedes añadir grafos');
+    expect(response?.message).toContain('Ctrl + F');
+  });
+
+  it('turns a rectangle stroke-width edit into an update patch instead of creating rectangles', () => {
+    const response = resolver.resolve('Canvia el grossor d algun quadrat', sceneWithRectangle(), rectanglePatchResponse(), webLlmResult());
+
+    expect(response.type).toBe('scenePatch');
+    expect(response.patch?.create).toHaveLength(0);
+    expect(response.patch?.update).toEqual([{ id: 'rect-1', changes: { strokeWidth: 0.12 } }]);
+  });
+
+  it('resolves rectangle stroke-width edits before calling a model', () => {
+    const response = resolver.resolvePreflight('Canvia el grossor d algun quadrat', sceneWithRectangle());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(0);
+    expect(response?.patch?.update).toEqual([{ id: 'rect-1', changes: { strokeWidth: 0.12 } }]);
+  });
+
+  it('does not invent a rectangle when an edit target is missing', () => {
+    const response = resolver.resolve('Canvia el grossor d algun quadrat', emptyScene(), rectanglePatchResponse(), webLlmResult());
+
+    expect(response.type).toBe('message');
+    expect(response.patch).toBeUndefined();
+    expect(response.message).toContain('No he encontrado');
+  });
+
+  it('does not call a model when a local edit target is missing', () => {
+    const response = resolver.resolvePreflight('Canvia el grossor d algun quadrat', emptyScene());
+
+    expect(response?.type).toBe('message');
+    expect(response?.patch).toBeUndefined();
+    expect(response?.message).toContain('No he encontrado');
+  });
+
+  it('does not retry capability answers remotely', () => {
+    const response = messageResponse('No he podido preparar una respuesta clara.', 'compact-prompt-echo');
+    const retry = resolver.shouldRetryWithCloud('Puc usar grafs?', emptyScene(), response, webLlmResult(), true);
+
+    expect(retry).toBe(false);
+  });
+
+  it('still allows cloud retry for non-answerable prompt echoes', () => {
+    const response = messageResponse('No he podido preparar una respuesta clara.', 'compact-prompt-echo');
+    const retry = resolver.shouldRetryWithCloud('Ordena aquesta escena de manera elegant', emptyScene(), response, webLlmResult(), true);
+
+    expect(retry).toBe(true);
+  });
+});
+
+function messageResponse(message: string, parseStatus: AiResponse['parseStatus'] = 'text-fallback'): AiResponse {
+  return {
+    type: 'message',
+    message,
+    parseStatus
+  };
+}
+
+function rectanglePatchResponse(): AiResponse {
+  return {
+    type: 'scenePatch',
+    message: 'He preparado dos rectángulos.',
+    patch: {
+      create: [
+        { kind: 'rectangle', name: 'Bloque 1', x: -2.2, y: -0.5, width: 2, height: 1, stroke: '#1d4ed8', fill: '#dbeafe', strokeWidth: 0.04 },
+        { kind: 'rectangle', name: 'Bloque 2', x: 0.4, y: -0.5, width: 2, height: 1, stroke: '#16a34a', fill: '#dcfce7', strokeWidth: 0.04 }
+      ],
+      update: [],
+      remove: []
+    },
+    parseStatus: 'json'
+  };
+}
+
+function webLlmResult(): AiProviderTextResult {
+  return {
+    mode: 'local',
+    providerType: 'webllm',
+    modelName: 'SmolLM2-360M-Instruct-q4f16_1-MLC',
+    text: ''
+  };
+}
+
+function emptyScene(): AiSceneContext {
+  return {
+    sceneName: 'Lienzo en blanco',
+    selectedElementIds: [],
+    elements: [],
+    capabilities: ['message', 'scenePatch', 'tikzCode'],
+    supportedElementKinds: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'triangle']
+  };
+}
+
+function sceneWithRectangle(): AiSceneContext {
+  return {
+    ...emptyScene(),
+    selectedElementIds: ['rect-1'],
+    elements: [
+      {
+        id: 'rect-1',
+        name: 'Quadrat',
+        kind: 'rectangle',
+        locked: false,
+        geometry: { x: 0, y: 0, width: 1, height: 1 },
+        style: { stroke: '#111111', strokeWidth: 0.08, fill: '#ffffff' }
+      }
+    ]
+  };
+}

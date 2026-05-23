@@ -33,9 +33,6 @@
   }
 
   <div class="quick-section">
-    <div class="quick-section__header">
-      <span>{{ 'ai.quickActions' | translate }}</span>
-    </div>
     <div class="quick-actions">
       @for (action of quickActions; track action.id) {
         <button type="button" (click)="useQuickAction(action)">

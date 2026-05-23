@@ -14,8 +14,8 @@ import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import { aiDebugLoggingEnabled } from './ai-debug-logging';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
-const WEB_LLM_MAX_OUTPUT_TOKENS = 180;
-const WEB_LLM_MAX_CONTEXT_ELEMENTS = 12;
+const WEB_LLM_MAX_OUTPUT_TOKENS = 96;
+const WEB_LLM_MAX_CONTEXT_ELEMENTS = 4;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
@@ -206,64 +206,55 @@ function usageFromCompletionUsage(usage: CompletionUsage): AiProviderUsage {
 function localSystemInstruction(): string {
   return [
     'Eres el asistente de Tikz Drawer.',
-    'Devuelve solo JSON valido, sin markdown.',
-    'Formato: {"type":"message"|"scenePatch"|"tikzCode","message":"...","patch":{...},"tikzCode":"..."}',
-    'Nunca devuelvas {} ni un objeto vacio.',
-    'Para charla usa type="message" y 1 frase.',
-    'Para dibujar o editar usa scenePatch con pocos elementos claros.',
-    'Si piden una o varias figuras en el canvas, devuelve type="scenePatch" y crea patch.create con todas las figuras necesarias.',
-    'Conocimiento de la app: Tikz Drawer crea diagramas TikZ editables en un canvas; los cambios de IA se proponen como patches y el usuario los aplica.',
-    'Figuras nativas y campos: rectangle usa x,y,width,height; circle usa cx,cy,r; ellipse usa cx,cy,rx,ry; triangle usa x,y,width,height; line usa fromX,fromY,toX,toY,arrowStart,arrowEnd; text usa x,y,text,fontSize,color.',
-    'Para un triangulo crea {"kind":"triangle","x":-1,"y":-0.8,"width":2,"height":1.6,"stroke":"#7c3aed","fill":"#ede9fe","strokeWidth":0.06}.',
-    'Para ordenar una escena, actualiza posiciones con patch.update y conserva ids. Para etiquetar, crea text cerca de los elementos. Para flujo, usa rectangles + lines con arrowEnd.',
-    'Ejemplo figura: {"kind":"rectangle","name":"Bloque","x":-1,"y":-1,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04}.',
-    'Ejemplo respuesta completa: {"type":"scenePatch","message":"He preparado dos rectangulos.","patch":{"create":[{"kind":"rectangle","name":"Bloque 1","x":-2.2,"y":-0.5,"width":2,"height":1,"stroke":"#1d4ed8","fill":"#dbeafe","strokeWidth":0.04},{"kind":"rectangle","name":"Bloque 2","x":0.4,"y":-0.5,"width":2,"height":1,"stroke":"#16a34a","fill":"#dcfce7","strokeWidth":0.04}]}}',
-    'Usa numeros cortos, maximo 2 decimales.',
-    'Tipos permitidos: rectangle, circle, ellipse, line, text, triangle.',
-    'El usuario previsualiza y aplica manualmente los cambios.'
+    'Devuelve un unico JSON valido, sin markdown ni texto extra.',
+    'Formato: {"type":"message","message":"..."} o {"type":"scenePatch","message":"...","patch":{"create":[],"update":[],"remove":[]}}.',
+    'Charla o preguntas: type="message", una frase, segunda persona. Nunca digas "el usuario puede".',
+    'Crear: usa patch.create solo si el usuario pide crear o dibujar.',
+    'Editar: usa patch.update con IDs existentes; no crees rectangulos para editar.',
+    'Tipos: rectangle, circle, ellipse, line, text, triangle. Numeros cortos.'
   ].join('\n');
 }
 
 function compactPromptPayload(request: AiProviderRequest): string {
   try {
     const payload = JSON.parse(request.contextJson) as WebLlmPromptPayload;
-    const elements = payload.context?.elements ?? [];
+    const selectedIds = payload.context?.selectedElementIds ?? [];
+    const elements = promptElementsForPayload(payload.context?.elements ?? [], selectedIds);
     return [
-      `TAREA DEL USUARIO: ${payload.instruction ?? request.instruction}`,
-      `FECHA: ${formatPromptValue(payload.now) || 'desconocida'}`,
-      `ESCENA: ${payload.context?.sceneName ?? 'sin nombre'}`,
-      `SELECCION: ${(payload.context?.selectedElementIds ?? []).join(', ') || 'ninguna'}`,
-      'ELEMENTOS EXISTENTES:',
-      ...(elements.length ? elements.slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS).map(formatPromptElement) : ['- ninguno']),
-      ...formatConversationLines(payload.conversation ?? []),
-      'RESPUESTA: devuelve solo un objeto JSON valido. Usa type="scenePatch" y patch.create si hay que crear figuras. No copies las lineas anteriores.'
+      `TAREA: ${payload.instruction ?? request.instruction}`,
+      `SELECCION: ${selectedIds.join(', ') || 'ninguna'}`,
+      'ELEMENTOS:',
+      ...(elements.length ? elements.map(formatPromptElement) : ['- ninguno']),
+      'RESPONDE SOLO JSON. Si pregunta capacidad: message. Si edita: update. Si crea: create. No copies el prompt.'
     ].join('\n');
   } catch {
     return request.contextJson;
   }
 }
 
+function promptElementsForPayload(elements: readonly WebLlmPromptElement[], selectedIds: readonly string[]): readonly WebLlmPromptElement[] {
+  if (!elements.length) {
+    return [];
+  }
+
+  const selected = new Set(selectedIds);
+  return [...elements]
+    .sort((left, right) => Number(selected.has(formatPromptValue(right.id))) - Number(selected.has(formatPromptValue(left.id))))
+    .slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS);
+}
+
 function formatPromptElement(element: WebLlmPromptElement): string {
   return [
     `- id=${formatPromptValue(element.id)}`,
-    `name=${formatPromptValue(element.name)}`,
     `kind=${formatPromptValue(element.kind)}`,
-    `locked=${formatPromptValue(element.locked)}`,
+    `name=${formatPromptValue(element.name)}`,
+    element.locked ? 'locked=true' : '',
     `geometry=${formatPromptRecord(element.geometry)}`,
-    `style=${formatPromptRecord(element.style)}`,
+    `style=${formatPromptStyle(element.style)}`,
     element.text ? `text=${formatPromptValue(element.text)}` : ''
   ]
     .filter(Boolean)
     .join('; ');
-}
-
-function formatConversationLines(conversation: readonly { readonly role: string; readonly text: string }[]): readonly string[] {
-  const recentConversation = conversation.slice(-4);
-  if (!recentConversation.length) {
-    return [];
-  }
-
-  return ['CONVERSACION RECIENTE:', ...recentConversation.map((message) => `- ${formatPromptValue(message.role)}: ${formatPromptValue(message.text)}`)];
 }
 
 function formatPromptRecord(value: unknown): string {
@@ -275,6 +266,19 @@ function formatPromptRecord(value: unknown): string {
     .map(([key, entry]) => `${key}=${formatPromptValue(entry)}`)
     .filter((entry) => !entry.endsWith('='))
     .join(',');
+}
+
+function formatPromptStyle(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return '';
+  }
+
+  const style = value as Record<string, unknown>;
+  return formatPromptRecord({
+    strokeWidth: style['strokeWidth'],
+    stroke: style['stroke'],
+    fill: style['fill']
+  });
 }
 
 function formatPromptValue(value: unknown): string {

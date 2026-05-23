@@ -43,4 +43,11 @@ export interface AiResponse {
   readonly aiUsage?: AiProviderUsage;
 }
 
-export type AiResponseParseStatus = 'json' | 'json-repaired' | 'text-fallback' | 'empty-json' | 'prompt-echo' | 'local-conversation-fallback';
+export type AiResponseParseStatus =
+  | 'json'
+  | 'json-repaired'
+  | 'text-fallback'
+  | 'empty-json'
+  | 'prompt-echo'
+  | 'compact-prompt-echo'
+  | 'local-conversation-fallback';
