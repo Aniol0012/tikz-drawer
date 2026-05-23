@@ -104,6 +104,14 @@ describe('AiResponseParserService', () => {
     expect(response.parseStatus).toBe('empty-json');
   });
 
+  it('marks copied placeholder JSON as unusable instead of showing ellipses', () => {
+    const response = parser.parse('{"type":"message","message":"..."}');
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toBe('...');
+    expect(response.parseStatus).toBe('placeholder-json');
+  });
+
   it('marks prompt echoes when WebLLM copies the compact prompt payload', () => {
     const response = parser.parse(`{
       "instruction": "Hola",

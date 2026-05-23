@@ -207,7 +207,8 @@ function localSystemInstruction(): string {
   return [
     'Eres el asistente de Tikz Drawer.',
     'Devuelve un unico JSON valido, sin markdown ni texto extra.',
-    'Formato: {"type":"message","message":"..."} o {"type":"scenePatch","message":"...","patch":{"create":[],"update":[],"remove":[]}}.',
+    'Para mensajes usa campos type=message y message con una frase real.',
+    'Para cambios usa type=scenePatch, message breve y patch con create/update/remove.',
     'Charla o preguntas: type="message", una frase, segunda persona. Nunca digas "el usuario puede".',
     'Crear: usa patch.create solo si el usuario pide crear o dibujar.',
     'Editar: usa patch.update con IDs existentes; no crees rectangulos para editar.',
@@ -225,7 +226,7 @@ function compactPromptPayload(request: AiProviderRequest): string {
       `SELECCION: ${selectedIds.join(', ') || 'ninguna'}`,
       'ELEMENTOS:',
       ...(elements.length ? elements.map(formatPromptElement) : ['- ninguno']),
-      'RESPONDE SOLO JSON. Si pregunta capacidad: message. Si edita: update. Si crea: create. No copies el prompt.'
+      'RESPONDE SOLO JSON. Escribe un message real, nunca puntos suspensivos. Si edita: update. Si crea: create. No copies el prompt.'
     ].join('\n');
   } catch {
     return request.contextJson;

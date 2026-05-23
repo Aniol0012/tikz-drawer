@@ -84,7 +84,7 @@ export class AiPanelComponent {
     return this.webLlmReady() || (this.aiSettings().allowRemoteFallback && !this.localAiProvider.isSupported());
   });
   readonly composerDisabled = computed(() => this.assistantState.loading() || !this.assistantState.draft().trim());
-  readonly composerHeight = signal(44);
+  readonly composerHeight = signal(this.defaultComposerHeight());
   readonly pendingChangesDialogOpen = signal(false);
   readonly pendingSubmitInstruction = signal('');
   readonly quickActions = AI_QUICK_ACTIONS;
@@ -328,6 +328,10 @@ export class AiPanelComponent {
     }
 
     return this.aiSettings().webLlmModel;
+  }
+
+  private defaultComposerHeight(): number {
+    return typeof globalThis.innerWidth === 'number' && globalThis.innerWidth <= 520 ? 44 : 56;
   }
 
   private errorMessage(error: unknown): string {

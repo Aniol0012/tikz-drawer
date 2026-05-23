@@ -43,6 +43,22 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.message).toContain('Ctrl + F');
   });
 
+  it('answers square capability questions before calling a model', () => {
+    const response = resolver.resolvePreflight('Com afegeixo un quadrat?', emptyScene());
+
+    expect(response?.type).toBe('message');
+    expect(response?.patch).toBeUndefined();
+    expect(response?.message).toContain('Puedes añadir figuras');
+  });
+
+  it('creates a simple square before calling a model', () => {
+    const response = resolver.resolvePreflight('Afegeix un quadrat', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(1);
+    expect(response?.patch?.create[0]).toMatchObject({ kind: 'rectangle', width: 1.2, height: 1.2 });
+  });
+
   it('turns a rectangle stroke-width edit into an update patch instead of creating rectangles', () => {
     const response = resolver.resolve('Canvia el grossor d algun quadrat', sceneWithRectangle(), rectanglePatchResponse(), webLlmResult());
 
@@ -73,6 +89,22 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.type).toBe('message');
     expect(response?.patch).toBeUndefined();
     expect(response?.message).toContain('No he encontrado');
+  });
+
+  it('resolves triangle color edits before calling a model', () => {
+    const response = resolver.resolvePreflight("Canvia el color del d'algun dels meus triangles", sceneWithTriangle());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(0);
+    expect(response?.patch?.update).toEqual([{ id: 'tri-1', changes: { stroke: '#7c3aed', fill: '#ede9fe' } }]);
+  });
+
+  it('does not call a model when a triangle color edit target is missing', () => {
+    const response = resolver.resolvePreflight("Canvia el color del d'algun dels meus triangles", emptyScene());
+
+    expect(response?.type).toBe('message');
+    expect(response?.patch).toBeUndefined();
+    expect(response?.message).toContain('triángulo editable');
   });
 
   it('does not retry capability answers remotely', () => {
@@ -142,6 +174,23 @@ function sceneWithRectangle(): AiSceneContext {
         id: 'rect-1',
         name: 'Quadrat',
         kind: 'rectangle',
+        locked: false,
+        geometry: { x: 0, y: 0, width: 1, height: 1 },
+        style: { stroke: '#111111', strokeWidth: 0.08, fill: '#ffffff' }
+      }
+    ]
+  };
+}
+
+function sceneWithTriangle(): AiSceneContext {
+  return {
+    ...emptyScene(),
+    selectedElementIds: ['tri-1'],
+    elements: [
+      {
+        id: 'tri-1',
+        name: 'Triangle',
+        kind: 'triangle',
         locked: false,
         geometry: { x: 0, y: 0, width: 1, height: 1 },
         style: { stroke: '#111111', strokeWidth: 0.08, fill: '#ffffff' }

@@ -17,6 +17,18 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   resolvePreflight(context: AiPreflightResolutionContext): AiResponse | null {
+    if (context.intent.createRequest) {
+      const shapes = this.simplePatchFactory.createShapes(context.instruction);
+      if (shapes.length) {
+        return {
+          type: 'scenePatch',
+          message: this.languageService.t('ai.simpleProposalReady'),
+          patch: { create: shapes, update: [], remove: [] },
+          parseStatus: 'local-conversation-fallback'
+        };
+      }
+    }
+
     if (!context.intent.conversation) {
       return null;
     }
@@ -51,7 +63,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   shouldRetryWithCloud(context: AiModelResolutionContext, allowRemoteFallback: boolean): boolean {
-    return allowRemoteFallback && this.isPromptEcho(context.response) && !context.intent.conversation && !context.intent.capabilityQuestion;
+    return allowRemoteFallback && this.isUnusableLocalOutput(context.response) && !context.intent.conversation && !context.intent.capabilityQuestion;
   }
 
   protected shouldUseSimpleDrawingFallback(response: AiResponse): boolean {
@@ -59,11 +71,16 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
       response.message === this.languageService.t('ai.responseGenerated') ||
       response.parseStatus === 'prompt-echo' ||
       response.parseStatus === 'compact-prompt-echo' ||
+      response.parseStatus === 'placeholder-json' ||
       response.parseStatus === 'text-fallback'
     );
   }
 
   protected isPromptEcho(response: AiResponse): boolean {
     return response.parseStatus === 'prompt-echo' || response.parseStatus === 'compact-prompt-echo';
+  }
+
+  private isUnusableLocalOutput(response: AiResponse): boolean {
+    return this.isPromptEcho(response) || response.parseStatus === 'placeholder-json';
   }
 }

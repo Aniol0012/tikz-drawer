@@ -50,4 +50,5 @@ export type AiResponseParseStatus =
   | 'empty-json'
   | 'prompt-echo'
   | 'compact-prompt-echo'
+  | 'placeholder-json'
   | 'local-conversation-fallback';

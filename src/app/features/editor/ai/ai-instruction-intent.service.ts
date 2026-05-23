@@ -11,6 +11,8 @@ export interface AiInstructionIntent {
   readonly editRequest: boolean;
   readonly graphTarget: boolean;
   readonly rectangleTarget: boolean;
+  readonly triangleTarget: boolean;
+  readonly colorTarget: boolean;
   readonly strokeWidthTarget: boolean;
 }
 
@@ -28,6 +30,8 @@ export class AiInstructionIntentService {
       editRequest: this.isEditRequest(normalized),
       graphTarget: this.isGraphTarget(normalized),
       rectangleTarget: this.isRectangleTarget(normalized),
+      triangleTarget: this.isTriangleTarget(normalized),
+      colorTarget: this.isColorTarget(normalized),
       strokeWidthTarget: this.isStrokeWidthTarget(normalized)
     };
   }
@@ -75,6 +79,14 @@ export class AiInstructionIntentService {
     );
   }
 
+  private isTriangleTarget(instruction: string): boolean {
+    return /\b(triangle|triangles|triangulo|triangulos|triángulo|triángulos)\b/.test(instruction);
+  }
+
+  private isColorTarget(instruction: string): boolean {
+    return /\b(color|colors|colores|colour|colours|fill|relleno|farcit|stroke|trazo|traç)\b/.test(instruction);
+  }
+
   private isStrokeWidthTarget(instruction: string): boolean {
     return /\b(grossor|gruix|grosor|ancho|amplada|stroke|strokewidth|thickness|width)\b/.test(instruction);
   }
@@ -86,6 +98,8 @@ export class AiInstructionIntentService {
   private isCapabilityTarget(instruction: string): boolean {
     return (
       this.isGraphTarget(instruction) ||
+      this.isRectangleTarget(instruction) ||
+      this.isTriangleTarget(instruction) ||
       /\b(figura|figures|figuras|shape|shapes|forma|formes|formas|diagrama|diagramas|diagrams|element|elements)\b/.test(instruction)
     );
   }

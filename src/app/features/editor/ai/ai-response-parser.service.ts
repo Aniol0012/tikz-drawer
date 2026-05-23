@@ -30,10 +30,14 @@ export class AiResponseParserService {
     const type =
       responseCandidate.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : responseCandidate.type === 'tikzCode' || tikzCode ? 'tikzCode' : 'message';
     const parseStatus = this.responseParseStatus(responseCandidate, parsedResult.status, message, hasPatchChanges, tikzCode);
+    const fallbackMessage = this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse');
 
     return {
       type,
-      message: message || (this.languageService?.t('ai.responseGenerated') ?? translate('en', 'ai.responseGenerated')),
+      message:
+        parseStatus === 'placeholder-json'
+          ? fallbackMessage
+          : message || (this.languageService?.t('ai.responseGenerated') ?? translate('en', 'ai.responseGenerated')),
       patch: type === 'scenePatch' ? patch : undefined,
       tikzCode,
       parseStatus
@@ -198,7 +202,15 @@ export class AiResponseParserService {
       return 'prompt-echo';
     }
 
+    if (this.placeholderResponse(message, hasPatchChanges, tikzCode)) {
+      return 'placeholder-json';
+    }
+
     return status;
+  }
+
+  private placeholderResponse(message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {
+    return !hasPatchChanges && !tikzCode && !!message && /^\.{2,}$/.test(message.trim());
   }
 
   private promptEchoResponse(candidate: Record<string, unknown>, message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {

@@ -8,6 +8,7 @@ import { mutableElements, selectedMutableElements } from './ai-model-response-re
 const SMOLLM_MODEL_ID = 'SmolLM2-360M-Instruct';
 const DEFAULT_STROKE_WIDTH_DELTA = 0.04;
 const DEFAULT_STROKE_WIDTH = 0.12;
+const DEFAULT_COLOR_EDIT = { stroke: '#7c3aed', fill: '#ede9fe' } as const;
 
 @Injectable({ providedIn: 'root' })
 export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
@@ -21,11 +22,15 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
 
   resolvePreflight(context: AiPreflightResolutionContext): AiResponse | null {
     if (context.intent.capabilityQuestion) {
-      return this.localMessage(this.languageService.t('ai.localCapabilityFallback'));
+      return this.localMessage(this.capabilityMessageKey(context));
     }
 
     if (context.intent.editRequest && context.intent.strokeWidthTarget && context.intent.rectangleTarget) {
       return this.resolveStrokeWidthEdit(context);
+    }
+
+    if (context.intent.editRequest && context.intent.colorTarget && context.intent.triangleTarget) {
+      return this.resolveTriangleColorEdit(context);
     }
 
     return null;
@@ -33,7 +38,7 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
 
   resolve(context: AiModelResolutionContext): AiResponse | null {
     if (context.intent.capabilityQuestion) {
-      return this.message(context.response, this.languageService.t('ai.localCapabilityFallback'));
+      return this.message(context.response, this.capabilityMessageKey(context));
     }
 
     if (context.intent.editRequest) {
@@ -69,11 +74,19 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
       return this.resolveStrokeWidthEdit(context);
     }
 
+    if (context.intent.colorTarget && context.intent.triangleTarget) {
+      return this.resolveTriangleColorEdit(context);
+    }
+
     if (context.response.type === 'scenePatch' && context.response.patch && this.patchCreatesWithoutUpdating(context.response.patch)) {
       return this.message(context.response, this.languageService.t('ai.localEditNeedsSelection'));
     }
 
     return context.response;
+  }
+
+  private capabilityMessageKey(context: AiPreflightResolutionContext): string {
+    return this.languageService.t(context.intent.graphTarget ? 'ai.localCapabilityFallback' : 'ai.localShapeCapabilityFallback');
   }
 
   private resolveStrokeWidthEdit(context: AiPreflightResolutionContext): AiResponse {
@@ -100,6 +113,48 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
       selectedMutableElements(context.scene).find((element) => element.kind === 'rectangle') ??
       mutableElements(context.scene).find((element) => element.kind === 'rectangle')
     );
+  }
+
+  private resolveTriangleColorEdit(context: AiPreflightResolutionContext): AiResponse {
+    const target = this.triangleTarget(context);
+    if (!target) {
+      return this.localMessage(this.languageService.t('ai.localEditNoMatchingTriangle'));
+    }
+
+    return {
+      type: 'scenePatch',
+      message: this.languageService.t('ai.localColorEditReady'),
+      patch: {
+        create: [],
+        update: [{ id: target.id, changes: this.colorChanges(context.intent.normalized) }],
+        remove: []
+      },
+      parseStatus: 'local-conversation-fallback'
+    };
+  }
+
+  private triangleTarget(context: AiPreflightResolutionContext) {
+    return (
+      selectedMutableElements(context.scene).find((element) => element.kind === 'triangle') ??
+      mutableElements(context.scene).find((element) => element.kind === 'triangle')
+    );
+  }
+
+  private colorChanges(instruction: string): { readonly stroke: string; readonly fill: string } {
+    if (/\b(verd|verde|green)\b/.test(instruction)) {
+      return { stroke: '#16a34a', fill: '#dcfce7' };
+    }
+    if (/\b(vermell|rojo|red)\b/.test(instruction)) {
+      return { stroke: '#dc2626', fill: '#fee2e2' };
+    }
+    if (/\b(groc|amarillo|yellow)\b/.test(instruction)) {
+      return { stroke: '#d97706', fill: '#fef3c7' };
+    }
+    if (/\b(blau|azul|blue)\b/.test(instruction)) {
+      return { stroke: '#1d4ed8', fill: '#dbeafe' };
+    }
+
+    return DEFAULT_COLOR_EDIT;
   }
 
   private nextStrokeWidth(value: unknown): number {
