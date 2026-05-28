@@ -59,6 +59,43 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.patch?.create[0]).toMatchObject({ kind: 'rectangle', width: 1.2, height: 1.2 });
   });
 
+  it('creates vague Catalan figures before calling a model', () => {
+    const response = resolver.resolvePreflight('crea algunes figures', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(3);
+    expect(new Set(response?.patch?.create.map((shape) => shape.kind)).size).toBeGreaterThan(1);
+  });
+
+  it('creates a pair of vague things before calling a model', () => {
+    const response = resolver.resolvePreflight('Crea un parell de coses', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(2);
+  });
+
+  it('accepts WebLLM proposals for vague figure suggestions', () => {
+    const response = resolver.resolve(
+      'Proposa alguna figura',
+      emptyScene(),
+      {
+        type: 'scenePatch',
+        message: 'He preparado un triángulo.',
+        patch: {
+          create: [{ kind: 'triangle', name: 'Triangulo', x: -4.98, y: -4.98, width: 8.24, height: 6.59, rotation: 0 }],
+          update: [],
+          remove: []
+        },
+        parseStatus: 'json'
+      },
+      webLlmResult()
+    );
+
+    expect(response.type).toBe('scenePatch');
+    expect(response.patch?.create).toHaveLength(1);
+    expect(response.message).not.toContain('No he podido');
+  });
+
   it('creates a simple editable diagram before calling a model', () => {
     const response = resolver.resolvePreflight('Crea un diagrama editable sencillo a partir de esta escena.', emptyScene());
 

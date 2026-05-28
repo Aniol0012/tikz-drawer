@@ -167,6 +167,16 @@ RESPUESTA: devuelve solo un objeto JSON valido.`);
     expect(response.parseStatus).toBe('compact-prompt-echo');
   });
 
+  it('marks WebLLM selection and element dumps as prompt echoes', () => {
+    const response = parser.parse(`SELECCION: no
+ELEMENTOS:
+- id=7e553043-9f80-4222-9ab6-6c82facdb5a0; kind=ellipse; name=Ellipse; geometry=cx=12.21,cy=7.21,rx=1.4,ry=0.85,rotation=0; style`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain('ELEMENTOS:');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
   it('marks copied local system notes as prompt echoes', () => {
     const response = parser.parse(`SIN MARKS Y TEXTOS
 Para que el usuario puede escribir una frase real, es que se debe escribir una frase real.

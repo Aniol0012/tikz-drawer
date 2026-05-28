@@ -296,17 +296,29 @@ export class AiResponseParserService {
 
   private compactPromptEcho(text: string): boolean {
     const normalized = text.trim();
+    const hasPromptLine = (key: string): boolean => this.localizedTerms(key).some((term) => this.lineStartsWith(normalized, term));
     return (
-      /^TAREA DEL USUARIO:/m.test(normalized) ||
-      /^SIN MARKS Y TEXTOS/m.test(normalized) ||
-      /\bPara que el usuario puede escribir una frase real\b/i.test(normalized) ||
-      /\bEs que no puede (crear|modificar|escribir)\b/i.test(normalized) ||
-      /^Eres el asistente (contextual )?de Tikz Drawer\./m.test(normalized) ||
-      /^Devuelve solo JSON valido/m.test(normalized) ||
+      this.localizedTerms('ai.promptEcho.phrases').some((term) => normalized.toLowerCase().includes(term.toLowerCase())) ||
+      hasPromptLine('ai.promptEcho.taskLabels') ||
+      (hasPromptLine('ai.promptEcho.selectionLabels') && hasPromptLine('ai.promptEcho.elementLabels')) ||
       (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||
       (/^FECTO:/m.test(normalized) && /^- id[:=]/m.test(normalized)) ||
-      (/^FECHA:/m.test(normalized) && /^ESCENA:/m.test(normalized) && /^ELEMENTOS EXISTENTES:/m.test(normalized)) ||
-      (/^.+\nFECHA:/s.test(normalized) && /^ESCENA:/m.test(normalized) && /^ELEMENTOS EXISTENTES:/m.test(normalized))
+      (hasPromptLine('ai.promptEcho.dateLabels') && hasPromptLine('ai.promptEcho.sceneLabels') && hasPromptLine('ai.promptEcho.elementLabels'))
     );
+  }
+
+  private localizedTerms(key: string): readonly string[] {
+    return (this.languageService?.t(key) ?? translate('en', key))
+      .split('|')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  private lineStartsWith(text: string, term: string): boolean {
+    return new RegExp(`^\\s*${this.escapeRegExp(term)}\\s*:`, 'im').test(text);
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

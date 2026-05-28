@@ -8,6 +8,7 @@ export interface AiInstructionIntent {
   readonly conversation: AiConversationIntent | null;
   readonly capabilityQuestion: boolean;
   readonly createRequest: boolean;
+  readonly proposalRequest: boolean;
   readonly editRequest: boolean;
   readonly graphTarget: boolean;
   readonly rectangleTarget: boolean;
@@ -27,6 +28,7 @@ export class AiInstructionIntentService {
       conversation: this.conversationIntent(instruction),
       capabilityQuestion: this.isCapabilityQuestion(normalized),
       createRequest: this.isCreateRequest(normalized),
+      proposalRequest: this.isProposalRequest(normalized),
       editRequest: this.isEditRequest(normalized),
       graphTarget: this.isGraphTarget(normalized),
       rectangleTarget: this.isRectangleTarget(normalized),
@@ -42,6 +44,18 @@ export class AiInstructionIntentService {
       .replace(/\p{Diacritic}/gu, '')
       .toLowerCase()
       .trim();
+  }
+
+  hasLocalizedTerm(instruction: string, key: string): boolean {
+    return this.localizedTerms(key).some((term) => this.termPattern(term).test(instruction));
+  }
+
+  localizedTerms(key: string): readonly string[] {
+    return this.languageService
+      .t(key)
+      .split('|')
+      .map((entry) => this.normalizeInstruction(entry))
+      .filter(Boolean);
   }
 
   private conversationIntent(instruction: string): AiConversationIntent | null {
@@ -62,37 +76,39 @@ export class AiInstructionIntentService {
   }
 
   private isCreateRequest(instruction: string): boolean {
-    return /\b(afegeix|afegir|posa|posar|pon|crear|crea|anade|añade|anadir|añadir|agrega|dibuixa|dibuja|draw|add|create|insert)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.create');
+  }
+
+  private isProposalRequest(instruction: string): boolean {
+    return this.hasLocalizedTerm(instruction, 'ai.intent.propose');
   }
 
   private isEditRequest(instruction: string): boolean {
-    return /\b(canvia|canviar|cambia|cambiar|modifica|modificar|edita|editar|ajusta|ajustar|change|modify|edit|update|set)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.edit');
   }
 
   private isGraphTarget(instruction: string): boolean {
-    return /\b(graf|grafs|grafo|grafos|graph|graphs)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.graphTargets');
   }
 
   private isRectangleTarget(instruction: string): boolean {
-    return /\b(quadrat|quadrats|cuadrat|cuadrado|cuadrados|rectangle|rectangles|rectangulo|rectangulos|rectángulo|rectángulos|square|squares)\b/.test(
-      instruction
-    );
+    return this.hasLocalizedTerm(instruction, 'ai.intent.rectangleTargets') || this.hasLocalizedTerm(instruction, 'ai.intent.squareTargets');
   }
 
   private isTriangleTarget(instruction: string): boolean {
-    return /\b(triangle|triangles|triangulo|triangulos|triángulo|triángulos)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.triangleTargets');
   }
 
   private isColorTarget(instruction: string): boolean {
-    return /\b(color|colors|colores|colour|colours|fill|relleno|farcit|stroke|trazo|traç)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.colorTargets');
   }
 
   private isStrokeWidthTarget(instruction: string): boolean {
-    return /\b(grossor|gruix|grosor|ancho|amplada|stroke|strokewidth|thickness|width)\b/.test(instruction);
+    return this.hasLocalizedTerm(instruction, 'ai.intent.strokeWidthTargets');
   }
 
   private hasQuestionShape(instruction: string): boolean {
-    return /\?|\b(puc|puedo|podria|podrias|pots|puedes|can i|can you|could i|could you)\b/.test(instruction);
+    return /\?/.test(instruction) || this.hasLocalizedTerm(instruction, 'ai.intent.questionStarters');
   }
 
   private isCapabilityTarget(instruction: string): boolean {
@@ -100,8 +116,17 @@ export class AiInstructionIntentService {
       this.isGraphTarget(instruction) ||
       this.isRectangleTarget(instruction) ||
       this.isTriangleTarget(instruction) ||
-      /\b(figura|figures|figuras|shape|shapes|forma|formes|formas|diagrama|diagramas|diagrams|element|elements)\b/.test(instruction)
+      this.hasLocalizedTerm(instruction, 'ai.intent.vagueShapeTargets') ||
+      this.hasLocalizedTerm(instruction, 'ai.intent.diagramTargets')
     );
+  }
+
+  private termPattern(term: string): RegExp {
+    return new RegExp(`(^|[^\\p{L}\\p{N}_])${this.escapeRegExp(term)}(?=$|[^\\p{L}\\p{N}_])`, 'u');
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private normalizeConversationInput(instruction: string): string {

@@ -4,6 +4,7 @@ import type { AiResponse, ScenePatch } from '../ai-message.model';
 import type { AiProviderTextResult } from '../ai-provider-result.model';
 import type { AiModelResolutionContext, AiModelResponseResolver, AiPreflightResolutionContext } from './ai-model-response-resolver';
 import { mutableElements, selectedMutableElements } from './ai-model-response-resolver';
+import { AiInstructionIntentService } from '../ai-instruction-intent.service';
 
 const SMOLLM_MODEL_ID = 'SmolLM2-360M-Instruct';
 const DEFAULT_STROKE_WIDTH_DELTA = 0.04;
@@ -13,6 +14,7 @@ const DEFAULT_COLOR_EDIT = { stroke: '#7c3aed', fill: '#ede9fe' } as const;
 @Injectable({ providedIn: 'root' })
 export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
   private readonly languageService = inject(EditorLanguageService);
+  private readonly intentService = inject(AiInstructionIntentService);
 
   readonly id = 'smollm2-webllm';
 
@@ -202,11 +204,25 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
   }
 
   private isLeakedExamplePatch(context: AiModelResolutionContext): boolean {
-    if (context.response.type !== 'scenePatch' || !context.response.patch || context.intent.createRequest) {
+    if (context.response.type !== 'scenePatch' || !context.response.patch || context.intent.createRequest || this.acceptsGeneratedPatch(context)) {
       return false;
     }
 
     return this.patchCreatesWithoutUpdating(context.response.patch);
+  }
+
+  private acceptsGeneratedPatch(context: AiModelResolutionContext): boolean {
+    return (
+      context.intent.proposalRequest &&
+      (this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.vagueShapeTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.circleTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.triangleTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.ellipseTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.rectangleTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.squareTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.diagramTargets') ||
+        this.intentService.hasLocalizedTerm(context.intent.normalized, 'ai.intent.graphTargets'))
+    );
   }
 
   private patchCreatesWithoutUpdating(patch: ScenePatch): boolean {

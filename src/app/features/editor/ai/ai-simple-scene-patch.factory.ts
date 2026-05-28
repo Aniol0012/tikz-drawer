@@ -23,20 +23,20 @@ export class AiSimpleScenePatchFactory {
       return this.composedSimpleShapes(requestedKinds, colors);
     }
 
-    if (/(cercle|circulo|circle)/.test(normalized)) {
+    if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.circleTargets')) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'circle',
         name: this.languageService.localizedShapeKind('circle'),
         cx: x,
         cy: y,
-        r: /petit|pequeno|pequeño|small/.test(normalized) ? 0.7 : 1,
+        r: this.intentService.hasLocalizedTerm(normalized, 'ai.intent.smallModifiers') ? 0.7 : 1,
         stroke: count > 1 ? color.stroke : colors.stroke,
         fill: count > 1 ? color.fill : colors.fill,
         strokeWidth: 0.06
       }));
     }
 
-    if (/(triangle)/.test(normalized)) {
+    if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.triangleTargets')) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'triangle',
         name: this.languageService.localizedShapeKind('triangle'),
@@ -50,7 +50,7 @@ export class AiSimpleScenePatchFactory {
       }));
     }
 
-    if (/(elipse|ellipse)/.test(normalized)) {
+    if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.ellipseTargets')) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'ellipse',
         name: this.languageService.localizedShapeKind('ellipse'),
@@ -64,8 +64,11 @@ export class AiSimpleScenePatchFactory {
       }));
     }
 
-    if (/(rectangle|rectangulo|rectangel|quadrat|cuadrat|cuadrado|square)/.test(normalized)) {
-      const square = /(quadrat|cuadrat|cuadrado|square)/.test(normalized);
+    if (
+      this.intentService.hasLocalizedTerm(normalized, 'ai.intent.rectangleTargets') ||
+      this.intentService.hasLocalizedTerm(normalized, 'ai.intent.squareTargets')
+    ) {
+      const square = this.intentService.hasLocalizedTerm(normalized, 'ai.intent.squareTargets');
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
         kind: 'rectangle',
         name: this.languageService.localizedShapeKind('rectangle'),
@@ -79,48 +82,42 @@ export class AiSimpleScenePatchFactory {
       }));
     }
 
-    if (/(fletxa|flecha|arrow)/.test(normalized)) {
+    if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.arrowTargets')) {
       return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.simpleLineShape(x, y, color.stroke));
     }
 
-    if (/(diagrama|diagram|flow|flux|flujo)/.test(normalized)) {
+    if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.diagramTargets')) {
       return this.simpleFlowDiagram(colors);
     }
 
-    if (/(figura|forma|shape|element)/.test(normalized)) {
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
-        kind: 'ellipse',
-        name: this.languageService.localizedShapeKind('ellipse'),
-        cx: x,
-        cy: y,
-        rx: 1.4,
-        ry: 0.85,
-        stroke: count > 1 ? color.stroke : colors.stroke,
-        fill: count > 1 ? color.fill : colors.fill,
-        strokeWidth: 0.06
-      }));
+    if (this.vagueShapeTarget(normalized)) {
+      return this.mixedSimpleShapes(count, colors);
     }
 
     return [];
   }
 
+  private vagueShapeTarget(instruction: string): boolean {
+    return this.intentService.hasLocalizedTerm(instruction, 'ai.intent.vagueShapeTargets');
+  }
+
   private requestedSimpleShapeKinds(instruction: string): readonly SimpleShapeKind[] {
     const kinds: SimpleShapeKind[] = [];
-    if (/(cercle|circulo|circle)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.circleTargets')) {
       kinds.push('circle');
     }
-    if (/(triangle)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.triangleTargets')) {
       kinds.push('triangle');
     }
-    if (/(elipse|ellipse)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.ellipseTargets')) {
       kinds.push('ellipse');
     }
-    if (/(quadrat|cuadrat|cuadrado|square)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.squareTargets')) {
       kinds.push('square');
-    } else if (/(rectangle|rectangulo|rectangel)/.test(instruction)) {
+    } else if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.rectangleTargets')) {
       kinds.push('rectangle');
     }
-    if (/(fletxa|flecha|arrow)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.arrowTargets')) {
       kinds.push('line');
     }
 
@@ -232,6 +229,57 @@ export class AiSimpleScenePatchFactory {
     return [nodes[0], this.flowConnector(nodes[0], nodes[1], y, colors.stroke), nodes[1], this.flowConnector(nodes[1], nodes[2], y, colors.stroke), nodes[2]];
   }
 
+  private mixedSimpleShapes(count: number, colors: { readonly stroke: string; readonly fill: string }): readonly Partial<CanvasShape>[] {
+    const palette = this.randomPalette(colors);
+    const factories = [
+      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+        kind: 'ellipse' as const,
+        name: this.languageService.localizedShapeKind('ellipse'),
+        cx: x,
+        cy: y,
+        rx: 1.2,
+        ry: 0.72,
+        stroke: color.stroke,
+        fill: color.fill,
+        strokeWidth: 0.06
+      }),
+      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+        kind: 'rectangle' as const,
+        name: this.languageService.localizedShapeKind('rectangle'),
+        x: x - 0.75,
+        y: y - 0.55,
+        width: 1.5,
+        height: 1.1,
+        stroke: color.stroke,
+        fill: color.fill,
+        strokeWidth: 0.06
+      }),
+      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+        kind: 'circle' as const,
+        name: this.languageService.localizedShapeKind('circle'),
+        cx: x,
+        cy: y,
+        r: 0.68,
+        stroke: color.stroke,
+        fill: color.fill,
+        strokeWidth: 0.06
+      }),
+      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+        kind: 'triangle' as const,
+        name: this.languageService.localizedShapeKind('triangle'),
+        x: x - 0.78,
+        y: y - 0.62,
+        width: 1.56,
+        height: 1.24,
+        stroke: color.stroke,
+        fill: color.fill,
+        strokeWidth: 0.06
+      })
+    ] as const;
+
+    return this.repeatGeneratedShapes(count, (index, x, y) => factories[index % factories.length](x, y, palette[index % palette.length]));
+  }
+
   private flowConnector(
     source: Partial<CanvasShape> & { readonly id?: string; readonly x?: number; readonly width?: number },
     target: Partial<CanvasShape> & { readonly id?: string; readonly x?: number; readonly width?: number },
@@ -317,29 +365,29 @@ export class AiSimpleScenePatchFactory {
       return Number(digitMatch[1]);
     }
 
-    const countWords: readonly [RegExp, number][] = [
-      [/\b(dos|dues|two)\b/, 2],
-      [/\b(tres|three)\b/, 3],
-      [/\b(quatre|cuatro|four)\b/, 4],
-      [/\b(cinc|cinco|five)\b/, 5],
-      [/\b(sis|seis|six)\b/, 6],
-      [/\b(set|siete|seven)\b/, 7],
-      [/\b(vuit|ocho|eight)\b/, 8]
+    const countWords: readonly [string, number][] = [
+      ['ai.intent.countTwo', 2],
+      ['ai.intent.countThree', 3],
+      ['ai.intent.countFour', 4],
+      ['ai.intent.countFive', 5],
+      ['ai.intent.countSix', 6],
+      ['ai.intent.countSeven', 7],
+      ['ai.intent.countEight', 8]
     ];
-    return countWords.find(([pattern]) => pattern.test(instruction))?.[1] ?? 1;
+    return countWords.find(([key]) => this.intentService.hasLocalizedTerm(instruction, key))?.[1] ?? 1;
   }
 
   private colorFromInstruction(instruction: string): { readonly stroke: string; readonly fill: string } {
-    if (/(verd|verde|green)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorGreen')) {
       return { stroke: '#16a34a', fill: '#dcfce7' };
     }
-    if (/(vermell|rojo|red)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorRed')) {
       return { stroke: '#dc2626', fill: '#fee2e2' };
     }
-    if (/(groc|amarillo|yellow)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorYellow')) {
       return { stroke: '#d97706', fill: '#fef3c7' };
     }
-    if (/(blau|azul|blue)/.test(instruction)) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorBlue')) {
       return { stroke: '#1d4ed8', fill: '#dbeafe' };
     }
 

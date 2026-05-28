@@ -7,6 +7,7 @@ import { AiProviderSelectorService } from './ai-provider-selector.service';
 import { AiSettingsService } from './ai-settings.service';
 import { EditorDevModeService } from '../state/editor-dev-mode.service';
 import { AiModelResponseResolverService } from './model-resolvers/ai-model-response-resolver.service';
+import { EditorLanguageService } from '../i18n/editor-language.service';
 
 @Injectable({ providedIn: 'root' })
 export class AiClientService {
@@ -15,6 +16,7 @@ export class AiClientService {
   private readonly settingsService = inject(AiSettingsService);
   private readonly devModeService = inject(EditorDevModeService);
   private readonly modelResolver = inject(AiModelResponseResolverService);
+  private readonly languageService = inject(EditorLanguageService);
 
   readonly lastProviderMode = signal<'local' | 'cloud'>('cloud');
   readonly lastModelName = signal('');
@@ -39,6 +41,7 @@ export class AiClientService {
           locale: Intl.DateTimeFormat().resolvedOptions().locale,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         },
+        language: this.languagePromptContext(),
         context,
         conversation: this.conversationForPrompt(messages)
       }),
@@ -149,6 +152,20 @@ export class AiClientService {
         role: message.role,
         text: message.text
       }));
+  }
+
+  private languagePromptContext(): Record<string, unknown> {
+    return {
+      code: this.languageService.language(),
+      webLlm: {
+        systemInstruction: this.languageService.t('ai.webLlm.systemInstruction'),
+        taskLabel: this.languageService.t('ai.webLlm.prompt.taskLabel'),
+        selectionLabel: this.languageService.t('ai.webLlm.prompt.selectionLabel'),
+        elementsLabel: this.languageService.t('ai.webLlm.prompt.elementsLabel'),
+        noneLabel: this.languageService.t('ai.webLlm.prompt.noneLabel'),
+        answerInstruction: this.languageService.t('ai.webLlm.prompt.answerInstruction')
+      }
+    };
   }
 
   private systemInstruction(): string {

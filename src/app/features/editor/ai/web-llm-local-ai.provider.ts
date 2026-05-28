@@ -14,7 +14,7 @@ import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import { aiDebugLoggingEnabled } from './ai-debug-logging';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
-const WEB_LLM_MAX_OUTPUT_TOKENS = 96;
+const WEB_LLM_MAX_OUTPUT_TOKENS = 384;
 const WEB_LLM_MAX_CONTEXT_ELEMENTS = 4;
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
@@ -151,7 +151,7 @@ async function generateStreamingResponse(
     messages: [
       {
         role: 'system',
-        content: localSystemInstruction()
+        content: localSystemInstruction(request)
       },
       {
         role: 'user',
@@ -203,7 +203,16 @@ function usageFromCompletionUsage(usage: CompletionUsage): AiProviderUsage {
   };
 }
 
-function localSystemInstruction(): string {
+function localSystemInstruction(request: AiProviderRequest): string {
+  const localized = webLlmPromptPayload(request)?.language?.webLlm?.systemInstruction;
+  if (typeof localized === 'string' && localized.trim()) {
+    return localized
+      .split('|')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
   return [
     'Eres el asistente de Tikz Drawer.',
     'Devuelve un unico JSON valido, sin markdown ni texto extra.',
@@ -219,18 +228,40 @@ function localSystemInstruction(): string {
 function compactPromptPayload(request: AiProviderRequest): string {
   try {
     const payload = JSON.parse(request.contextJson) as WebLlmPromptPayload;
+    const labels = promptLabels(payload);
     const selectedIds = payload.context?.selectedElementIds ?? [];
     const elements = promptElementsForPayload(payload.context?.elements ?? [], selectedIds);
     return [
-      `TAREA: ${payload.instruction ?? request.instruction}`,
-      `SELECCION: ${selectedIds.join(', ') || 'ninguna'}`,
-      'ELEMENTOS:',
-      ...(elements.length ? elements.map(formatPromptElement) : ['- ninguno']),
-      'RESPONDE SOLO JSON. Escribe un message real, nunca puntos suspensivos. Si edita: update. Si crea: create. No copies el prompt.'
+      `${labels.taskLabel}: ${payload.instruction ?? request.instruction}`,
+      `${labels.selectionLabel}: ${selectedIds.join(', ') || labels.noneLabel}`,
+      `${labels.elementsLabel}:`,
+      ...(elements.length ? elements.map(formatPromptElement) : [`- ${labels.noneLabel}`]),
+      labels.answerInstruction
     ].join('\n');
   } catch {
     return request.contextJson;
   }
+}
+
+function webLlmPromptPayload(request: AiProviderRequest): WebLlmPromptPayload | null {
+  try {
+    return JSON.parse(request.contextJson) as WebLlmPromptPayload;
+  } catch {
+    return null;
+  }
+}
+
+function promptLabels(payload: WebLlmPromptPayload): WebLlmPromptLabels {
+  const webLlm = payload.language?.webLlm;
+  return {
+    taskLabel: webLlm?.taskLabel?.trim() || 'TAREA',
+    selectionLabel: webLlm?.selectionLabel?.trim() || 'SELECCION',
+    elementsLabel: webLlm?.elementsLabel?.trim() || 'ELEMENTOS',
+    noneLabel: webLlm?.noneLabel?.trim() || 'ninguna',
+    answerInstruction:
+      webLlm?.answerInstruction?.trim() ||
+      'RESPONDE SOLO JSON. Escribe un message real, nunca puntos suspensivos. Si edita: update. Si crea: create. No copies el prompt.'
+  };
 }
 
 function promptElementsForPayload(elements: readonly WebLlmPromptElement[], selectedIds: readonly string[]): readonly WebLlmPromptElement[] {
@@ -429,12 +460,26 @@ function errorMessage(error: unknown): string {
 interface WebLlmPromptPayload {
   readonly instruction?: string;
   readonly now?: unknown;
+  readonly language?: {
+    readonly code?: string;
+    readonly webLlm?: Partial<WebLlmPromptLabels> & {
+      readonly systemInstruction?: string;
+    };
+  };
   readonly context?: {
     readonly sceneName?: string;
     readonly selectedElementIds?: readonly string[];
     readonly elements?: readonly WebLlmPromptElement[];
   };
   readonly conversation?: readonly { readonly role: string; readonly text: string }[];
+}
+
+interface WebLlmPromptLabels {
+  readonly taskLabel: string;
+  readonly selectionLabel: string;
+  readonly elementsLabel: string;
+  readonly noneLabel: string;
+  readonly answerInstruction: string;
 }
 
 interface WebLlmPromptElement {
