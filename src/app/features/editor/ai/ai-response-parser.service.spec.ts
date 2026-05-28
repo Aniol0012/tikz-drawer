@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { AiResponseParserService } from './ai-response-parser.service';
+import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
 
 describe('AiResponseParserService', () => {
   let parser: AiResponseParserService;
@@ -174,6 +175,29 @@ ELEMENTOS:
 
     expect(response.type).toBe('message');
     expect(response.message).not.toContain('ELEMENTOS:');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
+  it('marks sentinel-tagged compact prompts as prompt echoes', () => {
+    const response = parser.parse(`${AI_PROMPT_ECHO_SENTINEL}
+TAREA: crea un cercle
+SELECCION: ninguna
+ELEMENTOS:
+- ninguna`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain(AI_PROMPT_ECHO_SENTINEL);
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
+  it('marks hallucinated WebLLM element dumps as prompt echoes without exposing technical ids', () => {
+    const response = parser.parse(`SIN MANILLA:
+- id=3a63da59-4925-4f02-ab19-006fbd90a243; kind=rectangle; name=Rectángulo; geometry=x=-23.1,y=-11.98,width=17.39,height=17.39,rotation=0; style=strokeWidth=0.06,stroke=#2ba81c,fill=#eedcc
+- id=7e553043-9f80-4222-9ab6-6c82facdb5a0; kind=ellipse; name=Ellipse; geometry=cx=12.21,cy=7.21,rx=1.4,ry=0.85,rotation=0; style=strokeWidth=0.06,stroke=#1f2937,fill=#f1f5f9`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain('id=3a63da59');
+    expect(response.message).not.toContain('kind=rectangle');
     expect(response.parseStatus).toBe('compact-prompt-echo');
   });
 

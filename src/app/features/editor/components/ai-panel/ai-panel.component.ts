@@ -205,6 +205,10 @@ export class AiPanelComponent implements AfterViewInit {
       this.scrollChatToBottom();
 
       const response = preflightResponse ?? (await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages(), abortController.signal));
+      if (abortController.signal.aborted) {
+        return;
+      }
+
       if (response.patch) {
         this.scenePatch.setPendingPatch(response.patch);
         this.patchPreviewed.emit();
@@ -228,7 +232,15 @@ export class AiPanelComponent implements AfterViewInit {
   }
 
   stopGeneration(): void {
-    this.currentAbortController?.abort();
+    const controller = this.currentAbortController;
+    if (!controller) {
+      return;
+    }
+
+    controller.abort();
+    this.currentAbortController = null;
+    this.assistantState.loading.set(false);
+    this.scrollChatToBottom();
   }
 
   resetConversation(): void {

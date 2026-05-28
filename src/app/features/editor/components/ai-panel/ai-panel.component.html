@@ -73,17 +73,6 @@
       <article class="message message--system message--loading">
         <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
         <p>{{ 'ai.loading' | translate }}</p>
-        <button
-          class="stop-generation-button"
-          type="button"
-          (click)="stopGeneration()"
-          [attr.aria-label]="'ai.stopGeneration' | translate"
-          data-tooltip-disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.closeBold"></path>
-          </svg>
-          <span>{{ 'ai.stopGeneration' | translate }}</span>
-        </button>
       </article>
     }
   </div>
@@ -152,11 +141,24 @@
         (input)="setDraft($any($event.target).value)"
         (keydown)="handleComposerKeydown($event)"></textarea>
       <span class="composer__resize-handle" (pointerdown)="startComposerResize($event)" aria-hidden="true"></span>
-      <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate" data-tooltip-disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="iconMap.send"></path>
-        </svg>
-      </button>
+      @if (assistantState.loading()) {
+        <button
+          class="composer__stop-button"
+          type="button"
+          (click)="stopGeneration()"
+          [attr.aria-label]="'ai.stopGeneration' | translate"
+          data-tooltip-disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.closeBold"></path>
+          </svg>
+        </button>
+      } @else {
+        <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate" data-tooltip-disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.send"></path>
+          </svg>
+        </button>
+      }
     </div>
   </form>
 </section>

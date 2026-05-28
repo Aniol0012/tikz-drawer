@@ -12,6 +12,7 @@ import type { LocalAiStatus } from './local-ai-status.model';
 import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import { aiDebugLoggingEnabled } from './ai-debug-logging';
+import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
 const WEB_LLM_MAX_OUTPUT_TOKENS = 384;
@@ -254,6 +255,7 @@ function compactPromptPayload(request: AiProviderRequest): string {
     const selectedIds = payload.context?.selectedElementIds ?? [];
     const elements = promptElementsForPayload(payload.context?.elements ?? [], selectedIds);
     return [
+      AI_PROMPT_ECHO_SENTINEL,
       `${labels.taskLabel}: ${payload.instruction ?? request.instruction}`,
       `${labels.selectionLabel}: ${selectedIds.join(', ') || labels.noneLabel}`,
       `${labels.elementsLabel}:`,

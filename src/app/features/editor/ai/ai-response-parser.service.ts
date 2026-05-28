@@ -2,6 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import { translate } from '../i18n/editor-page.i18n';
 import type { AiResponse, AiResponseParseStatus, ScenePatch } from './ai-message.model';
+import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
+
+const TECHNICAL_ELEMENT_DUMP_PATTERN =
+  /^\s*-\s*(?:id[:=][^;\n]+(?:;|\s)+.*\bkind[:=]|kind[:=][^;\n]+(?:;|\s)+.*\bid[:=])(?:rectangle|circle|ellipse|line|text|triangle)?/im;
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
@@ -298,13 +302,19 @@ export class AiResponseParserService {
     const normalized = text.trim();
     const hasPromptLine = (key: string): boolean => this.localizedTerms(key).some((term) => this.lineStartsWith(normalized, term));
     return (
+      normalized.includes(AI_PROMPT_ECHO_SENTINEL) ||
       this.localizedTerms('ai.promptEcho.phrases').some((term) => normalized.toLowerCase().includes(term.toLowerCase())) ||
       hasPromptLine('ai.promptEcho.taskLabels') ||
       (hasPromptLine('ai.promptEcho.selectionLabels') && hasPromptLine('ai.promptEcho.elementLabels')) ||
+      this.technicalElementDump(normalized) ||
       (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||
       (/^FECTO:/m.test(normalized) && /^- id[:=]/m.test(normalized)) ||
       (hasPromptLine('ai.promptEcho.dateLabels') && hasPromptLine('ai.promptEcho.sceneLabels') && hasPromptLine('ai.promptEcho.elementLabels'))
     );
+  }
+
+  private technicalElementDump(text: string): boolean {
+    return TECHNICAL_ELEMENT_DUMP_PATTERN.test(text) && /\b(?:geometry|style|strokeWidth|stroke|fill)[:=]/i.test(text);
   }
 
   private localizedTerms(key: string): readonly string[] {

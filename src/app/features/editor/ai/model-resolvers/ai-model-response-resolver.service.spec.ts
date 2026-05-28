@@ -74,6 +74,23 @@ describe('AiModelResponseResolverService', () => {
     expect(response?.patch?.create).toHaveLength(2);
   });
 
+  it('creates a green circle for colloquial Catalan round-shape requests before calling a model', () => {
+    const response = resolver.resolvePreflight('posa una rodona verda', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(1);
+    expect(response?.patch?.create[0]).toMatchObject({ kind: 'circle' });
+    expectHexColorPair(response?.patch?.create[0]);
+  });
+
+  it('creates a small mixed design locally for vague Catalan design requests', () => {
+    const response = resolver.resolvePreflight('Fes algun disseny guapo', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create.length).toBeGreaterThan(1);
+    expect(new Set(response?.patch?.create.map((shape) => shape.kind)).size).toBeGreaterThan(1);
+  });
+
   it('accepts WebLLM proposals for vague figure suggestions', () => {
     const response = resolver.resolve(
       'Proposa alguna figura',
