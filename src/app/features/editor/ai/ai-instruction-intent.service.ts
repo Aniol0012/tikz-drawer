@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
+import type { AiColorRange } from './color-range-randomizer.service';
 
 export type AiConversationIntent = 'greeting' | 'thanks';
 
@@ -16,6 +17,19 @@ export interface AiInstructionIntent {
   readonly colorTarget: boolean;
   readonly strokeWidthTarget: boolean;
 }
+
+const COLOR_INTENT_KEYS: readonly { readonly key: string; readonly range: AiColorRange }[] = [
+  { key: 'ai.intent.colorGreen', range: 'green' },
+  { key: 'ai.intent.colorRed', range: 'red' },
+  { key: 'ai.intent.colorYellow', range: 'yellow' },
+  { key: 'ai.intent.colorBlue', range: 'blue' },
+  { key: 'ai.intent.colorPink', range: 'pink' },
+  { key: 'ai.intent.colorRose', range: 'rose' },
+  { key: 'ai.intent.colorOrange', range: 'orange' },
+  { key: 'ai.intent.colorPurple', range: 'purple' },
+  { key: 'ai.intent.colorCyan', range: 'cyan' },
+  { key: 'ai.intent.colorGray', range: 'gray' }
+] as const;
 
 @Injectable({ providedIn: 'root' })
 export class AiInstructionIntentService {
@@ -56,6 +70,10 @@ export class AiInstructionIntentService {
       .split('|')
       .map((entry) => this.normalizeInstruction(entry))
       .filter(Boolean);
+  }
+
+  colorRangeFromInstruction(instruction: string): AiColorRange | null {
+    return COLOR_INTENT_KEYS.find(({ key }) => this.hasLocalizedTerm(instruction, key))?.range ?? null;
   }
 
   private conversationIntent(instruction: string): AiConversationIntent | null {
@@ -100,7 +118,7 @@ export class AiInstructionIntentService {
   }
 
   private isColorTarget(instruction: string): boolean {
-    return this.hasLocalizedTerm(instruction, 'ai.intent.colorTargets');
+    return this.hasLocalizedTerm(instruction, 'ai.intent.colorTargets') || this.colorRangeFromInstruction(instruction) !== null;
   }
 
   private isStrokeWidthTarget(instruction: string): boolean {

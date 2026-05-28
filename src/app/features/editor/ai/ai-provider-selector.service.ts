@@ -9,6 +9,7 @@ const BROWSER_LOCAL_GENERATION_TIMEOUT_MS = 30000;
 const CLOUD_GENERATION_TIMEOUT_MS = 30000;
 const NO_PROVIDER_AVAILABLE_ERROR_KEY = 'ai.errorNoAiProviderAvailable';
 const REMOTE_UNAVAILABLE_ERROR_KEY = 'ai.errorRemoteUnavailableFallback';
+const ABORTED_ERROR_KEY = 'ai.errorGenerationStopped';
 
 @Injectable({ providedIn: 'root' })
 export class AiProviderSelectorService {
@@ -33,7 +34,12 @@ export class AiProviderSelectorService {
   readonly generateWithCloud = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
     this.log('remote:start', { model: request.options.remoteModel });
     try {
-      return await this.timeProvider(this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout'));
+      return await this.timeProvider(
+        this.withAbort(
+          this.withTimeout(this.firebaseProvider.generateText(request), CLOUD_GENERATION_TIMEOUT_MS, 'ai.errorFirebaseTimeout', request.abortSignal),
+          request.abortSignal
+        )
+      );
     } catch (error) {
       if (this.isCloudConfigurationError(error)) {
         throw new Error(REMOTE_UNAVAILABLE_ERROR_KEY);
@@ -51,7 +57,7 @@ export class AiProviderSelectorService {
   private readonly generateWithBrowserLocal = async (request: AiProviderRequest): Promise<AiProviderTextResult> => {
     this.log('browser-local:start', { timeoutMs: BROWSER_LOCAL_GENERATION_TIMEOUT_MS });
     return await this.timeProvider(
-      this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout')
+      this.withTimeout(this.browserLocalProvider.generateText(request), BROWSER_LOCAL_GENERATION_TIMEOUT_MS, 'ai.errorBrowserLocalTimeout', request.abortSignal)
     );
   };
 
@@ -94,6 +100,10 @@ export class AiProviderSelectorService {
       try {
         return await provider(request);
       } catch (error) {
+        if (this.isAbortError(error)) {
+          throw error;
+        }
+
         lastError = error;
         this.log('provider:failed', { error: error instanceof Error ? error.message : String(error) });
       }
@@ -133,16 +143,40 @@ export class AiProviderSelectorService {
     return providers;
   }
 
-  private async withTimeout<T>(task: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  private async withTimeout<T>(task: Promise<T>, timeoutMs: number, message: string, abortSignal?: AbortSignal): Promise<T> {
     let timeoutId = 0;
     const timeout = new Promise<never>((_, reject) => {
       timeoutId = globalThis.setTimeout(() => reject(new Error(message)), timeoutMs);
     });
 
     try {
-      return await Promise.race([task, timeout]);
+      return await this.withAbort(Promise.race([task, timeout]), abortSignal);
     } finally {
       globalThis.clearTimeout(timeoutId);
+    }
+  }
+
+  private async withAbort<T>(task: Promise<T>, abortSignal: AbortSignal | undefined): Promise<T> {
+    if (!abortSignal) {
+      return await task;
+    }
+
+    if (abortSignal.aborted) {
+      throw new Error(ABORTED_ERROR_KEY);
+    }
+
+    let abortHandler: (() => void) | null = null;
+    const aborted = new Promise<never>((_, reject) => {
+      abortHandler = () => reject(new Error(ABORTED_ERROR_KEY));
+      abortSignal.addEventListener('abort', abortHandler, { once: true });
+    });
+
+    try {
+      return await Promise.race([task, aborted]);
+    } finally {
+      if (abortHandler) {
+        abortSignal.removeEventListener('abort', abortHandler);
+      }
     }
   }
 
@@ -167,6 +201,10 @@ export class AiProviderSelectorService {
 
   private isRemoteUnavailableError(error: unknown): boolean {
     return error instanceof Error && (error.message === REMOTE_UNAVAILABLE_ERROR_KEY || error.message === 'ai.errorFirebaseTimeout');
+  }
+
+  private isAbortError(error: unknown): boolean {
+    return error instanceof Error && error.message === ABORTED_ERROR_KEY;
   }
 
   private isCloudConfigurationError(error: unknown): boolean {

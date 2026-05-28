@@ -29,7 +29,7 @@ export class BrowserLocalAiProvider {
         mode: this.mode,
         providerType: 'browser-local',
         modelName: this.modelName,
-        text: await session.prompt(request.contextJson)
+        text: await session.prompt(request.contextJson, request.abortSignal ? { signal: request.abortSignal } : undefined)
       };
     } finally {
       session.destroy?.();
@@ -53,7 +53,7 @@ export class BrowserLocalAiProvider {
 interface LocalLanguageModel {
   readonly availability?: () => Promise<string>;
   readonly create?: (options: { readonly systemPrompt: string }) => Promise<{
-    readonly prompt: (input: string) => Promise<string>;
+    readonly prompt: (input: string, options?: { readonly signal?: AbortSignal }) => Promise<string>;
     readonly destroy?: () => void;
   }>;
 }

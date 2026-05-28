@@ -19,6 +19,7 @@ export interface AiProviderRequest {
   readonly contextJson: string;
   readonly systemInstruction: string;
   readonly options: AiGenerationOptions;
+  readonly abortSignal?: AbortSignal;
 }
 
 export interface AiProviderTextResult {

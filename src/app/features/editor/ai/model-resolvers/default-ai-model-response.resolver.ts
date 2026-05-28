@@ -6,11 +6,18 @@ import type { AiProviderTextResult } from '../ai-provider-result.model';
 import type { AiModelResolutionContext, AiModelResponseResolver, AiPreflightResolutionContext } from './ai-model-response-resolver';
 import { mutableElements } from './ai-model-response-resolver';
 import type { CanvasShape } from '../../models/tikz.models';
+import { ColorRangeRandomizerService } from '../color-range-randomizer.service';
+
+const LABEL_COLOR_OPTIONS = {
+  saturation: [8, 28],
+  lightness: [18, 42]
+} as const;
 
 @Injectable({ providedIn: 'root' })
 export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   private readonly languageService = inject(EditorLanguageService);
   private readonly simplePatchFactory = inject(AiSimpleScenePatchFactory);
+  private readonly colorRandomizer = inject(ColorRangeRandomizerService);
 
   readonly id = 'default';
 
@@ -139,7 +146,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
         y: center.y - this.randomFrom([0.85, 1, 1.15]),
         text: element.name || `${this.languageService.localizedShapeKind(element.kind as CanvasShape['kind'])} ${index + 1}`,
         fontSize: this.randomFrom([0.14, 0.16, 0.18]),
-        color: this.randomFrom(['#111827', '#1d4ed8', '#374151']),
+        color: this.colorRandomizer.getRandomColor('gray', LABEL_COLOR_OPTIONS),
         stroke: 'transparent',
         strokeWidth: 0.02
       };
@@ -230,7 +237,12 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   private randomFrom<T>(values: readonly T[]): T {
-    return values[Math.floor(Math.random() * values.length)] ?? values[0];
+    const fallback = values[0];
+    if (fallback === undefined) {
+      throw new Error('Cannot choose from an empty list.');
+    }
+
+    return values[Math.floor(Math.random() * values.length)] ?? fallback;
   }
 
   private jitter(amount: number): number {

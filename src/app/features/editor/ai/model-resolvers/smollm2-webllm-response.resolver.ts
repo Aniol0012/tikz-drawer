@@ -5,16 +5,17 @@ import type { AiProviderTextResult } from '../ai-provider-result.model';
 import type { AiModelResolutionContext, AiModelResponseResolver, AiPreflightResolutionContext } from './ai-model-response-resolver';
 import { mutableElements, selectedMutableElements } from './ai-model-response-resolver';
 import { AiInstructionIntentService } from '../ai-instruction-intent.service';
+import { ColorRangeRandomizerService } from '../color-range-randomizer.service';
 
 const SMOLLM_MODEL_ID = 'SmolLM2-360M-Instruct';
 const DEFAULT_STROKE_WIDTH_DELTA = 0.04;
 const DEFAULT_STROKE_WIDTH = 0.12;
-const DEFAULT_COLOR_EDIT = { stroke: '#7c3aed', fill: '#ede9fe' } as const;
 
 @Injectable({ providedIn: 'root' })
 export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
   private readonly languageService = inject(EditorLanguageService);
   private readonly intentService = inject(AiInstructionIntentService);
+  private readonly colorRandomizer = inject(ColorRangeRandomizerService);
 
   readonly id = 'smollm2-webllm';
 
@@ -182,20 +183,7 @@ export class SmolLm2WebLlmResponseResolver implements AiModelResponseResolver {
   }
 
   private colorChanges(instruction: string): { readonly stroke: string; readonly fill: string } {
-    if (/\b(verd|verde|green)\b/.test(instruction)) {
-      return { stroke: '#16a34a', fill: '#dcfce7' };
-    }
-    if (/\b(vermell|rojo|red)\b/.test(instruction)) {
-      return { stroke: '#dc2626', fill: '#fee2e2' };
-    }
-    if (/\b(groc|amarillo|yellow)\b/.test(instruction)) {
-      return { stroke: '#d97706', fill: '#fef3c7' };
-    }
-    if (/\b(blau|azul|blue)\b/.test(instruction)) {
-      return { stroke: '#1d4ed8', fill: '#dbeafe' };
-    }
-
-    return DEFAULT_COLOR_EDIT;
+    return this.colorRandomizer.getRandomColorPair(this.intentService.colorRangeFromInstruction(instruction) ?? 'purple');
   }
 
   private nextStrokeWidth(value: unknown): number {

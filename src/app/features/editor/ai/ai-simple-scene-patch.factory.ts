@@ -2,21 +2,36 @@ import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import type { CanvasShape } from '../models/tikz.models';
 import { AiInstructionIntentService } from './ai-instruction-intent.service';
+import { ColorRangeRandomizerService, type ColorRangeInput, type RandomColorPair } from './color-range-randomizer.service';
 
 type SimpleShapeKind = 'circle' | 'triangle' | 'ellipse' | 'rectangle' | 'square' | 'line';
+type ShapeColor = { readonly stroke: string; readonly fill: string };
+
+const MAX_GENERATED_SHAPES = 8;
+const DEFAULT_PALETTE_SIZE = 8;
+const DEFAULT_SHAPE_STROKE_WIDTH = 0.06;
+const DEFAULT_LINE_STROKE_WIDTH = 0.06;
+const DEFAULT_CONNECTOR_STROKE_WIDTH = 0.07;
+const SMALL_CIRCLE_RADIUS = 0.7;
+const DEFAULT_CIRCLE_RADIUS = 1;
+const SQUARE_SIZE = 1.2;
+const RECTANGLE_WIDTH = 2;
+const RECTANGLE_HEIGHT = 1.2;
 
 @Injectable({ providedIn: 'root' })
 export class AiSimpleScenePatchFactory {
   private readonly languageService = inject(EditorLanguageService);
   private readonly intentService = inject(AiInstructionIntentService);
+  private readonly colorRandomizer = inject(ColorRangeRandomizerService);
 
   createShapes(instruction: string): readonly Partial<CanvasShape>[] {
     const normalized = this.intentService.normalizeInstruction(instruction);
-    if (!/(afegeix|afegir|posa|pon|crear|crea|anade|añade|dibuixa|dibuja)/.test(normalized)) {
+    if (!this.intentService.hasLocalizedTerm(normalized, 'ai.intent.create')) {
       return [];
     }
 
-    const colors = this.colorFromInstruction(normalized);
+    const colorTarget = this.colorFromInstruction(normalized);
+    const colors = this.colorRandomizer.getRandomColorPair(colorTarget ?? undefined);
     const count = this.shapeCountFromInstruction(normalized);
     const requestedKinds = this.requestedSimpleShapeKinds(normalized);
     if (requestedKinds.length > 1) {
@@ -24,44 +39,56 @@ export class AiSimpleScenePatchFactory {
     }
 
     if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.circleTargets')) {
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
-        kind: 'circle',
-        name: this.languageService.localizedShapeKind('circle'),
-        cx: x,
-        cy: y,
-        r: this.intentService.hasLocalizedTerm(normalized, 'ai.intent.smallModifiers') ? 0.7 : 1,
-        stroke: count > 1 ? color.stroke : colors.stroke,
-        fill: count > 1 ? color.fill : colors.fill,
-        strokeWidth: 0.06
-      }));
+      return this.repeatGeneratedShapes(
+        count,
+        (_index, x, y, color) => ({
+          kind: 'circle',
+          name: this.languageService.localizedShapeKind('circle'),
+          cx: x,
+          cy: y,
+          r: this.circleRadius(normalized),
+          stroke: color.stroke,
+          fill: color.fill,
+          strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
+        }),
+        colorTarget
+      );
     }
 
     if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.triangleTargets')) {
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
-        kind: 'triangle',
-        name: this.languageService.localizedShapeKind('triangle'),
-        x: x - 1,
-        y: y - 0.8,
-        width: 2,
-        height: 1.6,
-        stroke: count > 1 ? color.stroke : colors.stroke,
-        fill: count > 1 ? color.fill : colors.fill,
-        strokeWidth: 0.06
-      }));
+      return this.repeatGeneratedShapes(
+        count,
+        (_index, x, y, color) => ({
+          kind: 'triangle',
+          name: this.languageService.localizedShapeKind('triangle'),
+          x: x - 1,
+          y: y - 0.8,
+          width: 2,
+          height: 1.6,
+          stroke: color.stroke,
+          fill: color.fill,
+          strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
+        }),
+        colorTarget
+      );
     }
 
     if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.ellipseTargets')) {
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
-        kind: 'ellipse',
-        name: this.languageService.localizedShapeKind('ellipse'),
-        cx: x,
-        cy: y,
-        rx: 1.3,
-        ry: 0.75,
-        stroke: count > 1 ? color.stroke : colors.stroke,
-        fill: count > 1 ? color.fill : colors.fill,
-        strokeWidth: 0.06
-      }));
+      return this.repeatGeneratedShapes(
+        count,
+        (_index, x, y, color) => ({
+          kind: 'ellipse',
+          name: this.languageService.localizedShapeKind('ellipse'),
+          cx: x,
+          cy: y,
+          rx: 1.3,
+          ry: 0.75,
+          stroke: color.stroke,
+          fill: color.fill,
+          strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
+        }),
+        colorTarget
+      );
     }
 
     if (
@@ -69,21 +96,11 @@ export class AiSimpleScenePatchFactory {
       this.intentService.hasLocalizedTerm(normalized, 'ai.intent.squareTargets')
     ) {
       const square = this.intentService.hasLocalizedTerm(normalized, 'ai.intent.squareTargets');
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => ({
-        kind: 'rectangle',
-        name: this.languageService.localizedShapeKind('rectangle'),
-        x: x - (square ? 0.6 : 1),
-        y: y - 0.6,
-        width: square ? 1.2 : 2,
-        height: square ? 1.2 : 1.2,
-        stroke: count > 1 ? color.stroke : colors.stroke,
-        fill: count > 1 ? color.fill : colors.fill,
-        strokeWidth: 0.06
-      }));
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.rectangleShape(x, y, square, color), colorTarget);
     }
 
     if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.arrowTargets')) {
-      return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.simpleLineShape(x, y, color.stroke));
+      return this.repeatGeneratedShapes(count, (_index, x, y, color) => this.simpleLineShape(x, y, color.stroke), colorTarget);
     }
 
     if (this.intentService.hasLocalizedTerm(normalized, 'ai.intent.diagramTargets')) {
@@ -124,8 +141,8 @@ export class AiSimpleScenePatchFactory {
     return [...new Set(kinds)];
   }
 
-  private composedSimpleShapes(kinds: readonly SimpleShapeKind[], colors: { readonly stroke: string; readonly fill: string }): readonly Partial<CanvasShape>[] {
-    const safeKinds = kinds.slice(0, 8);
+  private composedSimpleShapes(kinds: readonly SimpleShapeKind[], colors: RandomColorPair): readonly Partial<CanvasShape>[] {
+    const safeKinds = kinds.slice(0, MAX_GENERATED_SHAPES);
     return safeKinds.map((kind, index) => {
       const x = (index - (safeKinds.length - 1) / 2) * 2.4;
       switch (kind) {
@@ -138,7 +155,7 @@ export class AiSimpleScenePatchFactory {
             r: 0.75,
             stroke: colors.stroke,
             fill: colors.fill,
-            strokeWidth: 0.06
+            strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
           };
         case 'triangle':
           return {
@@ -150,7 +167,7 @@ export class AiSimpleScenePatchFactory {
             height: 1.4,
             stroke: colors.stroke,
             fill: colors.fill,
-            strokeWidth: 0.06
+            strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
           };
         case 'ellipse':
           return {
@@ -162,7 +179,7 @@ export class AiSimpleScenePatchFactory {
             ry: 0.65,
             stroke: colors.stroke,
             fill: colors.fill,
-            strokeWidth: 0.06
+            strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
           };
         case 'square':
           return {
@@ -174,7 +191,7 @@ export class AiSimpleScenePatchFactory {
             height: 1.3,
             stroke: colors.stroke,
             fill: colors.fill,
-            strokeWidth: 0.06
+            strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
           };
         case 'rectangle':
           return {
@@ -186,7 +203,7 @@ export class AiSimpleScenePatchFactory {
             height: 1.1,
             stroke: colors.stroke,
             fill: colors.fill,
-            strokeWidth: 0.06
+            strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
           };
         case 'line':
           return this.simpleLineShape(x, 0, colors.stroke);
@@ -201,12 +218,43 @@ export class AiSimpleScenePatchFactory {
       from: { x: x - 0.9, y },
       to: { x: x + 0.9, y },
       stroke,
-      strokeWidth: 0.06,
+      strokeWidth: DEFAULT_LINE_STROKE_WIDTH,
       arrowEnd: true
     };
   }
 
-  private simpleFlowDiagram(colors: { readonly stroke: string; readonly fill: string }): readonly Partial<CanvasShape>[] {
+  private circleRadius(instruction: string): number {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.smallModifiers')) {
+      return SMALL_CIRCLE_RADIUS;
+    }
+
+    return DEFAULT_CIRCLE_RADIUS;
+  }
+
+  private rectangleShape(x: number, y: number, square: boolean, color: ShapeColor): Partial<CanvasShape> {
+    const dimensions = this.rectangleDimensions(square);
+    return {
+      kind: 'rectangle',
+      name: this.languageService.localizedShapeKind('rectangle'),
+      x: x - dimensions.width / 2,
+      y: y - dimensions.height / 2,
+      width: dimensions.width,
+      height: dimensions.height,
+      stroke: color.stroke,
+      fill: color.fill,
+      strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
+    };
+  }
+
+  private rectangleDimensions(square: boolean): { readonly width: number; readonly height: number } {
+    if (square) {
+      return { width: SQUARE_SIZE, height: SQUARE_SIZE };
+    }
+
+    return { width: RECTANGLE_WIDTH, height: RECTANGLE_HEIGHT };
+  }
+
+  private simpleFlowDiagram(colors: RandomColorPair): readonly Partial<CanvasShape>[] {
     const palette = this.randomPalette(colors);
     const spacing = this.randomFrom([2.35, 2.6, 2.85]);
     const nodeWidth = this.randomFrom([1.55, 1.7, 1.9]);
@@ -223,16 +271,16 @@ export class AiSimpleScenePatchFactory {
       height: nodeHeight,
       stroke: palette[index % palette.length].stroke,
       fill: palette[index % palette.length].fill,
-      strokeWidth: 0.06
+      strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
     }));
 
     return [nodes[0], this.flowConnector(nodes[0], nodes[1], y, colors.stroke), nodes[1], this.flowConnector(nodes[1], nodes[2], y, colors.stroke), nodes[2]];
   }
 
-  private mixedSimpleShapes(count: number, colors: { readonly stroke: string; readonly fill: string }): readonly Partial<CanvasShape>[] {
+  private mixedSimpleShapes(count: number, colors: RandomColorPair): readonly Partial<CanvasShape>[] {
     const palette = this.randomPalette(colors);
     const factories = [
-      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+      (x: number, y: number, color: ShapeColor) => ({
         kind: 'ellipse' as const,
         name: this.languageService.localizedShapeKind('ellipse'),
         cx: x,
@@ -241,9 +289,9 @@ export class AiSimpleScenePatchFactory {
         ry: 0.72,
         stroke: color.stroke,
         fill: color.fill,
-        strokeWidth: 0.06
+        strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
       }),
-      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+      (x: number, y: number, color: ShapeColor) => ({
         kind: 'rectangle' as const,
         name: this.languageService.localizedShapeKind('rectangle'),
         x: x - 0.75,
@@ -252,9 +300,9 @@ export class AiSimpleScenePatchFactory {
         height: 1.1,
         stroke: color.stroke,
         fill: color.fill,
-        strokeWidth: 0.06
+        strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
       }),
-      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+      (x: number, y: number, color: ShapeColor) => ({
         kind: 'circle' as const,
         name: this.languageService.localizedShapeKind('circle'),
         cx: x,
@@ -262,9 +310,9 @@ export class AiSimpleScenePatchFactory {
         r: 0.68,
         stroke: color.stroke,
         fill: color.fill,
-        strokeWidth: 0.06
+        strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
       }),
-      (x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => ({
+      (x: number, y: number, color: ShapeColor) => ({
         kind: 'triangle' as const,
         name: this.languageService.localizedShapeKind('triangle'),
         x: x - 0.78,
@@ -273,7 +321,7 @@ export class AiSimpleScenePatchFactory {
         height: 1.24,
         stroke: color.stroke,
         fill: color.fill,
-        strokeWidth: 0.06
+        strokeWidth: DEFAULT_SHAPE_STROKE_WIDTH
       })
     ] as const;
 
@@ -298,7 +346,7 @@ export class AiSimpleScenePatchFactory {
       fromAttachment: { shapeId: source.id ?? '', anchor: { x: 1, y: 0 } },
       toAttachment: { shapeId: target.id ?? '', anchor: { x: -1, y: 0 } },
       stroke,
-      strokeWidth: 0.07,
+      strokeWidth: DEFAULT_CONNECTOR_STROKE_WIDTH,
       lineMode: 'curved',
       strokeStyle: 'solid',
       arrowEnd: true,
@@ -310,12 +358,13 @@ export class AiSimpleScenePatchFactory {
 
   private repeatGeneratedShapes(
     count: number,
-    createShape: (index: number, x: number, y: number, color: { readonly stroke: string; readonly fill: string }) => Partial<CanvasShape>
+    createShape: (index: number, x: number, y: number, color: ShapeColor) => Partial<CanvasShape>,
+    colorTarget: ColorRangeInput | null = null
   ): readonly Partial<CanvasShape>[] {
-    const safeCount = Math.min(Math.max(count, 1), 8);
+    const safeCount = Math.min(Math.max(count, 1), MAX_GENERATED_SHAPES);
     const columns = Math.ceil(Math.sqrt(safeCount));
     const rows = Math.ceil(safeCount / columns);
-    const palette = this.randomPalette();
+    const palette = this.randomPalette(undefined, colorTarget);
     const spacingX = this.randomFrom([2.05, 2.25, 2.45]);
     const spacingY = this.randomFrom([1.85, 2, 2.15]);
 
@@ -331,24 +380,17 @@ export class AiSimpleScenePatchFactory {
     });
   }
 
-  private randomPalette(preferred?: { readonly stroke: string; readonly fill: string }): readonly { readonly stroke: string; readonly fill: string }[] {
-    const palette = [
-      { stroke: '#1d4ed8', fill: '#dbeafe' },
-      { stroke: '#16a34a', fill: '#dcfce7' },
-      { stroke: '#d97706', fill: '#fef3c7' },
-      { stroke: '#7c3aed', fill: '#ede9fe' },
-      { stroke: '#dc2626', fill: '#fee2e2' },
-      { stroke: '#0891b2', fill: '#cffafe' },
-      { stroke: '#4f46e5', fill: '#e0e7ff' },
-      { stroke: '#be123c', fill: '#ffe4e6' }
-    ] as const;
-    const start = Math.floor(Math.random() * palette.length);
-    const rotated = [...palette.slice(start), ...palette.slice(0, start)];
-    return preferred ? [preferred, ...rotated.filter((entry) => entry.stroke !== preferred.stroke)] : rotated;
+  private randomPalette(preferred?: RandomColorPair, range?: ColorRangeInput | null): readonly RandomColorPair[] {
+    if (range) {
+      return this.colorRandomizer.getRandomPalette(DEFAULT_PALETTE_SIZE, preferred, range);
+    }
+
+    return this.colorRandomizer.getRandomPalette(DEFAULT_PALETTE_SIZE, preferred);
   }
 
   private randomFrom(values: readonly number[]): number {
-    return values[Math.floor(Math.random() * values.length)] ?? values[0];
+    const fallback = values[0] ?? 0;
+    return values[Math.floor(Math.random() * values.length)] ?? fallback;
   }
 
   private jitter(amount: number): number {
@@ -377,20 +419,7 @@ export class AiSimpleScenePatchFactory {
     return countWords.find(([key]) => this.intentService.hasLocalizedTerm(instruction, key))?.[1] ?? 1;
   }
 
-  private colorFromInstruction(instruction: string): { readonly stroke: string; readonly fill: string } {
-    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorGreen')) {
-      return { stroke: '#16a34a', fill: '#dcfce7' };
-    }
-    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorRed')) {
-      return { stroke: '#dc2626', fill: '#fee2e2' };
-    }
-    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorYellow')) {
-      return { stroke: '#d97706', fill: '#fef3c7' };
-    }
-    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.colorBlue')) {
-      return { stroke: '#1d4ed8', fill: '#dbeafe' };
-    }
-
-    return { stroke: '#1f2937', fill: '#f1f5f9' };
+  private colorFromInstruction(instruction: string): ColorRangeInput | null {
+    return this.intentService.colorRangeFromInstruction(instruction);
   }
 }

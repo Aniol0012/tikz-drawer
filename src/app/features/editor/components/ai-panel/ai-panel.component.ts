@@ -17,6 +17,7 @@ import { AiSettingsService } from '../../ai/ai-settings.service';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import type { AiProviderRuntimeType, AiProviderType, AiProviderUsage } from '../../ai/ai-provider-result.model';
+import { AiInstructionIntentService } from '../../ai/ai-instruction-intent.service';
 
 @Component({
   selector: 'app-ai-panel',
@@ -34,7 +35,9 @@ export class AiPanelComponent implements AfterViewInit {
   private readonly localAiProvider = inject(WebLlmLocalAiProvider);
   private readonly browserLocalAiProvider = inject(BrowserLocalAiProvider);
   private readonly aiSettingsService = inject(AiSettingsService);
+  private readonly intentService = inject(AiInstructionIntentService);
   private readonly chatScroll = viewChild<ElementRef<HTMLElement>>('chatScroll');
+  private currentAbortController: AbortController | null = null;
   @Output() readonly patchApplied = new EventEmitter<readonly string[]>();
   @Output() readonly patchPreviewed = new EventEmitter<void>();
   @Output() readonly settingsRequested = new EventEmitter<void>();
@@ -191,6 +194,9 @@ export class AiPanelComponent implements AfterViewInit {
     this.assistantState.error.set('');
     this.assistantState.draft.set('');
 
+    const abortController = new AbortController();
+    this.currentAbortController = abortController;
+
     try {
       const context = this.contextBuilder.build(this.store.scene().name, this.store.scene().shapes, this.store.selectedShapeIds());
       const preflightResponse = this.aiClient.resolveBeforeProvider(instruction, context);
@@ -198,7 +204,7 @@ export class AiPanelComponent implements AfterViewInit {
       this.assistantState.loading.set(true);
       this.scrollChatToBottom();
 
-      const response = preflightResponse ?? (await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages()));
+      const response = preflightResponse ?? (await this.aiClient.sendPrompt(instruction, context, this.assistantState.messages(), abortController.signal));
       if (response.patch) {
         this.scenePatch.setPendingPatch(response.patch);
         this.patchPreviewed.emit();
@@ -206,12 +212,23 @@ export class AiPanelComponent implements AfterViewInit {
       this.assistantState.appendMessage({ role: 'assistant', text: response.message, response });
       this.scrollChatToBottom();
     } catch (error) {
+      if (this.isAbortError(error)) {
+        return;
+      }
+
       this.assistantState.error.set(this.errorMessage(error));
       this.scrollChatToBottom();
     } finally {
-      this.assistantState.loading.set(false);
+      if (this.currentAbortController === abortController) {
+        this.currentAbortController = null;
+        this.assistantState.loading.set(false);
+      }
       this.scrollChatToBottom();
     }
+  }
+
+  stopGeneration(): void {
+    this.currentAbortController?.abort();
   }
 
   resetConversation(): void {
@@ -362,17 +379,21 @@ export class AiPanelComponent implements AfterViewInit {
     return this.languageService.t('ai.errorGeneric');
   }
 
+  private isAbortError(error: unknown): boolean {
+    return error instanceof Error && error.message === 'ai.errorGenerationStopped';
+  }
+
   private shouldConfirmBeforeNewCreate(instruction: string): boolean {
     return this.scenePatch.pendingCreatedShapeIds().length > 0 && this.looksLikeCreateInstruction(instruction);
   }
 
   private looksLikeCreateInstruction(instruction: string): boolean {
-    const normalized = instruction
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .toLowerCase();
-    return /\b(afegeix|afegir|posa|posar|crea|crear|dibuixa|dibujar|anade|agrega|pon|create|add|draw|insert|figura|forma|diagrama|nou|nova|nuevo|nueva)\b/.test(
-      normalized
+    const intent = this.intentService.analyze(instruction);
+    return (
+      intent.createRequest ||
+      intent.proposalRequest ||
+      this.intentService.hasLocalizedTerm(intent.normalized, 'ai.intent.vagueShapeTargets') ||
+      this.intentService.hasLocalizedTerm(intent.normalized, 'ai.intent.diagramTargets')
     );
   }
 }

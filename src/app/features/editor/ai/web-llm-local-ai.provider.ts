@@ -16,6 +16,7 @@ import { aiDebugLoggingEnabled } from './ai-debug-logging';
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
 const WEB_LLM_MAX_OUTPUT_TOKENS = 384;
 const WEB_LLM_MAX_CONTEXT_ELEMENTS = 4;
+const WEB_LLM_ABORT_ERROR_KEY = 'ai.errorGenerationStopped';
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
@@ -74,7 +75,7 @@ export class WebLlmLocalAiProvider {
     }
 
     const engine = await ensureEngine(modelName);
-    const generated = await generateWithInterruptingTimeout(engine, request, timeoutMs);
+    const generated = await generateWithInterruptingTimeout(engine, request, timeoutMs, request.abortSignal);
 
     return {
       mode: this.mode,
@@ -101,12 +102,29 @@ export class WebLlmLocalAiProvider {
 async function generateWithInterruptingTimeout(
   engine: MLCEngineInterface,
   request: AiProviderRequest,
-  timeoutMs: number
+  timeoutMs: number,
+  abortSignal: AbortSignal | undefined
 ): Promise<{ readonly text: string; readonly usage?: AiProviderUsage }> {
   let timedOut = false;
+  let aborted = false;
   let timeoutId = 0;
+  const abortHandler = () => {
+    aborted = true;
+    logWebLlm('generate:abort-interrupt', {});
+    void engine.interruptGenerate();
+    void engine.resetChat();
+  };
   const startedAt = performance.now();
+  if (abortSignal?.aborted) {
+    abortHandler();
+    throw new Error(WEB_LLM_ABORT_ERROR_KEY);
+  }
+  abortSignal?.addEventListener('abort', abortHandler, { once: true });
   const generation = generateStreamingResponse(engine, request).then((result) => {
+    if (aborted) {
+      throw new Error(WEB_LLM_ABORT_ERROR_KEY);
+    }
+
     logWebLlm('generate:done', {
       durationMs: Math.round(performance.now() - startedAt),
       chars: result.text.length,
@@ -124,12 +142,16 @@ async function generateWithInterruptingTimeout(
       reject(new Error('ai.errorWebLlmTimeout'));
     }, timeoutMs);
   });
+  const abort = new Promise<never>((_, reject) => {
+    abortSignal?.addEventListener('abort', () => reject(new Error(WEB_LLM_ABORT_ERROR_KEY)), { once: true });
+  });
 
   try {
-    return await Promise.race([generation, timeout]);
+    return await Promise.race([generation, timeout, abort]);
   } finally {
     globalThis.clearTimeout(timeoutId);
-    if (timedOut) {
+    abortSignal?.removeEventListener('abort', abortHandler);
+    if (timedOut || aborted) {
       generation.catch((error) => logWebLlm('generate:interrupted', { error: error instanceof Error ? error.message : String(error) }));
     }
   }

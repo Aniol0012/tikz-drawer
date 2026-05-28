@@ -174,7 +174,9 @@ describe('AiModelResponseResolverService', () => {
 
     expect(response?.type).toBe('scenePatch');
     expect(response?.patch?.create).toHaveLength(0);
-    expect(response?.patch?.update).toEqual([{ id: 'tri-1', changes: { stroke: '#7c3aed', fill: '#ede9fe' } }]);
+    expect(response?.patch?.update).toHaveLength(1);
+    expect(response?.patch?.update[0]?.id).toBe('tri-1');
+    expectHexColorPair(response?.patch?.update[0]?.changes);
   });
 
   it('asks for a selection when a color edit has no target', () => {
@@ -189,7 +191,18 @@ describe('AiModelResponseResolverService', () => {
     const response = resolver.resolvePreflight('Canvia el color', sceneWithRectangle());
 
     expect(response?.type).toBe('scenePatch');
-    expect(response?.patch?.update).toEqual([{ id: 'rect-1', changes: { stroke: '#7c3aed', fill: '#ede9fe' } }]);
+    expect(response?.patch?.update).toHaveLength(1);
+    expect(response?.patch?.update[0]?.id).toBe('rect-1');
+    expectHexColorPair(response?.patch?.update[0]?.changes);
+  });
+
+  it('creates requested pink shapes with randomized hex colors', () => {
+    const response = resolver.resolvePreflight('Crea un triangle rosa', emptyScene());
+
+    expect(response?.type).toBe('scenePatch');
+    expect(response?.patch?.create).toHaveLength(1);
+    expect(response?.patch?.create[0]).toMatchObject({ kind: 'triangle' });
+    expectHexColorPair(response?.patch?.create[0]);
   });
 
   it('does not call a model when a triangle color edit target is missing', () => {
@@ -221,6 +234,14 @@ function messageResponse(message: string, parseStatus: AiResponse['parseStatus']
     message,
     parseStatus
   };
+}
+
+function expectHexColorPair(value: unknown): void {
+  expect(value).toMatchObject({
+    stroke: expect.stringMatching(/^#[a-f\d]{6}$/),
+    fill: expect.stringMatching(/^#[a-f\d]{6}$/)
+  });
+  expect((value as { readonly stroke?: string; readonly fill?: string }).stroke).not.toBe((value as { readonly stroke?: string; readonly fill?: string }).fill);
 }
 
 function rectanglePatchResponse(): AiResponse {
