@@ -1348,40 +1348,38 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 6px;
-  border: 2px solid var(--ai-bubble-border);
-  border-radius: 999px;
-  background: var(--ai-bubble-surface);
-  box-shadow:
-    0 8px 20px rgb(15 23 42 / 12%),
-    0 0 0 3px var(--ai-bubble-glow);
+  min-height: 44px;
+  padding: 7px 6px 9px;
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 8px 18px rgb(15 23 42 / 12%)) drop-shadow(0 0 0 var(--ai-bubble-glow));
   backdrop-filter: blur(12px);
 }
 
 .ai-selection-bubble::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -16px;
-  width: 22px;
-  height: 17px;
-  background: var(--ai-bubble-border);
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
-  transform: translateX(-50%);
-  z-index: 0;
+  display: none;
 }
 
 .ai-selection-bubble::after {
-  content: '';
+  display: none;
+}
+
+.ai-selection-bubble__shell {
   position: absolute;
-  left: 50%;
-  bottom: -12px;
-  width: 16px;
-  height: 15px;
-  background: var(--ai-bubble-surface);
-  clip-path: polygon(50% 100%, 0 0, 100% 0);
-  transform: translateX(-50%);
-  z-index: 1;
+  inset: 0 0 -14px;
+  z-index: 0;
+  width: 100%;
+  height: calc(100% + 14px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.ai-selection-bubble__shell path {
+  fill: var(--ai-bubble-surface);
+  stroke: var(--ai-bubble-border);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .ai-selection-bubble__badge {
@@ -1465,10 +1463,7 @@ kbd {
   --ai-bubble-border: color-mix(in srgb, var(--ai-selection-color) 60%, #5b4a7d);
   --ai-bubble-surface: color-mix(in srgb, #111827 88%, var(--panel-background));
   --ai-bubble-glow: color-mix(in srgb, var(--ai-selection-color) 24%, transparent);
-  box-shadow:
-    0 10px 24px rgb(0 0 0 / 30%),
-    0 0 0 3px var(--ai-bubble-glow),
-    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+  filter: drop-shadow(0 10px 22px rgb(0 0 0 / 30%));
 }
 
 :host-context([data-theme='dark']) .ai-selection-bubble__badge {
