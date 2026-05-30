@@ -798,21 +798,21 @@
               </svg>
             </span>
             <button
-              class="ai-selection-bubble__button ai-selection-bubble__button--apply"
-              type="button"
-              [attr.aria-label]="'ai.apply' | translate"
-              (click)="applyPendingAiPatchFromCanvas()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="iconMap.copySuccess"></path>
-              </svg>
-            </button>
-            <button
               class="ai-selection-bubble__button"
               type="button"
               [attr.aria-label]="'cancel' | translate"
               (click)="discardPendingAiPatchFromCanvas()">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="iconMap.close"></path>
+              </svg>
+            </button>
+            <button
+              class="ai-selection-bubble__button ai-selection-bubble__button--apply"
+              type="button"
+              [attr.aria-label]="'ai.apply' | translate"
+              (click)="applyPendingAiPatchFromCanvas()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.copySuccess"></path>
               </svg>
             </button>
           </div>

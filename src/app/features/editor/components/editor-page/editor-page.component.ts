@@ -795,9 +795,9 @@ export class EditorPageComponent {
       return null;
     }
 
-    const bubbleWidth = 140;
+    const bubbleWidth = 104;
     const margin = 12;
-    const topGap = 44;
+    const topGap = 54;
     const centerX = this.toSvgX((bounds.left + bounds.right) / 2);
     const top = this.toSvgY(bounds.top);
     return {
