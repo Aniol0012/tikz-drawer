@@ -1339,8 +1339,9 @@ kbd {
 }
 
 .ai-selection-bubble {
-  --ai-bubble-border: color-mix(in srgb, var(--ai-selection-color) 34%, #d8d1ea);
-  --ai-bubble-surface: color-mix(in srgb, var(--panel-background) 94%, white 6%);
+  --ai-bubble-border: color-mix(in srgb, var(--ai-selection-color) 46%, #cfc5e8);
+  --ai-bubble-surface: color-mix(in srgb, var(--panel-background) 96%, white 4%);
+  --ai-bubble-glow: color-mix(in srgb, var(--ai-selection-color) 16%, transparent);
   position: absolute;
   z-index: 8;
   display: flex;
@@ -1353,7 +1354,7 @@ kbd {
   background: var(--ai-bubble-surface);
   box-shadow:
     0 8px 20px rgb(15 23 42 / 12%),
-    0 0 0 3px color-mix(in srgb, var(--ai-selection-color) 8%, transparent);
+    0 0 0 3px var(--ai-bubble-glow);
   backdrop-filter: blur(12px);
 }
 
@@ -1361,9 +1362,9 @@ kbd {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -14px;
-  width: 20px;
-  height: 15px;
+  bottom: -16px;
+  width: 22px;
+  height: 17px;
   background: var(--ai-bubble-border);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
   transform: translateX(-50%);
@@ -1374,9 +1375,9 @@ kbd {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -10px;
+  bottom: -12px;
   width: 16px;
-  height: 12px;
+  height: 15px;
   background: var(--ai-bubble-surface);
   clip-path: polygon(50% 100%, 0 0, 100% 0);
   transform: translateX(-50%);
@@ -1433,6 +1434,12 @@ kbd {
   color: var(--app-foreground);
 }
 
+.ai-selection-bubble__button--reject:hover {
+  border-color: color-mix(in srgb, #ef4444 32%, transparent);
+  background: color-mix(in srgb, #ef4444 16%, var(--panel-background));
+  color: #b91c1c;
+}
+
 .ai-selection-bubble__button--apply {
   background: color-mix(in srgb, #16a34a 12%, var(--panel-background));
   color: #15803d;
@@ -1452,6 +1459,51 @@ kbd {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble {
+  --ai-bubble-border: color-mix(in srgb, var(--ai-selection-color) 60%, #5b4a7d);
+  --ai-bubble-surface: color-mix(in srgb, #111827 88%, var(--panel-background));
+  --ai-bubble-glow: color-mix(in srgb, var(--ai-selection-color) 24%, transparent);
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 30%),
+    0 0 0 3px var(--ai-bubble-glow),
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__badge {
+  border-color: color-mix(in srgb, var(--ai-selection-color) 52%, #5b4a7d);
+  background: color-mix(in srgb, #111827 88%, var(--panel-background));
+  box-shadow:
+    0 5px 13px rgb(0 0 0 / 28%),
+    0 0 0 3px color-mix(in srgb, var(--ai-selection-color) 14%, transparent);
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__button {
+  color: color-mix(in srgb, #f8fafc 64%, #94a3b8);
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__button:hover {
+  border-color: color-mix(in srgb, var(--ai-selection-color) 34%, transparent);
+  background: color-mix(in srgb, var(--ai-selection-color) 16%, #111827);
+  color: #f8fafc;
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__button--reject:hover {
+  border-color: color-mix(in srgb, #f87171 38%, transparent);
+  background: color-mix(in srgb, #ef4444 24%, #111827);
+  color: #fecaca;
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__button--apply {
+  background: color-mix(in srgb, #16a34a 18%, #111827);
+  color: #22c55e;
+}
+
+:host-context([data-theme='dark']) .ai-selection-bubble__button--apply:hover {
+  border-color: color-mix(in srgb, #22c55e 34%, transparent);
+  background: color-mix(in srgb, #16a34a 26%, #111827);
+  color: #bbf7d0;
 }
 
 .selection-handle {
