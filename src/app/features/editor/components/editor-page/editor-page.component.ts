@@ -797,7 +797,7 @@ export class EditorPageComponent {
 
     const bubbleWidth = 104;
     const margin = 12;
-    const topGap = 54;
+    const topGap = 64;
     const centerX = this.toSvgX((bounds.left + bounds.right) / 2);
     const top = this.toSvgY(bounds.top);
     return {
@@ -5021,6 +5021,10 @@ export class EditorPageComponent {
 
     this.handleModifierKeydown(event);
 
+    if (this.shouldLetBrowserHandleNativeTextShortcut(event)) {
+      return;
+    }
+
     if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
       event.preventDefault();
       event.stopPropagation();
@@ -5156,6 +5160,44 @@ export class EditorPageComponent {
       (shortcutEvent) => isUndoShortcut(shortcutEvent, shortcuts),
       () => this.undo()
     );
+  }
+
+  private shouldLetBrowserHandleNativeTextShortcut(event: KeyboardEvent): boolean {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (!isCopyShortcut(event, shortcuts) && !isCutShortcut(event, shortcuts) && !isSelectAllShortcut(event, shortcuts)) {
+      return false;
+    }
+
+    return this.hasNativeTextSelectionInAiPanel() || this.isAiPanelTarget(event.target);
+  }
+
+  private hasNativeTextSelectionInAiPanel(): boolean {
+    const selection = this.document.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0 || !selection.toString()) {
+      return false;
+    }
+
+    for (let index = 0; index < selection.rangeCount; index += 1) {
+      const range = selection.getRangeAt(index);
+      if (
+        this.isAiPanelSelectionNode(range.commonAncestorContainer) ||
+        this.isAiPanelSelectionNode(selection.anchorNode) ||
+        this.isAiPanelSelectionNode(selection.focusNode)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private isAiPanelSelectionNode(node: Node | null): boolean {
+    const element = node instanceof Element ? node : node?.parentElement;
+    return !!element?.closest('.ai-panel');
+  }
+
+  private isAiPanelTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('.ai-panel');
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {

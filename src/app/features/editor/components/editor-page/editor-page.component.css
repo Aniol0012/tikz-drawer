@@ -1340,6 +1340,7 @@ kbd {
 
 .ai-selection-bubble {
   --ai-bubble-border: color-mix(in srgb, var(--ai-selection-color) 34%, #d8d1ea);
+  --ai-bubble-surface: color-mix(in srgb, var(--panel-background) 94%, white 6%);
   position: absolute;
   z-index: 8;
   display: flex;
@@ -1349,7 +1350,7 @@ kbd {
   padding: 6px;
   border: 2px solid var(--ai-bubble-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--panel-background) 94%, white 6%);
+  background: var(--ai-bubble-surface);
   box-shadow:
     0 8px 20px rgb(15 23 42 / 12%),
     0 0 0 3px color-mix(in srgb, var(--ai-selection-color) 8%, transparent);
@@ -1360,14 +1361,12 @@ kbd {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -11px;
-  width: 18px;
-  height: 18px;
-  border-right: 2px solid var(--ai-bubble-border);
-  border-bottom: 2px solid var(--ai-bubble-border);
-  border-bottom-right-radius: 5px;
-  background: inherit;
-  transform: translateX(-50%) rotate(45deg);
+  bottom: -14px;
+  width: 20px;
+  height: 15px;
+  background: var(--ai-bubble-border);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  transform: translateX(-50%);
   z-index: 0;
 }
 
@@ -1375,10 +1374,11 @@ kbd {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: 24px;
+  bottom: -10px;
+  width: 16px;
   height: 12px;
-  background: inherit;
+  background: var(--ai-bubble-surface);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
   transform: translateX(-50%);
   z-index: 1;
 }
