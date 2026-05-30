@@ -3,16 +3,16 @@
 <div align="center">
   <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
 
-[![Version](https://img.shields.io/badge/version-1.2.25-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
+[![Version](https://img.shields.io/badge/version-1.2.29-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftikzdrawer.com%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://tikzdrawer.com/)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
 [![Tests Status](https://img.shields.io/github/actions/workflow/status/Aniol0012/tikz-drawer/tests.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
 
-[![Angular](https://img.shields.io/badge/Angular-21.2.12-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
+[![Angular](https://img.shields.io/badge/Angular-21.2.14-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
 [![RxJS](https://img.shields.io/badge/RxJS-7.8.0-B7178C?style=flat-square&logo=reactivex&logoColor=white)](https://rxjs.dev/)
 [![Shoelace](https://img.shields.io/badge/Shoelace-2.20.1-1E88E5?style=flat-square&logo=shoelace&logoColor=white)](https://shoelace.style/)
-[![Vitest](https://img.shields.io/badge/Vitest-4.1.6-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-4.1.7-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.8.3-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
 [![pnpm](https://img.shields.io/badge/pnpm-10.33.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
