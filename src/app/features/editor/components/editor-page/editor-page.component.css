@@ -1259,6 +1259,31 @@ kbd {
   filter: none;
 }
 
+.shape-layer.is-ai-pending:not(.is-selected) line:not(.line-hit-target),
+.shape-layer.is-ai-pending:not(.is-selected) path:not(.line-hit-target):not(.line-arrow-hit-target),
+.shape-layer.is-ai-pending:not(.is-selected) rect,
+.shape-layer.is-ai-pending:not(.is-selected) circle,
+.shape-layer.is-ai-pending:not(.is-selected) ellipse,
+.shape-layer.is-ai-pending:not(.is-selected) text {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ai-selection-color) 32%, transparent))
+    drop-shadow(0 0 11px color-mix(in srgb, var(--ai-selection-color) 16%, transparent));
+}
+
+.shape-layer.is-ai-pending:not(.is-selected) {
+  animation: ai-pending-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes ai-pending-glow {
+  0%,
+  100% {
+    opacity: 0.94;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .selection-outline,
 .selection-line,
 .marquee-rect {
@@ -1290,7 +1315,7 @@ kbd {
 .selection-outline--ai,
 .has-ai-selection .selection-line {
   stroke: var(--ai-selection-color);
-  fill: color-mix(in srgb, var(--ai-selection-color) 10%, transparent);
+  fill: color-mix(in srgb, var(--accent) 10%, transparent);
   filter: drop-shadow(0 0 9px color-mix(in srgb, var(--ai-selection-color) 30%, transparent));
 }
 
@@ -1311,6 +1336,93 @@ kbd {
   fill: var(--ai-selection-color);
   filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 8px color-mix(in srgb, var(--ai-selection-color) 28%, transparent));
   pointer-events: none;
+}
+
+.ai-selection-bubble {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--ai-selection-color) 30%, var(--panel-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-background) 94%, white 6%);
+  box-shadow:
+    0 8px 20px rgb(15 23 42 / 12%),
+    0 0 0 3px color-mix(in srgb, var(--ai-selection-color) 7%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.ai-selection-bubble__badge {
+  position: absolute;
+  top: -12px;
+  right: -9px;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--ai-selection-color) 24%, var(--panel-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel-background) 88%, white 12%);
+  color: var(--ai-selection-color);
+  box-shadow:
+    0 4px 12px rgb(15 23 42 / 10%),
+    0 0 0 3px color-mix(in srgb, var(--ai-selection-color) 8%, transparent);
+  pointer-events: none;
+}
+
+.ai-selection-bubble__badge svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ai-selection-color) 25%, transparent));
+}
+
+.ai-selection-bubble__button {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.ai-selection-bubble__button:hover {
+  border-color: color-mix(in srgb, var(--ai-selection-color) 24%, transparent);
+  background: color-mix(in srgb, var(--ai-selection-color) 8%, var(--panel-background));
+  color: var(--app-foreground);
+}
+
+.ai-selection-bubble__button--apply {
+  background: color-mix(in srgb, #16a34a 12%, var(--panel-background));
+  color: #15803d;
+}
+
+.ai-selection-bubble__button--apply:hover {
+  border-color: color-mix(in srgb, #16a34a 28%, transparent);
+  background: color-mix(in srgb, #16a34a 18%, var(--panel-background));
+  color: #166534;
+}
+
+.ai-selection-bubble__button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .selection-handle {

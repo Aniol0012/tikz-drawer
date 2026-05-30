@@ -320,6 +320,7 @@
             <g
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"
+              [class.is-ai-pending]="isAiPendingShape(shape.id)"
               (click)="onShapeClick($event, shape)"
               (keydown.enter)="onShapeKeydown($event, shape)"
               (dblclick)="onShapeDoubleClick($event, shape)"
@@ -693,7 +694,7 @@
               (pointerdown)="selectionCount() > 1 && startSelectionMove($event)"></rect>
           }
 
-          @if (aiSelectionIconLayout(); as aiIcon) {
+          @if (aiSelectionStandaloneIconLayout(); as aiIcon) {
             <svg
               class="ai-selection-icon"
               [attr.x]="aiIcon.x"
@@ -782,6 +783,40 @@
             }
           }
         </svg>
+
+        @if (aiSelectionBubbleLayout(); as aiBubble) {
+          <div
+            class="ai-selection-bubble"
+            [style.left.px]="aiBubble.left"
+            [style.top.px]="aiBubble.top"
+            [style.width.px]="aiBubble.width"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()">
+            <span class="ai-selection-bubble__badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path [attr.d]="iconMap.sparkles"></path>
+              </svg>
+            </span>
+            <button
+              class="ai-selection-bubble__button ai-selection-bubble__button--apply"
+              type="button"
+              [attr.aria-label]="'ai.apply' | translate"
+              (click)="applyPendingAiPatchFromCanvas()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.copySuccess"></path>
+              </svg>
+            </button>
+            <button
+              class="ai-selection-bubble__button"
+              type="button"
+              [attr.aria-label]="'cancel' | translate"
+              (click)="discardPendingAiPatchFromCanvas()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.close"></path>
+              </svg>
+            </button>
+          </div>
+        }
 
         @if (!scene().shapes.length) {
           <div class="canvas-empty">

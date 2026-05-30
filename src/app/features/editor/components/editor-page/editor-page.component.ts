@@ -785,6 +785,27 @@ export class EditorPageComponent {
     const selectedShapeIds = this.store.selectedShapeIds();
     return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.includes(shapeId));
   });
+  readonly aiSelectionBubbleLayout = computed(() => {
+    if (!this.aiSelectionActive() || !this.aiPatch.pendingPatch()) {
+      return null;
+    }
+
+    const bounds = this.selectionBounds();
+    if (!bounds) {
+      return null;
+    }
+
+    const bubbleWidth = 140;
+    const margin = 12;
+    const topGap = 44;
+    const centerX = this.toSvgX((bounds.left + bounds.right) / 2);
+    const top = this.toSvgY(bounds.top);
+    return {
+      left: Math.min(Math.max(centerX - bubbleWidth / 2, margin), Math.max(margin, this.canvasWidth() - bubbleWidth - margin)),
+      top: Math.max(margin, top - topGap),
+      width: bubbleWidth
+    };
+  });
   readonly aiSelectionIconLayout = computed(() => {
     if (!this.aiSelectionActive()) {
       return null;
@@ -802,6 +823,7 @@ export class EditorPageComponent {
       size
     };
   });
+  readonly aiSelectionStandaloneIconLayout = computed(() => (this.aiSelectionBubbleLayout() ? null : this.aiSelectionIconLayout()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShapes = this.selectedShapes();
     const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
@@ -3053,6 +3075,19 @@ export class EditorPageComponent {
 
   selectionContainsShape(shapeId: string): boolean {
     return selectionContainsShapeUtil(this.selectedShapes(), shapeId);
+  }
+
+  isAiPendingShape(shapeId: string): boolean {
+    return this.aiPatch.pendingAffectedShapeIds().includes(shapeId);
+  }
+
+  applyPendingAiPatchFromCanvas(): void {
+    const changedShapes = this.aiPatch.applyPendingPatch();
+    this.handleAiPatchApplied(changedShapes.map((shape) => shape.id));
+  }
+
+  discardPendingAiPatchFromCanvas(): void {
+    this.aiPatch.discardPendingPatch();
   }
 
   private selectShapeSet(shape: CanvasShape): void {
