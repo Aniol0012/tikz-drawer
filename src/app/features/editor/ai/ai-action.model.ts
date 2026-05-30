@@ -1,10 +1,10 @@
-export type AiQuickActionId = 'createDiagram' | 'improveScene' | 'fixTikz' | 'addLabels' | 'explainScene' | 'simplifyScene';
+export type AiQuickActionId = 'createDiagram' | 'improveScene' | 'connectElements' | 'addLabels' | 'explainScene' | 'simplifyScene';
 
 export interface AiQuickAction {
   readonly id: AiQuickActionId;
   readonly labelKey: string;
   readonly promptKey: string;
-  readonly icon: 'sparkles' | 'layout' | 'code' | 'tag' | 'note' | 'funnel';
+  readonly icon: 'sparkles' | 'layout' | 'arrow' | 'tag' | 'note' | 'funnel';
 }
 
 export const AI_QUICK_ACTIONS: readonly AiQuickAction[] = [
@@ -21,10 +21,10 @@ export const AI_QUICK_ACTIONS: readonly AiQuickAction[] = [
     icon: 'layout'
   },
   {
-    id: 'fixTikz',
-    labelKey: 'ai.action.fixTikz',
-    promptKey: 'ai.prompt.fixTikz',
-    icon: 'code'
+    id: 'connectElements',
+    labelKey: 'ai.action.connectElements',
+    promptKey: 'ai.prompt.connectElements',
+    icon: 'arrow'
   },
   {
     id: 'addLabels',

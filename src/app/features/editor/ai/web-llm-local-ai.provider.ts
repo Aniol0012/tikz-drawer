@@ -17,6 +17,7 @@ import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
 const WEB_LLM_MAX_OUTPUT_TOKENS = 384;
 const WEB_LLM_MAX_CONTEXT_ELEMENTS = 4;
+const WEB_LLM_EXPLAIN_MAX_CONTEXT_ELEMENTS = 14;
 const WEB_LLM_ABORT_ERROR_KEY = 'ai.errorGenerationStopped';
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
@@ -240,9 +241,11 @@ function localSystemInstruction(request: AiProviderRequest): string {
     'Eres el asistente de Tikz Drawer.',
     'Devuelve un unico JSON valido, sin markdown ni texto extra.',
     'Para mensajes usa campos type=message y message con una frase real.',
+    'Explicar escena: describe que representa visualmente, no solo cuentes figuras.',
     'Para cambios usa type=scenePatch, message breve y patch con create/update/remove.',
     'Charla o preguntas: type="message", una frase, segunda persona. Nunca digas "el usuario puede".',
     'Crear: usa patch.create solo si el usuario pide crear o dibujar.',
+    'Conectar: crea lineas con flechas entre elementos principales.',
     'Editar: usa patch.update con IDs existentes; no crees rectangulos para editar.',
     'Tipos: rectangle, circle, ellipse, line, text, triangle. Numeros cortos.'
   ].join('\n');
@@ -253,11 +256,12 @@ function compactPromptPayload(request: AiProviderRequest): string {
     const payload = JSON.parse(request.contextJson) as WebLlmPromptPayload;
     const labels = promptLabels(payload);
     const selectedIds = payload.context?.selectedElementIds ?? [];
-    const elements = promptElementsForPayload(payload.context?.elements ?? [], selectedIds);
+    const elements = promptElementsForPayload(payload.context?.elements ?? [], selectedIds, payload.instruction ?? request.instruction);
     return [
       AI_PROMPT_ECHO_SENTINEL,
       `${labels.taskLabel}: ${payload.instruction ?? request.instruction}`,
       `${labels.selectionLabel}: ${selectedIds.join(', ') || labels.noneLabel}`,
+      sceneSummaryForPayload(payload.context?.elements ?? []),
       `${labels.elementsLabel}:`,
       ...(elements.length ? elements.map(formatPromptElement) : [`- ${labels.noneLabel}`]),
       labels.answerInstruction
@@ -288,15 +292,49 @@ function promptLabels(payload: WebLlmPromptPayload): WebLlmPromptLabels {
   };
 }
 
-function promptElementsForPayload(elements: readonly WebLlmPromptElement[], selectedIds: readonly string[]): readonly WebLlmPromptElement[] {
+function promptElementsForPayload(
+  elements: readonly WebLlmPromptElement[],
+  selectedIds: readonly string[],
+  instruction: string
+): readonly WebLlmPromptElement[] {
   if (!elements.length) {
     return [];
   }
 
   const selected = new Set(selectedIds);
+  const maxElements = looksLikeExplainInstruction(instruction) ? WEB_LLM_EXPLAIN_MAX_CONTEXT_ELEMENTS : WEB_LLM_MAX_CONTEXT_ELEMENTS;
   return [...elements]
     .sort((left, right) => Number(selected.has(formatPromptValue(right.id))) - Number(selected.has(formatPromptValue(left.id))))
-    .slice(0, WEB_LLM_MAX_CONTEXT_ELEMENTS);
+    .slice(0, maxElements);
+}
+
+function sceneSummaryForPayload(elements: readonly WebLlmPromptElement[]): string {
+  if (!elements.length) {
+    return 'RESUMEN_ESCENA: empty';
+  }
+
+  const counts = new Map<string, number>();
+  const texts: string[] = [];
+  for (const element of elements) {
+    const kind = formatPromptValue(element.kind) || 'unknown';
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+    const visibleText = formatPromptValue(element.text || element.name);
+    if (visibleText && texts.length < 10) {
+      texts.push(visibleText);
+    }
+  }
+
+  return `RESUMEN_ESCENA: total=${elements.length}; kinds=${[...counts.entries()]
+    .map(([kind, count]) => `${kind}:${count}`)
+    .join(',')}; labels=${texts.join('|') || 'none'}`;
+}
+
+function looksLikeExplainInstruction(instruction: string): boolean {
+  const normalized = instruction
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+  return /\b(explica|explicar|explain|describe|descriu|descriure|que es|que representa|what is|what does)\b/.test(normalized);
 }
 
 function formatPromptElement(element: WebLlmPromptElement): string {

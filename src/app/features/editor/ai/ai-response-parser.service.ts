@@ -309,12 +309,22 @@ export class AiResponseParserService {
       this.technicalElementDump(normalized) ||
       (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||
       (/^FECTO:/m.test(normalized) && /^- id[:=]/m.test(normalized)) ||
+      this.malformedTechnicalJson(normalized) ||
       (hasPromptLine('ai.promptEcho.dateLabels') && hasPromptLine('ai.promptEcho.sceneLabels') && hasPromptLine('ai.promptEcho.elementLabels'))
     );
   }
 
   private technicalElementDump(text: string): boolean {
     return TECHNICAL_ELEMENT_DUMP_PATTERN.test(text) && /\b(?:geometry|style|strokeWidth|stroke|fill)[:=]/i.test(text);
+  }
+
+  private malformedTechnicalJson(text: string): boolean {
+    return (
+      /"?caption"?\s*:\s*"?paso\s+\d+/i.test(text) &&
+      /\b(?:id|seleccione)[:= ]+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(text) &&
+      /\bgeometry\s*[:=]/i.test(text) &&
+      /\bstyle\s*[:=]/i.test(text)
+    );
   }
 
   private localizedTerms(key: string): readonly string[] {

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { AiSimpleScenePatchFactory } from '../ai-simple-scene-patch.factory';
+import { AiInstructionIntentService } from '../ai-instruction-intent.service';
 import type { AiResponse } from '../ai-message.model';
 import type { AiProviderTextResult } from '../ai-provider-result.model';
 import type { AiModelResolutionContext, AiModelResponseResolver, AiPreflightResolutionContext } from './ai-model-response-resolver';
@@ -18,6 +19,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   private readonly languageService = inject(EditorLanguageService);
   private readonly simplePatchFactory = inject(AiSimpleScenePatchFactory);
   private readonly colorRandomizer = inject(ColorRangeRandomizerService);
+  private readonly intentService = inject(AiInstructionIntentService);
 
   readonly id = 'default';
 
@@ -30,7 +32,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
       return this.addLabels(context);
     }
 
-    if (context.intent.createRequest) {
+    if (context.intent.createRequest && this.shouldUseObviousCreateFallback(context.intent.normalized)) {
       const shapes = this.simplePatchFactory.createShapes(context.instruction);
       if (shapes.length) {
         return {
@@ -44,10 +46,6 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
 
     if (this.looksLikeImproveScene(context.intent.normalized)) {
       return this.improveScene(context);
-    }
-
-    if (this.looksLikeExplainScene(context.intent.normalized)) {
-      return this.explainScene(context);
     }
 
     if (this.looksLikeSimplifyScene(context.intent.normalized)) {
@@ -160,23 +158,6 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
     };
   }
 
-  private explainScene(context: AiPreflightResolutionContext): AiResponse {
-    const elements = context.scene.elements;
-    const byKind = [...new Set(elements.map((element) => element.kind))]
-      .map((kind) => `${elements.filter((element) => element.kind === kind).length} ${kind}`)
-      .slice(0, 4)
-      .join(', ');
-
-    return {
-      type: 'message',
-      message: this.interpolate(this.languageService.t('ai.localSceneExplanation'), {
-        count: String(elements.length),
-        summary: byKind || this.languageService.t('ai.localSceneEmptySummary')
-      }),
-      parseStatus: 'local-conversation-fallback'
-    };
-  }
-
   private simplifyScene(context: AiPreflightResolutionContext): AiResponse | null {
     const elements = mutableElements(context.scene);
     if (elements.length < 5) {
@@ -228,12 +209,27 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
     return /\b(etiqueta|etiquetes|etiquetas|label|labels)\b/.test(instruction);
   }
 
-  private looksLikeExplainScene(instruction: string): boolean {
-    return /\b(explica|explicar|explain|describe|descriu|describe)\b/.test(instruction);
-  }
-
   private looksLikeSimplifyScene(instruction: string): boolean {
     return /\b(simplifica|simplificar|simplify|reduceix|reduce|reduir)\b/.test(instruction);
+  }
+
+  private shouldUseObviousCreateFallback(instruction: string): boolean {
+    if (
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.diagramTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.graphTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.vagueShapeTargets')
+    ) {
+      return false;
+    }
+
+    return (
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.circleTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.triangleTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.ellipseTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.rectangleTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.squareTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.arrowTargets')
+    );
   }
 
   private randomFrom<T>(values: readonly T[]): T {
@@ -251,10 +247,6 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
 
   private round(value: number): number {
     return Number(value.toFixed(2));
-  }
-
-  private interpolate(template: string, values: Record<string, string>): string {
-    return Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{${key}}`, value), template);
   }
 
   private isUnusableLocalOutput(response: AiResponse): boolean {

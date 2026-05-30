@@ -211,6 +211,18 @@ Es que no puede modificar el color del rectangulo.`);
     expect(response.parseStatus).toBe('compact-prompt-echo');
   });
 
+  it('marks malformed WebLLM technical JSON as a prompt echo', () => {
+    const response = parser.parse(`{{
+      "caption": "Paso 1: Genera o corrige código TikZ equivalente para esta escena."
+    {{
+      "caption": "Paso 2: Seleccione 90e9285f-e711-44fe-9eeb-f344349b3f55; style=rectangle; name=Rectángulo; geometry=x=-8.7,y=-9.86,width=6.91,height=10.32; style=strokeWidth=0.06,stroke=#1045bd"
+    }}`);
+
+    expect(response.type).toBe('message');
+    expect(response.message).not.toContain('90e9285f');
+    expect(response.parseStatus).toBe('compact-prompt-echo');
+  });
+
   it('marks system prompt echoes without trying to parse example JSON from them', () => {
     const response = parser.parse(`Eres el asistente de Tikz Drawer.
 Devuelve solo JSON valido, sin markdown.
