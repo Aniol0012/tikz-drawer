@@ -28,8 +28,7 @@
   border-radius: 999px;
   background:
     radial-gradient(circle at 34% 28%, rgb(255 255 255 / 94%), rgb(255 255 255 / 66%) 34%, transparent 58%),
-    radial-gradient(circle at 62% 70%, rgb(168 85 247 / 15%), transparent 56%),
-    rgb(255 255 255 / 72%);
+    radial-gradient(circle at 62% 70%, rgb(168 85 247 / 15%), transparent 56%), rgb(255 255 255 / 72%);
   outline: 1px solid rgb(124 58 237 / 14%);
   box-shadow:
     0 18px 40px rgb(15 23 42 / 12%),
@@ -72,8 +71,7 @@
 :host-context([data-theme='dark']) .ai-intro-flight__orb {
   background:
     radial-gradient(circle at 34% 28%, rgb(255 255 255 / 15%), transparent 38%),
-    radial-gradient(circle at 62% 70%, rgb(168 85 247 / 22%), transparent 56%),
-    rgb(17 24 39 / 84%);
+    radial-gradient(circle at 62% 70%, rgb(168 85 247 / 22%), transparent 56%), rgb(17 24 39 / 84%);
   outline-color: rgb(167 139 250 / 28%);
   box-shadow:
     0 20px 44px rgb(0 0 0 / 28%),
