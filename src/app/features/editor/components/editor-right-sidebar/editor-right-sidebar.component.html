@@ -14,11 +14,10 @@
     </button>
     <button
       class="ai-sparkles-trigger"
-      data-ai-tab-target
       type="button"
       [class.is-active]="editor().inspectorTab() === 'assistant'"
       (click)="editor().openAssistant()">
-      <app-ai-sparkles-icon></app-ai-sparkles-icon>
+      <app-ai-sparkles-icon data-ai-tab-target></app-ai-sparkles-icon>
       <span>{{ editor().t('ai.tab') }}</span>
     </button>
   </div>
