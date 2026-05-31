@@ -32,6 +32,10 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
       return this.addLabels(context);
     }
 
+    if (this.looksLikeExplainScene(context.intent.normalized)) {
+      return this.explainScene(context);
+    }
+
     if (context.intent.createRequest && this.shouldUseObviousCreateFallback(context.intent.normalized)) {
       const shapes = this.simplePatchFactory.createShapes(context.instruction);
       if (shapes.length) {
@@ -173,6 +177,22 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
     };
   }
 
+  private explainScene(context: AiPreflightResolutionContext): AiResponse {
+    const elements = mutableElements(context.scene);
+    const summary = elements.length
+      ? this.summarizeElements(elements)
+      : this.languageService.t('ai.localSceneEmptySummary');
+
+    return {
+      type: 'message',
+      message: this.languageService
+        .t('ai.localSceneExplanation')
+        .replace('{count}', String(elements.length))
+        .replace('{summary}', summary),
+      parseStatus: 'local-conversation-fallback'
+    };
+  }
+
   private positionChanges(kind: string, x: number, y: number): Partial<CanvasShape> {
     if (kind === 'circle' || kind === 'ellipse') {
       return { cx: this.round(x), cy: this.round(y) } as Partial<CanvasShape>;
@@ -213,16 +233,20 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
     return /\b(simplifica|simplificar|simplify|reduceix|reduce|reduir)\b/.test(instruction);
   }
 
+  private looksLikeExplainScene(instruction: string): boolean {
+    return /\b(explica|explicar|explain|describe|descriu|describeix)\b/.test(instruction);
+  }
+
   private shouldUseObviousCreateFallback(instruction: string): boolean {
     if (
-      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.diagramTargets') ||
-      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.graphTargets') ||
-      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.vagueShapeTargets')
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.graphTargets')
     ) {
       return false;
     }
 
     return (
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.diagramTargets') ||
+      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.vagueShapeTargets') ||
       this.intentService.hasLocalizedTerm(instruction, 'ai.intent.circleTargets') ||
       this.intentService.hasLocalizedTerm(instruction, 'ai.intent.triangleTargets') ||
       this.intentService.hasLocalizedTerm(instruction, 'ai.intent.ellipseTargets') ||
@@ -247,6 +271,17 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
 
   private round(value: number): number {
     return Number(value.toFixed(2));
+  }
+
+  private summarizeElements(elements: ReturnType<typeof mutableElements>): string {
+    const counts = new Map<string, number>();
+    for (const element of elements) {
+      counts.set(element.kind, (counts.get(element.kind) ?? 0) + 1);
+    }
+
+    return [...counts]
+      .map(([kind, count]) => `${count} ${this.languageService.localizedShapeKind(kind as CanvasShape['kind'])}`)
+      .join(', ');
   }
 
   private isUnusableLocalOutput(response: AiResponse): boolean {
