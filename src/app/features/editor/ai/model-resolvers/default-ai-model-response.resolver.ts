@@ -179,16 +179,11 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
 
   private explainScene(context: AiPreflightResolutionContext): AiResponse {
     const elements = mutableElements(context.scene);
-    const summary = elements.length
-      ? this.summarizeElements(elements)
-      : this.languageService.t('ai.localSceneEmptySummary');
+    const summary = elements.length ? this.summarizeElements(elements) : this.languageService.t('ai.localSceneEmptySummary');
 
     return {
       type: 'message',
-      message: this.languageService
-        .t('ai.localSceneExplanation')
-        .replace('{count}', String(elements.length))
-        .replace('{summary}', summary),
+      message: this.languageService.t('ai.localSceneExplanation').replace('{count}', String(elements.length)).replace('{summary}', summary),
       parseStatus: 'local-conversation-fallback'
     };
   }
@@ -238,9 +233,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   private shouldUseObviousCreateFallback(instruction: string): boolean {
-    if (
-      this.intentService.hasLocalizedTerm(instruction, 'ai.intent.graphTargets')
-    ) {
+    if (this.intentService.hasLocalizedTerm(instruction, 'ai.intent.graphTargets')) {
       return false;
     }
 
@@ -279,9 +272,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
       counts.set(element.kind, (counts.get(element.kind) ?? 0) + 1);
     }
 
-    return [...counts]
-      .map(([kind, count]) => `${count} ${this.languageService.localizedShapeKind(kind as CanvasShape['kind'])}`)
-      .join(', ');
+    return [...counts].map(([kind, count]) => `${count} ${this.languageService.localizedShapeKind(kind as CanvasShape['kind'])}`).join(', ');
   }
 
   private isUnusableLocalOutput(response: AiResponse): boolean {
