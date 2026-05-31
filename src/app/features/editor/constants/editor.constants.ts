@@ -8,6 +8,7 @@ export const EDITOR_STORAGE_KEYS = {
   generalConfig: 'tikz-drawer.general-config',
   aiSettings: 'tikz-drawer.ai-settings',
   aiConversation: 'tikz-drawer.ai-conversation',
+  aiPromptSeen: 'tikz-drawer.ai-prompt-seen',
   devMode: 'tikz-drawer.dev-mode',
   sidebarSizes: 'tikz-drawer.sidebar-sizes',
   syncState: 'tikz-drawer.sync-state'

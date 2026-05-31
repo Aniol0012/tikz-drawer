@@ -156,6 +156,7 @@ import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
 import { EditorMinimapComponent } from '../editor-minimap/editor-minimap.component';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
+import { AiIntroFlightComponent } from '../ai-intro-flight/ai-intro-flight.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
@@ -305,6 +306,7 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     ImportReplaceDialogComponent,
     EditorMinimapComponent,
     AiSparklesIconComponent,
+    AiIntroFlightComponent,
     AppSelectComponent,
     BadgeComponent,
     ToggleFieldComponent,

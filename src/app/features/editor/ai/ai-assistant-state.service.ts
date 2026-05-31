@@ -9,6 +9,7 @@ export class AiAssistantStateService {
   private readonly languageService = inject(EditorLanguageService);
   private readonly storage = inject(EditorLocalStorageService);
   private readonly storageKey = EDITOR_STORAGE_KEYS.aiConversation;
+  private readonly promptSeenStorageKey = EDITOR_STORAGE_KEYS.aiPromptSeen;
 
   readonly draft = signal('');
   readonly loading = signal(false);
@@ -22,6 +23,10 @@ export class AiAssistantStateService {
   }
 
   appendMessage(message: Omit<AiMessage, 'id' | 'createdAt'>): void {
+    if (message.role === 'user') {
+      this.markPromptSeen();
+    }
+
     this.messages.update((messages) => [
       ...messages,
       {
@@ -30,6 +35,24 @@ export class AiAssistantStateService {
         createdAt: Date.now()
       }
     ]);
+  }
+
+  hasPromptBeenSeen(): boolean {
+    if (this.storage.getString(this.promptSeenStorageKey) === 'true') {
+      return true;
+    }
+
+    const restored = this.storage.getJson<readonly AiMessage[]>(this.storageKey);
+    if (Array.isArray(restored) && restored.some((message) => this.isStoredMessage(message) && message.role === 'user')) {
+      this.markPromptSeen();
+      return true;
+    }
+
+    return false;
+  }
+
+  private markPromptSeen(): void {
+    this.storage.setString(this.promptSeenStorageKey, 'true');
   }
 
   resetConversation(): void {
