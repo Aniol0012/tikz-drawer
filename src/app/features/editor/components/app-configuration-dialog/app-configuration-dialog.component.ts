@@ -34,8 +34,15 @@ import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-fie
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { KeyboardShortcutCaptureComponent, type KeyboardShortcutAssignment } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
 import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
+import { AiSettingsService, REMOTE_AI_MODEL_OPTIONS, WEB_LLM_MODEL_OPTIONS } from '../../ai/ai-settings.service';
+import type { AiProviderType } from '../../ai/ai-provider-result.model';
+import { EditorDevModeService } from '../../state/editor-dev-mode.service';
+import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
+import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
+import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
+import { BadgeComponent } from '../../../../shared/badge/badge.component';
 
-export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex';
+export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex' | 'ai';
 
 type LabelKeyOption = {
   readonly value: string;
@@ -45,7 +52,8 @@ type LabelKeyOption = {
 type ConfigurationTabDescriptor = {
   readonly id: ApplicationConfigurationTab;
   readonly labelKey: string;
-  readonly iconPath: string;
+  readonly iconPath?: string;
+  readonly aiIcon?: boolean;
 };
 
 type ShortcutRow = {
@@ -59,7 +67,15 @@ const PREVIEW_VIEWBOX_HEIGHT = 220;
 @Component({
   selector: 'app-configuration-dialog',
   standalone: true,
-  imports: [AppSelectComponent, ToggleFieldComponent, RangeInputCardComponent, KeyboardShortcutCaptureComponent, EditorTranslatePipe],
+  imports: [
+    AppSelectComponent,
+    ToggleFieldComponent,
+    RangeInputCardComponent,
+    KeyboardShortcutCaptureComponent,
+    EditorTranslatePipe,
+    AiSparklesIconComponent,
+    BadgeComponent
+  ],
   templateUrl: './app-configuration-dialog.component.html',
   styleUrl: './app-configuration-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -73,14 +89,19 @@ export class AppConfigurationDialogComponent {
   private readonly languageService = inject(EditorLanguageService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly appThemeService = inject(AppThemeService);
+  private readonly aiSettingsService = inject(AiSettingsService);
+  private readonly devModeService = inject(EditorDevModeService);
+  private readonly webLlmProvider = inject(WebLlmLocalAiProvider);
+  private readonly browserLocalProvider = inject(BrowserLocalAiProvider);
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
   @Input({ required: true }) set open(value: boolean) {
     this.isOpen.set(value);
     if (value) {
-      this.activeTab.set(this.initialTabValue);
-      this.prepareAlignmentSwitch(this.initialTabValue);
+      const tab = this.availableInitialTab(this.initialTabValue);
+      this.activeTab.set(tab);
+      this.prepareAlignmentSwitch(tab);
     } else {
       this.alignmentSwitchReady.set(false);
     }
@@ -89,8 +110,9 @@ export class AppConfigurationDialogComponent {
   @Input() set initialTab(value: ApplicationConfigurationTab) {
     this.initialTabValue = value;
     if (this.isOpen()) {
-      this.activeTab.set(value);
-      this.prepareAlignmentSwitch(value);
+      const tab = this.availableInitialTab(value);
+      this.activeTab.set(tab);
+      this.prepareAlignmentSwitch(tab);
     }
   }
 
@@ -105,6 +127,9 @@ export class AppConfigurationDialogComponent {
   readonly latexExportConfig = this.configuration.latexExportConfig;
   readonly generalConfig = this.configuration.generalConfig;
   readonly codeTheme = this.configuration.codeHighlightTheme;
+  readonly aiSettings = this.aiSettingsService.settings;
+  readonly localAiStatus = this.webLlmProvider.status;
+  readonly showDevAiConfiguration = this.devModeService.enabled;
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
@@ -115,8 +140,10 @@ export class AppConfigurationDialogComponent {
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
     { id: 'scene', labelKey: 'settingsTabScene', iconPath: iconPaths.scene },
-    { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.latex }
+    { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.latex },
+    { id: 'ai', labelKey: 'ai.settingsTitle', aiIcon: true }
   ];
+  readonly visibleTabs = computed<readonly ConfigurationTabDescriptor[]>(() => this.tabs.filter((tab) => tab.id !== 'ai' || this.showDevAiConfiguration()));
   readonly placementOptions = LATEX_FIGURE_PLACEMENT_OPTIONS;
   readonly alignmentOptions = LATEX_ALIGNMENT_OPTIONS;
   readonly fontSizeOptions = LATEX_FONT_SIZE_OPTIONS;
@@ -127,6 +154,61 @@ export class AppConfigurationDialogComponent {
   readonly minZoomPercent = Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100);
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
+  readonly devModeIconPath = iconPaths.code;
+  readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
+    const localUnavailable = this.localProviderUnavailable();
+    const webLlmUnavailable = this.webLlmUnavailable();
+    const localTone = this.localAiStatusTone();
+    const webLlmTone = this.webLlmStatusTone(this.aiSettings().webLlmModel);
+    return [
+      {
+        value: 'local',
+        label: this.t('ai.providerLocal'),
+        longLabel: this.t('ai.providerLocal'),
+        statusTone: localTone,
+        statusLabel: localUnavailable ? this.t('ai.unavailable') : this.statusLabel(localTone),
+        danger: localUnavailable
+      },
+      {
+        value: 'webllm',
+        label: this.t('ai.providerWebLlm'),
+        longLabel: this.t('ai.providerWebLlm'),
+        statusTone: webLlmTone,
+        statusLabel: webLlmUnavailable ? this.t('ai.unavailable') : this.statusLabel(webLlmTone),
+        danger: webLlmUnavailable
+      },
+      {
+        value: 'remote',
+        label: this.t('ai.providerRemote'),
+        longLabel: this.t('ai.providerRemote'),
+        statusTone: 'available',
+        statusLabel: this.statusLabel('available')
+      }
+    ];
+  });
+  readonly webLlmModelOptions = computed<readonly AppSelectOption[]>(() =>
+    WEB_LLM_MODEL_OPTIONS.map((model) => {
+      const danger = this.webLlmModelUnavailable(model);
+      const statusTone = this.webLlmStatusTone(model);
+      return {
+        value: model,
+        label: model,
+        longLabel: model,
+        statusTone,
+        statusLabel: danger ? this.t('ai.unavailable') : this.statusLabel(statusTone),
+        danger
+      };
+    })
+  );
+  readonly remoteModelOptions = computed<readonly AppSelectOption[]>(() =>
+    REMOTE_AI_MODEL_OPTIONS.map((model) => ({
+      value: model,
+      label: model,
+      longLabel: model,
+      statusTone: 'available',
+      statusLabel: this.statusLabel('available')
+    }))
+  );
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
     { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
@@ -163,6 +245,7 @@ export class AppConfigurationDialogComponent {
       this.preferencesEqual(this.preferences(), defaultPreferences) &&
       this.latexExportConfigEqual(this.latexExportConfig(), DEFAULT_LATEX_EXPORT_CONFIG) &&
       this.generalConfigEqual(this.generalConfig()) &&
+      (!this.showDevAiConfiguration() || this.aiSettingsService.isDefault()) &&
       this.codeTheme() === 'aurora' &&
       this.language() === detectLanguage()
   );
@@ -209,7 +292,8 @@ export class AppConfigurationDialogComponent {
   }
 
   onTabKeydown(event: KeyboardEvent, tab: ApplicationConfigurationTab): void {
-    const currentIndex = this.tabs.findIndex((entry) => entry.id === tab);
+    const tabs = this.visibleTabs();
+    const currentIndex = tabs.findIndex((entry) => entry.id === tab);
     if (currentIndex < 0) {
       return;
     }
@@ -218,22 +302,33 @@ export class AppConfigurationDialogComponent {
       case 'ArrowLeft':
       case 'ArrowUp':
         event.preventDefault();
-        this.selectTab(this.tabs[(currentIndex - 1 + this.tabs.length) % this.tabs.length].id, true);
+        this.selectTab(tabs[(currentIndex - 1 + tabs.length) % tabs.length].id, true);
         break;
       case 'ArrowRight':
       case 'ArrowDown':
         event.preventDefault();
-        this.selectTab(this.tabs[(currentIndex + 1) % this.tabs.length].id, true);
+        this.selectTab(tabs[(currentIndex + 1) % tabs.length].id, true);
         break;
       case 'Home':
         event.preventDefault();
-        this.selectTab(this.tabs[0].id, true);
+        this.selectTab(tabs[0].id, true);
         break;
       case 'End':
         event.preventDefault();
-        this.selectTab(this.tabs[this.tabs.length - 1].id, true);
+        this.selectTab(tabs[tabs.length - 1].id, true);
         break;
     }
+  }
+
+  activeTabIndex(): number {
+    return Math.max(
+      0,
+      this.visibleTabs().findIndex((tab) => tab.id === this.activeTab())
+    );
+  }
+
+  private availableInitialTab(tab: ApplicationConfigurationTab): ApplicationConfigurationTab {
+    return this.visibleTabs().some((entry) => entry.id === tab) ? tab : 'general';
   }
 
   onDialogKeydown(event: KeyboardEvent): void {
@@ -271,6 +366,132 @@ export class AppConfigurationDialogComponent {
 
   updateGeneralBoolean(key: 'showHelpTooltips', checked: boolean): void {
     this.configuration.patchGeneralConfig({ [key]: checked });
+  }
+
+  updateAiTemperature(event: Event): void {
+    const temperature = Number((event.target as HTMLInputElement).value);
+    this.aiSettingsService.patchSettings({ temperature });
+  }
+
+  updateAiMaxTokens(event: Event): void {
+    const maxTokens = Number((event.target as HTMLInputElement).value);
+    this.aiSettingsService.patchSettings({ maxTokens });
+  }
+
+  updateAiWebLlmTimeout(event: Event): void {
+    this.aiSettingsService.patchSettings({ webLlmTimeoutMs: Number((event.target as HTMLInputElement).value) * 1000 });
+  }
+
+  updateAiAutomaticWebLlmTimeout(event: Event): void {
+    this.aiSettingsService.patchSettings({ automaticWebLlmTimeoutMs: Number((event.target as HTMLInputElement).value) * 1000 });
+  }
+
+  updateAiAllowRemoteFallback(checked: boolean): void {
+    this.aiSettingsService.patchSettings({ allowRemoteFallback: checked });
+  }
+
+  updateAiDebugLogs(checked: boolean): void {
+    this.aiSettingsService.patchSettings({ debugLogs: checked });
+  }
+
+  setAiProviderType(value: string): void {
+    if (value === 'local' || value === 'webllm' || value === 'remote') {
+      this.aiSettingsService.patchSettings({ providerType: value satisfies AiProviderType });
+    }
+  }
+
+  setAiWebLlmModel(value: string): void {
+    if (WEB_LLM_MODEL_OPTIONS.includes(value as (typeof WEB_LLM_MODEL_OPTIONS)[number])) {
+      this.aiSettingsService.patchSettings({ webLlmModel: value });
+    }
+  }
+
+  setAiRemoteModel(value: string): void {
+    if (REMOTE_AI_MODEL_OPTIONS.includes(value as (typeof REMOTE_AI_MODEL_OPTIONS)[number])) {
+      this.aiSettingsService.patchSettings({ remoteModel: value });
+    }
+  }
+
+  aiLocalStatusLabel(): string {
+    if (!this.localAiStatus().supported) {
+      return this.t('ai.localUnavailable');
+    }
+
+    if (this.webLlmProvider.isReady(this.aiSettings().webLlmModel)) {
+      return this.t('ai.localReady');
+    }
+
+    if (this.webLlmProvider.isLoading(this.aiSettings().webLlmModel)) {
+      return this.t('ai.localLoading');
+    }
+
+    if (this.localAiStatus().loadingState === 'failed') {
+      return this.t('ai.localUnavailable');
+    }
+
+    return this.t('ai.localNotLoaded');
+  }
+
+  private localProviderUnavailable(): boolean {
+    return !this.browserLocalProvider.supported() && this.webLlmUnavailable();
+  }
+
+  webLlmUnavailable(): boolean {
+    return !this.localAiStatus().supported || this.localAiStatus().loadingState === 'failed';
+  }
+
+  private webLlmModelUnavailable(model: string): boolean {
+    if (!this.localAiStatus().supported) {
+      return true;
+    }
+
+    return this.aiSettings().webLlmModel === model && this.localAiStatus().loadingState === 'failed';
+  }
+
+  private localAiStatusTone(): AppSelectOption['statusTone'] {
+    if (!this.localAiStatus().supported) {
+      return 'unavailable';
+    }
+
+    if (this.webLlmProvider.isReady(this.aiSettings().webLlmModel)) {
+      return 'ready';
+    }
+
+    if (this.webLlmProvider.isLoading(this.aiSettings().webLlmModel)) {
+      return 'loading';
+    }
+
+    return 'available';
+  }
+
+  private webLlmStatusTone(model: string): AppSelectOption['statusTone'] {
+    if (!this.localAiStatus().supported) {
+      return 'unavailable';
+    }
+
+    if (this.webLlmProvider.isReady(model)) {
+      return 'ready';
+    }
+
+    if (this.webLlmProvider.isLoading(model)) {
+      return 'loading';
+    }
+
+    return 'available';
+  }
+
+  statusLabel(statusTone: AppSelectOption['statusTone']): string {
+    switch (statusTone) {
+      case 'ready':
+        return this.t('ai.statusReady');
+      case 'loading':
+        return this.t('ai.statusLoading');
+      case 'unavailable':
+        return this.t('ai.statusUnavailable');
+      case 'available':
+      default:
+        return this.t('ai.statusAvailable');
+    }
   }
 
   openShortcutSettings(): void {
@@ -553,6 +774,7 @@ export class AppConfigurationDialogComponent {
   confirmResetToDefaults(): void {
     this.store.patchPreferences(defaultPreferences);
     this.configuration.resetToDefaults();
+    this.aiSettingsService.resetToDefaults();
     this.languageService.setLanguage(detectLanguage());
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);

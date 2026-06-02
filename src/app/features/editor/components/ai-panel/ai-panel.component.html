@@ -1,0 +1,164 @@
+<section class="ai-panel" (click)="$event.stopPropagation()">
+  @if (devMode()) {
+    <header class="ai-header">
+      <span
+        class="model-pill"
+        [class.model-pill--local]="activeAiMode() === 'local'"
+        [class.model-pill--ready]="aiReady()"
+        [class.model-pill--loading]="webLlmLoading() && !webLlmReady()">
+        <span></span>
+        <strong>{{ aiModeLabelKey() | translate }}</strong>
+        <em>{{ activeModelName() }}</em>
+      </span>
+      <button
+        class="ai-settings-button"
+        type="button"
+        data-tooltip-disabled
+        [attr.aria-label]="'settings' | translate"
+        (click)="settingsRequested.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap.settings"></path>
+        </svg>
+      </button>
+    </header>
+  }
+
+  @if (devMode() && localAiStatus().loadingState === 'loading') {
+    <div class="ai-status-row">
+      <small>{{ localAiStatus().progressText || ('ai.localLoading' | translate) }}</small>
+      <div class="ai-progress" [style.--ai-progress]="localAiStatus().progress">
+        <span></span>
+      </div>
+    </div>
+  }
+
+  <div class="quick-section">
+    <div class="quick-actions">
+      @for (action of quickActions; track action.id) {
+        <button type="button" (click)="useQuickAction(action)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconForAction(action)"></path>
+          </svg>
+          <span>{{ action.labelKey | translate }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div #chatScroll class="ai-chat" aria-live="polite">
+    @for (message of assistantState.messages(); track message.id) {
+      <article class="message" [class.message--user]="message.role === 'user'" [class.message--system]="message.role === 'system'">
+        <p>{{ message.text }}</p>
+        @if (devMode() && message.debugInfo; as debugInfo) {
+          <small class="message__mode">{{ requestDebugLabel(debugInfo) }}</small>
+        }
+        @if (message.response; as response) {
+          @if (devMode() && response.aiMode) {
+            <small class="message__mode">{{ responseDebugLabel(response) }}</small>
+          }
+          @if (response.type === 'scenePatch') {
+            <div class="ai-proposal">
+              <span>{{ patchSummary(response) }}</span>
+            </div>
+          }
+          @if (response.type === 'tikzCode') {
+            <div class="ai-proposal">
+              <span>{{ 'ai.tikzReady' | translate }}</span>
+            </div>
+          }
+        }
+      </article>
+    }
+    @if (assistantState.loading()) {
+      <article class="message message--system message--loading">
+        <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <p>{{ 'ai.loading' | translate }}</p>
+      </article>
+    }
+  </div>
+
+  @if (assistantState.messages().length > 0 || aiPatch.pendingPatch()) {
+    <div class="conversation-actions">
+      @if (aiPatch.pendingPatch()) {
+        <div class="conversation-actions__patch">
+          <button class="patch-action patch-action--accept" type="button" (click)="acceptPendingPatch()">
+            {{ 'ai.apply' | translate }}
+          </button>
+          <button class="patch-action patch-action--reject" type="button" (click)="rejectPendingPatch()">
+            {{ 'cancel' | translate }}
+          </button>
+        </div>
+      }
+      @if (assistantState.messages().length > 0) {
+        <button class="ghost-action" type="button" (click)="resetConversation()">
+          {{ 'ai.resetConversation' | translate }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (assistantState.error()) {
+    <div class="ai-error">{{ assistantState.error() }}</div>
+  }
+
+  @if (pendingChangesDialogOpen()) {
+    <div class="ai-pending-backdrop">
+      <dialog class="ai-pending-dialog" open aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
+        <header>
+          <span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="iconMap.sparkles"></path>
+            </svg>
+          </span>
+          <div>
+            <h3>{{ 'ai.pendingChangesTitle' | translate }}</h3>
+            <p>{{ 'ai.pendingChangesDescription' | translate }}</p>
+          </div>
+        </header>
+        <div class="ai-pending-actions">
+          <button class="patch-action patch-action--accept" type="button" (click)="confirmPendingChangesApply()">
+            {{ 'ai.pendingChangesApply' | translate }}
+          </button>
+          <button class="patch-action patch-action--reject" type="button" (click)="confirmPendingChangesDiscard()">
+            {{ 'ai.pendingChangesDiscard' | translate }}
+          </button>
+          <button class="ghost-action" type="button" (click)="closePendingChangesDialog()">
+            {{ 'cancel' | translate }}
+          </button>
+        </div>
+      </dialog>
+    </div>
+  }
+
+  <form class="composer" (submit)="$event.preventDefault(); submit()">
+    <div class="composer__box">
+      <textarea
+        rows="3"
+        [style.height.px]="composerHeight()"
+        [attr.aria-label]="'ai.placeholder' | translate"
+        [placeholder]="'ai.placeholder' | translate"
+        [value]="assistantState.draft()"
+        (input)="setDraft($any($event.target).value)"
+        (keydown)="handleComposerKeydown($event)"></textarea>
+      <span class="composer__resize-handle" (pointerdown)="startComposerResize($event)" aria-hidden="true"></span>
+      @if (assistantState.loading()) {
+        <button
+          class="composer__stop-button"
+          type="button"
+          (click)="stopGeneration()"
+          [attr.aria-label]="'ai.stopGeneration' | translate"
+          data-tooltip-disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.closeBold"></path>
+          </svg>
+        </button>
+      } @else {
+        <button type="submit" [disabled]="composerDisabled()" [attr.aria-label]="'ai.send' | translate" data-tooltip-disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.send"></path>
+          </svg>
+        </button>
+      }
+    </div>
+  </form>
+</section>

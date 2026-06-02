@@ -6,6 +6,10 @@ export const EDITOR_STORAGE_KEYS = {
   codeTheme: 'tikz-drawer.code-theme',
   latexExportConfig: 'tikz-drawer.latex-export-config',
   generalConfig: 'tikz-drawer.general-config',
+  aiSettings: 'tikz-drawer.ai-settings',
+  aiConversation: 'tikz-drawer.ai-conversation',
+  aiPromptSeen: 'tikz-drawer.ai-prompt-seen',
+  devMode: 'tikz-drawer.dev-mode',
   sidebarSizes: 'tikz-drawer.sidebar-sizes',
   syncState: 'tikz-drawer.sync-state'
 } as const;
@@ -77,7 +81,7 @@ export const EDITOR_CANVAS_MIN_HEIGHT = 320;
 export const EDITOR_VIEWPORT_FALLBACK_WIDTH = 1280;
 export const EDITOR_VIEWPORT_CENTER_EPSILON = 0.0001;
 export const EDITOR_CANVAS_DEFAULT_HEIGHT = 840;
-export const EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT = 320;
+export const EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT = 360;
 export const EDITOR_TEXT_SYMBOL_PALETTE_DEFAULT_MAX_HEIGHT = 320;
 export const EDITOR_MOBILE_BREAKPOINT_PX = 760;
 export const EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX = 1220;
@@ -93,6 +97,10 @@ export const EDITOR_IMAGE_ASPECT_RATIO_EPSILON = 0.01;
 export const EDITOR_IMAGE_INSERT_VIEWPORT_RATIO = 0.52;
 export const EDITOR_IMAGE_INSERT_MIN_RENDERED_LONG_EDGE_PX = 280;
 export const EDITOR_IMAGE_INSERT_MAX_RENDERED_LONG_EDGE_PX = 720;
+export const EDITOR_AI_SELECTION_COLOR = '#7c3aed';
+export const EDITOR_AI_INSERT_MIN_RENDERED_LONG_EDGE_PX = 180;
+export const EDITOR_AI_INSERT_TARGET_RENDERED_LONG_EDGE_PX = 280;
+export const EDITOR_AI_INSERT_MAX_RENDERED_LONG_EDGE_PX = 460;
 export const EDITOR_LINE_ARROW_SCALE_MIN = 0.4;
 export const EDITOR_LINE_ARROW_SCALE_MAX = 4.5;
 export const EDITOR_LINE_ANCHOR_DECIMALS = 3;

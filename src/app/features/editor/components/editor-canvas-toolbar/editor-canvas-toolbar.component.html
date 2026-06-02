@@ -1,19 +1,23 @@
 <div class="canvas-control-group">
-  <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo" [attr.data-tooltip]="'undo' | translate">
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canUndo" [attr.data-tooltip]="'undo' | translate" data-tooltip-enabled>
     <button class="icon-button" type="button" [disabled]="!canUndo" [attr.aria-label]="'undo' | translate" (click)="requestUndo()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="icons.undo"></path>
       </svg>
     </button>
   </span>
-  <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo" [attr.data-tooltip]="'redo' | translate">
+  <span class="canvas-tooltip-target" [class.is-disabled]="!canRedo" [attr.data-tooltip]="'redo' | translate" data-tooltip-enabled>
     <button class="icon-button" type="button" [disabled]="!canRedo" [attr.aria-label]="'redo' | translate" (click)="requestRedo()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="icons.redo"></path>
       </svg>
     </button>
   </span>
-  <span class="canvas-tooltip-target" [class.is-disabled]="viewportCentered" [attr.data-tooltip]="'centerView' | translate">
+  <span
+    class="canvas-tooltip-target"
+    [class.is-disabled]="viewportCentered"
+    [attr.data-tooltip]="'centerView' | translate"
+    data-tooltip-enabled>
     <button
       class="icon-button"
       type="button"
@@ -33,6 +37,7 @@
     type="button"
     [attr.data-tooltip]="'zoomOut' | translate"
     [attr.aria-label]="'zoomOut' | translate"
+    data-tooltip-enabled
     (click)="zoomOut()">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path [attr.d]="icons.zoomOut"></path>
@@ -71,6 +76,7 @@
     type="button"
     [attr.data-tooltip]="'zoomIn' | translate"
     [attr.aria-label]="'zoomIn' | translate"
+    data-tooltip-enabled
     (click)="zoomIn()">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path [attr.d]="icons.zoomIn"></path>

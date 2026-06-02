@@ -5,6 +5,7 @@ import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
   DEFAULT_ARROW_TIP_WIDTH,
+  EDITOR_AI_SELECTION_COLOR,
   DEFAULT_EDITOR_SCALE,
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
@@ -80,9 +81,6 @@ import {
   MIN_TEXT_FONT_SIZE,
   MIN_TEXT_RESIZE_HEIGHT,
   MIN_TEXT_RESIZE_WIDTH,
-  MINIMAP_MIN_IMAGE_DIMENSION,
-  MINIMAP_MIN_RADIUS,
-  MINIMAP_MIN_TEXT_HEIGHT,
   OPACITY_MAX,
   OPACITY_MIN,
   SLIDER_DECIMAL_PLACES,
@@ -116,9 +114,6 @@ import {
   type LineBooleanKey,
   type LineCanvasShape,
   type LineEndpoint,
-  type MinimapOverview,
-  type MinimapRect,
-  type MinimapShape,
   type MultiEditSelectionInfo,
   type NotificationTone,
   type PinchZoomState,
@@ -157,8 +152,13 @@ import { RangeInputCardComponent } from '../range-input-card/range-input-card.co
 import { RegularPolygonDialogComponent } from '../regular-polygon-dialog/regular-polygon-dialog.component';
 import { GraphDialogComponent } from '../graph-dialog/graph-dialog.component';
 import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-search-overlay.component';
+import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
+import { EditorMinimapComponent } from '../editor-minimap/editor-minimap.component';
+import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
+import { AiIntroFlightComponent } from '../ai-intro-flight/ai-intro-flight.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
+import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import { categoryOrder, categoryTranslationKey, type SharedScenePayload } from '../../i18n/editor-page.i18n';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
@@ -209,6 +209,8 @@ import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
+import { EditorDevModeService } from '../../state/editor-dev-mode.service';
+import { ScenePatchService } from '../../ai/scene-patch.service';
 import { DEFAULT_TABLE_DIMENSIONS, type TableDialogState, type TableDimensions, type TableSelectionInfo } from '../../models/table.models';
 import {
   DEFAULT_REGULAR_POLYGON_DIMENSIONS,
@@ -231,10 +233,19 @@ import {
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
 import { EditorConfigurationService } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
-import { arrowMarkerViewportScale, renderedStrokeWidthForScale, zoomScaledArrowStrokeWidth } from '../../utils/editor-arrow.utils';
+import {
+  arrowMarkerFill as arrowMarkerFillUtil,
+  arrowMarkerGeometry as arrowMarkerGeometryUtil,
+  arrowMarkerViewportScale,
+  arrowRenderedHalfWidth as arrowRenderedHalfWidthUtil,
+  arrowRenderedLength as arrowRenderedLengthUtil,
+  arrowTipLength as arrowTipLengthUtil,
+  arrowTipWidth as arrowTipWidthUtil,
+  renderedStrokeWidthForScale,
+  zoomScaledArrowStrokeWidth
+} from '../../utils/editor-arrow.utils';
 import type { ImportDialogResult } from '../../import/import-sources';
 import type {
-  ArrowMarkerGeometry,
   ArrowTipKind,
   CanvasShape,
   EditorSyncMessage,
@@ -291,15 +302,20 @@ import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.uti
     RegularPolygonDialogComponent,
     GraphDialogComponent,
     FigureSearchOverlayComponent,
+    AiPanelComponent,
     ImportReplaceDialogComponent,
+    EditorMinimapComponent,
+    AiSparklesIconComponent,
+    AiIntroFlightComponent,
     AppSelectComponent,
+    BadgeComponent,
     ToggleFieldComponent,
     EditorTranslatePipe
   ],
   templateUrl: './editor-page.component.html',
   styleUrl: './editor-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [EditorStore, EditorConfigurationService],
+  providers: [EditorStore, EditorConfigurationService, ScenePatchService],
   host: {
     '[attr.data-theme]': 'store.preferences().theme',
     '[attr.data-tooltip-disabled]': 'configuration.generalConfig().showHelpTooltips ? null : ""',
@@ -322,6 +338,8 @@ export class EditorPageComponent {
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
+  readonly aiPatch = inject(ScenePatchService);
+  readonly devMode = inject(EditorDevModeService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
   private readonly appThemeService = inject(AppThemeService);
   private readonly document = inject(DOCUMENT);
@@ -386,6 +404,7 @@ export class EditorPageComponent {
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
+  readonly aiSelectionColor = EDITOR_AI_SELECTION_COLOR;
   readonly figureSearchOpen = signal(false);
   readonly figureSearchShortcutLabel = computed(() => this.shortcutLabel('figureSearch'));
   readonly selectedImageFilename = signal('');
@@ -431,7 +450,6 @@ export class EditorPageComponent {
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
   readonly rightSidebarCollapsed = signal(false);
-  readonly minimapPanPointerId = signal<number | null>(null);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
@@ -634,71 +652,6 @@ export class EditorPageComponent {
   readonly sceneContentBounds = computed(() => this.computeBounds(this.scene().shapes));
   readonly xSliderRange = computed(() => this.sliderRange('x'));
   readonly ySliderRange = computed(() => this.sliderRange('y'));
-  readonly minimapFrame = computed(() => {
-    const aspectRatio = this.canvasWidth() / Math.max(this.canvasHeight(), 1);
-    const width = Math.min(240, Math.max(132, Math.round(this.canvasWidth() * 0.12)));
-    const height = Math.min(180, Math.max(96, Math.round(width / Math.max(aspectRatio, 0.35))));
-    return { width, height };
-  });
-  readonly minimapOverview = computed<MinimapOverview | null>(() => {
-    const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) {
-      return null;
-    }
-
-    const visibleBounds = this.visibleWorldBounds();
-    const padding = 1.5;
-    const left = Math.min(sceneBounds.left, visibleBounds.left) - padding;
-    const right = Math.max(sceneBounds.right, visibleBounds.right) + padding;
-    const bottom = Math.min(sceneBounds.bottom, visibleBounds.bottom) - padding;
-    const top = Math.max(sceneBounds.top, visibleBounds.top) + padding;
-    const width = Math.max(right - left, 1);
-    const height = Math.max(top - bottom, 1);
-    const frame = this.minimapFrame();
-    const scaleX = frame.width / width;
-    const scaleY = frame.height / height;
-    const scale = Math.min(scaleX, scaleY);
-    const contentWidth = width * scale;
-    const contentHeight = height * scale;
-    const offsetX = (frame.width - contentWidth) / 2;
-    const offsetY = (frame.height - contentHeight) / 2;
-    const toMapX = (x: number): number => offsetX + (x - left) * scale;
-    const toMapY = (y: number): number => offsetY + (top - y) * scale;
-    const toMapRect = (bounds: SelectionBounds): MinimapRect => ({
-      x: toMapX(bounds.left),
-      y: toMapY(bounds.top),
-      width: Math.max((bounds.right - bounds.left) * scale, 1.6),
-      height: Math.max((bounds.top - bounds.bottom) * scale, 1.6)
-    });
-
-    return {
-      viewBoxWidth: frame.width,
-      viewBoxHeight: frame.height,
-      worldLeft: left,
-      worldTop: top,
-      mapScale: scale,
-      offsetX,
-      offsetY,
-      viewportRect: toMapRect(visibleBounds),
-      shapes: this.scene().shapes.map((shape) => this.toMinimapShape(shape, toMapX, toMapY, scale))
-    };
-  });
-  readonly showMinimap = computed(() => {
-    if (this.mobileLayout() || this.sidebarsOverlayLayout()) {
-      return false;
-    }
-    const sceneBounds = this.sceneContentBounds();
-    if (!sceneBounds) {
-      return false;
-    }
-    const visibleBounds = this.visibleWorldBounds();
-    const sceneFitsInView =
-      sceneBounds.left >= visibleBounds.left &&
-      sceneBounds.right <= visibleBounds.right &&
-      sceneBounds.bottom >= visibleBounds.bottom &&
-      sceneBounds.top <= visibleBounds.top;
-    return !sceneFitsInView || this.preferences().scale > this.defaultScale + 8;
-  });
   readonly effectiveLeftSidebarWidth = computed(() => this.desktopSidebarWidth('left'));
   readonly effectiveRightSidebarWidth = computed(() => this.desktopSidebarWidth('right'));
   readonly effectiveMobileRightSidebarHeight = computed(() => this.rightSidebarHeight());
@@ -829,6 +782,50 @@ export class EditorPageComponent {
     });
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
+  readonly aiSelectionActive = computed(() => {
+    const aiShapeIds = this.aiPatch.pendingAffectedShapeIds();
+    const selectedShapeIds = this.store.selectedShapeIds();
+    return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.includes(shapeId));
+  });
+  readonly aiSelectionBubbleLayout = computed(() => {
+    if (!this.aiSelectionActive() || !this.aiPatch.pendingPatch()) {
+      return null;
+    }
+
+    const bounds = this.selectionBounds();
+    if (!bounds) {
+      return null;
+    }
+
+    const bubbleWidth = 104;
+    const margin = 12;
+    const topGap = 64;
+    const centerX = this.toSvgX((bounds.left + bounds.right) / 2);
+    const top = this.toSvgY(bounds.top);
+    return {
+      left: Math.min(Math.max(centerX - bubbleWidth / 2, margin), Math.max(margin, this.canvasWidth() - bubbleWidth - margin)),
+      top: Math.max(margin, top - topGap),
+      width: bubbleWidth
+    };
+  });
+  readonly aiSelectionIconLayout = computed(() => {
+    if (!this.aiSelectionActive()) {
+      return null;
+    }
+
+    const bounds = this.selectionBounds();
+    if (!bounds) {
+      return null;
+    }
+
+    const size = 22;
+    return {
+      x: this.toSvgX(bounds.right) - size - 6,
+      y: this.toSvgY(bounds.top) - size - 6,
+      size
+    };
+  });
+  readonly aiSelectionStandaloneIconLayout = computed(() => (this.aiSelectionBubbleLayout() ? null : this.aiSelectionIconLayout()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
     const selectedShapes = this.selectedShapes();
     const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
@@ -980,16 +977,20 @@ export class EditorPageComponent {
     };
   });
   readonly insertionPreviewShapes = computed<readonly CanvasShape[]>(() => {
+    const aiPreviewShapes = this.aiPatch.previewShapes();
     const interactionState = this.interactionState();
     if (interactionState?.kind !== 'insert') {
       if (interactionState?.kind === 'freehand') {
         const line = this.buildFreehandLine(interactionState.points, 'preview-freehand');
-        return line ? [line] : [];
+        return line ? [...aiPreviewShapes, line] : aiPreviewShapes;
       }
-      return [];
+      return aiPreviewShapes;
     }
 
-    return this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint);
+    return [
+      ...aiPreviewShapes,
+      ...this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint)
+    ];
   });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
@@ -1047,8 +1048,6 @@ export class EditorPageComponent {
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
   private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
-  private readonly arrowMarkerGeometryCache = new WeakMap<LineShape, ArrowMarkerGeometry>();
-
   constructor() {
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
@@ -1592,6 +1591,11 @@ export class EditorPageComponent {
     });
   }
 
+  openAssistant(): void {
+    this.rightSidebarCollapsed.set(false);
+    this.inspectorTab.set('assistant');
+  }
+
   setLibraryQuery(value: string): void {
     this.libraryQuery.set(value);
   }
@@ -1864,6 +1868,13 @@ export class EditorPageComponent {
   selectSceneShape(shapeId: string): void {
     this.selectShape(shapeId);
     this.centerViewportOnShape(shapeId);
+  }
+
+  handleAiPatchApplied(shapeIds: readonly string[]): void {
+    const firstShapeId = shapeIds[0];
+    if (firstShapeId) {
+      this.centerViewportOnShape(firstShapeId);
+    }
   }
 
   applyScenePreset(presetId: string): void {
@@ -2197,13 +2208,6 @@ export class EditorPageComponent {
 
   handleCopyError(): void {
     this.showNotification(this.t('copyError'), 'warning');
-  }
-
-  startMinimapPan(event: PointerEvent, minimap: MinimapOverview): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.minimapPanPointerId.set(event.pointerId);
-    this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
   }
 
   onShapeClick(event: MouseEvent, shape: CanvasShape): void {
@@ -3073,6 +3077,19 @@ export class EditorPageComponent {
 
   selectionContainsShape(shapeId: string): boolean {
     return selectionContainsShapeUtil(this.selectedShapes(), shapeId);
+  }
+
+  isAiPendingShape(shapeId: string): boolean {
+    return this.aiPatch.pendingAffectedShapeIds().includes(shapeId);
+  }
+
+  applyPendingAiPatchFromCanvas(): void {
+    const changedShapes = this.aiPatch.applyPendingPatch();
+    this.handleAiPatchApplied(changedShapes.map((shape) => shape.id));
+  }
+
+  discardPendingAiPatchFromCanvas(): void {
+    this.aiPatch.discardPendingPatch();
   }
 
   private selectShapeSet(shape: CanvasShape): void {
@@ -4760,6 +4777,20 @@ export class EditorPageComponent {
     }));
   }
 
+  lineArrowHitPath(shape: LineShape, endpoint: LineEndpoint): string | null {
+    const points = this.lineArrowTipHitPoints(shape, endpoint);
+    if (!points) {
+      return null;
+    }
+
+    return `${points
+      .map((point, index) => {
+        const command = index === 0 ? 'M' : 'L';
+        return `${command} ${this.toSvgX(point.x)} ${this.toSvgY(point.y)}`;
+      })
+      .join(' ')} Z`;
+  }
+
   triangleSvgPath(shape: TriangleCanvasShape): string {
     return this.buildTrianglePath(
       shape,
@@ -4898,104 +4929,23 @@ export class EditorPageComponent {
   }
 
   arrowTipLength(shape: LineShape): number {
-    return DEFAULT_ARROW_TIP_LENGTH * shape.arrowLengthScale;
+    return arrowTipLengthUtil(shape);
   }
 
   arrowTipWidth(shape: LineShape): number {
-    return DEFAULT_ARROW_TIP_WIDTH * shape.arrowWidthScale;
+    return arrowTipWidthUtil(shape);
   }
 
   arrowRenderedLength(shape: LineShape): number {
-    return this.arrowTipLength(shape) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
+    return arrowRenderedLengthUtil(shape, this.preferences().scale);
   }
 
   arrowRenderedHalfWidth(shape: LineShape): number {
-    return (this.arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, this.preferences().scale) * shape.arrowScale;
+    return arrowRenderedHalfWidthUtil(shape, this.preferences().scale);
   }
 
-  arrowMarkerGeometry(shape: LineShape): ArrowMarkerGeometry {
-    const cachedGeometry = this.arrowMarkerGeometryCache.get(shape);
-    if (cachedGeometry) {
-      return cachedGeometry;
-    }
-
-    const length = this.arrowTipLength(shape);
-    const width = this.arrowTipWidth(shape);
-    const halfWidth = width / 2;
-    const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
-    const bendsTip = shape.lineMode === 'curved' && shape.arrowBendMode !== 'none';
-    const bendOffset =
-      shape.arrowBendMode === 'flex'
-        ? halfWidth * 0.32
-        : shape.arrowBendMode === 'flex-prime'
-          ? -halfWidth * 0.32
-          : shape.arrowBendMode === 'bend'
-            ? halfWidth * 0.52
-            : 0;
-    const bendControlX = shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46;
-    const curvedOpenTipPath = `M0,0 Q${bendControlX},${Math.max(0.1, halfWidth * 0.18 + bendOffset)} ${length},${halfWidth} Q${bendControlX},${Math.max(0.9, width - halfWidth * 0.18 + bendOffset)} 0,${width}`;
-    const curvedFilledTipPath = `${curvedOpenTipPath} z`;
-    let refX = length;
-    let path = '';
-
-    switch (shape.arrowType) {
-      case 'triangle':
-        path = bendsTip ? curvedFilledTipPath : `M0,0 L0,${width} L${length},${halfWidth} z`;
-        break;
-      case 'latex':
-        path = bendsTip ? curvedOpenTipPath : `M0.2,0.1 L${length},${halfWidth} L0.2,${Math.max(width - 0.1, 0.9)}`;
-        break;
-      case 'stealth':
-        path = `M0.45,${halfWidth} C${length * 0.34},${Math.max(halfWidth * 0.18 + bendOffset, 0.5)} ${length * 0.68},0.1 ${length},${halfWidth} C${length * 0.68},${Math.max(width - 0.1, 0.9)} ${length * 0.34},${Math.max(width - halfWidth * 0.18 + bendOffset, 0.9)} 0.45,${halfWidth} z`;
-        break;
-      case 'diamond':
-        path = `M0,0 L0,${width} L${length},${halfWidth} z`;
-        break;
-      case 'circle':
-        {
-          const radius = Math.max(Math.min(length, width) * 0.32, 1.2);
-          const centerX = Math.max(length - radius - 0.8, radius + 0.8);
-          refX = centerX + radius;
-          path = `M${centerX},${halfWidth - radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth + radius} A${radius},${radius} 0 1 1 ${centerX},${halfWidth - radius} z`;
-        }
-        break;
-      case 'bar':
-        path = `M${length},0 L${length},${width}`;
-        break;
-      case 'hooks':
-        path = `M${length},0.6 C${length * 0.62},0.6 ${length * 0.62},${Math.max(width - 0.6, 0.8)} ${length},${Math.max(width - 0.6, 0.8)} M${length * 0.55},0.6 C${Math.max(length * 0.18, 0.8)},0.6 ${Math.max(length * 0.18, 0.8)},${Math.max(width - 0.6, 0.8)} ${length * 0.55},${Math.max(width - 0.6, 0.8)}`;
-        break;
-      case 'bracket':
-        path = `M${length},0 L${length * 0.5},0 L${length * 0.5},${width} L${length},${width}`;
-        break;
-      case 'kite':
-        path = `M0,${halfWidth} L${length * 0.62},0 L${length},${halfWidth} L${length * 0.62},${width} z`;
-        break;
-      case 'square':
-        {
-          const side = Math.min(length, width);
-          const left = Math.max(length - side, 0);
-          path = `M${left},${halfWidth - side / 2} L${length},${halfWidth - side / 2} L${length},${halfWidth + side / 2} L${left},${halfWidth + side / 2} z`;
-        }
-        break;
-      case 'parenthesis':
-        path = `M${length},0 C${length * 0.55},${width * 0.18} ${length * 0.55},${width * 0.82} ${length},${width}`;
-        break;
-      case 'straight-barb':
-        path = bendsTip ? curvedOpenTipPath : `M0,0 L${length},${halfWidth} L0,${width}`;
-        break;
-    }
-
-    const geometry = {
-      markerWidth: (length + padding * 2) * shape.arrowScale,
-      markerHeight: (width + padding * 2) * shape.arrowScale,
-      viewBox: `${-padding} ${-padding} ${length + padding * 2} ${width + padding * 2}`,
-      refX,
-      refY: halfWidth,
-      path
-    };
-    this.arrowMarkerGeometryCache.set(shape, geometry);
-    return geometry;
+  arrowMarkerGeometry(shape: LineShape) {
+    return arrowMarkerGeometryUtil(shape);
   }
 
   lineEndpointVectors(
@@ -5044,16 +4994,7 @@ export class EditorPageComponent {
   }
 
   arrowMarkerFill(shape: LineShape): string {
-    return shape.arrowOpen ||
-      shape.arrowType === 'latex' ||
-      shape.arrowType === 'diamond' ||
-      shape.arrowType === 'bar' ||
-      shape.arrowType === 'hooks' ||
-      shape.arrowType === 'bracket' ||
-      shape.arrowType === 'parenthesis' ||
-      shape.arrowType === 'straight-barb'
-      ? 'none'
-      : shape.arrowColor;
+    return arrowMarkerFillUtil(shape);
   }
 
   arrowMarkerStrokeLineJoin(shape: LineShape): 'round' | 'miter' {
@@ -5073,25 +5014,20 @@ export class EditorPageComponent {
   }
 
   handleWindowKeydown(event: KeyboardEvent): void {
+    if (this.isDevModeToggleShortcut(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.devMode.toggle();
+      return;
+    }
+
     this.handleModifierKeydown(event);
 
-    if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.openAppConfigurationDialog();
+    if (this.shouldLetBrowserHandleNativeTextShortcut(event)) {
       return;
     }
 
-    if (isFigureSearchShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.openFigureSearch();
-      return;
-    }
-
-    if (isEscapeShortcutKey(event.key)) {
-      event.preventDefault();
-      this.handleEscapeShortcut();
+    if (this.handleWindowDialogShortcut(event)) {
       return;
     }
 
@@ -5135,6 +5071,35 @@ export class EditorPageComponent {
       this.zoomOut();
       return;
     }
+  }
+
+  private handleWindowDialogShortcut(event: KeyboardEvent): boolean {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (isOpenSettingsShortcut(event, shortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openAppConfigurationDialog();
+      return true;
+    }
+
+    if (isFigureSearchShortcut(event, shortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openFigureSearch();
+      return true;
+    }
+
+    if (isEscapeShortcutKey(event.key)) {
+      event.preventDefault();
+      this.handleEscapeShortcut();
+      return true;
+    }
+
+    return false;
+  }
+
+  private isDevModeToggleShortcut(event: KeyboardEvent): boolean {
+    return event.ctrlKey && !event.altKey && !event.metaKey && event.key === 'F12' && !event.repeat;
   }
 
   private handleModifierKeydown(event: KeyboardEvent): void {
@@ -5206,6 +5171,44 @@ export class EditorPageComponent {
       (shortcutEvent) => isUndoShortcut(shortcutEvent, shortcuts),
       () => this.undo()
     );
+  }
+
+  private shouldLetBrowserHandleNativeTextShortcut(event: KeyboardEvent): boolean {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (!isCopyShortcut(event, shortcuts) && !isCutShortcut(event, shortcuts) && !isSelectAllShortcut(event, shortcuts)) {
+      return false;
+    }
+
+    return this.hasNativeTextSelectionInAiPanel() || this.isAiPanelTarget(event.target);
+  }
+
+  private hasNativeTextSelectionInAiPanel(): boolean {
+    const selection = this.document.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0 || !selection.toString()) {
+      return false;
+    }
+
+    for (let index = 0; index < selection.rangeCount; index += 1) {
+      const range = selection.getRangeAt(index);
+      if (
+        this.isAiPanelSelectionNode(range.commonAncestorContainer) ||
+        this.isAiPanelSelectionNode(selection.anchorNode) ||
+        this.isAiPanelSelectionNode(selection.focusNode)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private isAiPanelSelectionNode(node: Node | null): boolean {
+    const element = node instanceof Element ? node : node?.parentElement;
+    return !!element?.closest('.ai-panel');
+  }
+
+  private isAiPanelTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('.ai-panel');
   }
 
   private handleArrowNavigation(event: KeyboardEvent): boolean {
@@ -5395,21 +5398,11 @@ export class EditorPageComponent {
     this.ignoreNextShapeClickId.set(null);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
-    this.minimapPanPointerId.set(null);
     this.mobileLibraryPanelOpen.set(false);
     this.finishInspectorEditHistory();
   }
 
   handleWindowPointerMove(event: PointerEvent): void {
-    const minimapPanPointerId = this.minimapPanPointerId();
-    if (minimapPanPointerId === event.pointerId) {
-      const minimap = this.minimapOverview();
-      if (minimap) {
-        this.updateViewportFromMinimapPointer(event.clientX, event.clientY, minimap);
-      }
-      return;
-    }
-
     const resizeState = this.sidebarResizeState();
     if (!resizeState) {
       return;
@@ -5445,7 +5438,6 @@ export class EditorPageComponent {
     this.sidebarResizeState.set(null);
     this.sidebarResizeMoved = false;
     this.sidebarResizeStartedFromToggle = false;
-    this.minimapPanPointerId.set(null);
   }
 
   handleFocusOut(event: FocusEvent): void {
@@ -5480,6 +5472,10 @@ export class EditorPageComponent {
     }
 
     if (this.configuration.restoreFromStorageEvent(key, newValue)) {
+      return;
+    }
+
+    if (this.devMode.restoreFromStorageEvent(key, newValue)) {
       return;
     }
 
@@ -5810,13 +5806,28 @@ export class EditorPageComponent {
     this.viewportCenter.set({ x: worldX - offsetX / clampedScale, y: worldY - offsetY / clampedScale });
   }
 
-  private centerViewportOnShape(shapeId: string): void {
+  centerViewportOnShape(shapeId: string): void {
     const shape = this.scene().shapes.find((entry) => entry.id === shapeId);
     if (!shape) {
       return;
     }
 
     this.viewportCenter.set(this.shapeCenter(shape));
+  }
+
+  centerViewportOnPendingPatch(): void {
+    const pendingCreatedShapeId = this.aiPatch.pendingCreatedShapeIds()[0];
+    if (pendingCreatedShapeId) {
+      this.centerViewportOnShape(pendingCreatedShapeId);
+      return;
+    }
+
+    const previewShape = this.aiPatch.previewShapes()[0];
+    if (!previewShape) {
+      return;
+    }
+
+    this.viewportCenter.set(this.shapeCenter(previewShape));
   }
 
   private touchDistance(firstTouch: Touch, secondTouch: Touch): number {
@@ -5834,29 +5845,6 @@ export class EditorPageComponent {
       canvasSvg.releasePointerCapture(interactionState.pointerId);
     }
     this.interactionState.set(null);
-  }
-
-  private updateViewportFromMinimapPointer(clientX: number, clientY: number, minimap: MinimapOverview): void {
-    const target = this.document.elementFromPoint(clientX, clientY);
-    if (!(target instanceof SVGElement)) {
-      return;
-    }
-
-    const minimapSvg = target.closest('.minimap__svg');
-    if (!(minimapSvg instanceof SVGSVGElement)) {
-      return;
-    }
-
-    const rect = minimapSvg.getBoundingClientRect();
-    if (!rect.width || !rect.height) {
-      return;
-    }
-
-    const localX = ((clientX - rect.left) / rect.width) * minimap.viewBoxWidth;
-    const localY = ((clientY - rect.top) / rect.height) * minimap.viewBoxHeight;
-    const worldX = minimap.worldLeft + (localX - minimap.offsetX) / minimap.mapScale;
-    const worldY = minimap.worldTop - (localY - minimap.offsetY) / minimap.mapScale;
-    this.viewportCenter.set({ x: worldX, y: worldY });
   }
 
   private toScenePoint(clientX: number, clientY: number): Point {
@@ -6604,7 +6592,7 @@ export class EditorPageComponent {
     return (
       corners.some((corner) => pointInTriangleShapeUtil(shape, corner, tolerance)) ||
       outlinePoints.some((outlinePoint, index) =>
-        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] as Point, bounds)
+        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] ?? outlinePoint, bounds)
       )
     );
   }
@@ -6623,8 +6611,71 @@ export class EditorPageComponent {
       points.slice(0, -1).some((point, index) => {
         const nextPoint = points[index + 1];
         return nextPoint ? this.segmentIntersectsBounds(point, nextPoint, expandedBounds) : false;
-      })
+      }) ||
+      this.lineArrowTipIntersectsBounds(shape, 'from', expandedBounds) ||
+      this.lineArrowTipIntersectsBounds(shape, 'to', expandedBounds)
     );
+  }
+
+  private lineArrowTipIntersectsBounds(shape: LineShape, endpoint: LineEndpoint, bounds: SelectionBounds): boolean {
+    const points = this.lineArrowTipHitPoints(shape, endpoint);
+    if (!points) {
+      return false;
+    }
+
+    const corners = [
+      { x: bounds.left, y: bounds.bottom },
+      { x: bounds.right, y: bounds.bottom },
+      { x: bounds.right, y: bounds.top },
+      { x: bounds.left, y: bounds.top }
+    ];
+
+    return (
+      points.some((point) => this.pointInsideBounds(point, bounds)) ||
+      corners.some((corner) => this.pointInPolygon(corner, points)) ||
+      points.some((point, index) => this.segmentIntersectsBounds(point, points[(index + 1) % points.length] ?? point, bounds))
+    );
+  }
+
+  private lineArrowTipHitPoints(shape: LineShape, endpoint: LineEndpoint): readonly Point[] | null {
+    const showsArrow = endpoint === 'from' ? shape.arrowStart : shape.arrowEnd;
+    if (!showsArrow) {
+      return null;
+    }
+
+    const points = this.linePoints(shape);
+    if (points.length < 2) {
+      return null;
+    }
+
+    const target = endpoint === 'from' ? shape.from : shape.to;
+    const adjacent = endpoint === 'from' ? points[1] : (points.at(-2) ?? shape.from);
+    const deltaX = target.x - adjacent.x;
+    const deltaY = target.y - adjacent.y;
+    const segmentLength = Math.hypot(deltaX, deltaY);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
+      return null;
+    }
+
+    const unit = { x: deltaX / segmentLength, y: deltaY / segmentLength };
+    const normal = { x: -unit.y, y: unit.x };
+    const hitPadding = Math.max(this.lineHitStrokeWidth(shape.strokeWidth) / this.preferences().scale / 2, 0.06);
+    const length = Math.min(this.arrowRenderedLength(shape) / this.preferences().scale + hitPadding, segmentLength * 0.6);
+    const halfWidth = this.arrowRenderedHalfWidth(shape) / this.preferences().scale + hitPadding;
+    const tip = {
+      x: target.x + unit.x * hitPadding,
+      y: target.y + unit.y * hitPadding
+    };
+    const baseCenter = {
+      x: target.x - unit.x * length,
+      y: target.y - unit.y * length
+    };
+
+    return [
+      tip,
+      { x: baseCenter.x + normal.x * halfWidth, y: baseCenter.y + normal.y * halfWidth },
+      { x: baseCenter.x - normal.x * halfWidth, y: baseCenter.y - normal.y * halfWidth }
+    ];
   }
 
   private pointInsideBounds(point: Point, bounds: SelectionBounds): boolean {
@@ -6653,7 +6704,7 @@ export class EditorPageComponent {
       { x: bounds.right, y: bounds.top },
       { x: bounds.left, y: bounds.top }
     ];
-    return corners.some((corner, index) => this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] as Point));
+    return corners.some((corner, index) => this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] ?? corner));
   }
 
   private segmentsIntersect(firstStart: Point, firstEnd: Point, secondStart: Point, secondEnd: Point): boolean {
@@ -6664,6 +6715,26 @@ export class EditorPageComponent {
     const secondDirectionStart = direction(secondStart, secondEnd, firstStart);
     const secondDirectionEnd = direction(secondStart, secondEnd, firstEnd);
     return firstDirectionStart * firstDirectionEnd <= 0 && secondDirectionStart * secondDirectionEnd <= 0;
+  }
+
+  private pointInPolygon(point: Point, polygon: readonly Point[]): boolean {
+    let inside = false;
+    for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index, index += 1) {
+      const current = polygon[index];
+      const previous = polygon[previousIndex];
+      if (!current || !previous) {
+        continue;
+      }
+      const crossesY = current.y > point.y !== previous.y > point.y;
+      if (!crossesY) {
+        continue;
+      }
+      const intersectionX = ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y) + current.x;
+      if (point.x < intersectionX) {
+        inside = !inside;
+      }
+    }
+    return inside;
   }
 
   private computeBounds(shapes: readonly CanvasShape[]): SelectionBounds | null {
@@ -6684,102 +6755,6 @@ export class EditorPageComponent {
 
   private buildLinePath(shape: LineShape, projectPoint: (point: Point) => { readonly x: number; readonly y: number }): string {
     return buildLinePathUtil(shape, projectPoint);
-  }
-
-  private toMinimapShape(shape: CanvasShape, toMapX: (x: number) => number, toMapY: (y: number) => number, scale: number): MinimapShape {
-    const minimapStrokeWidth = (strokeWidth: number): number => Math.min(Math.max(strokeWidth * scale * 0.42, 0.16), 0.95);
-    switch (shape.kind) {
-      case 'line':
-        return {
-          kind: 'line',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
-          path: this.buildLinePath(shape, (point) => ({
-            x: toMapX(point.x),
-            y: toMapY(point.y)
-          }))
-        };
-      case 'rectangle':
-        return {
-          kind: 'rectangle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          x: toMapX(shape.x),
-          y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          rx: Math.max(effectiveRectangleCornerRadiusUtil(shape) * scale, 0.6)
-        };
-      case 'triangle':
-        return {
-          kind: 'triangle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          path: this.buildTrianglePath(
-            shape,
-            (point) => ({
-              x: toMapX(point.x),
-              y: toMapY(point.y)
-            }),
-            effectiveTriangleCornerRadiusUtil(shape) * scale
-          )
-        };
-      case 'circle':
-        return {
-          kind: 'circle',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          cx: toMapX(shape.cx),
-          cy: toMapY(shape.cy),
-          r: Math.max(shape.r * scale, MINIMAP_MIN_RADIUS)
-        };
-      case 'ellipse':
-        return {
-          kind: 'ellipse',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          fill: shape.fill,
-          cx: toMapX(shape.cx),
-          cy: toMapY(shape.cy),
-          rx: Math.max(shape.rx * scale, MINIMAP_MIN_RADIUS),
-          ry: Math.max(shape.ry * scale, MINIMAP_MIN_RADIUS)
-        };
-      case 'text': {
-        const lines = this.displayTextLinesForShape(shape);
-        return {
-          kind: 'text',
-          stroke: 'transparent',
-          strokeWidth: 0,
-          fill: shape.color,
-          fillOpacity: shape.colorOpacity,
-          x: this.textRenderXAt(shape, toMapX, scale),
-          y: toMapY(shape.y),
-          lines,
-          fontSize: Math.max(shape.fontSize * scale, MINIMAP_MIN_TEXT_HEIGHT),
-          textAnchor: this.textAnchor(shape.textAlign),
-          fontWeight: shape.fontWeight,
-          fontStyle: shape.fontStyle,
-          textDecoration: shape.textDecoration,
-          transform: shape.rotation ? `rotate(${shape.rotation} ${toMapX(shape.x)} ${toMapY(shape.y)})` : null
-        };
-      }
-      case 'image':
-        return {
-          kind: 'image',
-          stroke: shape.stroke,
-          strokeWidth: minimapStrokeWidth(shape.strokeWidth),
-          x: toMapX(shape.x),
-          y: toMapY(shape.y + shape.height),
-          width: Math.max(shape.width * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          height: Math.max(shape.height * scale, MINIMAP_MIN_IMAGE_DIMENSION),
-          opacity: shape.strokeOpacity,
-          href: shape.src
-        };
-    }
   }
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {

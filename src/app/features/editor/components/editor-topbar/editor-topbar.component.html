@@ -144,7 +144,9 @@
           class="tool-button"
           type="button"
           [class.is-active]="activeTool() === tool.id"
-          [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          [attr.aria-label]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          [attr.data-tooltip]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+          data-tooltip-enabled
           (click)="activeToolChange.emit(tool.id)">
           <svg
             viewBox="0 0 24 24"
@@ -163,7 +165,9 @@
             class="tool-button tool-button--pinned"
             type="button"
             [class.is-active]="activeTool() === tool.id"
-            [title]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            [attr.aria-label]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            [attr.data-tooltip]="tool.shortcut ? tool.label + ' (' + tool.shortcut + ')' : tool.label"
+            data-tooltip-enabled
             (click)="activeToolChange.emit(tool.id)">
             <svg
               viewBox="0 0 24 24"
@@ -181,6 +185,10 @@
 
   @if (!mobileLayout()) {
     <div class="topbar__right">
+      @if (devMode()) {
+        <app-badge tone="dev" size="sm" [iconPath]="icon('code')">{{ t('devMode') }}</app-badge>
+      }
+
       <sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
         <button slot="trigger" class="language-select language-select--shoelace" type="button" [attr.aria-label]="t('language')">
           <span>{{ languageLabel() }}</span>

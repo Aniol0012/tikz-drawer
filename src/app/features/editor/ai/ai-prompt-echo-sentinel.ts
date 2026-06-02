@@ -1,0 +1,1 @@
+export const AI_PROMPT_ECHO_SENTINEL = '§TD_PROMPT§';

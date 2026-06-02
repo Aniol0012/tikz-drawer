@@ -32,7 +32,9 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/router": "^21.2.14",
     "@angular/service-worker": "^21.2.14",
+    "@mlc-ai/web-llm": "^0.2.84",
     "@shoelace-style/shoelace": "^2.20.1",
+    "firebase": "^12.14.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

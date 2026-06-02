@@ -50,7 +50,14 @@ export class CustomTooltipComponent {
 
   @HostListener('document:pointerover', ['$event'])
   onPointerOver(event: PointerEvent): void {
-    const target = this.tooltipTarget(event.target);
+    const forcedTarget = this.forcedTooltipTarget(event.target);
+    const disabledTarget = forcedTarget ? null : this.disabledTooltipTarget(event.target);
+    if (disabledTarget) {
+      this.suppressTooltip(disabledTarget);
+      return;
+    }
+
+    const target = forcedTarget ?? this.tooltipTarget(event.target);
     if (!target) {
       return;
     }
@@ -76,7 +83,14 @@ export class CustomTooltipComponent {
 
   @HostListener('document:focusin', ['$event'])
   onFocusIn(event: FocusEvent): void {
-    const target = this.tooltipTarget(event.target);
+    const forcedTarget = this.forcedTooltipTarget(event.target);
+    const disabledTarget = forcedTarget ? null : this.disabledTooltipTarget(event.target);
+    if (disabledTarget) {
+      this.suppressTooltip(disabledTarget);
+      return;
+    }
+
+    const target = forcedTarget ?? this.tooltipTarget(event.target);
     if (!target) {
       return;
     }
@@ -132,6 +146,16 @@ export class CustomTooltipComponent {
     }
 
     this.showHandle = setTimeout(show, TOOLTIP_SHOW_DELAY_MS);
+  }
+
+  private suppressTooltip(target: HTMLElement): void {
+    this.clearTimers();
+    this.disconnectMutationObserver();
+    this.clearPositionHandle();
+    this.restoreTitle(this.activeTarget);
+    this.activeTarget = target;
+    this.removeNativeTitle(target);
+    this.tooltip.set(null);
   }
 
   private show(target: HTMLElement): void {
@@ -213,7 +237,7 @@ export class CustomTooltipComponent {
       return null;
     }
 
-    if (target.closest('[data-tooltip-disabled]')) {
+    if (this.disabledTooltipTarget(target)) {
       return null;
     }
 
@@ -232,6 +256,28 @@ export class CustomTooltipComponent {
     }
 
     return this.tooltipText(candidate) ? candidate : null;
+  }
+
+  private forcedTooltipTarget(target: EventTarget | null): HTMLElement | null {
+    if (!(target instanceof Element)) {
+      return null;
+    }
+
+    const candidate = target.closest<HTMLElement>('[data-tooltip-enabled][data-tooltip]');
+    if (!candidate || candidate.closest('app-custom-tooltip')) {
+      return null;
+    }
+
+    return this.tooltipText(candidate) ? candidate : null;
+  }
+
+  private disabledTooltipTarget(target: EventTarget | null): HTMLElement | null {
+    if (!(target instanceof Element)) {
+      return null;
+    }
+
+    const candidate = target.closest<HTMLElement>('[data-tooltip-disabled]');
+    return candidate && !candidate.closest('app-custom-tooltip') ? candidate : null;
   }
 
   private isNativeControlEventTarget(target: EventTarget | null): boolean {

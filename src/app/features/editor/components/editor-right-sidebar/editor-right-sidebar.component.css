@@ -19,7 +19,7 @@
 .sidebar-tabs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin: 10px 10px 0;
   padding: 2px;
@@ -34,7 +34,7 @@
   top: 2px;
   bottom: 2px;
   left: 2px;
-  width: calc((100% - 8px) / 2);
+  width: calc((100% - 12px) / 3);
   border-radius: 8px;
   background: var(--accent-soft);
   transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
@@ -44,26 +44,62 @@
   transform: translateX(calc(100% + 4px));
 }
 
+.sidebar-tabs[data-active-tab='assistant']::before {
+  transform: translateX(calc((100% + 4px) * 2));
+}
+
 .sidebar-tabs button {
   position: relative;
   z-index: 1;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3px, 1.4vw, 6px);
   min-width: 0;
   min-height: 34px;
-  padding: 5px 8px;
+  padding: 5px clamp(3px, 1.5vw, 8px);
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--muted-foreground);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: clamp(0.68rem, 2.7vw, 0.9rem);
   text-align: center;
   line-height: 1.2;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
-  hyphens: manual;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-tabs button svg {
+  flex: 0 1 auto;
+  width: clamp(11px, 3.2vw, 15px);
+  height: clamp(11px, 3.2vw, 15px);
+  min-width: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.sidebar-tabs button app-ai-sparkles-icon {
+  flex: 0 1 auto;
+  width: clamp(11px, 3.2vw, 15px);
+  height: clamp(11px, 3.2vw, 15px);
+  min-width: 0;
+}
+
+.sidebar-tabs button.ai-sparkles-trigger {
+  --ai-sparkles-main: #7c3aed;
+  --ai-sparkles-top: #2563eb;
+  --ai-sparkles-bottom: #a855f7;
+  --ai-sparkles-glow: rgb(124 58 237 / 18%);
+}
+
+.sidebar-tabs button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-tabs button.is-active {
@@ -72,12 +108,19 @@
 }
 
 .sidebar-scroll {
-  display: grid;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   min-height: 0;
   overflow: auto;
   overflow-x: hidden;
   padding: 12px;
+}
+
+.sidebar-scroll > app-ai-panel {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 @media (max-width: 1220px) {
@@ -119,10 +162,14 @@
     transform: translateX(calc(100% + 3px));
   }
 
+  .sidebar-tabs[data-active-tab='assistant']::before {
+    transform: translateX(calc((100% + 3px) * 2));
+  }
+
   .sidebar-tabs button {
     min-height: 28px;
     padding: 3px 6px;
-    font-size: 0.74rem;
+    font-size: clamp(0.62rem, 3vw, 0.74rem);
     line-height: 1.1;
   }
 

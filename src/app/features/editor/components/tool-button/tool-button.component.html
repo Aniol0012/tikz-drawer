@@ -4,7 +4,8 @@
   [class.is-active]="active()"
   [class.is-subtle]="subtle()"
   [attr.aria-label]="label()"
-  [title]="label()"
+  [attr.data-tooltip]="label()"
+  data-tooltip-enabled
   (click)="onPress()">
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path [attr.d]="iconPath()"></path>

@@ -19,8 +19,13 @@
         </button>
       </header>
 
-      <div class="configuration-tabs" role="tablist" [attr.aria-label]="'settings' | translate" [attr.data-active-tab]="activeTab()">
-        @for (tab of tabs; track tab.id) {
+      <div
+        class="configuration-tabs"
+        role="tablist"
+        [attr.aria-label]="'settings' | translate"
+        [style.--configuration-tab-count]="visibleTabs().length"
+        [style.--configuration-active-tab]="activeTabIndex()">
+        @for (tab of visibleTabs(); track tab.id) {
           <button
             #configurationTab
             class="configuration-tab"
@@ -34,10 +39,18 @@
             [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
             (click)="selectTab(tab.id)"
             (keydown)="onTabKeydown($event, tab.id)">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="tab.iconPath"></path>
-            </svg>
-            <span>{{ tab.labelKey | translate }}</span>
+            @if (tab.aiIcon) {
+              <span>{{ tab.labelKey | translate }}</span>
+              <app-ai-sparkles-icon></app-ai-sparkles-icon>
+              <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{
+                'devMode' | translate
+              }}</app-badge>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="tab.iconPath"></path>
+              </svg>
+              <span>{{ tab.labelKey | translate }}</span>
+            }
           </button>
         }
       </div>
@@ -100,6 +113,116 @@
                       <pre class="code-block code-block--theme-preview"><code [innerHTML]="highlightedCodeThemePreview"></code></pre>
                     </div>
                   </div>
+                </section>
+              </div>
+            </section>
+          }
+
+          @case ('ai') {
+            <section id="configuration-panel-ai" class="configuration-panel" role="tabpanel" aria-labelledby="configuration-tab-ai">
+              <div class="configuration-grid configuration-grid--ai">
+                <section class="settings-card settings-card--ai-model">
+                  <div class="settings-card__header">
+                    <h3>{{ 'ai.modelConfiguration' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--ai-model">
+                    <div class="field">
+                      <span>{{ 'ai.providerType' | translate }}</span>
+                      <app-select
+                        [attr.aria-label]="'ai.providerType' | translate"
+                        [value]="aiSettings().providerType"
+                        [options]="aiProviderTypeOptions()"
+                        (valueChange)="setAiProviderType($event)"></app-select>
+                    </div>
+                    <div class="field">
+                      <span>{{ 'ai.localModel' | translate }}</span>
+                      <app-select
+                        [attr.aria-label]="'ai.localModel' | translate"
+                        [value]="aiSettings().webLlmModel"
+                        [options]="webLlmModelOptions()"
+                        (valueChange)="setAiWebLlmModel($event)"></app-select>
+                      <small class="field-status" [class.field-status--danger]="webLlmUnavailable()">{{ aiLocalStatusLabel() }}</small>
+                    </div>
+                    <div class="field">
+                      <span>{{ 'ai.cloudModel' | translate }}</span>
+                      <app-select
+                        [attr.aria-label]="'ai.cloudModel' | translate"
+                        [value]="aiSettings().remoteModel"
+                        [options]="remoteModelOptions()"
+                        (valueChange)="setAiRemoteModel($event)"></app-select>
+                    </div>
+                    <label class="field">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.temperatureTooltip' | translate">{{
+                        'ai.temperature' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="1.2"
+                        step="0.05"
+                        [value]="aiSettings().temperature"
+                        (input)="updateAiTemperature($event)" />
+                    </label>
+                    <label class="field">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.maxTokensTooltip' | translate">{{
+                        'ai.maxTokens' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="250"
+                        max="2000"
+                        step="50"
+                        [value]="aiSettings().maxTokens"
+                        (input)="updateAiMaxTokens($event)" />
+                    </label>
+                    <label class="field">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.webLlmTimeoutTooltip' | translate">{{
+                        'ai.webLlmTimeout' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        step="5"
+                        [value]="aiSettings().webLlmTimeoutMs / 1000"
+                        (input)="updateAiWebLlmTimeout($event)" />
+                    </label>
+                    <label class="field">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'ai.automaticWebLlmTimeoutTooltip' | translate">{{
+                        'ai.automaticWebLlmTimeout' | translate
+                      }}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        step="1"
+                        [value]="aiSettings().automaticWebLlmTimeoutMs / 1000"
+                        (input)="updateAiAutomaticWebLlmTimeout($event)" />
+                    </label>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--ai-flags">
+                  <div class="settings-card__header">
+                    <h3>{{ 'ai.flagsTitle' | translate }}</h3>
+                  </div>
+                  <div class="ai-flag-list">
+                    <app-toggle-field
+                      class="toggle-field--compact"
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'ai.allowRemoteFallbackTooltip' | translate"
+                      [checked]="aiSettings().allowRemoteFallback"
+                      [label]="'ai.allowRemoteFallback' | translate"
+                      (checkedChange)="updateAiAllowRemoteFallback($event)"></app-toggle-field>
+                    <app-toggle-field
+                      class="toggle-field--compact"
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'ai.debugLogsTooltip' | translate"
+                      [checked]="aiSettings().debugLogs"
+                      [label]="'ai.debugLogs' | translate"
+                      (checkedChange)="updateAiDebugLogs($event)"></app-toggle-field>
+                  </div>
+                  <p class="settings-note settings-note--ai">{{ 'ai.settingsDescription' | translate }}</p>
                 </section>
               </div>
             </section>

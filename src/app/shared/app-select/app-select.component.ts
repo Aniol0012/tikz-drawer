@@ -9,7 +9,10 @@ export interface AppSelectOption {
   readonly flagSrc?: string;
   readonly iconPath?: string;
   readonly iconFilled?: boolean;
+  readonly statusTone?: 'ready' | 'loading' | 'unavailable' | 'available';
+  readonly statusLabel?: string;
   readonly disabled?: boolean;
+  readonly danger?: boolean;
 }
 
 @Component({
@@ -26,6 +29,7 @@ export class AppSelectComponent {
   readonly hoist = input(true);
   readonly isOpen = signal(false);
   readonly selectedOption = computed(() => this.options().find((option) => option.value === this.value()) ?? null);
+  readonly selectedStatusColor = computed(() => this.statusColor(this.selectedOption()?.statusTone));
 
   readonly valueChange = output<string>();
 
@@ -33,7 +37,26 @@ export class AppSelectComponent {
     this.valueChange.emit((event.target as HTMLSelectElement).value);
   }
 
+  statusLabel(option: AppSelectOption): string {
+    return option.statusLabel ?? option.longLabel ?? option.label;
+  }
+
   setOpen(open: boolean): void {
     this.isOpen.set(open);
+  }
+
+  statusColor(tone: AppSelectOption['statusTone'] | undefined): string | null {
+    switch (tone) {
+      case 'ready':
+        return '#12a150';
+      case 'loading':
+        return '#f59e0b';
+      case 'unavailable':
+        return '#dc2626';
+      case 'available':
+        return '#2563eb';
+      default:
+        return null;
+    }
   }
 }

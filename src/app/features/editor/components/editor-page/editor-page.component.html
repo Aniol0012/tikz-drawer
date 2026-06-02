@@ -21,6 +21,7 @@
     [defaultToolbarTools]="defaultToolbarTools()"
     [pinnedToolbarTools]="pinnedToolbarTools()"
     [iconMap]="iconMap"
+    [devMode]="devMode.enabled()"
     (sceneNameChange)="onSceneNameInputValue($event)"
     (activeToolChange)="setActiveTool($event)"
     (themeToggle)="toggleTheme()"
@@ -45,6 +46,8 @@
     </div>
   }
 
+  <app-ai-intro-flight></app-ai-intro-flight>
+
   <div class="workspace">
     <app-editor-left-sidebar
       [overlayLayout]="sidebarsOverlayLayout()"
@@ -53,7 +56,7 @@
       <section class="sidebar-block sidebar-block--intro">
         <div class="section-header section-header--static">
           <span>{{ 'library' | translate }}</span>
-          <div class="stat-pill">{{ allInsertablePresets().length }}</div>
+          <app-badge tone="gray" size="sm">{{ allInsertablePresets().length }}</app-badge>
         </div>
         <div class="search-field">
           <button
@@ -273,6 +276,8 @@
         <svg
           #canvasSvg
           class="canvas-surface"
+          [class.has-ai-selection]="aiSelectionActive()"
+          [style.--ai-selection-color]="aiSelectionColor"
           [attr.viewBox]="'0 0 ' + canvasWidth() + ' ' + canvasHeight()"
           (pointermove)="onCanvasPointerMove($event)"
           (pointerup)="endInteraction($event)"
@@ -317,6 +322,7 @@
             <g
               class="shape-layer"
               [class.is-selected]="selectionContainsShape(shape.id)"
+              [class.is-ai-pending]="isAiPendingShape(shape.id)"
               (click)="onShapeClick($event, shape)"
               (keydown.enter)="onShapeKeydown($event, shape)"
               (dblclick)="onShapeDoubleClick($event, shape)"
@@ -371,6 +377,12 @@
                     [attr.d]="lineSvgPath(shape)"
                     [attr.stroke-width]="lineHitStrokeWidth(shape.strokeWidth)"
                     fill="none"></path>
+                  @if (lineArrowHitPath(shape, 'from'); as arrowStartHitPath) {
+                    <path class="line-arrow-hit-target" [attr.d]="arrowStartHitPath"></path>
+                  }
+                  @if (lineArrowHitPath(shape, 'to'); as arrowEndHitPath) {
+                    <path class="line-arrow-hit-target" [attr.d]="arrowEndHitPath"></path>
+                  }
                   <path
                     [attr.d]="lineSvgPath(shape)"
                     [attr.stroke]="shape.stroke"
@@ -662,16 +674,18 @@
           }
 
           @if (lineSelectionPath(); as selectionPath) {
-            <path class="selection-line" [attr.d]="selectionPath"></path>
+            <path class="selection-line" [class.selection-outline--ai]="aiSelectionActive()" [attr.d]="selectionPath"></path>
           } @else if (singleSelectedTriangle(); as triangle) {
             <path
               class="selection-outline selection-outline--shape"
+              [class.selection-outline--ai]="aiSelectionActive()"
               [attr.d]="triangleSvgPath(triangle)"
               [attr.transform]="shapeRotationTransform(triangle)"></path>
           } @else if (selectionOutline(); as outline) {
             <rect
               class="selection-outline"
               [class.selection-outline--interactive]="selectionCount() > 1 && !selectionModifierPressed()"
+              [class.selection-outline--ai]="aiSelectionActive()"
               [attr.x]="outline.x"
               [attr.y]="outline.y"
               [attr.width]="outline.width"
@@ -680,6 +694,19 @@
               [attr.fill]="selectionCount() > 1 ? 'transparent' : null"
               (dblclick)="onSelectionOutlineDoubleClick($event)"
               (pointerdown)="selectionCount() > 1 && startSelectionMove($event)"></rect>
+          }
+
+          @if (aiSelectionStandaloneIconLayout(); as aiIcon) {
+            <svg
+              class="ai-selection-icon"
+              [attr.x]="aiIcon.x"
+              [attr.y]="aiIcon.y"
+              [attr.width]="aiIcon.size"
+              [attr.height]="aiIcon.size"
+              viewBox="0 0 24 24"
+              aria-hidden="true">
+              <path [attr.d]="iconMap.sparkles"></path>
+            </svg>
           }
 
           @if (marqueeBounds(); as marquee) {
@@ -759,6 +786,44 @@
           }
         </svg>
 
+        @if (aiSelectionBubbleLayout(); as aiBubble) {
+          <div
+            class="ai-selection-bubble"
+            [style.left.px]="aiBubble.left"
+            [style.top.px]="aiBubble.top"
+            [style.width.px]="aiBubble.width"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()">
+            <svg class="ai-selection-bubble__shell" viewBox="0 0 104 58" preserveAspectRatio="none" aria-hidden="true">
+              <path
+                d="M22 1 H82 C93.6 1 103 10.4 103 22 C103 33.6 93.6 43 82 43 H60 L52 56 L44 43 H22 C10.4 43 1 33.6 1 22 C1 10.4 10.4 1 22 1 Z"></path>
+            </svg>
+            <span class="ai-selection-bubble__badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path [attr.d]="iconMap.sparkles"></path>
+              </svg>
+            </span>
+            <button
+              class="ai-selection-bubble__button ai-selection-bubble__button--reject"
+              type="button"
+              [attr.aria-label]="'cancel' | translate"
+              (click)="discardPendingAiPatchFromCanvas()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.close"></path>
+              </svg>
+            </button>
+            <button
+              class="ai-selection-bubble__button ai-selection-bubble__button--apply"
+              type="button"
+              [attr.aria-label]="'ai.apply' | translate"
+              (click)="applyPendingAiPatchFromCanvas()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="iconMap.copySuccess"></path>
+              </svg>
+            </button>
+          </div>
+        }
+
         @if (!scene().shapes.length) {
           <div class="canvas-empty">
             <h2>{{ 'startDrawing' | translate }}</h2>
@@ -768,10 +833,21 @@
 
         <div class="canvas-corner canvas-corner--top">
           <button
+            class="canvas-chip canvas-chip--assistant ai-sparkles-trigger"
+            type="button"
+            [attr.aria-label]="'ai.tab' | translate"
+            [attr.data-tooltip]="'ai.tab' | translate"
+            data-tooltip-enabled
+            (pointerdown)="$event.stopPropagation()"
+            (click)="openAssistant(); $event.stopPropagation()">
+            <app-ai-sparkles-icon></app-ai-sparkles-icon>
+          </button>
+          <button
             class="canvas-chip canvas-chip--objects"
             type="button"
-            [title]="'layers' | translate"
             [attr.aria-label]="'layers' | translate"
+            [attr.data-tooltip]="'layers' | translate"
+            data-tooltip-enabled
             (pointerdown)="$event.stopPropagation()"
             (click)="openSceneLayers(); $event.stopPropagation()">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -791,123 +867,16 @@
           (centerRequested)="resetViewport()"
           (scaleRequested)="setCanvasToolbarScale($event)"></app-editor-canvas-toolbar>
 
-        @if (showMinimap() && minimapOverview(); as minimap) {
-          <div
-            class="minimap"
-            [style.width.px]="minimapFrame().width"
-            [style.height.px]="minimapFrame().height"
-            (contextmenu)="$event.preventDefault(); $event.stopPropagation()">
-            <svg
-              class="minimap__svg"
-              [attr.viewBox]="'0 0 ' + minimap.viewBoxWidth + ' ' + minimap.viewBoxHeight"
-              (pointerdown)="startMinimapPan($event, minimap)"
-              aria-hidden="true">
-              @for (shape of minimap.shapes; track $index) {
-                @switch (shape.kind) {
-                  @case ('line') {
-                    <path
-                      class="minimap__shape"
-                      [attr.d]="shape.path"
-                      fill="none"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"
-                      [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
-                  }
-                  @case ('rectangle') {
-                    <rect
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.rx]="shape.rx"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></rect>
-                  }
-                  @case ('triangle') {
-                    <path
-                      class="minimap__shape"
-                      [attr.d]="shape.path"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></path>
-                  }
-                  @case ('circle') {
-                    <circle
-                      class="minimap__shape"
-                      [attr.cx]="shape.cx"
-                      [attr.cy]="shape.cy"
-                      [attr.r]="shape.r"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></circle>
-                  }
-                  @case ('ellipse') {
-                    <ellipse
-                      class="minimap__shape"
-                      [attr.cx]="shape.cx"
-                      [attr.cy]="shape.cy"
-                      [attr.rx]="shape.rx"
-                      [attr.ry]="shape.ry"
-                      [attr.fill]="shape.fill"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></ellipse>
-                  }
-                  @case ('text') {
-                    <text
-                      class="minimap__shape minimap__shape--text"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.fill]="shape.fill"
-                      [attr.fill-opacity]="shape.fillOpacity"
-                      [attr.font-size]="shape.fontSize"
-                      [attr.font-weight]="shape.fontWeight"
-                      [attr.font-style]="shape.fontStyle"
-                      [attr.text-decoration]="shape.textDecoration"
-                      [attr.text-anchor]="shape.textAnchor"
-                      [attr.transform]="shape.transform">
-                      @for (line of shape.lines; track $index) {
-                        <tspan
-                          [attr.x]="shape.x"
-                          [attr.text-anchor]="shape.textAnchor"
-                          [attr.dy]="$index === 0 ? 0 : shape.fontSize * 1.14">
-                          {{ line }}
-                        </tspan>
-                      }
-                    </text>
-                  }
-                  @case ('image') {
-                    <image
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.opacity]="shape.opacity"
-                      [attr.href]="shape.href"
-                      preserveAspectRatio="xMidYMid meet"></image>
-                    <rect
-                      class="minimap__shape"
-                      [attr.x]="shape.x"
-                      [attr.y]="shape.y"
-                      [attr.width]="shape.width"
-                      [attr.height]="shape.height"
-                      [attr.fill]="'none'"
-                      [attr.stroke]="shape.stroke"
-                      [attr.stroke-width]="shape.strokeWidth"></rect>
-                  }
-                }
-              }
-              <rect
-                class="minimap__viewport"
-                [attr.x]="minimap.viewportRect.x"
-                [attr.y]="minimap.viewportRect.y"
-                [attr.width]="minimap.viewportRect.width"
-                [attr.height]="minimap.viewportRect.height"></rect>
-            </svg>
-          </div>
-        }
+        <app-editor-minimap
+          [shapes]="scene().shapes"
+          [visibleBounds]="visibleWorldBounds()"
+          [canvasWidth]="canvasWidth()"
+          [canvasHeight]="canvasHeight()"
+          [scale]="preferences().scale"
+          [defaultScale]="defaultScale"
+          [mobileLayout]="mobileLayout()"
+          [overlayLayout]="sidebarsOverlayLayout()"
+          (viewportCenterChange)="viewportCenter.set($event)"></app-editor-minimap>
       </div>
     </section>
 
@@ -1204,6 +1173,7 @@
                               [class.arrow-tip-button--filled]="arrowTipIconFilled(arrowType.id)"
                               [title]="arrowTipLabel(arrowType.id)"
                               [attr.aria-label]="arrowTipLabel(arrowType.id)"
+                              data-tooltip-disabled
                               (click)="setLineArrowType(arrowType.id)">
                               <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path [attr.d]="arrowTipIconPath(arrowType.id)"></path>
@@ -2964,6 +2934,8 @@
             <div class="empty-panel">{{ 'noneSelected' | translate }}</div>
           }
         </section>
+      } @else if (inspectorTab() === 'assistant') {
+        <app-ai-panel (patchApplied)="handleAiPatchApplied($event)" (settingsRequested)="openAppConfigurationDialog('ai')"></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">
           <div class="scene-layers-header">

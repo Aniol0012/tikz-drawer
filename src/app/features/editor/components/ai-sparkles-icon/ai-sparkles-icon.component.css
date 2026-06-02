@@ -1,0 +1,193 @@
+:host {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 1em;
+  height: 1em;
+  color: var(--ai-sparkles-main, #7c3aed);
+  line-height: 0;
+}
+
+:host::before {
+  content: '';
+  position: absolute;
+  inset: -22%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 34%, color-mix(in srgb, var(--ai-sparkles-top, #2563eb) 34%, transparent), transparent 36%),
+    radial-gradient(circle at 68% 64%, color-mix(in srgb, var(--ai-sparkles-bottom, #a855f7) 28%, transparent), transparent 40%);
+  opacity: 0;
+  transform: scale(0.72);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.ai-sparkles-icon {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 9%));
+  transform-origin: 50% 50%;
+  animation: ai-sparkles-idle-orbit 2.7s ease-in-out infinite;
+  transition:
+    filter 160ms ease,
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ai-sparkles-icon__sparkle {
+  stroke: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ai-sparkles-idle-pulse 2.7s ease-in-out infinite;
+  transition: fill 160ms ease;
+}
+
+.ai-sparkles-icon__sparkle--top {
+  animation-delay: 360ms;
+  fill: var(--ai-sparkles-top, #2563eb);
+}
+
+.ai-sparkles-icon__sparkle--bottom {
+  animation-delay: 720ms;
+  fill: var(--ai-sparkles-bottom, #a855f7);
+}
+
+.ai-sparkles-icon__sparkle--main {
+  fill: var(--ai-sparkles-main, #7c3aed);
+}
+
+:host(:hover) .ai-sparkles-icon,
+:host-context(button:hover) .ai-sparkles-icon,
+:host-context(button:focus-visible) .ai-sparkles-icon,
+:host-context([role='button']:hover) .ai-sparkles-icon,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon {
+  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 10%)) drop-shadow(0 0 7px var(--ai-sparkles-glow, rgb(124 58 237 / 20%)));
+  animation: ai-sparkles-orbit 980ms ease-in-out infinite;
+}
+
+:host(:hover)::before,
+:host-context(button:hover)::before,
+:host-context(button:focus-visible)::before,
+:host-context([role='button']:hover)::before,
+:host-context([role='button']:focus-visible)::before {
+  opacity: 1;
+  animation: ai-sparkles-halo 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+:host(:hover) .ai-sparkles-icon__sparkle--main,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--main,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--main,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--main,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--main {
+  animation: ai-sparkles-main-pulse 980ms ease-in-out infinite;
+}
+
+:host(:hover) .ai-sparkles-icon__sparkle--top,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--top,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--top,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--top,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--top,
+:host(:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context(button:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context(button:focus-visible) .ai-sparkles-icon__sparkle--bottom,
+:host-context([role='button']:hover) .ai-sparkles-icon__sparkle--bottom,
+:host-context([role='button']:focus-visible) .ai-sparkles-icon__sparkle--bottom {
+  animation: ai-sparkles-small-drift 980ms ease-in-out infinite;
+}
+
+:host(:active) .ai-sparkles-icon,
+:host-context(button:active) .ai-sparkles-icon,
+:host-context([role='button']:active) .ai-sparkles-icon {
+  transform: scale(0.88) rotate(4deg);
+}
+
+@keyframes ai-sparkles-orbit {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+
+  32% {
+    transform: translate3d(0.8px, -1px, 0) rotate(-7deg) scale(1.08);
+  }
+
+  64% {
+    transform: translate3d(-0.7px, 0.6px, 0) rotate(4deg) scale(1.04);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes ai-sparkles-idle-orbit {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(0.35px, -0.45px, 0) rotate(-2deg);
+  }
+}
+
+@keyframes ai-sparkles-idle-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+@keyframes ai-sparkles-halo {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.72);
+  }
+
+  34% {
+    opacity: 1;
+    transform: translate3d(0.6px, -0.6px, 0) scale(1.05);
+  }
+
+  100% {
+    opacity: 0.72;
+    transform: translate3d(0, 0, 0) scale(0.96);
+  }
+}
+
+@keyframes ai-sparkles-main-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  48% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes ai-sparkles-small-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+
+  48% {
+    transform: translate3d(0.75px, -0.75px, 0) scale(1.2) rotate(12deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-sparkles-icon,
+  .ai-sparkles-icon__sparkle,
+  :host::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
