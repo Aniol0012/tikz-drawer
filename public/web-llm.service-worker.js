@@ -1,6 +1,7 @@
 import { ServiceWorkerMLCEngineHandler } from './web-llm/index.js';
 
-new ServiceWorkerMLCEngineHandler();
+const webLlmServiceWorkerHandler = new ServiceWorkerMLCEngineHandler();
+self.webLlmServiceWorkerHandler = webLlmServiceWorkerHandler;
 
 self.addEventListener('install', () => {
   self.skipWaiting();
