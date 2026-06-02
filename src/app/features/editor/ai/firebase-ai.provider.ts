@@ -44,7 +44,7 @@ export class FirebaseAiProvider {
   }
 
   private initializeAnalytics(): void {
-    void isAnalyticsSupported().then((supported) => {
+    isAnalyticsSupported().then((supported) => {
       if (supported) {
         getAnalytics(this.app);
       }

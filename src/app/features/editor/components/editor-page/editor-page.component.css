@@ -1492,13 +1492,13 @@ kbd {
 
 :host-context([data-theme='dark']) .ai-selection-bubble__button--apply {
   background: color-mix(in srgb, #16a34a 18%, #111827);
-  color: #22c55e;
+  color: #bbf7d0;
 }
 
 :host-context([data-theme='dark']) .ai-selection-bubble__button--apply:hover {
   border-color: color-mix(in srgb, #22c55e 34%, transparent);
   background: color-mix(in srgb, #16a34a 26%, #111827);
-  color: #bbf7d0;
+  color: #dcfce7;
 }
 
 .selection-handle {
@@ -1610,7 +1610,7 @@ kbd {
   pointer-events: auto;
 }
 
-.canvas-chip {
+.canvas-corner .canvas-chip {
   min-height: 32px;
   padding: 0 10px;
   background: color-mix(in srgb, var(--panel-background) 95%, transparent);

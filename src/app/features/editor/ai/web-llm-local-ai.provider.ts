@@ -30,7 +30,7 @@ export function preloadWebLlmLocalAi(): void {
   }
 
   preloadStarted = true;
-  void ensureEngine(preloadModelName()).catch((error) => logWebLlm('preload:failed', { error: errorMessage(error) }));
+  preloadEngine(preloadModelName(), 'preload:failed');
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,7 +48,7 @@ export class WebLlmLocalAiProvider {
       const modelName = this.aiSettingsService.settings().webLlmModel;
       if (this.status().supported && this.autoRequestedModel !== modelName) {
         this.autoRequestedModel = modelName;
-        void ensureEngine(modelName).catch((error) => logWebLlm('settings-preload:failed', { error: errorMessage(error) }));
+        preloadEngine(modelName, 'settings-preload:failed');
       }
     });
   }
@@ -113,8 +113,7 @@ async function generateWithInterruptingTimeout(
   const abortHandler = () => {
     aborted = true;
     logWebLlm('generate:abort-interrupt', {});
-    void engine.interruptGenerate();
-    void engine.resetChat();
+    interruptGeneration(engine);
   };
   const startedAt = performance.now();
   if (abortSignal?.aborted) {
@@ -139,8 +138,7 @@ async function generateWithInterruptingTimeout(
     timeoutId = globalThis.setTimeout(() => {
       timedOut = true;
       logWebLlm('generate:timeout-interrupt', { timeoutMs });
-      void engine.interruptGenerate();
-      void engine.resetChat();
+      interruptGeneration(engine);
       reject(new Error('ai.errorWebLlmTimeout'));
     }, timeoutMs);
   });
@@ -157,6 +155,15 @@ async function generateWithInterruptingTimeout(
       generation.catch((error) => logWebLlm('generate:interrupted', { error: error instanceof Error ? error.message : String(error) }));
     }
   }
+}
+
+function preloadEngine(modelName: string, failureEvent: string): void {
+  ensureEngine(modelName).catch((error) => logWebLlm(failureEvent, { error: errorMessage(error) }));
+}
+
+function interruptGeneration(engine: MLCEngineInterface): void {
+  engine.interruptGenerate();
+  engine.resetChat().catch((error) => logWebLlm('generate:reset-failed', { error: errorMessage(error) }));
 }
 
 async function generateStreamingResponse(

@@ -140,11 +140,11 @@ export class AiInstructionIntentService {
   }
 
   private termPattern(term: string): RegExp {
-    return new RegExp(`(^|[^\\p{L}\\p{N}_])${this.escapeRegExp(term)}(?=$|[^\\p{L}\\p{N}_])`, 'u');
+    return new RegExp(String.raw`(^|[^\p{L}\p{N}_])${this.escapeRegExp(term)}(?=$|[^\p{L}\p{N}_])`, 'u');
   }
 
   private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
   }
 
   private normalizeConversationInput(instruction: string): string {

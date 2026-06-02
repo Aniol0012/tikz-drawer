@@ -5027,23 +5027,7 @@ export class EditorPageComponent {
       return;
     }
 
-    if (isOpenSettingsShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.openAppConfigurationDialog();
-      return;
-    }
-
-    if (isFigureSearchShortcut(event, this.configuration.generalConfig().keyboardShortcuts)) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.openFigureSearch();
-      return;
-    }
-
-    if (isEscapeShortcutKey(event.key)) {
-      event.preventDefault();
-      this.handleEscapeShortcut();
+    if (this.handleWindowDialogShortcut(event)) {
       return;
     }
 
@@ -5087,6 +5071,31 @@ export class EditorPageComponent {
       this.zoomOut();
       return;
     }
+  }
+
+  private handleWindowDialogShortcut(event: KeyboardEvent): boolean {
+    const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (isOpenSettingsShortcut(event, shortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openAppConfigurationDialog();
+      return true;
+    }
+
+    if (isFigureSearchShortcut(event, shortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openFigureSearch();
+      return true;
+    }
+
+    if (isEscapeShortcutKey(event.key)) {
+      event.preventDefault();
+      this.handleEscapeShortcut();
+      return true;
+    }
+
+    return false;
   }
 
   private isDevModeToggleShortcut(event: KeyboardEvent): boolean {
@@ -6583,7 +6592,7 @@ export class EditorPageComponent {
     return (
       corners.some((corner) => pointInTriangleShapeUtil(shape, corner, tolerance)) ||
       outlinePoints.some((outlinePoint, index) =>
-        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] as Point, bounds)
+        this.segmentIntersectsBounds(outlinePoint, outlinePoints[(index + 1) % outlinePoints.length] ?? outlinePoint, bounds)
       )
     );
   }
@@ -6624,7 +6633,7 @@ export class EditorPageComponent {
     return (
       points.some((point) => this.pointInsideBounds(point, bounds)) ||
       corners.some((corner) => this.pointInPolygon(corner, points)) ||
-      points.some((point, index) => this.segmentIntersectsBounds(point, points[(index + 1) % points.length] as Point, bounds))
+      points.some((point, index) => this.segmentIntersectsBounds(point, points[(index + 1) % points.length] ?? point, bounds))
     );
   }
 
@@ -6695,7 +6704,7 @@ export class EditorPageComponent {
       { x: bounds.right, y: bounds.top },
       { x: bounds.left, y: bounds.top }
     ];
-    return corners.some((corner, index) => this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] as Point));
+    return corners.some((corner, index) => this.segmentsIntersect(start, end, corner, corners[(index + 1) % corners.length] ?? corner));
   }
 
   private segmentsIntersect(firstStart: Point, firstEnd: Point, secondStart: Point, secondEnd: Point): boolean {
@@ -6711,8 +6720,11 @@ export class EditorPageComponent {
   private pointInPolygon(point: Point, polygon: readonly Point[]): boolean {
     let inside = false;
     for (let index = 0, previousIndex = polygon.length - 1; index < polygon.length; previousIndex = index, index += 1) {
-      const current = polygon[index] as Point;
-      const previous = polygon[previousIndex] as Point;
+      const current = polygon[index];
+      const previous = polygon[previousIndex];
+      if (!current || !previous) {
+        continue;
+      }
       const crossesY = current.y > point.y !== previous.y > point.y;
       if (!crossesY) {
         continue;

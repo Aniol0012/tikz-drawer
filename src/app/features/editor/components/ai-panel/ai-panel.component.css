@@ -532,10 +532,12 @@
   display: grid;
   gap: 14px;
   width: min(100%, 390px);
+  margin: 0;
   padding: 16px;
   border: 1px solid color-mix(in srgb, #7c3aed 34%, var(--ai-line));
   border-radius: 14px;
   background: var(--panel-background);
+  color: inherit;
   box-shadow: 0 18px 44px color-mix(in srgb, var(--foreground) 18%, transparent);
 }
 

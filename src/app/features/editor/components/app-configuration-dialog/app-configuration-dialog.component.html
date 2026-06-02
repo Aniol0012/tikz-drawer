@@ -126,28 +126,31 @@
                     <h3>{{ 'ai.modelConfiguration' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--ai-model">
-                    <label class="field">
+                    <div class="field">
                       <span>{{ 'ai.providerType' | translate }}</span>
                       <app-select
+                        [attr.aria-label]="'ai.providerType' | translate"
                         [value]="aiSettings().providerType"
                         [options]="aiProviderTypeOptions()"
                         (valueChange)="setAiProviderType($event)"></app-select>
-                    </label>
-                    <label class="field">
+                    </div>
+                    <div class="field">
                       <span>{{ 'ai.localModel' | translate }}</span>
                       <app-select
+                        [attr.aria-label]="'ai.localModel' | translate"
                         [value]="aiSettings().webLlmModel"
                         [options]="webLlmModelOptions()"
                         (valueChange)="setAiWebLlmModel($event)"></app-select>
                       <small class="field-status" [class.field-status--danger]="webLlmUnavailable()">{{ aiLocalStatusLabel() }}</small>
-                    </label>
-                    <label class="field">
+                    </div>
+                    <div class="field">
                       <span>{{ 'ai.cloudModel' | translate }}</span>
                       <app-select
+                        [attr.aria-label]="'ai.cloudModel' | translate"
                         [value]="aiSettings().remoteModel"
                         [options]="remoteModelOptions()"
                         (valueChange)="setAiRemoteModel($event)"></app-select>
-                    </label>
+                    </div>
                     <label class="field">
                       <span data-tooltip-enabled [attr.data-tooltip]="'ai.temperatureTooltip' | translate">{{
                         'ai.temperature' | translate

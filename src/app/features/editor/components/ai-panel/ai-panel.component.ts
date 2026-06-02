@@ -1,6 +1,15 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject, signal, viewChild } from '@angular/core';
-import type { AfterViewInit } from '@angular/core';
-import type { ElementRef } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Output,
+  computed,
+  inject,
+  signal,
+  viewChild,
+  type AfterViewInit,
+  type ElementRef
+} from '@angular/core';
 import { iconPaths } from '../../config/editor-icons';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
@@ -136,14 +145,14 @@ export class AiPanelComponent implements AfterViewInit {
       this.composerHeight.set(Math.min(maxHeight, Math.max(minHeight, nextHeight)));
     };
     const stopResize = () => {
-      window.removeEventListener('pointermove', resize);
-      window.removeEventListener('pointerup', stopResize);
-      window.removeEventListener('pointercancel', stopResize);
+      globalThis.removeEventListener('pointermove', resize);
+      globalThis.removeEventListener('pointerup', stopResize);
+      globalThis.removeEventListener('pointercancel', stopResize);
     };
 
-    window.addEventListener('pointermove', resize);
-    window.addEventListener('pointerup', stopResize, { once: true });
-    window.addEventListener('pointercancel', stopResize, { once: true });
+    globalThis.addEventListener('pointermove', resize);
+    globalThis.addEventListener('pointerup', stopResize, { once: true });
+    globalThis.addEventListener('pointercancel', stopResize, { once: true });
   }
 
   async submit(): Promise<void> {

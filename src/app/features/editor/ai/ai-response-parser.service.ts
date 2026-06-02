@@ -4,8 +4,8 @@ import { translate } from '../i18n/editor-page.i18n';
 import type { AiResponse, AiResponseParseStatus, ScenePatch } from './ai-message.model';
 import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
 
-const TECHNICAL_ELEMENT_DUMP_PATTERN =
-  /^\s*-\s*(?:id[:=][^;\n]+(?:;|\s)+.*\bkind[:=]|kind[:=][^;\n]+(?:;|\s)+.*\bid[:=])(?:rectangle|circle|ellipse|line|text|triangle)?/im;
+const TECHNICAL_ELEMENT_DUMP_WITH_ID_BEFORE_KIND_PATTERN = /^\s*-\s*id[:=][^;\n]+(?:;|\s)+.*\bkind[:=]/im;
+const TECHNICAL_ELEMENT_DUMP_WITH_KIND_BEFORE_ID_PATTERN = /^\s*-\s*kind[:=][^;\n]+(?:;|\s)+.*\bid[:=]/im;
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
@@ -31,8 +31,7 @@ export class AiResponseParserService {
     const hasPatchChanges = patch.create.length > 0 || patch.update.length > 0 || patch.remove.length > 0;
     const tikzCode = this.firstString(responseCandidate, ['tikzCode', 'tikz', 'latex', 'code']);
     const message = this.firstString(responseCandidate, ['message', 'text', 'answer', 'content', 'response', 'explanation']);
-    const type =
-      responseCandidate.type === 'scenePatch' || hasPatchChanges ? 'scenePatch' : responseCandidate.type === 'tikzCode' || tikzCode ? 'tikzCode' : 'message';
+    const type = this.responseType(responseCandidate, hasPatchChanges, tikzCode);
     const parseStatus = this.responseParseStatus(responseCandidate, parsedResult.status, message, hasPatchChanges, tikzCode);
     const fallbackMessage = this.languageService?.t('ai.errorUnclearResponse') ?? translate('en', 'ai.errorUnclearResponse');
 
@@ -135,20 +134,32 @@ export class AiResponseParserService {
         continue;
       }
 
-      if (character === '{' || character === '[') {
-        stack.push(character);
-      } else if (character === '}' || character === ']') {
-        stack.pop();
-        if (!stack.length) {
-          return jsonText.slice(firstBrace, index + 1);
-        }
+      const balancedJson = this.consumeJsonBracket(character, stack, jsonText, firstBrace, index);
+      if (balancedJson) {
+        return balancedJson;
       }
     }
 
-    return `${jsonText.slice(firstBrace)}${stack
+    const closingBrackets = stack
       .reverse()
       .map((character) => (character === '[' ? ']' : '}'))
-      .join('')}`;
+      .join('');
+
+    return `${jsonText.slice(firstBrace)}${closingBrackets}`;
+  }
+
+  private consumeJsonBracket(character: string, stack: string[], jsonText: string, firstBrace: number, index: number): string | null {
+    if (character === '{' || character === '[') {
+      stack.push(character);
+      return null;
+    }
+
+    if (character !== '}' && character !== ']') {
+      return null;
+    }
+
+    stack.pop();
+    return stack.length ? null : jsonText.slice(firstBrace, index + 1);
   }
 
   private normalizePatch(patch: unknown): ScenePatch {
@@ -315,7 +326,7 @@ export class AiResponseParserService {
   }
 
   private technicalElementDump(text: string): boolean {
-    return TECHNICAL_ELEMENT_DUMP_PATTERN.test(text) && /\b(?:geometry|style|strokeWidth|stroke|fill)[:=]/i.test(text);
+    return this.technicalElementDumpLine(text) && /\b(?:geometry|style|strokeWidth|stroke|fill)[:=]/i.test(text);
   }
 
   private malformedTechnicalJson(text: string): boolean {
@@ -335,10 +346,26 @@ export class AiResponseParserService {
   }
 
   private lineStartsWith(text: string, term: string): boolean {
-    return new RegExp(`^\\s*${this.escapeRegExp(term)}\\s*:`, 'im').test(text);
+    return new RegExp(String.raw`^\s*${this.escapeRegExp(term)}\s*:`, 'im').test(text);
   }
 
   private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+  }
+
+  private responseType(candidate: Record<string, unknown>, hasPatchChanges: boolean, tikzCode: string | undefined): AiResponse['type'] {
+    if (candidate['type'] === 'scenePatch' || hasPatchChanges) {
+      return 'scenePatch';
+    }
+
+    if (candidate['type'] === 'tikzCode' || tikzCode) {
+      return 'tikzCode';
+    }
+
+    return 'message';
+  }
+
+  private technicalElementDumpLine(text: string): boolean {
+    return TECHNICAL_ELEMENT_DUMP_WITH_ID_BEFORE_KIND_PATTERN.test(text) || TECHNICAL_ELEMENT_DUMP_WITH_KIND_BEFORE_ID_PATTERN.test(text);
   }
 }

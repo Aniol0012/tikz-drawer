@@ -47,22 +47,16 @@
 
 .ai-sparkles-icon__sparkle--top {
   animation-delay: 360ms;
-}
-
-.ai-sparkles-icon__sparkle--bottom {
-  animation-delay: 720ms;
-}
-
-.ai-sparkles-icon__sparkle--main {
-  fill: var(--ai-sparkles-main, #7c3aed);
-}
-
-.ai-sparkles-icon__sparkle--top {
   fill: var(--ai-sparkles-top, #2563eb);
 }
 
 .ai-sparkles-icon__sparkle--bottom {
+  animation-delay: 720ms;
   fill: var(--ai-sparkles-bottom, #a855f7);
+}
+
+.ai-sparkles-icon__sparkle--main {
+  fill: var(--ai-sparkles-main, #7c3aed);
 }
 
 :host(:hover) .ai-sparkles-icon,

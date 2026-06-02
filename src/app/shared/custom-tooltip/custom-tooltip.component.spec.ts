@@ -1,6 +1,5 @@
 import '@angular/compiler';
-import { Component } from '@angular/core';
-import { ɵresolveComponentResources as resolveComponentResources } from '@angular/core';
+import { Component, ɵresolveComponentResources as resolveComponentResources } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';

@@ -26,6 +26,21 @@ export const arrowRenderedLength = (shape: LineShape, scale: number): number =>
 export const arrowRenderedHalfWidth = (shape: LineShape, scale: number): number =>
   (arrowTipWidth(shape) / 2) * zoomScaledArrowStrokeWidth(shape.strokeWidth, scale) * shape.arrowScale;
 
+const arrowBendOffset = (shape: LineShape, halfWidth: number): number => {
+  switch (shape.arrowBendMode) {
+    case 'flex':
+      return halfWidth * 0.32;
+    case 'flex-prime':
+      return -halfWidth * 0.32;
+    case 'bend':
+      return halfWidth * 0.52;
+    case 'none':
+      return 0;
+  }
+};
+
+const arrowBendControlX = (shape: LineShape, length: number): number => (shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46);
+
 export const arrowMarkerFill = (shape: LineShape): string =>
   shape.arrowOpen ||
   shape.arrowType === 'latex' ||
@@ -44,15 +59,8 @@ export const arrowMarkerGeometry = (shape: LineShape): ArrowMarkerGeometry => {
   const halfWidth = width / 2;
   const padding = shape.arrowType === 'latex' ? 1.6 : 1.25;
   const bendsTip = shape.lineMode === 'curved' && shape.arrowBendMode !== 'none';
-  const bendOffset =
-    shape.arrowBendMode === 'flex'
-      ? halfWidth * 0.32
-      : shape.arrowBendMode === 'flex-prime'
-        ? -halfWidth * 0.32
-        : shape.arrowBendMode === 'bend'
-          ? halfWidth * 0.52
-          : 0;
-  const bendControlX = shape.arrowBendMode === 'bend' ? length * 0.72 : length * 0.46;
+  const bendOffset = arrowBendOffset(shape, halfWidth);
+  const bendControlX = arrowBendControlX(shape, length);
   const curvedOpenTipPath = `M0,0 Q${bendControlX},${Math.max(0.1, halfWidth * 0.18 + bendOffset)} ${length},${halfWidth} Q${bendControlX},${Math.max(0.9, width - halfWidth * 0.18 + bendOffset)} 0,${width}`;
   const curvedFilledTipPath = `${curvedOpenTipPath} z`;
   let refX = length;

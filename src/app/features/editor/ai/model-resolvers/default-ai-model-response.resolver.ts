@@ -267,7 +267,7 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   private summarizeElements(elements: ReturnType<typeof mutableElements>): string {
-    const counts = new Map<string, number>();
+    const counts = new Map<CanvasShape['kind'], number>();
     for (const element of elements) {
       counts.set(element.kind, (counts.get(element.kind) ?? 0) + 1);
     }

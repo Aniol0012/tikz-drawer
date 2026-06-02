@@ -231,7 +231,7 @@ export class ColorRangeRandomizerService {
   }
 
   private isNaturalRange(value: string): value is AiColorRange {
-    return Object.prototype.hasOwnProperty.call(NATURAL_COLOR_RANGES, value);
+    return Object.hasOwn(NATURAL_COLOR_RANGES, value);
   }
 
   private defaultSaturationRange(range: AiColorRange): readonly [number, number] {

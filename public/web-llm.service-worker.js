@@ -1,12 +1,12 @@
 import { ServiceWorkerMLCEngineHandler } from './web-llm/index.js';
 
 const webLlmServiceWorkerHandler = new ServiceWorkerMLCEngineHandler();
-self.webLlmServiceWorkerHandler = webLlmServiceWorkerHandler;
+globalThis.webLlmServiceWorkerHandler = webLlmServiceWorkerHandler;
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
+globalThis.addEventListener('install', () => {
+  globalThis.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+globalThis.addEventListener('activate', (event) => {
+  event.waitUntil(globalThis.clients.claim());
 });

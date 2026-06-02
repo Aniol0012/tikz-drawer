@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_EDITOR_SCALE } from '../../constants/editor.constants';
 import { ARROW_TIP_OPTIONS } from '../../config/arrow-tip.config';
-import type { ArrowTipKind, LineShape } from '../../models/tikz.models';
+import type { LineShape } from '../../models/tikz.models';
 import { arrowMarkerGeometry } from '../../utils/editor-arrow.utils';
 import { EditorMinimapComponent } from './editor-minimap.component';
 
@@ -118,7 +118,7 @@ describe('EditorMinimapComponent', () => {
     const fixture = TestBed.createComponent(EditorMinimapHostComponent);
     configureFixture(fixture, shapes);
 
-    const arrowPaths = Array.from(fixture.nativeElement.querySelectorAll('path[transform]')) as SVGPathElement[];
+    const arrowPaths = Array.from(fixture.nativeElement.querySelectorAll<SVGPathElement>('path[transform]'));
     expect(arrowPaths).toHaveLength(ARROW_TIP_OPTIONS.length);
     expect(new Set(arrowPaths.map((path) => path.getAttribute('d'))).size).toBeGreaterThan(8);
     for (const [index, option] of ARROW_TIP_OPTIONS.entries()) {

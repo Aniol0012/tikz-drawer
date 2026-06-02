@@ -102,8 +102,8 @@
   }
 
   @if (pendingChangesDialogOpen()) {
-    <div class="ai-pending-backdrop" role="presentation">
-      <section class="ai-pending-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
+    <div class="ai-pending-backdrop">
+      <dialog class="ai-pending-dialog" open aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
         <header>
           <span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -126,7 +126,7 @@
             {{ 'cancel' | translate }}
           </button>
         </div>
-      </section>
+      </dialog>
     </div>
   }
 
