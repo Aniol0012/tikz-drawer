@@ -11,6 +11,7 @@ import type {
   TikzScene
 } from '../models/tikz.models';
 import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH, DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
+import type { NamedNode, ParseContext, ParsedNode, TikzBasis } from './tikz.parser.types';
 
 const defaultSceneBounds = {
   width: 960,
@@ -43,31 +44,6 @@ const POINTS_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s
 const ARROW_BEND_PATTERN = new RegExp(String.raw`[[,]\s*bend(?:\s*[,}\]])`, 'i');
 const ARROW_FLEX_PRIME_PATTERN = new RegExp(String.raw`flex'\s*(?:=|[,}\]])`, 'i');
 const ARROW_FLEX_PATTERN = new RegExp(String.raw`flex\s*(?:=|[,}\]])`, 'i');
-
-interface ParsedNode {
-  readonly name: string | null;
-  readonly styles: string | undefined;
-  readonly point: string | null;
-  readonly text: string;
-}
-
-interface NamedNode {
-  readonly center: Point;
-  readonly width: number;
-  readonly height: number;
-}
-
-interface TikzBasis {
-  readonly x: Point;
-  readonly y: Point;
-  readonly z: Point;
-}
-
-interface ParseContext {
-  readonly styles: Record<string, Record<string, string>>;
-  readonly nodes: Map<string, NamedNode>;
-  readonly basis: TikzBasis;
-}
 
 const createId = (): string => crypto.randomUUID();
 

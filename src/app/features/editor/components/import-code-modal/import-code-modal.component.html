@@ -68,7 +68,10 @@
                   </svg>
                 </button>
               }
-              <label class="file-icon-button">
+              <label
+                class="file-icon-button"
+                [attr.aria-label]="'import.chooseFileAria' | translate"
+                [attr.title]="'import.chooseFileAria' | translate">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="uploadIconPath"></path>
                 </svg>

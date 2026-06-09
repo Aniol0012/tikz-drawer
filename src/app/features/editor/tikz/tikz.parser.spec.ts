@@ -272,30 +272,97 @@ cluster/.style={draw, rounded corners=8pt, thick, inner sep=0.35cm, fill=gray!8}
     expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed')).toBe(true);
   });
 
+  it('imports state machines with transition labels and relative note nodes', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+font=\small,
+state/.style={circle, draw, thick, minimum size=1.8cm, align=center, blur shadow, fill=white},
+finalstate/.style={circle, draw, double, double distance=1.2pt, thick, minimum size=1.8cm, align=center, blur shadow, fill=white},
+transition/.style={-{Latex[length=2.5mm]}, thick},
+condition/.style={midway, fill=white, inner sep=1.5pt, font=\scriptsize}
+]
+\node[state] (created) at (0,0) {Created};
+\node[state] (validated) at (3.2,1.6) {Validated};
+\node[state] (pending) at (6.4,0) {Pending\\Execution};
+\node[state] (executed) at (9.6,1.6) {Executed};
+\node[finalstate] (closed) at (12.8,0) {Closed};
+\node[state] (rejected) at (3.2,-2.4) {Rejected};
+\node[state] (cancelled) at (8.0,-2.4) {Cancelled};
+\draw[transition] (created) -- (validated) node[condition, above left] {valid data};
+\draw[transition] (validated) -- (pending) node[condition, above right] {confirmed};
+\draw[transition] (pending) -- (executed) node[condition, above left] {processed};
+\draw[transition] (executed) -- (closed) node[condition, above right] {balanced};
+\draw[transition] (created) -- (rejected) node[condition, left] {invalid};
+\draw[transition] (validated) -- (rejected) node[condition, right] {rule error};
+\draw[transition] (pending) -- (cancelled) node[condition, right] {manual stop};
+\draw[transition] (cancelled) -- (closed) node[condition, below right] {resolved};
+\draw[transition] (rejected) to[out=160,in=220,looseness=1.3] (created) node[condition, left] {fix};
+\draw[transition] (pending) to[out=130,in=50,looseness=1.1] (validated) node[condition, above] {reopen};
+\draw[transition, dashed] (executed) to[out=-120,in=-40] (pending) node[condition, below] {rollback};
+\node[draw, rounded corners=2pt, thick, align=left, fill=gray!8, below=1.0cm of cancelled, text width=8.5cm] {
+  \textbf{Rule:} only validated entities can be executed. Rollback is available only before final closure.
+};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(7);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(11);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Pending\nExecution')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'valid data')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text.includes('only validated entities'))).toBe(true);
+  });
+
   it('imports isometric cuboid diagrams with projected 3D coordinates and cuboid helpers', () => {
     const result = parseTikz(String.raw`\begin{tikzpicture}[
 font=\small,
 x={(1cm,0cm)},
 y={(0.45cm,0.28cm)},
 z={(0cm,1cm)},
+block/.style={draw, thick, fill=gray!12},
 edge/.style={thick, draw},
 arrow/.style={-{Latex[length=2.4mm]}, thick}
 ]
 \newcommand{\cuboid}[5]{
   \coordinate (#1-A) at #2;
+  \coordinate (#1-B) at ($(#1-A)+(#3,0,0)$);
+  \coordinate (#1-C) at ($(#1-A)+(#3,#4,0)$);
+  \coordinate (#1-D) at ($(#1-A)+(0,#4,0)$);
+  \coordinate (#1-E) at ($(#1-A)+(0,0,#5)$);
+  \coordinate (#1-F) at ($(#1-A)+(#3,0,#5)$);
+  \coordinate (#1-G) at ($(#1-A)+(#3,#4,#5)$);
+  \coordinate (#1-H) at ($(#1-A)+(0,#4,#5)$);
+  \filldraw[block, fill=gray!10] (#1-A) -- (#1-B) -- (#1-C) -- (#1-D) -- cycle;
+  \filldraw[block, fill=gray!18] (#1-D) -- (#1-C) -- (#1-G) -- (#1-H) -- cycle;
+  \filldraw[block, fill=gray!25] (#1-A) -- (#1-D) -- (#1-H) -- (#1-E) -- cycle;
+  \filldraw[block, fill=gray!32] (#1-E) -- (#1-F) -- (#1-G) -- (#1-H) -- cycle;
+  \draw[edge] (#1-A) -- (#1-B) -- (#1-C) -- (#1-G) -- (#1-F) -- (#1-B);
+  \draw[edge] (#1-A) -- (#1-D) -- (#1-H) -- (#1-G);
+  \draw[edge] (#1-A) -- (#1-E) -- (#1-F);
 }
 \cuboid{core}{(0,0,0)}{3.2}{2.2}{1.0}
 \cuboid{api}{(4.4,0.2,0)}{2.8}{2.0}{1.4}
+\cuboid{db}{(8.4,0.0,0)}{2.6}{2.3}{1.8}
+\cuboid{cache}{(4.8,3.2,0)}{2.4}{1.6}{1.1}
+\cuboid{queue}{(8.5,3.0,0)}{2.4}{1.7}{1.2}
 \node at ($(core-E)!0.5!(core-G)+(0,0,0.15)$) {Domain Core};
+\node at ($(api-E)!0.5!(api-G)+(0,0,0.15)$) {API Layer};
+\node at ($(db-E)!0.5!(db-G)+(0,0,0.15)$) {Database};
+\node at ($(cache-E)!0.5!(cache-G)+(0,0,0.15)$) {Cache};
+\node at ($(queue-E)!0.5!(queue-G)+(0,0,0.15)$) {Queue};
 \draw[arrow] ($(core-B)!0.5!(core-C)+(0,0,0.7)$) -- ($(api-A)!0.5!(api-D)+(0,0,0.8)$);
+\draw[arrow] ($(api-B)!0.5!(api-C)+(0,0,0.9)$) -- ($(db-A)!0.5!(db-D)+(0,0,1.0)$);
+\draw[arrow] ($(api-D)!0.5!(api-C)+(0,0,1.0)$) -- ($(cache-A)!0.5!(cache-B)+(0,0,0.7)$);
+\draw[arrow] ($(cache-B)!0.5!(cache-C)+(0,0,0.7)$) -- ($(queue-A)!0.5!(queue-D)+(0,0,0.8)$);
+\draw[arrow, dashed] ($(queue-B)!0.5!(queue-C)+(0,0,0.8)$) -- ($(db-D)!0.5!(db-C)+(0,0,1.1)$);
 \draw[decorate, decoration={brace, amplitude=5pt}, thick]
   (-0.2,-0.4,0) -- (11.4,-0.4,0)
   node[midway, below=0.35cm] {Execution pipeline};
 \end{tikzpicture}`);
 
     expect(result.warnings).toHaveLength(0);
-    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(26);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line').length).toBeGreaterThanOrEqual(66);
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Domain Core')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Database')).toBe(true);
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Execution pipeline')).toBe(true);
   });
 });
