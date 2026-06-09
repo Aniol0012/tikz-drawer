@@ -4371,10 +4371,7 @@ export class EditorPageComponent {
   }
 
   private resizePointerOffset(handle: ResizeHandle, pointerPoint: Point, selectedShape: CanvasShape | null = this.selectedShape()): Point {
-    if (
-      (selectedShape?.kind === 'rectangle' || selectedShape?.kind === 'triangle') &&
-      handle.startsWith('corner-radius-')
-    ) {
+    if ((selectedShape?.kind === 'rectangle' || selectedShape?.kind === 'triangle') && handle.startsWith('corner-radius-')) {
       const localHandlePoint = cornerRadiusHandlePointUtil(selectedShape, handle);
       if (localHandlePoint) {
         const center = this.shapeCenter(selectedShape);
