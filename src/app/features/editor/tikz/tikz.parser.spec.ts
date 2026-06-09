@@ -365,4 +365,95 @@ arrow/.style={-{Latex[length=2.4mm]}, thick}
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Database')).toBe(true);
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Execution pipeline')).toBe(true);
   });
+
+  it('imports service architecture diagrams with implicit and relative nodes', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+font=\sffamily\small,
+node distance=8mm and 12mm,
+box/.style={draw, rounded corners=2pt, thick, fill=white, minimum width=31mm, minimum height=9mm, align=center},
+store/.style={draw, cylinder, shape border rotate=90, aspect=0.25, thick, fill=gray!10, minimum height=12mm, minimum width=16mm, align=center},
+bus/.style={draw, rounded corners=2pt, thick, fill=gray!12, minimum width=105mm, minimum height=10mm, align=center},
+arr/.style={-{Latex[length=2.4mm]}, thick},
+darr/.style={-{Latex[length=2.4mm]}, thick, dashed}
+]
+\node[box] (ui) {Web UI};
+\node[box, right=of ui] (api) {REST API};
+\node[box, right=of api] (svc) {Application\\Service};
+\node[box, right=of svc] (domain) {Domain\\Model};
+\node[bus, below=14mm of api, xshift=26mm] (bus) {Event bus / command dispatcher};
+\node[store, below=16mm of ui] (cache) {Cache};
+\node[store, below=16mm of svc] (db) {SQL\\DB};
+\node[box, below=16mm of domain] (worker) {Async\\Worker};
+\draw[arr] (ui) -- (api);
+\draw[arr] (api) -- (svc);
+\draw[arr] (svc) -- (domain);
+\draw[arr] (svc) -- (db);
+\draw[darr] (api) -- (cache);
+\draw[arr] (domain) |- (bus);
+\draw[arr] (bus) -| (worker);
+\draw[arr] (worker) -- (db);
+\draw[darr] (worker.east) to[out=15,in=-35] (domain.east);
+\begin{scope}[on background layer]
+\node[draw, rounded corners=5pt, thick, fill=gray!5, fit=(ui)(api)(svc)(domain), inner sep=6mm, label={[font=\bfseries]above:Synchronous path}] {};
+\node[draw, rounded corners=5pt, thick, fill=gray!3, fit=(cache)(db)(worker)(bus), inner sep=6mm, label={[font=\bfseries]below:Persistence and asynchronous side effects}] {};
+\end{scope}
+\end{tikzpicture}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'rectangle').length).toBeGreaterThanOrEqual(10);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(9);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.anchors.length === 1)).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Application\nService')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Synchronous path')).toBe(true);
+  });
+
+  it('imports circular process diagrams with foreach loops and polar coordinates', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+font=\sffamily\small,
+phase/.style={draw, circle, thick, minimum size=17mm, align=center, fill=white, blur shadow},
+arr/.style={-{Latex[length=2.2mm]}, thick},
+note/.style={draw, rounded corners=2pt, fill=gray!8, align=center, font=\scriptsize, inner sep=3pt}
+]
+\def\r{3.0}
+\foreach \name/\angle/\text in {
+    n1/90/Plan,
+    n2/30/Build,
+    n3/-30/Test,
+    n4/-90/Deploy,
+    n5/-150/Monitor,
+    n6/150/Improve
+}{
+    \node[phase] (\name) at (\angle:\r) {\text};
+}
+\foreach \a/\b in {
+    n1/n2,
+    n2/n3,
+    n3/n4,
+    n4/n5,
+    n5/n6,
+    n6/n1
+}{
+    \draw[arr] (\a) to[bend left=13] (\b);
+}
+\node[note] (center) at (0,0) {Iterative\\release cycle};
+\draw[arr, dashed] (center) -- (n1);
+\draw[arr, dashed] (center) -- (n3);
+\draw[arr, dashed] (center) -- (n5);
+\draw[decorate, decoration={brace, amplitude=5pt}, thick]
+    ($(n2.north east)+(0.15,0.15)$) --
+    ($(n3.south east)+(0.15,-0.15)$)
+    node[midway, right=7pt, font=\scriptsize, align=left] {Delivery\\risk};
+\draw[decorate, decoration={brace, mirror, amplitude=5pt}, thick]
+    ($(n5.south west)+(-0.15,-0.15)$) --
+    ($(n6.north west)+(-0.15,0.15)$)
+    node[midway, left=7pt, font=\scriptsize, align=right] {Feedback\\loop};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(6);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(11);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Plan')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Delivery\nrisk')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Feedback\nloop')).toBe(true);
+  });
 });
