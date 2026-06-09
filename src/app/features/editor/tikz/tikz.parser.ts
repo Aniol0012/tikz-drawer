@@ -295,7 +295,12 @@ const resolveStyleMap = (raw: string | undefined, context?: ParseContext): Recor
   };
 };
 
-const extractBalanced = (source: string, startIndex: number, opening: string, closing: string): { readonly value: string; readonly endIndex: number } | null => {
+const extractBalanced = (
+  source: string,
+  startIndex: number,
+  opening: string,
+  closing: string
+): { readonly value: string; readonly endIndex: number } | null => {
   if (source[startIndex] !== opening) {
     return null;
   }
@@ -376,7 +381,10 @@ const stripNewCommandBlocks = (source: string): string => {
       break;
     }
 
-    const bodyStart = nextSource.indexOf('{', nextSource.indexOf(']', commandIndex) >= 0 ? nextSource.indexOf(']', commandIndex) : commandIndex + String.raw`\newcommand`.length);
+    const bodyStart = nextSource.indexOf(
+      '{',
+      nextSource.indexOf(']', commandIndex) >= 0 ? nextSource.indexOf(']', commandIndex) : commandIndex + String.raw`\newcommand`.length
+    );
     if (bodyStart < 0) {
       break;
     }
@@ -589,7 +597,10 @@ const anchorPointForNode = (node: NamedNode, anchor: string): Point => {
 };
 
 const parseNamedAnchorPoint = (value: string, context: ParseContext): Point | null => {
-  const normalized = value.trim().replace(/^\((.*)\)$/, '$1').trim();
+  const normalized = value
+    .trim()
+    .replace(/^\((.*)\)$/, '$1')
+    .trim();
   const match = /^([A-Za-z][\w-]*)(?:\.([A-Za-z ]+))?$/.exec(normalized);
   if (!match) {
     return null;
@@ -976,11 +987,7 @@ const textAlignFromAnchor = (anchor: string): TextShape['textAlign'] => {
   return 'center';
 };
 
-const readOptionalBalanced = (
-  source: string,
-  opening: string,
-  closing: string
-): { readonly value: string | undefined; readonly rest: string } => {
+const readOptionalBalanced = (source: string, opening: string, closing: string): { readonly value: string | undefined; readonly rest: string } => {
   const trimmed = source.trimStart();
   if (!trimmed.startsWith(opening)) {
     return { value: undefined, rest: trimmed };
@@ -1096,7 +1103,10 @@ const nodeFontSizeFromStyles = (styles: Record<string, string>, scale: number): 
   return DEFAULT_TEXT_FONT_SIZE * scale;
 };
 
-const fitBoundsFromStyles = (styles: Record<string, string>, context: ParseContext): { readonly center: Point; readonly width: number; readonly height: number } | null => {
+const fitBoundsFromStyles = (
+  styles: Record<string, string>,
+  context: ParseContext
+): { readonly center: Point; readonly width: number; readonly height: number } | null => {
   const rawFit = styles['fit'];
   if (!rawFit) {
     return null;
@@ -1149,7 +1159,11 @@ const centerFromAnchoredPoint = (point: Point, size: { readonly width: number; r
   };
 };
 
-const nodeCenterFromStyles = (styles: Record<string, string>, context: ParseContext, size: { readonly width: number; readonly height: number }): Point | null => {
+const nodeCenterFromStyles = (
+  styles: Record<string, string>,
+  context: ParseContext,
+  size: { readonly width: number; readonly height: number }
+): Point | null => {
   for (const direction of ['below', 'above', 'right', 'left'] as const) {
     const raw = styles[direction];
     const match = /^(?:(?<distance>-?\d+(?:\.\d+)?\s*(?:cm|mm|pt|in)?)\s+)?of\s+(?<node>[A-Za-z][\w-]*)$/i.exec(raw ?? '');
@@ -1191,7 +1205,9 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
   const textContent = parseTextNodeContent(parsedNode.text);
   const fittedBounds = fitBoundsFromStyles(styles, context);
   const size = fittedBounds ? { width: fittedBounds.width, height: fittedBounds.height } : nodeSizeFromStyles(styles);
-  const rawPoint = parsedNode.point ? parseCoordinateExpression(parsedNode.point, context) : fittedBounds?.center ?? nodeCenterFromStyles(styles, context, size);
+  const rawPoint = parsedNode.point
+    ? parseCoordinateExpression(parsedNode.point, context)
+    : (fittedBounds?.center ?? nodeCenterFromStyles(styles, context, size));
 
   if (!rawPoint) {
     return null;
@@ -1222,7 +1238,9 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
 
   const shapes: CanvasShape[] = [];
   const hasCircle = styles['circle'] === 'true';
-  const hasVisualNode = Boolean(styles['draw'] || styles['fill'] || styles['minimum width'] || styles['minimum height'] || styles['minimum size'] || styles['fit']);
+  const hasVisualNode = Boolean(
+    styles['draw'] || styles['fill'] || styles['minimum width'] || styles['minimum height'] || styles['minimum size'] || styles['fit']
+  );
   if (hasCircle) {
     const radius = Math.max(size.width, size.height) / 2;
     shapes.push({
@@ -1430,7 +1448,8 @@ const parseCuboidInvocation = (line: string, context: ParseContext): readonly Ca
   }
 
   const styles = resolveStyleMap('edge', context);
-  const edge = (from: keyof typeof points, to: keyof typeof points): LineShape => createImportedLine(styles, points[from], points[to], [], 'straight', `${name} edge`);
+  const edge = (from: keyof typeof points, to: keyof typeof points): LineShape =>
+    createImportedLine(styles, points[from], points[to], [], 'straight', `${name} edge`);
   return [
     edge('A', 'B'),
     edge('B', 'C'),
@@ -1521,7 +1540,9 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
       stroke: 'none',
       strokeOpacity: 1,
       strokeWidth: 0,
-      x: (from.x + to.x) / 2 + (nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0),
+      x:
+        (from.x + to.x) / 2 +
+        (nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0),
       y: (from.y + to.y) / 2,
       text: textContent.text,
       textBox: textContent.text.includes('\n'),

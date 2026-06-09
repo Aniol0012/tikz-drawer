@@ -87,31 +87,31 @@
         </div>
 
         @if (sourceKind() !== 'tikz' && sourceKind() !== 'mermaid') {
-        <div class="file-row">
-          <label class="file-drop">
-            <span class="file-drop__text">
-              <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
-              <small>{{ selectedSourceOption().helperKey | translate }}</small>
-            </span>
-            <input
-              #importFileInput
-              type="file"
-              [attr.accept]="selectedSourceOption().accept"
-              [attr.aria-label]="'import.chooseFileAria' | translate"
-              (change)="onFileSelected($event)" />
-          </label>
-          @if (fileName()) {
-            <button
-              class="file-clear-button"
-              type="button"
-              [attr.aria-label]="'import.clearFile' | translate"
-              (click)="clearSelectedFile()">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="trashIconPath"></path>
-              </svg>
-            </button>
-          }
-        </div>
+          <div class="file-row">
+            <label class="file-drop">
+              <span class="file-drop__text">
+                <strong>{{ fileName() || (filePlaceholderKey() | translate) }}</strong>
+                <small>{{ selectedSourceOption().helperKey | translate }}</small>
+              </span>
+              <input
+                #importFileInput
+                type="file"
+                [attr.accept]="selectedSourceOption().accept"
+                [attr.aria-label]="'import.chooseFileAria' | translate"
+                (change)="onFileSelected($event)" />
+            </label>
+            @if (fileName()) {
+              <button
+                class="file-clear-button"
+                type="button"
+                [attr.aria-label]="'import.clearFile' | translate"
+                (click)="clearSelectedFile()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="trashIconPath"></path>
+                </svg>
+              </button>
+            }
+          </div>
         }
 
         @if (sourceKind() === 'tex' && texDiagrams().length) {
