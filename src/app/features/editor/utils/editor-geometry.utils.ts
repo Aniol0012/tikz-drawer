@@ -577,6 +577,51 @@ export const cornerRadiusFromPointer = (shape: RoundedCornerCanvasShape, handle:
   return Math.max(0, Math.min(maxRadius, insets.horizontal, insets.vertical));
 };
 
+export const cornerRadiusHandlePoint = (shape: RoundedCornerCanvasShape, handle: ResizeHandle, radius = shape.cornerRadius): Point | null => {
+  if (shape.kind === 'triangle') {
+    const cornerIndex = triangleCornerIndexFromHandle(handle);
+    if (cornerIndex === null) {
+      return null;
+    }
+
+    const corners = trianglePoints(shape);
+    const corner = corners[cornerIndex];
+    const previous = corners[(cornerIndex - 1 + corners.length) % corners.length];
+    const next = corners[(cornerIndex + 1) % corners.length];
+    const toPrevious = normalizeVector(previous.x - corner.x, previous.y - corner.y);
+    const toNext = normalizeVector(next.x - corner.x, next.y - corner.y);
+    const bisector = normalizeVector(toPrevious.x + toNext.x, toPrevious.y + toNext.y);
+    if (Math.hypot(bisector.x, bisector.y) <= GEOMETRY_EPSILON) {
+      return null;
+    }
+
+    const clampedRadius = clamp(radius, 0, maxTriangleCornerRadius(shape));
+    return {
+      x: corner.x + bisector.x * clampedRadius,
+      y: corner.y + bisector.y * clampedRadius
+    };
+  }
+
+  const maxRadius = maxRectangleCornerRadius(shape);
+  if (maxRadius <= 0) {
+    return null;
+  }
+
+  const clampedRadius = clamp(radius, 0, maxRadius);
+  switch (handle) {
+    case 'corner-radius-nw':
+      return { x: shape.x + clampedRadius, y: shape.y + shape.height - clampedRadius };
+    case 'corner-radius-ne':
+      return { x: shape.x + shape.width - clampedRadius, y: shape.y + shape.height - clampedRadius };
+    case 'corner-radius-se':
+      return { x: shape.x + shape.width - clampedRadius, y: shape.y + clampedRadius };
+    case 'corner-radius-sw':
+      return { x: shape.x + clampedRadius, y: shape.y + clampedRadius };
+    default:
+      return null;
+  }
+};
+
 const roundedCornerInsets = (
   shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
   localPointer: Point,

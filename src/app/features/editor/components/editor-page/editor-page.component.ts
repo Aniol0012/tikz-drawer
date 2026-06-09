@@ -267,6 +267,7 @@ import {
   buildLinePath as buildLinePathUtil,
   buildTrianglePath as buildTrianglePathUtil,
   computeBounds as computeBoundsUtil,
+  cornerRadiusHandlePoint as cornerRadiusHandlePointUtil,
   cornerRadiusFromPointer as cornerRadiusFromPointerUtil,
   effectiveRectangleCornerRadius as effectiveRectangleCornerRadiusUtil,
   effectiveTriangleCornerRadius as effectiveTriangleCornerRadiusUtil,
@@ -3536,7 +3537,7 @@ export class EditorPageComponent {
       pointerId: event.pointerId,
       handle,
       cursor: this.resizeHandleCursor(handle),
-      pointerOffset: this.resizePointerOffset(handle, pointerPoint),
+      pointerOffset: this.resizePointerOffset(handle, pointerPoint, selectedShape),
       initialShape: selectedShape ? structuredClone(selectedShape) : null,
       initialShapes: structuredClone(selectedShapes),
       initialBounds: structuredClone(selectionBounds)
@@ -4369,7 +4370,23 @@ export class EditorPageComponent {
     return this.selectionHandles().find((entry) => entry.id === handle)?.cursor ?? 'default';
   }
 
-  private resizePointerOffset(handle: ResizeHandle, pointerPoint: Point): Point {
+  private resizePointerOffset(handle: ResizeHandle, pointerPoint: Point, selectedShape: CanvasShape | null = this.selectedShape()): Point {
+    if (
+      (selectedShape?.kind === 'rectangle' || selectedShape?.kind === 'triangle') &&
+      handle.startsWith('corner-radius-')
+    ) {
+      const localHandlePoint = cornerRadiusHandlePointUtil(selectedShape, handle);
+      if (localHandlePoint) {
+        const center = this.shapeCenter(selectedShape);
+        const angle = this.shapeRotation(selectedShape);
+        const handlePoint = this.rotatePointAround(localHandlePoint, center, -angle);
+        return {
+          x: handlePoint.x - pointerPoint.x,
+          y: handlePoint.y - pointerPoint.y
+        };
+      }
+    }
+
     const descriptor = this.selectionHandles().find((entry) => entry.id === handle);
     if (!descriptor) {
       return { x: 0, y: 0 };

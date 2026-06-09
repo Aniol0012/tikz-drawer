@@ -4,6 +4,7 @@ import {
   buildLinePath,
   buildTrianglePath,
   computeBounds,
+  cornerRadiusHandlePoint,
   cornerRadiusFromPointer,
   maxTriangleCornerRadius,
   normalizeRotationDegrees,
@@ -256,6 +257,14 @@ describe('editor-geometry utils', () => {
     expect(clampedRadius).toBe(2.52);
   });
 
+  it('places rectangle corner radius handles at the actual radius point', () => {
+    const sharpRectangle = { ...rectangleShape, cornerRadius: 0 };
+
+    expect(cornerRadiusHandlePoint(sharpRectangle, 'corner-radius-nw')).toEqual({ x: 0, y: 6 });
+    expect(cornerRadiusHandlePoint(rectangleShape, 'corner-radius-nw')).toEqual({ x: 1.5, y: 4.5 });
+    expect(cornerRadiusHandlePoint(rectangleShape, 'corner-radius-se')).toEqual({ x: 8.5, y: 1.5 });
+  });
+
   it('keeps rotated rectangle corner radius pointer mapping stable', () => {
     const rotatedRectangle = {
       ...rectangleShape,
@@ -278,5 +287,16 @@ describe('editor-geometry utils', () => {
 
     expect(radius).toBeGreaterThan(0);
     expect(clamped).toBeCloseTo(maxTriangleCornerRadius(triangleShape));
+  });
+
+  it('places triangle corner radius handles at their current radius along the bisector', () => {
+    const sharpTriangle = { ...triangleShape, cornerRadius: 0 };
+    const apex = { x: triangleShape.x + triangleShape.width * triangleShape.apexOffset, y: triangleShape.y + triangleShape.height };
+    const sharpHandlePoint = cornerRadiusHandlePoint(sharpTriangle, 'corner-radius-apex');
+    const roundedHandlePoint = cornerRadiusHandlePoint(triangleShape, 'corner-radius-apex');
+
+    expect(sharpHandlePoint).toEqual(apex);
+    expect(roundedHandlePoint?.x).toBeCloseTo(apex.x);
+    expect(roundedHandlePoint?.y).toBeLessThan(apex.y);
   });
 });
