@@ -100,6 +100,7 @@ export class ImportCodeModalComponent {
 
   readonly closeIconPath = getIconPath('close');
   readonly trashIconPath = getIconPath('trash');
+  readonly uploadIconPath = getIconPath('upload');
   readonly title = input.required<string>();
   readonly actionLabel = input.required<string>();
   readonly closeLabel = input.required<string>();

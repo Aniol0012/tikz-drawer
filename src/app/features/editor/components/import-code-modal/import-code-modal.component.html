@@ -55,8 +55,35 @@
           <div>
             <strong>{{ selectedSourceOption().inputTitleKey | translate }}</strong>
           </div>
+          @if (sourceKind() === 'tikz' || sourceKind() === 'mermaid') {
+            <div class="import-input-panel__actions">
+              @if (fileName()) {
+                <button
+                  class="file-icon-button file-icon-button--clear"
+                  type="button"
+                  [attr.aria-label]="'import.clearFile' | translate"
+                  (click)="clearSelectedFile()">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="trashIconPath"></path>
+                  </svg>
+                </button>
+              }
+              <label class="file-icon-button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="uploadIconPath"></path>
+                </svg>
+                <input
+                  #importFileInput
+                  type="file"
+                  [attr.accept]="selectedSourceOption().accept"
+                  [attr.aria-label]="'import.chooseFileAria' | translate"
+                  (change)="onFileSelected($event)" />
+              </label>
+            </div>
+          }
         </div>
 
+        @if (sourceKind() !== 'tikz' && sourceKind() !== 'mermaid') {
         <div class="file-row">
           <label class="file-drop">
             <span class="file-drop__text">
@@ -82,6 +109,7 @@
             </button>
           }
         </div>
+        }
 
         @if (sourceKind() === 'tex' && texDiagrams().length) {
           <section class="diagram-picker" [attr.aria-label]="'import.diagramPickerLabel' | translate">

@@ -93,6 +93,7 @@
 .primary-button,
 .import-source-option,
 .file-drop,
+.file-icon-button,
 .file-clear-button,
 .import-input-panel,
 .code-editor,
@@ -133,6 +134,7 @@
 .import-code-modal__close svg,
 .import-source-option svg,
 .file-drop svg,
+.file-icon-button svg,
 .import-empty-state svg,
 .import-input-panel__icon svg {
   width: 18px;
@@ -284,13 +286,54 @@
 
 .import-input-panel__header {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
 }
 
 .import-input-panel__header strong {
   font-size: 0.92rem;
+}
+
+.import-input-panel__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.file-icon-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--tool-border);
+  border-radius: 9px;
+  background: var(--tool-surface);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.file-icon-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--accent) 7%, var(--tool-surface));
+  color: var(--app-foreground);
+}
+
+.file-icon-button--clear:hover {
+  border-color: color-mix(in srgb, var(--danger) 42%, var(--tool-border-strong));
+  background: color-mix(in srgb, var(--danger) 7%, var(--tool-surface));
+  color: color-mix(in srgb, var(--danger) 78%, var(--app-foreground));
+}
+
+.file-icon-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .file-row {
@@ -710,6 +753,8 @@
 .primary-button:focus-visible,
 .import-source-option:focus-visible,
 .file-drop:focus-within,
+.file-icon-button:focus-within,
+.file-icon-button:focus-visible,
 .file-clear-button:focus-visible,
 .csv-options input:focus-visible,
 .diagram-picker input:focus-visible,

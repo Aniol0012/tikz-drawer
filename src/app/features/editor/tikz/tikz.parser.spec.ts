@@ -6,7 +6,7 @@ describe('parseTikz', () => {
 \draw[-{Triangle[draw=#334455, fill=#334455, scale=1.5, length=12pt, width=4.5pt, bend]}] (0, 0) -- (2, 1);
 \end{tikzpicture}`);
 
-    expect(result.warnings).toHaveLength(0);
+    expect(result.warnings).toEqual([]);
     expect(result.scene.shapes).toHaveLength(1);
 
     const shape = result.scene.shapes[0];
@@ -31,7 +31,7 @@ describe('parseTikz', () => {
 \draw[-{Straight Barb[color=#334455]}] (0, 0) -- (2, 1);
 \end{tikzpicture}`);
 
-    expect(result.warnings).toHaveLength(0);
+    expect(result.warnings).toEqual([]);
     const shape = result.scene.shapes[0];
     expect(shape.kind).toBe('line');
 
@@ -159,5 +159,143 @@ line width=0.4pt,
     expect(result.warnings).toHaveLength(0);
     expect(result.scene.shapes).toHaveLength(1);
     expect(result.scene.shapes[0].kind).toBe('image');
+  });
+
+  it('imports layered architecture diagrams with named styles, relative nodes and anchored draw paths', () => {
+    const result = parseTikz(String.raw`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    font=\small,
+    layer/.style={
+        rounded corners=3pt,
+        draw,
+        thick,
+        minimum width=11.5cm,
+        minimum height=1.15cm,
+        align=center,
+        blur shadow
+    },
+    module/.style={
+        rounded corners=2pt,
+        draw,
+        thick,
+        minimum width=2.6cm,
+        minimum height=0.7cm,
+        align=center,
+        fill=white
+    },
+    arrow/.style={
+        -{Latex[length=2.5mm]},
+        thick
+    },
+    dashedarrow/.style={
+        -{Latex[length=2.5mm]},
+        thick,
+        dashed
+    }
+]
+\node[layer, fill=gray!12] (ui) at (0,0) {Presentation Layer};
+\node[layer, fill=gray!8, below=0.7cm of ui] (app) {Application Layer};
+\node[layer, fill=gray!12, below=0.7cm of app] (domain) {Domain Layer};
+\node[layer, fill=gray!8, below=0.7cm of domain] (infra) {Infrastructure Layer};
+\node[module] (screen) at ($(ui.west)+(2.0cm,0)$) {Screens};
+\node[module, right=0.45cm of screen] (dialogs) {Dialogs};
+\node[module, right=0.45cm of dialogs] (forms) {Forms};
+\node[module] (services) at ($(app.west)+(2.0cm,0)$) {Services};
+\node[module, right=0.45cm of services] (commands) {Commands};
+\node[module, right=0.45cm of commands] (validators) {Validators};
+\node[module] (entities) at ($(domain.west)+(2.0cm,0)$) {Entities};
+\node[module, right=0.45cm of entities] (rules) {Business Rules};
+\node[module, right=0.45cm of rules] (events) {Domain Events};
+\node[module] (repo) at ($(infra.west)+(2.0cm,0)$) {Repositories};
+\node[module, right=0.45cm of repo] (db) {Database};
+\node[module, right=0.45cm of db] (external) {External APIs};
+\draw[arrow] (screen.south) -- (services.north);
+\draw[arrow] (dialogs.south) -- (commands.north);
+\draw[arrow] (forms.south) -- (validators.north);
+\draw[arrow] (services.south) -- (entities.north);
+\draw[arrow] (commands.south) -- (rules.north);
+\draw[arrow] (validators.south) -- (events.north);
+\draw[arrow] (services.south east) to[out=-45,in=135] (repo.north west);
+\draw[arrow] (repo.north) -- (entities.south);
+\draw[dashedarrow] (events.south) to[out=-70,in=110] (external.north);
+\draw[decorate, decoration={brace, amplitude=5pt}, thick]
+    ($(ui.north west)+(-0.35cm,0.1cm)$) --
+    node[left=0.35cm, align=center] {User\\side}
+    ($(app.south west)+(-0.35cm,-0.1cm)$);
+\draw[decorate, decoration={brace, amplitude=5pt}, thick]
+    ($(domain.north east)+(0.35cm,0.1cm)$) --
+    node[right=0.35cm, align=center] {Core\\system}
+    ($(infra.south east)+(0.35cm,-0.1cm)$);
+\end{tikzpicture}
+\caption{Layered architecture with application, domain and infrastructure responsibilities}
+\end{figure}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'rectangle')).toHaveLength(16);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(11);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'User\nside')).toBe(true);
+
+    const dashedLine = result.scene.shapes.find((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed');
+    expect(dashedLine?.kind).toBe('line');
+  });
+
+  it('imports clustered networks with circular nodes, fit clusters and inline edge labels', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+nodepoint/.style={circle, draw, thick, minimum size=0.8cm, fill=white, blur shadow},
+critical/.style={circle, draw, thick, minimum size=1.05cm, fill=gray!20, blur shadow},
+link/.style={thick},
+stronglink/.style={very thick},
+weaklink/.style={thick, dashed},
+cluster/.style={draw, rounded corners=8pt, thick, inner sep=0.35cm, fill=gray!8}
+]
+\node[nodepoint] (a1) at (0,1.2) {A1};
+\node[critical] (a2) at (1.6,2.0) {A2};
+\node[nodepoint] (a3) at (2.8,0.8) {A3};
+\node[nodepoint] (a4) at (1.0,0.0) {A4};
+\begin{scope}[on background layer]
+\node[cluster, fit=(a1)(a2)(a3)(a4), label={[font=\bfseries]above:Cluster A}] {};
+\end{scope}
+\draw[stronglink] (a1) -- node[above left, font=\scriptsize] {0.91} (a2);
+\draw[weaklink] (a3) -- node[below, font=\scriptsize] {0.31} (a4);
+\draw[stronglink, -{Latex[length=2.5mm]}] (a2) to[bend left=12] node[above, font=\scriptsize] {sync} (a3);
+\node[draw, rounded corners=2pt, fill=white, thick, align=left, anchor=north west] at (0,-2.0) {
+  \textbf{Legend}\\
+  \tikz{\draw[stronglink] (0,0) -- (0.6,0);} Strong relation
+};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(4);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'rectangle' && shape.name === 'Imported node')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Cluster A')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed')).toBe(true);
+  });
+
+  it('imports isometric cuboid diagrams with projected 3D coordinates and cuboid helpers', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+font=\small,
+x={(1cm,0cm)},
+y={(0.45cm,0.28cm)},
+z={(0cm,1cm)},
+edge/.style={thick, draw},
+arrow/.style={-{Latex[length=2.4mm]}, thick}
+]
+\newcommand{\cuboid}[5]{
+  \coordinate (#1-A) at #2;
+}
+\cuboid{core}{(0,0,0)}{3.2}{2.2}{1.0}
+\cuboid{api}{(4.4,0.2,0)}{2.8}{2.0}{1.4}
+\node at ($(core-E)!0.5!(core-G)+(0,0,0.15)$) {Domain Core};
+\draw[arrow] ($(core-B)!0.5!(core-C)+(0,0,0.7)$) -- ($(api-A)!0.5!(api-D)+(0,0,0.8)$);
+\draw[decorate, decoration={brace, amplitude=5pt}, thick]
+  (-0.2,-0.4,0) -- (11.4,-0.4,0)
+  node[midway, below=0.35cm] {Execution pipeline};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toHaveLength(0);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(26);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Domain Core')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Execution pipeline')).toBe(true);
   });
 });
