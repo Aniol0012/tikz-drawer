@@ -456,4 +456,99 @@ note/.style={draw, rounded corners=2pt, fill=gray!8, align=center, font=\scripts
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Delivery\nrisk')).toBe(true);
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Feedback\nloop')).toBe(true);
   });
+
+  it('imports relative draw path targets used by timeline tick marks', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+    milestone/.style={
+        circle,
+        draw,
+        thick,
+        minimum size=0.75cm
+    },
+    labelbox/.style={
+        rectangle,
+        draw,
+        rounded corners,
+        align=center,
+        minimum width=2.3cm,
+        minimum height=0.75cm
+    },
+    line/.style={
+        thick,
+        -{Latex[length=3mm]}
+    }
+]
+\draw[line] (0, 0) -- (10.5, 0);
+\node[milestone] (m1) at (1, 0) {1};
+\node[milestone] (m2) at (3.5, 0) {2};
+\node[milestone] (m3) at (6, 0) {3};
+\node[milestone] (m4) at (8.5, 0) {4};
+\node[labelbox, above=0.7cm of m1] {Planning};
+\node[labelbox, below=0.7cm of m2] {Prototype};
+\node[labelbox, above=0.7cm of m3] {Testing};
+\node[labelbox, below=0.7cm of m4] {Release};
+\draw[thick] (m1) -- ++(0, 0.35);
+\draw[thick] (m2) -- ++(0, -0.35);
+\draw[thick] (m3) -- ++(0, 0.35);
+\draw[thick] (m4) -- ++(0, -0.35);
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(5);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Release')).toBe(true);
+  });
+
+  it('imports rectangle split entity nodes as separated rows without visible nodepart commands', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+    entity/.style={
+        rectangle split,
+        rectangle split parts=4,
+        draw,
+        thick,
+        rounded corners,
+        text width=3.2cm,
+        align=left
+    },
+    relation/.style={
+        -{Latex[length=2.6mm]},
+        thick
+    },
+    node distance=2.2cm and 2.5cm
+]
+\node[entity] (customer) {
+    \textbf{Customer}
+    \nodepart{second} id
+    \nodepart{third} name
+    \nodepart{fourth} fiscalNumber
+};
+\node[entity, right=of customer] (invoice) {
+    \textbf{Invoice}
+    \nodepart{second} id
+    \nodepart{third} customerId
+    \nodepart{fourth} totalAmount
+};
+\node[entity, below=of invoice] (line) {
+    \textbf{InvoiceLine}
+    \nodepart{second} id
+    \nodepart{third} invoiceId
+    \nodepart{fourth} netAmount
+};
+\node[entity, below=of customer] (payment) {
+    \textbf{Payment}
+    \nodepart{second} id
+    \nodepart{third} invoiceId
+    \nodepart{fourth} paidAmount
+};
+\draw[relation] (customer) -- node[above] {1:N} (invoice);
+\draw[relation] (invoice) -- node[right] {1:N} (line);
+\draw[relation] (invoice) -- node[below right] {1:N} (payment);
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'rectangle')).toHaveLength(4);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(15);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'InvoiceLine')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'fiscalNumber')).toBe(true);
+    expect(result.scene.shapes.every((shape) => shape.kind !== 'text' || !shape.text.includes(String.raw`\nodepart`))).toBe(true);
+  });
 });

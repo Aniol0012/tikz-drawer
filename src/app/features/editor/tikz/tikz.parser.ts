@@ -1129,6 +1129,15 @@ const textAlignFromAnchor = (anchor: string): TextShape['textAlign'] => {
   return 'center';
 };
 
+const textAlignFromStyles = (styles: Record<string, string>, anchor: string): TextShape['textAlign'] => {
+  const align = styles['align']?.toLowerCase();
+  if (align === 'left' || align === 'right' || align === 'center') {
+    return align;
+  }
+
+  return textAlignFromAnchor(anchor);
+};
+
 const readOptionalBalanced = (source: string, opening: string, closing: string): { readonly value: string | undefined; readonly rest: string } => {
   const trimmed = source.trimStart();
   if (!trimmed.startsWith(opening)) {
@@ -1222,9 +1231,32 @@ const parseTextNodeContent = (
   };
 };
 
-const nodeSizeFromStyles = (styles: Record<string, string>): { readonly width: number; readonly height: number } => ({
-  width: Math.max(parseDimension(styles['minimum width'] ?? styles['minimum size'], DEFAULT_TEXT_BOX_WIDTH), 0.2),
-  height: Math.max(parseDimension(styles['minimum height'] ?? styles['minimum size'], DEFAULT_TEXT_FONT_SIZE), 0.2)
+const rectangleSplitPartCount = (styles: Record<string, string>, rawText: string): number | null => {
+  if (styles['rectangle split'] !== 'true' && !styles['rectangle split parts']) {
+    return null;
+  }
+
+  const explicitParts = Number.parseInt(styles['rectangle split parts'] ?? '', 10);
+  if (Number.isFinite(explicitParts) && explicitParts > 0) {
+    return explicitParts;
+  }
+
+  const nodePartCount = rawText.match(/\\nodepart\{[^}]+\}/g)?.length ?? 0;
+  return Math.max(nodePartCount + 1, 1);
+};
+
+const rectangleSplitTextParts = (rawText: string): readonly string[] =>
+  removeOuterBraces(rawText.trim())
+    .split(/\\nodepart\{[^}]+\}/g)
+    .map((part) => parseTextNodeContent(part).text)
+    .filter((part) => part.length > 0);
+
+const nodeSizeFromStyles = (styles: Record<string, string>, splitPartCount: number | null = null): { readonly width: number; readonly height: number } => ({
+  width: Math.max(parseDimension(styles['minimum width'] ?? styles['text width'] ?? styles['minimum size'], DEFAULT_TEXT_BOX_WIDTH), 0.2),
+  height: Math.max(
+    parseDimension(styles['minimum height'] ?? styles['minimum size'], DEFAULT_TEXT_FONT_SIZE),
+    splitPartCount ? splitPartCount * DEFAULT_TEXT_FONT_SIZE * 1.55 : 0.2
+  )
 });
 
 const nodeFontSizeFromStyles = (styles: Record<string, string>, scale: number): number => {
@@ -1353,8 +1385,9 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
   const scale = Number.parseFloat(styles['scale'] ?? '1') || 1;
   const anchor = styles['anchor'] ?? 'center';
   const textContent = parseTextNodeContent(parsedNode.text);
+  const splitPartCount = rectangleSplitPartCount(styles, parsedNode.text);
   const fittedBounds = fitBoundsFromStyles(styles, context);
-  const size = fittedBounds ? { width: fittedBounds.width, height: fittedBounds.height } : nodeSizeFromStyles(styles);
+  const size = fittedBounds ? { width: fittedBounds.width, height: fittedBounds.height } : nodeSizeFromStyles(styles, splitPartCount);
   const rawPoint = parsedNode.point
     ? parseCoordinateExpression(parsedNode.point, context)
     : (fittedBounds?.center ?? nodeCenterFromStyles(styles, context, size) ?? { x: 0, y: 0 });
@@ -1382,7 +1415,7 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
     fontWeight: textContent.fontWeight,
     fontStyle: textContent.fontStyle,
     textDecoration: textContent.textDecoration,
-    textAlign: textAlignFromAnchor(anchor),
+    textAlign: textAlignFromStyles(styles, anchor),
     rotation: styleRotation(styles)
   };
 
@@ -1424,7 +1457,34 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
     });
   }
 
-  if (textContent.text) {
+  if (splitPartCount && hasVisualNode) {
+    const parts = rectangleSplitTextParts(parsedNode.text);
+    const rowHeight = size.height / splitPartCount;
+    for (let index = 1; index < splitPartCount; index += 1) {
+      const y = point.y + size.height / 2 - rowHeight * index;
+      shapes.push(createImportedLine(styles, { x: point.x - size.width / 2, y }, { x: point.x + size.width / 2, y }, [], 'straight', 'Imported split divider'));
+    }
+
+    parts.slice(0, splitPartCount).forEach((part, index) => {
+      const partContent = parseTextNodeContent(part);
+      const textAlign = textAlignFromStyles(styles, anchor);
+      const horizontalPadding = 0.16;
+      shapes.push({
+        ...shape,
+        id: createId(),
+        name: index === 0 ? 'Imported entity title' : 'Imported entity field',
+        x: textAlign === 'left' ? point.x - size.width / 2 + horizontalPadding : textAlign === 'right' ? point.x + size.width / 2 - horizontalPadding : point.x,
+        y: point.y + size.height / 2 - rowHeight * (index + 0.5) - DEFAULT_TEXT_FONT_SIZE * 0.18,
+        text: partContent.text,
+        textBox: textAlign !== 'center',
+        boxWidth: Math.max(size.width - horizontalPadding * 2, 0.2),
+        fontWeight: partContent.fontWeight,
+        fontStyle: partContent.fontStyle,
+        textDecoration: partContent.textDecoration,
+        textAlign
+      });
+    });
+  } else if (textContent.text) {
     shapes.push(shape);
   }
 
@@ -1659,15 +1719,25 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
     rest = inlineNode.rest;
   }
 
+  let relativeTarget = false;
+  if (rest.startsWith('++')) {
+    relativeTarget = true;
+    rest = rest.slice(2).trimStart();
+  } else if (rest.startsWith('+')) {
+    relativeTarget = true;
+    rest = rest.slice(1).trimStart();
+  }
+
   const toToken = readCoordinateToken(rest);
   if (!toToken) {
     return null;
   }
 
-  const to = parseCoordinateExpression(toToken.token, context);
-  if (!to) {
+  const parsedTo = parseCoordinateExpression(toToken.token, context);
+  if (!parsedTo) {
     return null;
   }
+  const to = relativeTarget ? { x: from.x + parsedTo.x, y: from.y + parsedTo.y } : parsedTo;
 
   let trailing = toToken.rest.replace(/;$/, '').trim();
   if (!inlineNode) {
