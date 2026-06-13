@@ -551,4 +551,116 @@ note/.style={draw, rounded corners=2pt, fill=gray!8, align=center, font=\scripts
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'fiscalNumber')).toBe(true);
     expect(result.scene.shapes.every((shape) => shape.kind !== 'text' || !shape.text.includes(String.raw`\nodepart`))).toBe(true);
   });
+
+  it('imports coordinate based triangle diagrams with projections and arcs', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+    point/.style={
+        circle,
+        fill,
+        inner sep=1.5pt
+    },
+    label/.style={
+        font=\small
+    },
+    edge/.style={
+        thick
+    }
+]
+\coordinate (a) at (0, 0);
+\coordinate (b) at (5, 0);
+\coordinate (c) at (1.4, 3.2);
+\draw[edge] (a) -- (b) -- (c) -- cycle;
+\node[point, label=below left:$A$] at (a) {};
+\node[point, label=below right:$B$] at (b) {};
+\node[point, label=above:$C$] at (c) {};
+\draw[thick, dashed] (c) -- ($(a)!(c)!(b)$);
+\node[label, below] at ($(a)!0.5!(b)$) {$c$};
+\node[label, left] at ($(a)!0.5!(c)$) {$b$};
+\node[label, right] at ($(b)!0.5!(c)$) {$a$};
+\draw (0.7, 0) arc[start angle=0, end angle=66, radius=0.7];
+\node[label] at (0.9, 0.35) {$\alpha$};
+\draw ($(b)+(-0.7,0)$) arc[start angle=180, end angle=138, radius=0.7];
+\node[label] at (4.25, 0.35) {$\beta$};
+\draw ($(c)+(-104:0.65)$) arc[start angle=-104, end angle=-42, radius=0.65];
+\node[label] at ($(c)+(0,-0.75)$) {$\gamma$};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(3);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(7);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === String.raw`\alpha`)).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'A')).toBe(true);
+  });
+
+  it('imports 3D projected coordinate diagrams with chained paths', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+    x={(1cm,0cm)},
+    y={(0.45cm,0.35cm)},
+    z={(0cm,1cm)},
+    edge/.style={
+        thick
+    },
+    hidden/.style={
+        thick,
+        dashed
+    }
+]
+\coordinate (a) at (0, 0, 0);
+\coordinate (b) at (3, 0, 0);
+\coordinate (c) at (3, 3, 0);
+\coordinate (d) at (0, 3, 0);
+\coordinate (e) at (0, 0, 3);
+\coordinate (f) at (3, 0, 3);
+\coordinate (g) at (3, 3, 3);
+\coordinate (h) at (0, 3, 3);
+\draw[edge] (a) -- (b) -- (c) -- (g) -- (f) -- (b);
+\draw[edge] (f) -- (e) -- (h) -- (g);
+\draw[edge] (e) -- (a);
+\draw[hidden] (a) -- (d) -- (c);
+\draw[hidden] (d) -- (h);
+\node[below left] at (a) {$A$};
+\node[below right] at (b) {$B$};
+\node[right] at (c) {$C$};
+\node[above] at (g) {$G$};
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(12);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed')).toHaveLength(3);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'G')).toBe(true);
+  });
+
+  it('imports nested foreach grids with arithmetic coordinates and pgf math macros', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+    cell/.style={
+        rectangle,
+        draw,
+        minimum width=0.8cm,
+        minimum height=0.8cm
+    },
+    label/.style={
+        font=\small
+    }
+]
+\foreach \x in {0,...,5} {
+    \foreach \y in {0,...,4} {
+        \pgfmathtruncatemacro{\value}{mod(\x*\y+\x+\y, 5)}
+        \node[cell] at (\x*0.8, -\y*0.8) {\value};
+    }
+}
+\foreach \x/\name in {0/A,1/B,2/C,3/D,4/E,5/F} {
+    \node[label] at (\x*0.8, 0.65) {\name};
+}
+\foreach \y/\name in {0/R1,1/R2,2/R3,3/R4,4/R5} {
+    \node[label, left] at (-0.55, -\y*0.8) {\name};
+}
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'rectangle')).toHaveLength(30);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === '4')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'F')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'R5')).toBe(true);
+  });
 });

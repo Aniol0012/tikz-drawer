@@ -24,6 +24,8 @@ const defaultTikzBasis: TikzBasis = {
   z: { x: 0, y: 1 }
 };
 
+type TikzLabelPosition = 'above' | 'below' | 'left' | 'right' | 'above left' | 'above right' | 'below left' | 'below right';
+
 const TIKZ_NUMBER_PATTERN = String.raw`-?\d+(?:\.\d+)?`;
 const POINT_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`);
 const HEX_COLOR_PATTERN = /^#?([0-9a-fA-F]{6})$/;
@@ -93,7 +95,85 @@ const projectCoordinate = (x: number, y: number, z: number, basis: TikzBasis): P
 });
 
 const replaceTikzVariables = (value: string, variables: Record<string, string>): string =>
-  Object.entries(variables).reduce((nextValue, [name, replacement]) => nextValue.replaceAll(name, replacement), value);
+  Object.entries(variables).reduce((nextValue, [name, replacement]) => {
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    return nextValue.replace(new RegExp(`${escapedName}(?![A-Za-z])`, 'g'), replacement);
+  }, value);
+
+const numericExpressionTokens = (source: string): readonly string[] | null => {
+  const tokens = source.match(/\d+(?:\.\d+)?|[()+\-*/]/g);
+  return tokens?.join('').length === source.replace(/\s+/g, '').length ? tokens : null;
+};
+
+const evaluateNumericExpression = (source: string): number | null => {
+  const tokens = numericExpressionTokens(source);
+  if (!tokens) {
+    return null;
+  }
+
+  let index = 0;
+  const peek = (): string | undefined => tokens[index];
+  const take = (): string | undefined => tokens[index++];
+
+  const parseFactor = (): number | null => {
+    const token = peek();
+    if (token === '+' || token === '-') {
+      take();
+      const value = parseFactor();
+      return value === null ? null : token === '-' ? -value : value;
+    }
+    if (token === '(') {
+      take();
+      const value = parseExpression();
+      if (take() !== ')') {
+        return null;
+      }
+      return value;
+    }
+
+    take();
+    const parsed = Number(token);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const parseTerm = (): number | null => {
+    let value = parseFactor();
+    while (value !== null && (peek() === '*' || peek() === '/')) {
+      const operator = take();
+      const right = parseFactor();
+      if (right === null) {
+        return null;
+      }
+      value = operator === '*' ? value * right : value / right;
+    }
+    return value;
+  };
+
+  function parseExpression(): number | null {
+    let value = parseTerm();
+    while (value !== null && (peek() === '+' || peek() === '-')) {
+      const operator = take();
+      const right = parseTerm();
+      if (right === null) {
+        return null;
+      }
+      value = operator === '+' ? value + right : value - right;
+    }
+    return value;
+  }
+
+  const value = parseExpression();
+  return value !== null && index === tokens.length && Number.isFinite(value) ? value : null;
+};
+
+const parseCoordinateDimension = (value: string): number => {
+  const parsedDimension = parseDimension(value, Number.NaN);
+  if (Number.isFinite(parsedDimension)) {
+    return parsedDimension;
+  }
+
+  return evaluateNumericExpression(value) ?? Number.NaN;
+};
 
 const parseCoordinateLiteral = (value: string, basis: TikzBasis, variables: Record<string, string> = {}): Point | null => {
   const normalized = replaceTikzVariables(value.trim().replace(/^\((.*)\)$/, '$1'), variables);
@@ -114,7 +194,7 @@ const parseCoordinateLiteral = (value: string, basis: TikzBasis, variables: Reco
     return null;
   }
 
-  const coordinates = parts.map((part) => parseDimension(part, Number.NaN));
+  const coordinates = parts.map((part) => parseCoordinateDimension(part));
   if (coordinates.some((coordinate) => !Number.isFinite(coordinate))) {
     return null;
   }
@@ -446,6 +526,22 @@ const splitTopLevelCommaList = (source: string): readonly string[] => {
   return values;
 };
 
+const expandForeachListItems = (source: string): readonly string[] => {
+  const rangeMatch = /^\s*(-?\d+)\s*,\s*\.\.\.\s*,\s*(-?\d+)\s*$/.exec(source);
+  if (!rangeMatch) {
+    return splitTopLevelCommaList(source);
+  }
+
+  const start = Number(rangeMatch[1]);
+  const end = Number(rangeMatch[2]);
+  const step = start <= end ? 1 : -1;
+  const values: string[] = [];
+  for (let value = start; step > 0 ? value <= end : value >= end; value += step) {
+    values.push(String(value));
+  }
+  return values;
+};
+
 const expandForeachLoops = (source: string): string => {
   let nextSource = source;
   let searchIndex = 0;
@@ -497,7 +593,7 @@ const expandForeachLoops = (source: string): string => {
       continue;
     }
 
-    const expanded = splitTopLevelCommaList(list.value)
+    const expanded = expandForeachListItems(list.value)
       .map((item) => {
         const values = item.split('/').map((value) => value.trim());
         return variables.reduce((nextBody, variable, index) => {
@@ -508,7 +604,7 @@ const expandForeachLoops = (source: string): string => {
       .join('\n');
 
     nextSource = `${nextSource.slice(0, foreachIndex)}${expanded}${nextSource.slice(body.endIndex)}`;
-    searchIndex = foreachIndex + expanded.length;
+    searchIndex = foreachIndex;
   }
 
   return nextSource;
@@ -558,6 +654,36 @@ const parseTikzVariables = (source: string): Record<string, string> => {
   }
 
   return variables;
+};
+
+const evaluatePgfMathExpression = (source: string): number | null => {
+  const modMatch = /^mod\((.+),\s*(-?\d+(?:\.\d+)?)\)$/.exec(source.trim());
+  if (modMatch) {
+    const value = evaluateNumericExpression(modMatch[1]);
+    const divisor = Number(modMatch[2]);
+    if (value === null || !Number.isFinite(divisor) || divisor === 0) {
+      return null;
+    }
+    return ((value % divisor) + divisor) % divisor;
+  }
+
+  return evaluateNumericExpression(source);
+};
+
+const parsePgfMathTruncateMacro = (line: string, context: ParseContext): boolean => {
+  const match = /^\\pgfmathtruncatemacro\{(?<name>\\[A-Za-z]+)\}\{(?<expression>.+)\};?$/.exec(line);
+  if (!match?.groups) {
+    return false;
+  }
+
+  const expression = replaceTikzVariables(match.groups['expression'], context.variables);
+  const value = evaluatePgfMathExpression(expression);
+  if (value === null) {
+    return false;
+  }
+
+  context.variables[match.groups['name']] = String(Math.trunc(value));
+  return true;
 };
 
 const parseNodeDistance = (source: string): ParseContext['nodeDistance'] => {
@@ -818,6 +944,29 @@ const parseCoordinateExpression = (value: string, context: ParseContext): Point 
     return {
       x: from.x + (to.x - from.x) * ratio,
       y: from.y + (to.y - from.y) * ratio
+    };
+  }
+
+  const projectionMatch = /^\((?<from>[^)]+)\)\s*!\s*\((?<point>[^)]+)\)\s*!\s*\((?<to>[^)]+)\)$/.exec(calcExpression);
+  if (projectionMatch?.groups) {
+    const from = parseCoordinateExpression(`(${projectionMatch.groups['from']})`, context);
+    const point = parseCoordinateExpression(`(${projectionMatch.groups['point']})`, context);
+    const to = parseCoordinateExpression(`(${projectionMatch.groups['to']})`, context);
+    if (!from || !point || !to) {
+      return null;
+    }
+
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) {
+      return from;
+    }
+
+    const t = ((point.x - from.x) * dx + (point.y - from.y) * dy) / lengthSquared;
+    return {
+      x: from.x + dx * t,
+      y: from.y + dy * t
     };
   }
 
@@ -1222,9 +1371,13 @@ const parseTextNodeContent = (
     .replaceAll(/\\textbf\{([^}]*)\}/g, '$1')
     .trim();
   const underlineMatch = /^\\underline\{(?<text>.*)\}$/.exec(textWithoutFontCommands);
+  const text = (underlineMatch?.groups?.['text'] ?? textWithoutFontCommands)
+    .replaceAll(String.raw`\\`, '\n')
+    .replace(/^\$(.*)\$$/, '$1')
+    .trim();
 
   return {
-    text: (underlineMatch?.groups?.['text'] ?? textWithoutFontCommands).replaceAll(String.raw`\\`, '\n').trim(),
+    text,
     fontWeight,
     fontStyle,
     textDecoration
@@ -1305,20 +1458,20 @@ const fitBoundsFromStyles = (
   };
 };
 
-const labelFromStyles = (styles: Record<string, string>): { readonly text: string; readonly position: 'above' | 'below' | 'left' | 'right' } | null => {
+const labelFromStyles = (styles: Record<string, string>): { readonly text: string; readonly position: TikzLabelPosition } | null => {
   const rawLabel = styles['label'];
   if (!rawLabel) {
     return null;
   }
 
   const normalized = removeOuterBraces(rawLabel);
-  const match = /(?:\[[^\]]*\])?(above|below|left|right)\s*:\s*(.+)$/i.exec(normalized);
+  const match = /(?:\[[^\]]*\])?(above left|above right|below left|below right|above|below|left|right)\s*:\s*(.+)$/i.exec(normalized);
   if (!match) {
     return null;
   }
 
   return {
-    position: match[1].toLowerCase() as 'above' | 'below' | 'left' | 'right',
+    position: match[1].toLowerCase() as TikzLabelPosition,
     text: parseTextNodeContent(match[2]).text
   };
 };
@@ -1374,6 +1527,21 @@ const applyNodeShifts = (point: Point, styles: Record<string, string>): Point =>
   y: point.y + parseDimension(styles['yshift'], 0)
 });
 
+const parseCoordinateDeclaration = (line: string, context: ParseContext): readonly CanvasShape[] | null => {
+  const match = /^\\coordinate\s*\((?<name>[A-Za-z][\w-]*)\)\s*at\s*(?<point>\([^;]+\))\s*;?$/.exec(line);
+  if (!match?.groups) {
+    return null;
+  }
+
+  const point = parseCoordinateExpression(match.groups['point'], context);
+  if (!point) {
+    return null;
+  }
+
+  registerCoordinate(context, match.groups['name'], point);
+  return [];
+};
+
 const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] | null => {
   const parsedNode = parseNodeCommand(line);
 
@@ -1384,8 +1552,9 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
   const styles = resolveStyleMap(parsedNode.styles, context);
   const scale = Number.parseFloat(styles['scale'] ?? '1') || 1;
   const anchor = styles['anchor'] ?? 'center';
-  const textContent = parseTextNodeContent(parsedNode.text);
-  const splitPartCount = rectangleSplitPartCount(styles, parsedNode.text);
+  const nodeText = replaceTikzVariables(parsedNode.text, context.variables);
+  const textContent = parseTextNodeContent(nodeText);
+  const splitPartCount = rectangleSplitPartCount(styles, nodeText);
   const fittedBounds = fitBoundsFromStyles(styles, context);
   const size = fittedBounds ? { width: fittedBounds.width, height: fittedBounds.height } : nodeSizeFromStyles(styles, splitPartCount);
   const rawPoint = parsedNode.point
@@ -1458,7 +1627,7 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
   }
 
   if (splitPartCount && hasVisualNode) {
-    const parts = rectangleSplitTextParts(parsedNode.text);
+    const parts = rectangleSplitTextParts(nodeText);
     const rowHeight = size.height / splitPartCount;
     for (let index = 1; index < splitPartCount; index += 1) {
       const y = point.y + size.height / 2 - rowHeight * index;
@@ -1498,8 +1667,8 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
       stroke: 'none',
       strokeOpacity: 1,
       strokeWidth: 0,
-      x: point.x + (label.position === 'right' ? size.width / 2 + offset : label.position === 'left' ? -size.width / 2 - offset : 0),
-      y: point.y + (label.position === 'above' ? size.height / 2 + offset : label.position === 'below' ? -size.height / 2 - offset : 0),
+      x: point.x + (label.position.includes('right') ? size.width / 2 + offset : label.position.includes('left') ? -size.width / 2 - offset : 0),
+      y: point.y + (label.position.includes('above') ? size.height / 2 + offset : label.position.includes('below') ? -size.height / 2 - offset : 0),
       text: label.text,
       textBox: false,
       boxWidth: DEFAULT_TEXT_BOX_WIDTH,
@@ -1591,6 +1760,71 @@ const parseInlinePathNode = (source: string): { readonly text: string; readonly 
     text: text.value,
     styles: styles.value,
     rest: text.rest
+  };
+};
+
+const readPathCoordinateToken = (
+  source: string,
+  context: ParseContext,
+  relativeFrom?: Point
+): { readonly point: Point; readonly token: string; readonly rest: string } | null => {
+  let rest = source.trimStart();
+  let relative = false;
+  if (rest.startsWith('++')) {
+    relative = true;
+    rest = rest.slice(2).trimStart();
+  } else if (rest.startsWith('+')) {
+    relative = true;
+    rest = rest.slice(1).trimStart();
+  }
+
+  const token = readCoordinateToken(rest);
+  if (!token) {
+    return null;
+  }
+
+  const parsed = parseCoordinateExpression(token.token, context);
+  if (!parsed) {
+    return null;
+  }
+
+  return {
+    point: relative && relativeFrom ? { x: relativeFrom.x + parsed.x, y: relativeFrom.y + parsed.y } : parsed,
+    token: token.token,
+    rest: token.rest
+  };
+};
+
+const inlineLabelShape = (
+  inlineNode: { readonly text: string; readonly styles: string | undefined },
+  from: Point,
+  to: Point,
+  context: ParseContext
+): TextShape => {
+  const nodeStyles = resolveStyleMap(inlineNode.styles, context);
+  const textContent = parseTextNodeContent(replaceTikzVariables(inlineNode.text, context.variables));
+  return {
+    id: createId(),
+    name: 'Imported label',
+    kind: 'text',
+    stroke: 'none',
+    strokeOpacity: 1,
+    strokeWidth: 0,
+    x:
+      (from.x + to.x) / 2 +
+      (nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0),
+    y: (from.y + to.y) / 2,
+    text: textContent.text,
+    textBox: textContent.text.includes('\n'),
+    boxWidth: DEFAULT_TEXT_BOX_WIDTH,
+    fontSize: DEFAULT_TEXT_FONT_SIZE,
+    color: normalizeTikzColor(nodeStyles['text'], '#0f172a'),
+    colorOpacity: styleOpacity(nodeStyles, 'text opacity'),
+    fontWeight: textContent.fontWeight,
+    fontStyle: textContent.fontStyle,
+    textDecoration: textContent.textDecoration,
+    textAlign: textAlignFromAnchor(nodeStyles['anchor'] ?? (nodeStyles['left'] ? 'east' : nodeStyles['right'] ? 'west' : 'center')),
+    rotation: styleRotation(nodeStyles)
   };
 };
 
@@ -1696,106 +1930,112 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
   }
 
   rest = fromToken.rest;
-  let lineMode: LineShape['lineMode'] = 'straight';
-  let orthogonalMode: '|-' | '-|' | null = null;
-  if (rest.startsWith('--')) {
-    rest = rest.slice(2).trimStart();
-  } else if (rest.startsWith('|-') || rest.startsWith('-|')) {
-    orthogonalMode = rest.startsWith('|-') ? '|-' : '-|';
-    rest = rest.slice(2).trimStart();
-  } else if (rest.startsWith('to')) {
-    rest = rest.slice(2).trimStart();
-    const toOptions = readOptionalBalanced(rest, '[', ']');
-    if (toOptions.value) {
-      lineMode = 'curved';
+  if (rest.startsWith('arc')) {
+    rest = rest.slice(3).trimStart();
+    const arcOptions = readOptionalBalanced(rest, '[', ']');
+    const options = parseStyleMap(arcOptions.value);
+    const startAngle = Number(options['start angle']);
+    const endAngle = Number(options['end angle']);
+    const radius = parseDimension(options['radius'], Number.NaN);
+    const trailing = arcOptions.rest.replace(/;$/, '').trim();
+    if (!Number.isFinite(startAngle) || !Number.isFinite(endAngle) || !Number.isFinite(radius) || trailing) {
+      return null;
     }
-    rest = toOptions.rest;
-  } else {
-    return null;
+
+    const startRadians = (startAngle * Math.PI) / 180;
+    const endRadians = (endAngle * Math.PI) / 180;
+    const midRadians = (((startAngle + endAngle) / 2) * Math.PI) / 180;
+    const center = { x: from.x - Math.cos(startRadians) * radius, y: from.y - Math.sin(startRadians) * radius };
+    const to = { x: center.x + Math.cos(endRadians) * radius, y: center.y + Math.sin(endRadians) * radius };
+    const anchor = { x: center.x + Math.cos(midRadians) * radius, y: center.y + Math.sin(midRadians) * radius };
+    return [createImportedLine(styles, from, to, [anchor], 'curved')];
   }
 
-  let inlineNode = parseInlinePathNode(rest);
-  if (inlineNode) {
-    rest = inlineNode.rest;
-  }
+  const shapes: CanvasShape[] = [];
+  const first = from;
+  let current = from;
 
-  let relativeTarget = false;
-  if (rest.startsWith('++')) {
-    relativeTarget = true;
-    rest = rest.slice(2).trimStart();
-  } else if (rest.startsWith('+')) {
-    relativeTarget = true;
-    rest = rest.slice(1).trimStart();
-  }
-
-  const toToken = readCoordinateToken(rest);
-  if (!toToken) {
-    return null;
-  }
-
-  const parsedTo = parseCoordinateExpression(toToken.token, context);
-  if (!parsedTo) {
-    return null;
-  }
-  const to = relativeTarget ? { x: from.x + parsedTo.x, y: from.y + parsedTo.y } : parsedTo;
-
-  let trailing = toToken.rest.replace(/;$/, '').trim();
-  if (!inlineNode) {
-    const trailingNode = parseInlinePathNode(trailing);
-    if (trailingNode) {
-      inlineNode = trailingNode;
-      trailing = trailingNode.rest.replace(/;$/, '').trim();
+  while (rest.trim()) {
+    rest = rest.trimStart();
+    let lineMode: LineShape['lineMode'] = 'straight';
+    let orthogonalMode: '|-' | '-|' | null = null;
+    if (rest.startsWith('--')) {
+      rest = rest.slice(2).trimStart();
+    } else if (rest.startsWith('|-') || rest.startsWith('-|')) {
+      orthogonalMode = rest.startsWith('|-') ? '|-' : '-|';
+      rest = rest.slice(2).trimStart();
+    } else if (rest.startsWith('to')) {
+      rest = rest.slice(2).trimStart();
+      const toOptions = readOptionalBalanced(rest, '[', ']');
+      if (toOptions.value) {
+        lineMode = 'curved';
+      }
+      rest = toOptions.rest;
+    } else {
+      return null;
     }
-  }
-  if (trailing) {
-    return null;
+
+    let inlineNode = parseInlinePathNode(rest);
+    if (inlineNode) {
+      rest = inlineNode.rest;
+    }
+
+    let to: Point;
+    if (rest.startsWith('cycle')) {
+      to = first;
+      rest = rest.slice('cycle'.length).trimStart();
+    } else {
+      const toToken = readPathCoordinateToken(rest, context, current);
+      if (!toToken) {
+        return null;
+      }
+      to = toToken.point;
+      rest = toToken.rest;
+    }
+
+    if (!inlineNode) {
+      const trailingNode = parseInlinePathNode(rest);
+      if (trailingNode) {
+        inlineNode = trailingNode;
+        rest = trailingNode.rest;
+      }
+    }
+
+    const anchors =
+      orthogonalMode === '|-'
+        ? [{ x: current.x, y: to.y }]
+        : orthogonalMode === '-|'
+          ? [{ x: to.x, y: current.y }]
+          : lineMode === 'curved'
+            ? [{ x: (current.x + to.x) / 2, y: (current.y + to.y) / 2 }]
+            : [];
+    shapes.push(createImportedLine(styles, current, to, anchors, lineMode, styles['decorate'] === 'true' ? 'Imported brace' : 'Imported line'));
+
+    if (inlineNode) {
+      shapes.push(inlineLabelShape(inlineNode, current, to, context));
+    }
+
+    current = to;
+    rest = rest.replace(/;$/, '').trim();
   }
 
-  const anchors =
-    orthogonalMode === '|-'
-      ? [{ x: from.x, y: to.y }]
-      : orthogonalMode === '-|'
-        ? [{ x: to.x, y: from.y }]
-        : lineMode === 'curved'
-          ? [{ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 }]
-          : [];
-  const shapes: CanvasShape[] = [createImportedLine(styles, from, to, anchors, lineMode, styles['decorate'] === 'true' ? 'Imported brace' : 'Imported line')];
-
-  if (inlineNode) {
-    const nodeStyles = resolveStyleMap(inlineNode.styles, context);
-    const textContent = parseTextNodeContent(inlineNode.text);
-    shapes.push({
-      id: createId(),
-      name: 'Imported label',
-      kind: 'text',
-      stroke: 'none',
-      strokeOpacity: 1,
-      strokeWidth: 0,
-      x:
-        (from.x + to.x) / 2 +
-        (nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0),
-      y: (from.y + to.y) / 2,
-      text: textContent.text,
-      textBox: textContent.text.includes('\n'),
-      boxWidth: DEFAULT_TEXT_BOX_WIDTH,
-      fontSize: DEFAULT_TEXT_FONT_SIZE,
-      color: normalizeTikzColor(nodeStyles['text'], '#0f172a'),
-      colorOpacity: styleOpacity(nodeStyles, 'text opacity'),
-      fontWeight: textContent.fontWeight,
-      fontStyle: textContent.fontStyle,
-      textDecoration: textContent.textDecoration,
-      textAlign: textAlignFromAnchor(nodeStyles['anchor'] ?? (nodeStyles['left'] ? 'east' : nodeStyles['right'] ? 'west' : 'center')),
-      rotation: styleRotation(nodeStyles)
-    });
-  }
-
-  return shapes;
+  return shapes.length ? shapes : null;
 };
 
 const parseShape = (line: string, context: ParseContext): readonly CanvasShape[] | null => {
+  const coordinate = parseCoordinateDeclaration(line, context);
+  if (coordinate) {
+    return coordinate;
+  }
+
   const cuboid = parseCuboidInvocation(line, context);
   if (cuboid) {
     return cuboid;
+  }
+
+  const triangle = parseTriangle(line, context);
+  if (triangle) {
+    return [triangle];
   }
 
   const drawPath = parseDrawPath(line, context);
@@ -1805,7 +2045,6 @@ const parseShape = (line: string, context: ParseContext): readonly CanvasShape[]
 
   const shape =
     parseRectangle(line, context) ??
-    parseTriangle(line, context) ??
     parseCircle(line, context) ??
     parseEllipse(line, context) ??
     parseSmoothLine(line, context) ??
@@ -1942,6 +2181,10 @@ export const parseTikz = (source: string): ParsedTikzResult => {
 
   for (const line of normalizedLines) {
     if (!line || isIgnorableLine(line)) {
+      continue;
+    }
+
+    if (parsePgfMathTruncateMacro(line, context)) {
       continue;
     }
 
