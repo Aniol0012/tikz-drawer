@@ -21,6 +21,7 @@ import {
   importTikzSource,
   type ExtractedTikzDiagram
 } from '../../import/import-sources';
+import { latexEnvironmentBeginRegex, latexEnvironmentEndRegex, REGEX } from '../../../../shared/regex/regex.utils';
 
 const hasUnbalancedDelimiters = (source: string): boolean => {
   const openingByClosing: Record<string, string> = {
@@ -64,8 +65,8 @@ const hasMismatchedEnvironment = (source: string, environment: string): boolean 
     }
     return count;
   };
-  const begin = countMatches(new RegExp(String.raw`\\begin\{${environment}\}`, 'g'));
-  const end = countMatches(new RegExp(String.raw`\\end\{${environment}\}`, 'g'));
+  const begin = countMatches(latexEnvironmentBeginRegex(environment));
+  const end = countMatches(latexEnvironmentEndRegex(environment));
   return begin !== end;
 };
 
@@ -313,7 +314,7 @@ export class ImportCodeModalComponent {
     }
 
     const parsed = this.parsedInput();
-    const hasCommands = /\\(?:draw|node|path|fill|filldraw|clip)\b/.test(source);
+    const hasCommands = REGEX.importModal.drawLikeCommand.test(source);
     return (
       parsed.warnings.length > 0 ||
       (hasCommands && parsed.scene.shapes.length === 0) ||
@@ -474,7 +475,7 @@ export class ImportCodeModalComponent {
   }
 
   private describeWarning(warning: string): ImportWarningView {
-    const diagramRawTikzMatch = warning.match(/^(.*?): Unsupported line preserved as raw TikZ: (.*)$/);
+    const diagramRawTikzMatch = warning.match(REGEX.importModal.diagramRawTikzWarning);
     if (diagramRawTikzMatch) {
       const [, diagramTitle, line] = diagramRawTikzMatch;
       return {
@@ -484,7 +485,7 @@ export class ImportCodeModalComponent {
       };
     }
 
-    const rawTikzMatch = warning.match(/^Unsupported line preserved as raw TikZ: (.*)$/);
+    const rawTikzMatch = warning.match(REGEX.importModal.rawTikzWarning);
     if (rawTikzMatch) {
       return {
         summary: this.t('import.warningRawTikzLineSummary'),
@@ -493,7 +494,7 @@ export class ImportCodeModalComponent {
       };
     }
 
-    const csvMatch = warning.match(/^Skipped CSV row with invalid coordinates: (.*)$/);
+    const csvMatch = warning.match(REGEX.importModal.csvInvalidCoordinatesWarning);
     if (csvMatch) {
       return {
         summary: this.t('import.warningCsvRowSummary'),
@@ -502,7 +503,7 @@ export class ImportCodeModalComponent {
       };
     }
 
-    const svgPathMatch = warning.match(/^Unsupported SVG path preserved as warning: (.*)$/);
+    const svgPathMatch = warning.match(REGEX.importModal.svgPathWarning);
     if (svgPathMatch) {
       return {
         summary: this.t('import.warningSvgPathSummary'),

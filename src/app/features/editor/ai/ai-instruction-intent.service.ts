@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { EditorLanguageService } from '../i18n/editor-language.service';
 import type { AiColorRange } from './color-range-randomizer.service';
+import { aiWholeTermRegex, REGEX } from '../../../shared/regex/regex.utils';
 
 export type AiConversationIntent = 'greeting' | 'thanks';
 
@@ -53,11 +54,7 @@ export class AiInstructionIntentService {
   }
 
   normalizeInstruction(instruction: string): string {
-    return instruction
-      .normalize('NFD')
-      .replace(/\p{Diacritic}/gu, '')
-      .toLowerCase()
-      .trim();
+    return instruction.normalize('NFD').replace(REGEX.ai.diacritic, '').toLowerCase().trim();
   }
 
   hasLocalizedTerm(instruction: string, key: string): boolean {
@@ -126,7 +123,7 @@ export class AiInstructionIntentService {
   }
 
   private hasQuestionShape(instruction: string): boolean {
-    return /\?/.test(instruction) || this.hasLocalizedTerm(instruction, 'ai.intent.questionStarters');
+    return REGEX.ai.questionMark.test(instruction) || this.hasLocalizedTerm(instruction, 'ai.intent.questionStarters');
   }
 
   private isCapabilityTarget(instruction: string): boolean {
@@ -140,17 +137,11 @@ export class AiInstructionIntentService {
   }
 
   private termPattern(term: string): RegExp {
-    return new RegExp(String.raw`(^|[^\p{L}\p{N}_])${this.escapeRegExp(term)}(?=$|[^\p{L}\p{N}_])`, 'u');
-  }
-
-  private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    return aiWholeTermRegex(term);
   }
 
   private normalizeConversationInput(instruction: string): string {
-    return this.normalizeInstruction(instruction)
-      .replace(/[!¡?¿.]+$/g, '')
-      .trim();
+    return this.normalizeInstruction(instruction).replace(REGEX.ai.trailingPunctuation, '').trim();
   }
 
   private greetingInputs(): readonly string[] {

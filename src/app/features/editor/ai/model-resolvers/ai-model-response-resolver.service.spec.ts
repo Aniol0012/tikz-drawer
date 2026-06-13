@@ -5,6 +5,7 @@ import type { AiSceneContext } from '../ai-scene-context.model';
 import type { AiResponse } from '../ai-message.model';
 import type { AiProviderTextResult } from '../ai-provider-result.model';
 import { AiModelResponseResolverService } from './ai-model-response-resolver.service';
+import { REGEX } from '../../../../shared/regex/regex.utils';
 
 describe('AiModelResponseResolverService', () => {
   let resolver: AiModelResponseResolverService;
@@ -255,8 +256,8 @@ function messageResponse(message: string, parseStatus: AiResponse['parseStatus']
 
 function expectHexColorPair(value: unknown): void {
   expect(value).toMatchObject({
-    stroke: expect.stringMatching(/^#[a-f\d]{6}$/),
-    fill: expect.stringMatching(/^#[a-f\d]{6}$/)
+    stroke: expect.stringMatching(REGEX.color.hex6Strict),
+    fill: expect.stringMatching(REGEX.color.hex6Strict)
   });
   expect((value as { readonly stroke?: string; readonly fill?: string }).stroke).not.toBe((value as { readonly stroke?: string; readonly fill?: string }).fill);
 }

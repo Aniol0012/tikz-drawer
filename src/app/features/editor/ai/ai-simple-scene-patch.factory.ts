@@ -3,6 +3,7 @@ import { EditorLanguageService } from '../i18n/editor-language.service';
 import type { CanvasShape } from '../models/tikz.models';
 import { AiInstructionIntentService } from './ai-instruction-intent.service';
 import { ColorRangeRandomizerService, type ColorRangeInput, type RandomColorPair } from './color-range-randomizer.service';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 type SimpleShapeKind = 'circle' | 'triangle' | 'ellipse' | 'rectangle' | 'square' | 'line';
 type ShapeColor = { readonly stroke: string; readonly fill: string };
@@ -402,7 +403,7 @@ export class AiSimpleScenePatchFactory {
   }
 
   private shapeCountFromInstruction(instruction: string): number {
-    const digitMatch = /\b([2-8])\b/.exec(instruction);
+    const digitMatch = REGEX.ai.sceneCount.exec(instruction);
     if (digitMatch?.[1]) {
       return Number(digitMatch[1]);
     }

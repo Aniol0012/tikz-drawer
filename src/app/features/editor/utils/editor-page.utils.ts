@@ -11,6 +11,7 @@ import {
 import type { SharedScenePayload } from '../i18n/editor-page.i18n';
 import type { CanvasShape, Point } from '../models/tikz.models';
 import { sceneToTikz } from '../tikz/tikz.codegen';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 export interface SelectionBounds {
   readonly left: number;
@@ -229,11 +230,11 @@ export const highlightLatex = (source: string): string =>
       const base = commentIndex >= 0 ? escaped.slice(0, commentIndex) : escaped;
       const comment = commentIndex >= 0 ? escaped.slice(commentIndex) : '';
       const highlightedBase = base
-        .replaceAll(/(\\[a-zA-Z@]+)/g, '<span class="tok-command">$1</span>')
-        .replaceAll(/(\[[^\]]*\])/g, '<span class="tok-option">$1</span>')
-        .replaceAll(/([()[\]{}])/g, '<span class="tok-punctuation">$1</span>')
-        .replaceAll(/(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}))/g, '<span class="tok-color">$1</span>')
-        .replaceAll(/(-?\d+(?:\.\d+)?)/g, '<span class="tok-number">$1</span>');
+        .replaceAll(REGEX.tikzHighlight.command, '<span class="tok-command">$1</span>')
+        .replaceAll(REGEX.tikzHighlight.options, '<span class="tok-option">$1</span>')
+        .replaceAll(REGEX.tikzHighlight.brackets, '<span class="tok-punctuation">$1</span>')
+        .replaceAll(REGEX.tikzHighlight.color, '<span class="tok-color">$1</span>')
+        .replaceAll(REGEX.tikzHighlight.number, '<span class="tok-number">$1</span>');
       const highlightedComment = comment ? `<span class="tok-comment">${comment}</span>` : '';
       return `${highlightedBase}${highlightedComment}`;
     })
@@ -256,7 +257,7 @@ const bytesToBase64Url = (bytes: Uint8Array): string => {
   for (let index = 0; index < bytes.length; index += chunkSize) {
     binary += String.fromCodePoint(...bytes.subarray(index, index + chunkSize));
   }
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll(/=+$/g, '');
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll(REGEX.tikzHighlight.base64Padding, '');
 };
 
 const base64UrlToBytes = (value: string): Uint8Array => {

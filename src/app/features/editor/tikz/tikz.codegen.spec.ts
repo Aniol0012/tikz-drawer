@@ -1,6 +1,7 @@
 import { sceneToStandaloneDocument, sceneToTikzBundle } from './tikz.codegen';
 import { parseTikz } from './tikz.parser';
 import type { ImageShape, LineShape, RectangleShape, TextShape, TikzScene, TriangleShape } from '../models/tikz.models';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 const baseLine: LineShape = {
   id: 'line-1',
@@ -117,7 +118,7 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('fill opacity=0.8');
     expect(bundle.code).toContain('bend');
     expect(bundle.code).not.toContain('Triangle[draw=');
-    expect(bundle.code).not.toMatch(/Triangle\[[^\]]*\bopacity=/);
+    expect(bundle.code).not.toMatch(REGEX.tikzCodegen.triangleOpacityExport);
   });
 
   it('exports additional arrow tip kinds through arrows.meta names', () => {
@@ -141,8 +142,8 @@ describe('sceneToTikzBundle', () => {
 
     const bundle = sceneToTikzBundle(scene);
 
-    expect(bundle.code).toMatch(/-\{Latex\[[^\]]*\bopen\b/);
-    expect(bundle.code).not.toMatch(/Latex\[[^\]]*\bfill=/);
+    expect(bundle.code).toMatch(REGEX.tikzCodegen.latexOpenExport);
+    expect(bundle.code).not.toMatch(REGEX.tikzCodegen.latexFillExport);
     expect(bundle.code).not.toContain('draw opacity=0,');
   });
 
@@ -156,7 +157,7 @@ describe('sceneToTikzBundle', () => {
     const bundle = sceneToTikzBundle(scene);
 
     expect(bundle.imports).not.toContain(String.raw`\usetikzlibrary{bending}`);
-    expect(bundle.code).not.toMatch(/\bflex'?|\bbend\b/);
+    expect(bundle.code).not.toMatch(REGEX.tikzCodegen.flexOrBendExport);
   });
 
   it('exports arrow tip dimensions from rendered line and arrow scales', () => {
@@ -185,7 +186,8 @@ describe('sceneToTikzBundle', () => {
     };
 
     const document = sceneToStandaloneDocument(scene, { colorMode: 'define-colors' });
-    const colorDefinitionPattern = /\\definecolor\{tikzdrawercolor1\}\{HTML\}\{112233\}/g;
+    const colorDefinitionPattern = REGEX.tikzCodegen.defineColor112233;
+    colorDefinitionPattern.lastIndex = 0;
     let colorDefinitionCount = 0;
     while (colorDefinitionPattern.exec(document)) {
       colorDefinitionCount += 1;

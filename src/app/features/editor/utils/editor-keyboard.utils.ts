@@ -1,3 +1,5 @@
+import { REGEX } from '../../../shared/regex/regex.utils';
+
 export type ModifierKey = 'space' | 'shift' | 'control' | 'meta' | 'alt';
 export type ArrowNavigationDelta = { readonly x: number; readonly y: number };
 export type KeyboardShortcutAction =
@@ -119,10 +121,10 @@ export const normalizeKeyboardShortcut = (shortcut: string, fallback = ''): stri
   }
 
   const parts = shortcut
-    .replace(/⌘|command|cmd/gi, 'Mod')
-    .replace(/control|ctrl/gi, 'Mod')
-    .replace(/option/gi, 'Alt')
-    .replace(/\s*\+\s*/g, '+')
+    .replace(REGEX.keyboard.command, 'Mod')
+    .replace(REGEX.keyboard.control, 'Mod')
+    .replace(REGEX.keyboard.option, 'Alt')
+    .replace(REGEX.keyboard.shortcutSeparator, '+')
     .split('+')
     .map((part) => part.trim())
     .filter(Boolean);
@@ -145,7 +147,7 @@ export const normalizeKeyboardShortcut = (shortcut: string, fallback = ''): stri
       key =
         normalizedPart === 'delete' || normalizedPart === 'backspace' || normalizedPart === 'enter'
           ? normalizedPart[0].toUpperCase() + normalizedPart.slice(1)
-          : part.length === 1 && /[a-z]/i.test(part)
+          : part.length === 1 && REGEX.keyboard.letter.test(part)
             ? part.toUpperCase()
             : part;
     }
@@ -337,7 +339,7 @@ export const shortcutFromKeyboardEvent = (event: KeyboardShortcutEvent, fallback
       ? 'Space'
       : key === 'delete' || key === 'backspace' || key === 'enter'
         ? key[0].toUpperCase() + key.slice(1)
-        : event.key.length === 1 && /[a-z]/i.test(event.key)
+        : event.key.length === 1 && REGEX.keyboard.letter.test(event.key)
           ? event.key.toUpperCase()
           : event.key;
   return {

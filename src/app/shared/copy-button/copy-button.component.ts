@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { getIconPath } from '../../features/editor/config/editor-icons';
+import { REGEX } from '../regex/regex.utils';
 
 export type CopyButtonAppearance = 'icon' | 'secondary' | 'dropdown';
 export type CopyButtonState = 'idle' | 'copying' | 'success' | 'error';
@@ -107,7 +108,7 @@ export class CopyButtonComponent {
   }
 
   private valueFromTarget(from: string): string {
-    const match = /^(?<id>[^.[\]]+)(?:\[(?<attribute>[^\]]+)\]|\.(?<property>[\w$]+))?$/.exec(from);
+    const match = REGEX.copyButton.bindingReference.exec(from);
     if (!match?.groups) {
       throw new Error(`Invalid copy source "${from}".`);
     }

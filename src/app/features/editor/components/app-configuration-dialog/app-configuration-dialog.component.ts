@@ -41,6 +41,7 @@ import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
+import { REGEX } from '../../../../shared/regex/regex.utils';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex' | 'ai';
 
@@ -867,6 +868,6 @@ export class AppConfigurationDialogComponent {
   }
 
   isMacPlatform(): boolean {
-    return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+    return typeof navigator !== 'undefined' && REGEX.editor.macPlatform.test(navigator.platform);
   }
 }

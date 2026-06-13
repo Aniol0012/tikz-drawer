@@ -8,6 +8,7 @@ import type { AiModelResolutionContext, AiModelResponseResolver, AiPreflightReso
 import { mutableElements } from './ai-model-response-resolver';
 import type { CanvasShape } from '../../models/tikz.models';
 import { ColorRangeRandomizerService } from '../color-range-randomizer.service';
+import { REGEX } from '../../../../shared/regex/regex.utils';
 
 const LABEL_COLOR_OPTIONS = {
   saturation: [8, 28],
@@ -217,19 +218,19 @@ export class DefaultAiModelResponseResolver implements AiModelResponseResolver {
   }
 
   private looksLikeImproveScene(instruction: string): boolean {
-    return /\b(ordena|ordenar|millora|mejora|mejorar|improve|arrange|layout)\b/.test(instruction);
+    return REGEX.ai.layoutIntent.test(instruction);
   }
 
   private looksLikeAddLabels(instruction: string): boolean {
-    return /\b(etiqueta|etiquetes|etiquetas|label|labels)\b/.test(instruction);
+    return REGEX.ai.labelIntent.test(instruction);
   }
 
   private looksLikeSimplifyScene(instruction: string): boolean {
-    return /\b(simplifica|simplificar|simplify|reduceix|reduce|reduir)\b/.test(instruction);
+    return REGEX.ai.simplifyIntent.test(instruction);
   }
 
   private looksLikeExplainScene(instruction: string): boolean {
-    return /\b(explica|explicar|explain|describe|descriu|describeix)\b/.test(instruction);
+    return REGEX.ai.explainIntent.test(instruction);
   }
 
   private shouldUseObviousCreateFallback(instruction: string): boolean {
