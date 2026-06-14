@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
 
@@ -53,7 +54,7 @@ function chipTemplate(template: string, className: string): string {
 }
 
 function toolButtonTemplates(template: string): readonly string[] {
-  const matches = [...template.matchAll(/class="tool-button/g)].map((match) => {
+  const matches = [...template.matchAll(REGEX.editor.toolButtonClass)].map((match) => {
     const classStart = match.index;
     const buttonStart = template.lastIndexOf('<button', classStart);
     const buttonEnd = template.indexOf('</button>', classStart);

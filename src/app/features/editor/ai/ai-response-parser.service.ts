@@ -3,9 +3,10 @@ import { EditorLanguageService } from '../i18n/editor-language.service';
 import { translate } from '../i18n/editor-page.i18n';
 import type { AiResponse, AiResponseParseStatus, ScenePatch } from './ai-message.model';
 import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
+import { aiSectionHeadingRegex, REGEX } from '../../../shared/regex/regex.utils';
 
-const TECHNICAL_ELEMENT_DUMP_WITH_ID_BEFORE_KIND_PATTERN = /^\s*-\s*id[:=][^;\n]+(?:;|\s)+.*\bkind[:=]/im;
-const TECHNICAL_ELEMENT_DUMP_WITH_KIND_BEFORE_ID_PATTERN = /^\s*-\s*kind[:=][^;\n]+(?:;|\s)+.*\bid[:=]/im;
+const TECHNICAL_ELEMENT_DUMP_WITH_ID_BEFORE_KIND_PATTERN = REGEX.ai.lineItemIdBeforeKind;
+const TECHNICAL_ELEMENT_DUMP_WITH_KIND_BEFORE_ID_PATTERN = REGEX.ai.lineItemKindBeforeId;
 
 @Injectable({ providedIn: 'root' })
 export class AiResponseParserService {
@@ -74,7 +75,7 @@ export class AiResponseParserService {
       return trimmed;
     }
 
-    const fencedMatch = /```(?:json)?\s*(\{[\s\S]*?\})\s*```/i.exec(trimmed);
+    const fencedMatch = REGEX.ai.fencedJsonObject.exec(trimmed);
     if (fencedMatch?.[1]) {
       return fencedMatch[1];
     }
@@ -95,8 +96,8 @@ export class AiResponseParserService {
 
   private repairJson(jsonText: string): string {
     const balanced = this.balanceJsonObject(jsonText)
-      .replace(/,\s*([}\]])/g, '$1')
-      .replace(/-?\d+\.\d{6,}/g, (value: string) => {
+      .replace(REGEX.ai.trailingJsonCommas, '$1')
+      .replace(REGEX.ai.longDecimal, (value: string) => {
         const numericValue = Number(value);
         return Number.isFinite(numericValue) ? String(Number(numericValue.toFixed(3))) : value;
       });
@@ -275,7 +276,7 @@ export class AiResponseParserService {
   }
 
   private placeholderResponse(message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {
-    return !hasPatchChanges && !tikzCode && !!message && /^\.{2,}$/.test(message.trim());
+    return !hasPatchChanges && !tikzCode && !!message && REGEX.ai.ellipsisOnly.test(message.trim());
   }
 
   private promptEchoResponse(candidate: Record<string, unknown>, message: string | undefined, hasPatchChanges: boolean, tikzCode: string | undefined): boolean {
@@ -302,11 +303,7 @@ export class AiResponseParserService {
   }
 
   private cleanTextFallback(rawText: string): string {
-    return rawText
-      .trim()
-      .replace(/^```(?:json|text)?/i, '')
-      .replace(/```$/i, '')
-      .trim();
+    return rawText.trim().replace(REGEX.ai.openingFence, '').replace(REGEX.ai.closingFence, '').trim();
   }
 
   private compactPromptEcho(text: string): boolean {
@@ -318,23 +315,20 @@ export class AiResponseParserService {
       hasPromptLine('ai.promptEcho.taskLabels') ||
       (hasPromptLine('ai.promptEcho.selectionLabels') && hasPromptLine('ai.promptEcho.elementLabels')) ||
       this.technicalElementDump(normalized) ||
-      (/^- id[:=]/m.test(normalized) && /^- kind[:=]/m.test(normalized)) ||
-      (/^FECTO:/m.test(normalized) && /^- id[:=]/m.test(normalized)) ||
+      (REGEX.ai.lineStartsId.test(normalized) && REGEX.ai.lineStartsKind.test(normalized)) ||
+      (REGEX.ai.lineStartsFecto.test(normalized) && REGEX.ai.lineStartsId.test(normalized)) ||
       this.malformedTechnicalJson(normalized) ||
       (hasPromptLine('ai.promptEcho.dateLabels') && hasPromptLine('ai.promptEcho.sceneLabels') && hasPromptLine('ai.promptEcho.elementLabels'))
     );
   }
 
   private technicalElementDump(text: string): boolean {
-    return this.technicalElementDumpLine(text) && /\b(?:geometry|style|strokeWidth|stroke|fill)[:=]/i.test(text);
+    return this.technicalElementDumpLine(text) && REGEX.ai.geometryStyleToken.test(text);
   }
 
   private malformedTechnicalJson(text: string): boolean {
     return (
-      /"?caption"?\s*:\s*"?paso\s+\d+/i.test(text) &&
-      /\b(?:id|seleccione)[:= ]+[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(text) &&
-      /\bgeometry\s*[:=]/i.test(text) &&
-      /\bstyle\s*[:=]/i.test(text)
+      REGEX.ai.pasoCaption.test(text) && REGEX.ai.uuidReference.test(text) && REGEX.ai.geometryAssignment.test(text) && REGEX.ai.styleAssignment.test(text)
     );
   }
 
@@ -346,11 +340,7 @@ export class AiResponseParserService {
   }
 
   private lineStartsWith(text: string, term: string): boolean {
-    return new RegExp(String.raw`^\s*${this.escapeRegExp(term)}\s*:`, 'im').test(text);
-  }
-
-  private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    return aiSectionHeadingRegex(term).test(text);
   }
 
   private responseType(candidate: Record<string, unknown>, hasPatchChanges: boolean, tikzCode: string | undefined): AiResponse['type'] {

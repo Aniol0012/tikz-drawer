@@ -9,6 +9,7 @@ import {
   TEXT_WRAP_MIN_CHAR_WIDTH
 } from '../constants/editor.constants';
 import type { TextShape } from '../models/tikz.models';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 const DISPLAY_TEXT_REPLACEMENTS = [
   [String.raw`\alpha`, 'α'],
@@ -59,7 +60,7 @@ export const wrapTextLine = (line: string, maxChars: number): readonly string[] 
     return [line || ' '];
   }
 
-  const words = line.split(/\s+/).filter(Boolean);
+  const words = line.split(REGEX.text.whitespace).filter(Boolean);
   if (!words.length) {
     return [line.slice(0, maxChars), ...wrapTextLine(line.slice(maxChars), maxChars)];
   }

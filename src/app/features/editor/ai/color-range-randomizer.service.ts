@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 export const AI_COLOR_RANGES = ['red', 'orange', 'yellow', 'green', 'teal', 'cyan', 'blue', 'purple', 'pink', 'rose', 'gray'] as const;
 
@@ -252,12 +253,12 @@ export class ColorRangeRandomizerService {
 
   private normalizeHex(value: string): HexColor | null {
     const trimmed = value.trim();
-    const shortMatch = /^#([a-f\d])([a-f\d])([a-f\d])$/i.exec(trimmed);
+    const shortMatch = REGEX.color.hex3Capture.exec(trimmed);
     if (shortMatch?.[1] && shortMatch[2] && shortMatch[3]) {
       return `#${shortMatch[1]}${shortMatch[1]}${shortMatch[2]}${shortMatch[2]}${shortMatch[3]}${shortMatch[3]}`.toLowerCase() as HexColor;
     }
 
-    return /^#[a-f\d]{6}$/i.test(trimmed) ? (trimmed.toLowerCase() as HexColor) : null;
+    return REGEX.color.hex6.test(trimmed) ? (trimmed.toLowerCase() as HexColor) : null;
   }
 
   private hexToHsl(hex: string): HslColor | null {

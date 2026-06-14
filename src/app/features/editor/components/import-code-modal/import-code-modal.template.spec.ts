@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { REGEX } from '../../../../shared/regex/regex.utils';
 
 describe('ImportCodeModalComponent template', () => {
   const readTemplate = (): Promise<string> =>
@@ -8,7 +9,7 @@ describe('ImportCodeModalComponent template', () => {
 
   it('keeps the clear-scene toggle in the footer actions immediately before the import button', async () => {
     const template = await readTemplate();
-    const footerActions = template.match(/<div class="import-code-modal__footer-actions">([\s\S]*?)<\/div>/)?.[1] ?? '';
+    const footerActions = template.match(REGEX.editor.importFooterActions)?.[1] ?? '';
 
     expect(footerActions.indexOf('<app-toggle-field')).toBeGreaterThanOrEqual(0);
     expect(footerActions.indexOf('<button class="primary-button"')).toBeGreaterThan(footerActions.indexOf('<app-toggle-field'));
@@ -18,7 +19,7 @@ describe('ImportCodeModalComponent template', () => {
 
   it('does not render the clear-scene toggle in the import input panel', async () => {
     const template = await readTemplate();
-    const inputPanel = template.match(/<section class="import-input-panel"[\s\S]*?<section class="import-workspace">/)?.[0] ?? '';
+    const inputPanel = template.match(REGEX.editor.importInputPanel)?.[0] ?? '';
 
     expect(inputPanel).not.toContain('<app-toggle-field');
     expect(inputPanel).not.toContain('clearSceneBeforeImport');

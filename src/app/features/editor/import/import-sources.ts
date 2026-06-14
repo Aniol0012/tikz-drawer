@@ -1,6 +1,7 @@
 import type { CanvasShape, LineShape, PersistedEditorState, TikzScene } from '../models/tikz.models';
 import { DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
 import { parseTikz } from '../tikz/tikz.parser';
+import { keyValueRegex, REGEX } from '../../../shared/regex/regex.utils';
 
 export type ImportSourceKind = 'tikz' | 'tex' | 'project-json' | 'drawio' | 'svg' | 'mermaid' | 'dot' | 'csv' | 'image';
 
@@ -76,7 +77,7 @@ const normalizeColor = (value: string | null | undefined, fallback: string): str
   if (raw === 'none') {
     return 'none';
   }
-  if (/^#[0-9a-f]{3}$/i.test(raw)) {
+  if (REGEX.color.hex3.test(raw)) {
     return `#${raw[1]}${raw[1]}${raw[2]}${raw[2]}${raw[3]}${raw[3]}`.toLowerCase();
   }
   return raw;
@@ -111,7 +112,8 @@ const textShape = (x: number, y: number, text: string, color = '#0f172a'): Canva
 
 export const extractTikzDiagrams = (source: string): readonly ExtractedTikzDiagram[] => {
   const diagrams: ExtractedTikzDiagram[] = [];
-  const pattern = /\\begin\{tikzpicture\}(?:\[[^\]]*\])?[\s\S]*?\\end\{tikzpicture\}/g;
+  const pattern = REGEX.importSources.tikzPictureEnvironment;
+  pattern.lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(source);
 
   while (match) {
@@ -370,10 +372,10 @@ export const importDrawioSource = (source: string): ImportDialogResult => {
   return { scene: makeScene('Imported Draw.io diagram', shapes), importCode: source, warnings: [] };
 };
 
-export const importMermaidSource = (source: string): ImportDialogResult => graphSourceToScene(source, /(.+?)\s*(-->|---)\s*(.+)/, 'Imported Mermaid graph');
+export const importMermaidSource = (source: string): ImportDialogResult =>
+  graphSourceToScene(source, REGEX.importSources.mermaidEdge, 'Imported Mermaid graph');
 
-export const importDotSource = (source: string): ImportDialogResult =>
-  graphSourceToScene(source, /"?([^";{}]+?)"?\s*(->|--)\s*"?([^";{}]+?)"?/, 'Imported DOT graph');
+export const importDotSource = (source: string): ImportDialogResult => graphSourceToScene(source, REGEX.importSources.dotEdge, 'Imported DOT graph');
 
 export const importCsvSource = (source: string, xColumn: string, yColumn: string, labelColumn: string, groupColumn: string): ImportDialogResult => {
   const rows = parseCsvRows(source);
@@ -473,8 +475,8 @@ const offsetShape = (shape: CanvasShape, deltaX: number, deltaY: number): Canvas
 };
 
 const pathToLines = (path: string, stroke: string, strokeWidth: number, warnings: string[]): readonly CanvasShape[] => {
-  const numbers = Array.from(path.matchAll(/-?\d+(?:\.\d+)?/g)).map((match) => Number(match[0]) / 40);
-  if (!/[ML]/i.test(path) || numbers.length < 4) {
+  const numbers = Array.from(path.matchAll(REGEX.importSources.svgPathNumber)).map((match) => Number(match[0]) / 40);
+  if (!REGEX.importSources.svgPathMoveOrLine.test(path) || numbers.length < 4) {
     warnings.push(`Unsupported SVG path preserved as warning: ${path}`);
     return [];
   }
@@ -486,7 +488,7 @@ const pathToLines = (path: string, stroke: string, strokeWidth: number, warnings
 };
 
 const styleValue = (style: string, key: string, fallback: string): string => {
-  const match = new RegExp(`${key}=([^;]+)`).exec(style);
+  const match = keyValueRegex(key).exec(style);
   return normalizeColor(match?.[1], fallback);
 };
 
@@ -509,8 +511,7 @@ const drawioArrowType = (style: string): LineShape['arrowType'] => {
   return 'latex';
 };
 
-const isDrawioArrowVertex = (style: string): boolean =>
-  /(?:^|;)shape=(?:singleArrow|doubleArrow|flexArrow|filledEdge)(?:;|$)/.test(style) || /(?:^|;)arrowWidth=/.test(style);
+const isDrawioArrowVertex = (style: string): boolean => REGEX.importSources.drawioArrowShape.test(style) || REGEX.importSources.drawioArrowWidth.test(style);
 
 const drawioEdgePoints = (geometry: Element): readonly { readonly x: number; readonly y: number }[] => {
   const points = Array.from(geometry.getElementsByTagName('*'))
@@ -537,15 +538,15 @@ const drawioEdgePoints = (geometry: Element): readonly { readonly x: number; rea
 
 const decodeHtml = (value: string): string => {
   const element = document.createElement('textarea');
-  element.innerHTML = value.replaceAll(/<br\s*\/?>/gi, '\n').replaceAll(/<[^>]+>/g, '');
+  element.innerHTML = value.replaceAll(REGEX.importSources.htmlBreak, '\n').replaceAll(REGEX.importSources.htmlTag, '');
   return element.value.trim();
 };
 
 const graphSourceToScene = (source: string, edgePattern: RegExp, name: string): ImportDialogResult => {
   const labels = new Set<string>();
   const edges: { readonly from: string; readonly to: string; readonly directed: boolean }[] = [];
-  for (const rawLine of source.split(/\r?\n/)) {
-    const line = rawLine.trim().replace(/[;{}]/g, '');
+  for (const rawLine of source.split(REGEX.shared.lineBreak)) {
+    const line = rawLine.trim().replace(REGEX.importSources.graphLinePunctuation, '');
     const match = edgePattern.exec(line);
     if (!match) {
       continue;
@@ -597,10 +598,10 @@ const normalizeGraphLabel = (value: string): string => value.replaceAll('[', '')
 
 const parseCsvRows = (source: string): readonly string[][] =>
   source
-    .split(/\r?\n/)
+    .split(REGEX.shared.lineBreak)
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => line.split(/[,;\t]/).map((cell) => cell.trim()));
+    .map((line) => line.split(REGEX.importSources.csvCellSeparator).map((cell) => cell.trim()));
 
 const columnIndex = (headers: readonly string[], preferred: string, fallbacks: readonly string[]): number => {
   const candidates = [preferred, ...fallbacks].filter(Boolean).map((candidate) => candidate.toLowerCase());

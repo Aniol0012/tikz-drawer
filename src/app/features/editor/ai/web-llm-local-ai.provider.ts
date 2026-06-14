@@ -13,6 +13,7 @@ import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service'
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import { aiDebugLoggingEnabled } from './ai-debug-logging';
 import { AI_PROMPT_ECHO_SENTINEL } from './ai-prompt-echo-sentinel';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 const DEFAULT_WEB_LLM_MODEL = WEB_LLM_MODEL_OPTIONS[0];
 const WEB_LLM_MAX_OUTPUT_TOKENS = 384;
@@ -337,11 +338,8 @@ function sceneSummaryForPayload(elements: readonly WebLlmPromptElement[]): strin
 }
 
 function looksLikeExplainInstruction(instruction: string): boolean {
-  const normalized = instruction
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-  return /\b(explica|explicar|explain|describe|descriu|descriure|que es|que representa|what is|what does)\b/.test(normalized);
+  const normalized = instruction.normalize('NFD').replace(REGEX.ai.diacritic, '').toLowerCase();
+  return REGEX.ai.localExplainIntent.test(normalized);
 }
 
 function formatPromptElement(element: WebLlmPromptElement): string {
@@ -392,7 +390,7 @@ function formatPromptValue(value: unknown): string {
   }
 
   if (typeof value === 'string') {
-    return value.replaceAll(/\s+/g, ' ').trim().slice(0, 160);
+    return value.replaceAll(REGEX.ai.whitespaceGlobal, ' ').trim().slice(0, 160);
   }
 
   if (Array.isArray(value)) {

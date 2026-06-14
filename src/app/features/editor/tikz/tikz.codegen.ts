@@ -19,6 +19,7 @@ import {
   SHAPE_STROKE_SCALE_FACTOR
 } from '../constants/editor.constants';
 import { effectiveRectangleCornerRadius, effectiveTriangleCornerRadius } from '../utils/editor-geometry.utils';
+import { REGEX } from '../../../shared/regex/regex.utils';
 
 export interface TikzExportBundle {
   readonly imports: string;
@@ -71,8 +72,6 @@ const INLINE_MATH_COMMANDS = [
 const INLINE_MATH_COMMAND_BY_NAME = new Map<string, string>(
   INLINE_MATH_COMMANDS.map((command) => [command, command === 'e' ? String.raw`\ensuremath{\mathrm{e}}` : `\\ensuremath{\\${command}}`])
 );
-const INLINE_MATH_COMMAND_REGEX = new RegExp(String.raw`\\(?:${INLINE_MATH_COMMANDS.join('|')})`, 'g');
-
 const formatNumber = (value: number): string => {
   const rounded = Number.parseFloat(value.toFixed(3));
   return rounded.toString();
@@ -103,7 +102,9 @@ const wrapInlineMathCommands = (text: string): string => {
       return;
     }
 
-    result += inMathMode ? buffer : buffer.replaceAll(INLINE_MATH_COMMAND_REGEX, (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command);
+    result += inMathMode
+      ? buffer
+      : buffer.replaceAll(REGEX.tikzCodegen.inlineMathCommand, (command) => INLINE_MATH_COMMAND_BY_NAME.get(command.slice(1)) ?? command);
     buffer = '';
   };
 
@@ -141,7 +142,7 @@ const sanitizeColorKey = (color: string): string => color.trim().toLowerCase();
 
 const normalizeHexColor = (color: string): string | null => {
   const trimmed = color.trim();
-  const match = /^#?([0-9a-fA-F]{6})$/.exec(trimmed);
+  const match = REGEX.color.optionalHashHex6.exec(trimmed);
   return match ? match[1].toUpperCase() : null;
 };
 

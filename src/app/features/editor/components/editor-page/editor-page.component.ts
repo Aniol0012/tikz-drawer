@@ -287,6 +287,7 @@ import {
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
 import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
+import { REGEX } from '../../../../shared/regex/regex.utils';
 
 @Component({
   selector: 'app-editor-page',
@@ -2771,7 +2772,7 @@ export class EditorPageComponent {
       if (shape.kind !== 'text') {
         return shape;
       }
-      let text = shape.text.replaceAll(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+      let text = shape.text.replaceAll(REGEX.editor.wordTitleCase, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
       if (mode === 'uppercase') {
         text = shape.text.toUpperCase();
       } else if (mode === 'lowercase') {
@@ -5916,11 +5917,7 @@ export class EditorPageComponent {
   }
 
   suggestedLabel(): string {
-    const slug = this.scene()
-      .name.toLowerCase()
-      .trim()
-      .replaceAll(/[^a-z0-9]+/g, '-')
-      .replaceAll(/^-+|-+$/g, '');
+    const slug = this.scene().name.toLowerCase().trim().replaceAll(REGEX.editor.slugInvalidChars, '-').replaceAll(REGEX.editor.slugTrimDashes, '');
     return `fig:${slug || 'tikz-figure'}`;
   }
 
@@ -6913,7 +6910,7 @@ export class EditorPageComponent {
     const { width, height } = this.imageInsertionSize(aspectRatio);
     const imageShape = this.applyInsertionDefaults({
       id: crypto.randomUUID(),
-      name: file.name.replaceAll(/\.[^/.]+$/g, '') || 'Image',
+      name: file.name.replaceAll(REGEX.editor.extensionSuffix, '') || 'Image',
       kind: 'image',
       stroke: this.preferences().defaultStroke,
       strokeOpacity: 1,
@@ -7193,7 +7190,7 @@ export class EditorPageComponent {
   }
 
   private exportFileBaseName(): string {
-    return (this.scene().name || 'figure').trim().replaceAll(/[\\/:*?"<>|]+/g, '-');
+    return (this.scene().name || 'figure').trim().replaceAll(REGEX.editor.filenameInvalidChars, '-');
   }
 
   private isRepeatedTextTap(shapeId: string): boolean {

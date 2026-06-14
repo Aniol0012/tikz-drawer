@@ -12,6 +12,7 @@ import type {
 } from '../models/tikz.models';
 import { DEFAULT_ARROW_TIP_LENGTH, DEFAULT_ARROW_TIP_WIDTH, DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
 import type { NamedNode, ParseContext, ParsedNode, TikzBasis } from './tikz.parser.types';
+import { arrowDimensionRegex, literalGlobalRegex, REGEX, variableReferenceRegex } from '../../../shared/regex/regex.utils';
 
 const defaultSceneBounds = {
   width: 960,
@@ -26,31 +27,10 @@ const defaultTikzBasis: TikzBasis = {
 
 type TikzLabelPosition = 'above' | 'below' | 'left' | 'right' | 'above left' | 'above right' | 'below left' | 'below right';
 
-const TIKZ_NUMBER_PATTERN = String.raw`-?\d+(?:\.\d+)?`;
-const POINT_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`);
-const HEX_COLOR_PATTERN = /^#?([0-9a-fA-F]{6})$/;
-const ARROW_DRAW_PATTERN = /draw=({[^}]+}|[^,\]]+)/i;
-const ARROW_OPACITY_PATTERN = /opacity=([^,\]]+)/i;
-const ARROW_SCALE_PATTERN = /scale=([^,\]}]+)/i;
-const TRIANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/;
-const SMOOTH_LINE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/;
-const RECTANGLE_PATTERN = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/;
-const ELLIPSE_PATTERN = new RegExp(
-  String.raw`^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>${TIKZ_NUMBER_PATTERN})\s*and\s*(?<ry>${TIKZ_NUMBER_PATTERN})\s*\)\s*;?$`
-);
-const IMAGE_NODE_PATTERN =
-  /^\\node(?:\[(?<styles>.+)\])?\s*at\s*(?<point>\([^)]*\))\s*\{\\includegraphics\[(?<imageOptions>[^\]]*)\]\{(?<source>[^}]+)\}\}\s*;?$/;
-const IMAGE_WIDTH_PATTERN = /(?:^|,)\s*width\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
-const IMAGE_HEIGHT_PATTERN = /(?:^|,)\s*height\s*=\s*(-?\d+(?:\.\d+)?)\s*cm/i;
-const POINTS_PATTERN = new RegExp(String.raw`\(\s*(${TIKZ_NUMBER_PATTERN})\s*,\s*(${TIKZ_NUMBER_PATTERN})\s*\)`, 'g');
-const ARROW_BEND_PATTERN = new RegExp(String.raw`[[,]\s*bend(?:\s*[,}\]])`, 'i');
-const ARROW_FLEX_PRIME_PATTERN = new RegExp(String.raw`flex'\s*(?:=|[,}\]])`, 'i');
-const ARROW_FLEX_PATTERN = new RegExp(String.raw`flex\s*(?:=|[,}\]])`, 'i');
-
 const createId = (): string => crypto.randomUUID();
 
 const parsePoint = (value: string): { x: number; y: number } | null => {
-  const match = POINT_PATTERN.exec(value);
+  const match = REGEX.tikzParser.point.exec(value);
 
   if (!match) {
     return null;
@@ -67,7 +47,7 @@ const parseDimension = (value: string | undefined, fallback = 0): number => {
     return fallback;
   }
 
-  const match = /^\s*(-?\d+(?:\.\d+)?)\s*(cm|mm|pt|in)?\s*$/i.exec(removeOuterBraces(value));
+  const match = REGEX.tikzParser.dimension.exec(removeOuterBraces(value));
   if (!match) {
     return fallback;
   }
@@ -96,13 +76,12 @@ const projectCoordinate = (x: number, y: number, z: number, basis: TikzBasis): P
 
 const replaceTikzVariables = (value: string, variables: Record<string, string>): string =>
   Object.entries(variables).reduce((nextValue, [name, replacement]) => {
-    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-    return nextValue.replace(new RegExp(`${escapedName}(?![A-Za-z])`, 'g'), replacement);
+    return nextValue.replace(variableReferenceRegex(name), replacement);
   }, value);
 
 const numericExpressionTokens = (source: string): readonly string[] | null => {
-  const tokens = source.match(/\d+(?:\.\d+)?|[()+\-*/]/g);
-  return tokens?.join('').length === source.replace(/\s+/g, '').length ? tokens : null;
+  const tokens = source.match(REGEX.tikzParser.numericExpressionToken);
+  return tokens?.join('').length === source.replace(REGEX.tikzParser.whitespaceGlobal, '').length ? tokens : null;
 };
 
 const evaluateNumericExpression = (source: string): number | null => {
@@ -176,8 +155,8 @@ const parseCoordinateDimension = (value: string): number => {
 };
 
 const parseCoordinateLiteral = (value: string, basis: TikzBasis, variables: Record<string, string> = {}): Point | null => {
-  const normalized = replaceTikzVariables(value.trim().replace(/^\((.*)\)$/, '$1'), variables);
-  const polarMatch = new RegExp(String.raw`^\s*(${TIKZ_NUMBER_PATTERN})\s*:\s*(.+?)\s*$`).exec(normalized);
+  const normalized = replaceTikzVariables(value.trim().replace(REGEX.tikzParser.wrappedParens, '$1'), variables);
+  const polarMatch = REGEX.tikzParser.polarCoordinate.exec(normalized);
   if (polarMatch) {
     const angle = Number(polarMatch[1]);
     const radius = parseDimension(polarMatch[2], Number.NaN);
@@ -189,7 +168,7 @@ const parseCoordinateLiteral = (value: string, basis: TikzBasis, variables: Reco
     return projectCoordinate(Math.cos(radians) * radius, Math.sin(radians) * radius, 0, basis);
   }
 
-  const parts = normalized.split(/\s*,\s*/);
+  const parts = normalized.split(REGEX.tikzParser.commaListSeparator);
   if (parts.length !== 2 && parts.length !== 3) {
     return null;
   }
@@ -239,9 +218,9 @@ const mixHexWithWhite = (hex: string, percent: number): string => {
 };
 
 const parseTikzRgbColor = (value: string): string | null => {
-  const [model, ...channels] = removeOuterBraces(value).split(/\s*[:;]\s*/);
+  const [model, ...channels] = removeOuterBraces(value).split(REGEX.tikzParser.rgbChannelSeparator);
 
-  if (!model || channels.length !== 3 || !/^rgb\s*,/i.test(model)) {
+  if (!model || channels.length !== 3 || !REGEX.tikzParser.rgbModel.test(model)) {
     return null;
   }
 
@@ -263,7 +242,7 @@ function tikzColorChannel(value: string | undefined, channel: 'red' | 'green' | 
     return null;
   }
 
-  const [name, raw] = value.split(/\s*,\s*/);
+  const [name, raw] = value.split(REGEX.tikzParser.colorChannelSeparator);
   if (name?.toLowerCase() !== channel) {
     return null;
   }
@@ -291,12 +270,12 @@ const normalizeTikzColor = (value: string | undefined, fallback: string): string
     return rgbColor;
   }
 
-  const hexMatch = HEX_COLOR_PATTERN.exec(normalized);
+  const hexMatch = REGEX.color.optionalHashHex6.exec(normalized);
   if (hexMatch) {
     return `#${hexMatch[1].toLowerCase()}`;
   }
 
-  const mixMatch = /^([a-z]+)!(\d+(?:\.\d+)?)$/i.exec(normalized);
+  const mixMatch = REGEX.tikzParser.colorMix.exec(normalized);
   if (mixMatch) {
     const base = NAMED_TIKZ_COLORS[mixMatch[1].toLowerCase()];
     const percent = Number(mixMatch[2]);
@@ -420,13 +399,13 @@ const extractBalanced = (
 };
 
 const extractTikzPictureOptions = (source: string): string | undefined => {
-  const beginMatch = /\\begin\{tikzpicture\}/.exec(source);
+  const beginMatch = REGEX.tikzParser.tikzBeginCommand.exec(source);
   if (!beginMatch) {
     return undefined;
   }
 
   const afterBegin = beginMatch.index + beginMatch[0].length;
-  const optionStart = source.slice(afterBegin).search(/\S/);
+  const optionStart = source.slice(afterBegin).search(REGEX.tikzParser.nonWhitespace);
   if (optionStart < 0 || source[afterBegin + optionStart] !== '[') {
     return undefined;
   }
@@ -439,14 +418,14 @@ const stripTikzPictureOptionBlocks = (source: string): string => {
   let searchIndex = 0;
 
   while (searchIndex < nextSource.length) {
-    const beginMatch = /\\begin\{tikzpicture\}/.exec(nextSource.slice(searchIndex));
+    const beginMatch = REGEX.tikzParser.tikzBeginCommand.exec(nextSource.slice(searchIndex));
     if (!beginMatch) {
       break;
     }
 
     const beginIndex = searchIndex + beginMatch.index;
     const afterBegin = beginIndex + beginMatch[0].length;
-    const optionStart = nextSource.slice(afterBegin).search(/\S/);
+    const optionStart = nextSource.slice(afterBegin).search(REGEX.tikzParser.nonWhitespace);
     if (optionStart < 0 || nextSource[afterBegin + optionStart] !== '[') {
       searchIndex = afterBegin;
       continue;
@@ -496,8 +475,6 @@ const stripNewCommandBlocks = (source: string): string => {
   return nextSource;
 };
 
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-
 const splitTopLevelCommaList = (source: string): readonly string[] => {
   const values: string[] = [];
   let depth = 0;
@@ -527,7 +504,7 @@ const splitTopLevelCommaList = (source: string): readonly string[] => {
 };
 
 const expandForeachListItems = (source: string): readonly string[] => {
-  const rangeMatch = /^\s*(-?\d+)\s*,\s*\.\.\.\s*,\s*(-?\d+)\s*$/.exec(source);
+  const rangeMatch = REGEX.tikzParser.foreachRange.exec(source);
   if (!rangeMatch) {
     return splitTopLevelCommaList(source);
   }
@@ -552,7 +529,7 @@ const expandForeachLoops = (source: string): string => {
       break;
     }
 
-    const inMatch = /\s+in\s+/.exec(nextSource.slice(foreachIndex + String.raw`\foreach`.length));
+    const inMatch = REGEX.tikzParser.foreachIn.exec(nextSource.slice(foreachIndex + String.raw`\foreach`.length));
     if (!inMatch) {
       searchIndex = foreachIndex + String.raw`\foreach`.length;
       continue;
@@ -567,7 +544,7 @@ const expandForeachLoops = (source: string): string => {
       .map((variable) => variable.trim())
       .filter(Boolean);
     const listStart = variablesEnd + inMatch[0].length;
-    const listOpenIndex = nextSource.slice(listStart).search(/\S/);
+    const listOpenIndex = nextSource.slice(listStart).search(REGEX.tikzParser.nonWhitespace);
     if (listOpenIndex < 0 || nextSource[listStart + listOpenIndex] !== '{') {
       searchIndex = listStart;
       continue;
@@ -580,7 +557,7 @@ const expandForeachLoops = (source: string): string => {
       continue;
     }
 
-    const bodyOpenIndex = nextSource.slice(list.endIndex).search(/\S/);
+    const bodyOpenIndex = nextSource.slice(list.endIndex).search(REGEX.tikzParser.nonWhitespace);
     if (bodyOpenIndex < 0 || nextSource[list.endIndex + bodyOpenIndex] !== '{') {
       searchIndex = list.endIndex;
       continue;
@@ -598,7 +575,7 @@ const expandForeachLoops = (source: string): string => {
         const values = item.split('/').map((value) => value.trim());
         return variables.reduce((nextBody, variable, index) => {
           const replacement = values[index] ?? '';
-          return nextBody.replace(new RegExp(escapeRegExp(variable), 'g'), replacement);
+          return nextBody.replace(literalGlobalRegex(variable), replacement);
         }, body.value);
       })
       .join('\n');
@@ -645,7 +622,7 @@ const parseTikzBasis = (source: string): TikzBasis => {
 
 const parseTikzVariables = (source: string): Record<string, string> => {
   const variables: Record<string, string> = {};
-  const definitionPattern = /\\def\\(?<name>[A-Za-z]+)\{(?<value>[^}]*)\}/g;
+  const definitionPattern = REGEX.tikzParser.defVariable;
   let match: RegExpExecArray | null = definitionPattern.exec(source);
 
   while (match?.groups) {
@@ -657,7 +634,7 @@ const parseTikzVariables = (source: string): Record<string, string> => {
 };
 
 const evaluatePgfMathExpression = (source: string): number | null => {
-  const modMatch = /^mod\((.+),\s*(-?\d+(?:\.\d+)?)\)$/.exec(source.trim());
+  const modMatch = REGEX.tikzParser.pgfMod.exec(source.trim());
   if (modMatch) {
     const value = evaluateNumericExpression(modMatch[1]);
     const divisor = Number(modMatch[2]);
@@ -671,7 +648,7 @@ const evaluatePgfMathExpression = (source: string): number | null => {
 };
 
 const parsePgfMathTruncateMacro = (line: string, context: ParseContext): boolean => {
-  const match = /^\\pgfmathtruncatemacro\{(?<name>\\[A-Za-z]+)\}\{(?<expression>.+)\};?$/.exec(line);
+  const match = REGEX.tikzParser.pgfMathTruncateMacro.exec(line);
   if (!match?.groups) {
     return false;
   }
@@ -694,7 +671,7 @@ const parseNodeDistance = (source: string): ParseContext['nodeDistance'] => {
     return { horizontal: 1, vertical: 1 };
   }
 
-  const [verticalRaw, horizontalRaw] = rawDistance.split(/\s+and\s+/i).map((part) => part.trim());
+  const [verticalRaw, horizontalRaw] = rawDistance.split(REGEX.tikzParser.nodeDistanceSeparator).map((part) => part.trim());
   const vertical = parseDimension(verticalRaw, 1);
   return {
     vertical,
@@ -754,7 +731,7 @@ const styleOpacity = (styles: Record<string, string>, key: string): number => {
 const styleRotation = (styles: Record<string, string>): number => {
   const rotateAround = styles['rotate around'];
   if (rotateAround) {
-    const match = /[{]?\s*(-?\d+(?:\.\d+)?)/.exec(rotateAround);
+    const match = REGEX.tikzParser.rotateAround.exec(rotateAround);
     const parsed = Number.parseFloat(match?.[1] ?? '');
     return Number.isFinite(parsed) ? parsed : 0;
   }
@@ -802,13 +779,13 @@ const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] 
 
 const parseArrowColor = (styles: Record<string, string>): string => {
   const raw = styles['arrow meta'] ?? '';
-  const drawMatch = ARROW_DRAW_PATTERN.exec(raw);
+  const drawMatch = REGEX.tikzParser.arrowDraw.exec(raw);
   return normalizeTikzColor(drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'], '#0f172a');
 };
 
 const parseArrowOpacity = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
-  const opacityMatch = ARROW_OPACITY_PATTERN.exec(raw);
+  const opacityMatch = REGEX.tikzParser.arrowOpacity.exec(raw);
   if (opacityMatch) {
     const parsed = Number.parseFloat(opacityMatch[1]);
     if (Number.isFinite(parsed)) {
@@ -818,21 +795,21 @@ const parseArrowOpacity = (styles: Record<string, string>): number => {
   return styleOpacity(styles, 'opacity');
 };
 
-const parseArrowOpen = (styles: Record<string, string>): boolean => /[[,]\s*open(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+const parseArrowOpen = (styles: Record<string, string>): boolean => REGEX.tikzParser.arrowOpen.test(styles['arrow meta'] ?? '');
 
-const parseArrowRound = (styles: Record<string, string>): boolean => /[[,]\s*round(?:\s*[,}\]])/i.test(styles['arrow meta'] ?? '');
+const parseArrowRound = (styles: Record<string, string>): boolean => REGEX.tikzParser.arrowRound.test(styles['arrow meta'] ?? '');
 
 const parseArrowScale = (styles: Record<string, string>): number => {
   const raw = styles['arrow meta'] ?? '';
-  const match = ARROW_SCALE_PATTERN.exec(raw);
+  const match = REGEX.tikzParser.arrowScale.exec(raw);
   const parsed = Number.parseFloat(match?.[1] ?? '');
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 };
 
 const parseArrowDimensionScale = (styles: Record<string, string>, key: 'length' | 'width', defaultValue: number): number => {
   const raw = styles['arrow meta'] ?? '';
-  const match = new RegExp(`${key}=([^,\\]}]+)`, 'i').exec(raw);
-  const parsed = Number.parseFloat((match?.[1] ?? '').replaceAll(/(?:pt|cm|mm|ex|em)/g, '').trim());
+  const match = arrowDimensionRegex(key).exec(raw);
+  const parsed = Number.parseFloat((match?.[1] ?? '').replaceAll(REGEX.tikzParser.arrowDimensionUnit, '').trim());
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return 1;
   }
@@ -841,13 +818,13 @@ const parseArrowDimensionScale = (styles: Record<string, string>, key: 'length' 
 
 const parseArrowBendMode = (styles: Record<string, string>): LineShape['arrowBendMode'] => {
   const raw = styles['arrow meta'] ?? '';
-  if (ARROW_BEND_PATTERN.test(raw)) {
+  if (REGEX.tikzParser.arrowBend.test(raw)) {
     return 'bend';
   }
-  if (ARROW_FLEX_PRIME_PATTERN.test(raw)) {
+  if (REGEX.tikzParser.arrowFlexPrime.test(raw)) {
     return 'flex-prime';
   }
-  if (ARROW_FLEX_PATTERN.test(raw)) {
+  if (REGEX.tikzParser.arrowFlex.test(raw)) {
     return 'flex';
   }
   return 'none';
@@ -865,11 +842,8 @@ const anchorPointForNode = (node: NamedNode, anchor: string): Point => {
 };
 
 const parseNamedAnchorPoint = (value: string, context: ParseContext): Point | null => {
-  const normalized = value
-    .trim()
-    .replace(/^\((.*)\)$/, '$1')
-    .trim();
-  const match = /^([A-Za-z][\w-]*)(?:\.([A-Za-z ]+))?$/.exec(normalized);
+  const normalized = value.trim().replace(REGEX.tikzParser.wrappedParens, '$1').trim();
+  const match = REGEX.tikzParser.namedAnchor.exec(normalized);
   if (!match) {
     return null;
   }
@@ -932,7 +906,7 @@ const parseCoordinateExpression = (value: string, context: ParseContext): Point 
     };
   }
 
-  const interpolationMatch = /^\((?<from>[^)]+)\)\s*!\s*(?<ratio>-?\d+(?:\.\d+)?)\s*!\s*\((?<to>[^)]+)\)$/.exec(calcExpression);
+  const interpolationMatch = REGEX.tikzParser.interpolation.exec(calcExpression);
   if (interpolationMatch?.groups) {
     const from = parseCoordinateExpression(`(${interpolationMatch.groups['from']})`, context);
     const to = parseCoordinateExpression(`(${interpolationMatch.groups['to']})`, context);
@@ -947,7 +921,7 @@ const parseCoordinateExpression = (value: string, context: ParseContext): Point 
     };
   }
 
-  const projectionMatch = /^\((?<from>[^)]+)\)\s*!\s*\((?<point>[^)]+)\)\s*!\s*\((?<to>[^)]+)\)$/.exec(calcExpression);
+  const projectionMatch = REGEX.tikzParser.projection.exec(calcExpression);
   if (projectionMatch?.groups) {
     const from = parseCoordinateExpression(`(${projectionMatch.groups['from']})`, context);
     const point = parseCoordinateExpression(`(${projectionMatch.groups['point']})`, context);
@@ -974,7 +948,7 @@ const parseCoordinateExpression = (value: string, context: ParseContext): Point 
 };
 
 const parseLine = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/.exec(line);
+  const match = REGEX.tikzParser.simpleLine.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1018,22 +992,22 @@ const parseLine = (line: string, context?: ParseContext): CanvasShape | null => 
 
 const parsePointList = (raw: string): readonly Point[] => {
   const points: Point[] = [];
-  POINTS_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null = POINTS_PATTERN.exec(raw);
+  REGEX.tikzParser.points.lastIndex = 0;
+  let match: RegExpExecArray | null = REGEX.tikzParser.points.exec(raw);
 
   while (match) {
     points.push({
       x: Number(match[1]),
       y: Number(match[2])
     });
-    match = POINTS_PATTERN.exec(raw);
+    match = REGEX.tikzParser.points.exec(raw);
   }
 
   return points;
 };
 
 const parseSmoothLine = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = SMOOTH_LINE_PATTERN.exec(line);
+  const match = REGEX.tikzParser.smoothLine.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1075,7 +1049,7 @@ const parseSmoothLine = (line: string, context?: ParseContext): CanvasShape | nu
 };
 
 const parseRectangle = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = RECTANGLE_PATTERN.exec(line);
+  const match = REGEX.tikzParser.rectangle.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1110,7 +1084,7 @@ const parseRectangle = (line: string, context?: ParseContext): CanvasShape | nul
 };
 
 const parseTriangle = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = TRIANGLE_PATTERN.exec(line);
+  const match = REGEX.tikzParser.triangle.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1155,7 +1129,7 @@ const parseTriangle = (line: string, context?: ParseContext): CanvasShape | null
 };
 
 const parseCircle = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/.exec(line);
+  const match = REGEX.tikzParser.circle.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1186,7 +1160,7 @@ const parseCircle = (line: string, context?: ParseContext): CanvasShape | null =
 };
 
 const parseEllipse = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = ELLIPSE_PATTERN.exec(line);
+  const match = REGEX.tikzParser.ellipse.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1224,7 +1198,7 @@ const imagePlaceholder = (label: string): string =>
   );
 
 const parseImageNode = (line: string, context?: ParseContext): CanvasShape | null => {
-  const match = IMAGE_NODE_PATTERN.exec(line);
+  const match = REGEX.tikzParser.imageNode.exec(line);
 
   if (!match?.groups) {
     return null;
@@ -1236,8 +1210,8 @@ const parseImageNode = (line: string, context?: ParseContext): CanvasShape | nul
   }
 
   const imageOptions = match.groups['imageOptions'] ?? '';
-  const widthMatch = IMAGE_WIDTH_PATTERN.exec(imageOptions);
-  const heightMatch = IMAGE_HEIGHT_PATTERN.exec(imageOptions);
+  const widthMatch = REGEX.tikzParser.imageWidth.exec(imageOptions);
+  const heightMatch = REGEX.tikzParser.imageHeight.exec(imageOptions);
   const width = Number.parseFloat(widthMatch?.[1] ?? '');
   const height = Number.parseFloat(heightMatch?.[1] ?? '');
   const safeWidth = Number.isFinite(width) && width > 0 ? width : 4.8;
@@ -1314,7 +1288,7 @@ const parseNodeCommand = (line: string): ParsedNode | null => {
   rest = styles.rest;
 
   let name: string | null = null;
-  const nameMatch = /^\(([A-Za-z]\w*)\)/.exec(rest);
+  const nameMatch = REGEX.tikzParser.nodeName.exec(rest);
   if (nameMatch) {
     name = nameMatch[1];
     rest = rest.slice(nameMatch[0].length).trimStart();
@@ -1332,14 +1306,14 @@ const parseNodeCommand = (line: string): ParsedNode | null => {
   }
 
   if (!name) {
-    const lateNameMatch = /^\(([A-Za-z]\w*)\)/.exec(rest);
+    const lateNameMatch = REGEX.tikzParser.nodeName.exec(rest);
     if (lateNameMatch) {
       name = lateNameMatch[1];
       rest = rest.slice(lateNameMatch[0].length).trimStart();
     }
   }
 
-  const textMatch = /^\{(?<text>[\s\S]*)\}\s*;?$/.exec(rest);
+  const textMatch = REGEX.tikzParser.nodeText.exec(rest);
   if (!textMatch?.groups) {
     return null;
   }
@@ -1367,13 +1341,13 @@ const parseTextNodeContent = (
   const textWithoutFontCommands = trimmedText
     .replaceAll(String.raw`\bfseries`, '')
     .replaceAll(String.raw`\itshape`, '')
-    .replaceAll(/\\tikz\{[^}]*\}/g, '')
-    .replaceAll(/\\textbf\{([^}]*)\}/g, '$1')
+    .replaceAll(REGEX.tikzParser.inlineTikz, '')
+    .replaceAll(REGEX.tikzParser.textbf, '$1')
     .trim();
-  const underlineMatch = /^\\underline\{(?<text>.*)\}$/.exec(textWithoutFontCommands);
+  const underlineMatch = REGEX.tikzParser.underline.exec(textWithoutFontCommands);
   const text = (underlineMatch?.groups?.['text'] ?? textWithoutFontCommands)
     .replaceAll(String.raw`\\`, '\n')
-    .replace(/^\$(.*)\$$/, '$1')
+    .replace(REGEX.tikzParser.mathDelimiters, '$1')
     .trim();
 
   return {
@@ -1394,13 +1368,13 @@ const rectangleSplitPartCount = (styles: Record<string, string>, rawText: string
     return explicitParts;
   }
 
-  const nodePartCount = rawText.match(/\\nodepart\{[^}]+\}/g)?.length ?? 0;
+  const nodePartCount = rawText.match(REGEX.tikzParser.nodePart)?.length ?? 0;
   return Math.max(nodePartCount + 1, 1);
 };
 
 const rectangleSplitTextParts = (rawText: string): readonly string[] =>
   removeOuterBraces(rawText.trim())
-    .split(/\\nodepart\{[^}]+\}/g)
+    .split(REGEX.tikzParser.nodePart)
     .map((part) => parseTextNodeContent(part).text)
     .filter((part) => part.length > 0);
 
@@ -1439,7 +1413,7 @@ const fitBoundsFromStyles = (
     return null;
   }
 
-  const nodeNames = [...rawFit.matchAll(/\(([A-Za-z][\w-]*)\)/g)].map((match) => match[1]);
+  const nodeNames = [...rawFit.matchAll(REGEX.tikzParser.fitNodeName)].map((match) => match[1]);
   const nodes = nodeNames.map((name) => context.nodes.get(name)).filter((node): node is NamedNode => Boolean(node));
   if (!nodes.length) {
     return null;
@@ -1465,7 +1439,7 @@ const labelFromStyles = (styles: Record<string, string>): { readonly text: strin
   }
 
   const normalized = removeOuterBraces(rawLabel);
-  const match = /(?:\[[^\]]*\])?(above left|above right|below left|below right|above|below|left|right)\s*:\s*(.+)$/i.exec(normalized);
+  const match = REGEX.tikzParser.labelPosition.exec(normalized);
   if (!match) {
     return null;
   }
@@ -1493,7 +1467,7 @@ const nodeCenterFromStyles = (
 ): Point | null => {
   for (const direction of ['below', 'above', 'right', 'left'] as const) {
     const raw = styles[direction];
-    const match = /^(?:(?<distance>-?\d+(?:\.\d+)?\s*(?:cm|mm|pt|in)?)\s+)?of\s+(?<node>[A-Za-z][\w-]*)$/i.exec(raw ?? '');
+    const match = REGEX.tikzParser.relativeNodePosition.exec(raw ?? '');
     if (!match?.groups) {
       continue;
     }
@@ -1528,7 +1502,7 @@ const applyNodeShifts = (point: Point, styles: Record<string, string>): Point =>
 });
 
 const parseCoordinateDeclaration = (line: string, context: ParseContext): readonly CanvasShape[] | null => {
-  const match = /^\\coordinate\s*\((?<name>[A-Za-z][\w-]*)\)\s*at\s*(?<point>\([^;]+\))\s*;?$/.exec(line);
+  const match = REGEX.tikzParser.coordinateDeclaration.exec(line);
   if (!match?.groups) {
     return null;
   }
@@ -1841,7 +1815,7 @@ const readRequiredBraceArguments = (source: string, count: number): readonly str
     rest = extracted.rest;
   }
 
-  return rest.replace(/;$/, '').trim() ? null : args;
+  return rest.replace(REGEX.tikzParser.trailingSemicolon, '').trim() ? null : args;
 };
 
 const registerCoordinate = (context: ParseContext, name: string, point: Point): void => {
@@ -1937,7 +1911,7 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
     const startAngle = Number(options['start angle']);
     const endAngle = Number(options['end angle']);
     const radius = parseDimension(options['radius'], Number.NaN);
-    const trailing = arcOptions.rest.replace(/;$/, '').trim();
+    const trailing = arcOptions.rest.replace(REGEX.tikzParser.trailingSemicolon, '').trim();
     if (!Number.isFinite(startAngle) || !Number.isFinite(endAngle) || !Number.isFinite(radius) || trailing) {
       return null;
     }
@@ -2016,7 +1990,7 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
     }
 
     current = to;
-    rest = rest.replace(/;$/, '').trim();
+    rest = rest.replace(REGEX.tikzParser.trailingSemicolon, '').trim();
   }
 
   return shapes.length ? shapes : null;
@@ -2068,34 +2042,11 @@ const stripLineComment = (line: string): string => {
   return line;
 };
 
-const tikzBeginPattern = /\\begin\{tikzpicture\}(?:\[[^\]]*\])?/;
-const tikzEndPattern = /\\end\{tikzpicture\}/;
-const multilineCommandPattern = /^\\(?:draw|node|path|fill|filldraw|clip)\b/;
-const ignorableLinePatterns = [
-  /^\\begin\{tikzpicture\}(?:\[[^\]]*\])?;?$/,
-  /^\\end\{tikzpicture\};?$/,
-  /^\\begin\{figure\*?\}(?:\[[^\]]*\])?;?$/,
-  /^\\end\{figure\*?\};?$/,
-  /^\\begin\{adjustbox\}(?:\[[^\]]*\])?\{.*\};?$/,
-  /^\\end\{adjustbox\};?$/,
-  /^\\begin\{scope\}(?:\[[^\]]*\])?;?$/,
-  /^\\end\{scope\};?$/,
-  /^\\begin\{center\};?$/,
-  /^\\end\{center\};?$/,
-  /^\\centering;?$/,
-  /^\\raggedright;?$/,
-  /^\\raggedleft;?$/,
-  /^\\(?:tiny|scriptsize|footnotesize|small|normalsize|large|Large|LARGE|huge|Huge);?$/,
-  /^\\caption(?:\[[^\]]*\])?\{.*\};?$/,
-  /^\\label\{.*\};?$/,
-  /^\\def\\[A-Za-z]+\{.*\};?$/
-] as const;
-
-const isIgnorableLine = (line: string): boolean => ignorableLinePatterns.some((pattern) => pattern.test(line));
+const isIgnorableLine = (line: string): boolean => REGEX.tikzParser.ignorableLines.some((pattern) => pattern.test(line));
 
 const sourceLines = (source: string): readonly string[] =>
   source
-    .split(/\r?\n/)
+    .split(REGEX.shared.lineBreak)
     .map((rawLine) => stripLineComment(rawLine).trim())
     .filter((line) => line.length > 0);
 
@@ -2105,7 +2056,7 @@ interface TikzBodyExtractionState {
 }
 
 const startTikzBodyIfNeeded = (line: string, state: TikzBodyExtractionState, outsideLines: string[]): TikzBodyExtractionState => {
-  if (tikzBeginPattern.test(line)) {
+  if (REGEX.tikzParser.tikzBegin.test(line)) {
     return { insideTikz: true, tikzDepth: 1 };
   }
 
@@ -2114,8 +2065,8 @@ const startTikzBodyIfNeeded = (line: string, state: TikzBodyExtractionState, out
 };
 
 const collectTikzBodyLine = (line: string, state: TikzBodyExtractionState, bodyLines: string[]): TikzBodyExtractionState => {
-  let tikzDepth = state.tikzDepth + (tikzBeginPattern.test(line) ? 1 : 0);
-  if (tikzEndPattern.test(line)) {
+  let tikzDepth = state.tikzDepth + (REGEX.tikzParser.tikzBegin.test(line) ? 1 : 0);
+  if (REGEX.tikzParser.tikzEnd.test(line)) {
     tikzDepth -= 1;
     return { insideTikz: tikzDepth > 0, tikzDepth };
   }
@@ -2150,7 +2101,7 @@ const collapseMultilineCommands = (lines: readonly string[]): readonly string[] 
       continue;
     }
 
-    if (multilineCommandPattern.test(line) && !line.endsWith(';')) {
+    if (REGEX.tikzParser.multilineCommand.test(line) && !line.endsWith(';')) {
       commandBuffer = line;
       continue;
     }
