@@ -3310,3 +3310,7 @@
       (confirm)="confirmGraphDialog($event)"></app-graph-dialog>
   }
 </div>
+
+<figure class="print-canvas" aria-hidden="true">
+  <img [src]="printCanvasDataUrl()" [attr.alt]="scene().name" />
+</figure>

@@ -5,6 +5,45 @@
   color: var(--app-foreground);
 }
 
+.print-canvas {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  :host {
+    min-height: 0;
+    background: #ffffff;
+  }
+
+  .editor-shell {
+    display: none !important;
+  }
+
+  .print-canvas {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 24mm);
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+    break-inside: avoid;
+    print-color-adjust: exact;
+  }
+
+  .print-canvas img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
 .editor-shell {
   --topbar-height: 64px;
   --ai-selection-color: #7c3aed;

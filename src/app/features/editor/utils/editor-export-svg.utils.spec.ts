@@ -1,5 +1,5 @@
 import type { CanvasShape, LineShape, Point, TextShape } from '../models/tikz.models';
-import { buildCanvasExportDocument, escapeXml, type SvgExportHelpers } from './editor-export-svg.utils';
+import { buildCanvasExportDocument, escapeXml, svgMarkupDataUrl, type SvgExportHelpers } from './editor-export-svg.utils';
 import type { SelectionBounds } from './editor-page.utils';
 
 const computeBounds = (shapes: readonly CanvasShape[]): SelectionBounds | null => {
@@ -38,6 +38,12 @@ const helpers: SvgExportHelpers = {
 };
 
 describe('editor-export-svg utils', () => {
+  it('encodes SVG markup as a printable image data URL', () => {
+    const markup = '<svg xmlns="http://www.w3.org/2000/svg"><text>A & B</text></svg>';
+
+    expect(svgMarkupDataUrl(markup)).toBe(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`);
+  });
+
   it('builds an empty document when no shapes are present', () => {
     const document = buildCanvasExportDocument({
       selectedShapes: [],

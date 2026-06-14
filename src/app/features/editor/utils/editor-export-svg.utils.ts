@@ -54,6 +54,8 @@ export interface BuildSvgExportOptions {
   readonly omitImages?: boolean;
 }
 
+export const svgMarkupDataUrl = (markup: string): string => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+
 export const escapeXml = (value: string): string =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 

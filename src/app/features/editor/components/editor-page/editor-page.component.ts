@@ -172,7 +172,7 @@ import {
   translateShapeBy
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
-import { buildCanvasExportDocument as buildCanvasExportDocumentUtil } from '../../utils/editor-export-svg.utils';
+import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
 import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
@@ -353,6 +353,7 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
+  readonly printCanvasDataUrl = computed(() => svgMarkupDataUrl(this.buildCanvasExportDocument(false, []).markup));
   readonly contextMenuPanel = viewChild<ElementRef<HTMLDivElement>>('contextMenuPanel');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
@@ -7254,9 +7255,9 @@ export class EditorPageComponent {
     return selectedShapes.length ? selectedShapes : this.scene().shapes;
   }
 
-  private buildCanvasExportDocument(omitImages = false): ExportSvgDocument {
+  private buildCanvasExportDocument(omitImages = false, selectedShapes: readonly CanvasShape[] = this.selectedShapes()): ExportSvgDocument {
     return buildCanvasExportDocumentUtil({
-      selectedShapes: this.selectedShapes(),
+      selectedShapes,
       sceneShapes: this.scene().shapes,
       theme: this.preferences().theme,
       omitImages,
