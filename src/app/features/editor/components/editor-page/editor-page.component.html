@@ -2935,7 +2935,10 @@
           }
         </section>
       } @else if (inspectorTab() === 'assistant') {
-        <app-ai-panel (patchApplied)="handleAiPatchApplied($event)" (settingsRequested)="openAppConfigurationDialog('ai')"></app-ai-panel>
+        <app-ai-panel
+          (patchApplied)="handleAiPatchApplied($event)"
+          (patchPreviewed)="centerViewportOnPendingPatch()"
+          (settingsRequested)="openAppConfigurationDialog('ai')"></app-ai-panel>
       } @else {
         <section #layersSection class="sidebar-section">
           <div class="scene-layers-header">

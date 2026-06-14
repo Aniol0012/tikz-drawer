@@ -1873,10 +1873,8 @@ export class EditorPageComponent {
   }
 
   handleAiPatchApplied(shapeIds: readonly string[]): void {
-    const firstShapeId = shapeIds[0];
-    if (firstShapeId) {
-      this.centerViewportOnShape(firstShapeId);
-    }
+    const shapeIdSet = new Set(shapeIds);
+    this.centerViewportOnShapes(this.scene().shapes.filter((shape) => shapeIdSet.has(shape.id)));
   }
 
   applyScenePreset(presetId: string): void {
@@ -5831,18 +5829,25 @@ export class EditorPageComponent {
   }
 
   centerViewportOnPendingPatch(): void {
-    const pendingCreatedShapeId = this.aiPatch.pendingCreatedShapeIds()[0];
-    if (pendingCreatedShapeId) {
-      this.centerViewportOnShape(pendingCreatedShapeId);
+    const pendingCreatedShapeIds = new Set(this.aiPatch.pendingCreatedShapeIds());
+    if (pendingCreatedShapeIds.size) {
+      this.centerViewportOnShapes(this.scene().shapes.filter((shape) => pendingCreatedShapeIds.has(shape.id)));
       return;
     }
 
-    const previewShape = this.aiPatch.previewShapes()[0];
-    if (!previewShape) {
+    this.centerViewportOnShapes(this.aiPatch.previewShapes());
+  }
+
+  private centerViewportOnShapes(shapes: readonly CanvasShape[]): void {
+    const bounds = this.computeBounds(shapes);
+    if (!bounds) {
       return;
     }
 
-    this.viewportCenter.set(this.shapeCenter(previewShape));
+    this.viewportCenter.set({
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2
+    });
   }
 
   private touchDistance(firstTouch: Touch, secondTouch: Touch): number {
