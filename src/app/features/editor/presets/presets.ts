@@ -6,6 +6,7 @@ import type {
   EllipseShape,
   LineShape,
   ObjectPreset,
+  Point,
   PresetCategory,
   RectangleShape,
   TriangleShape,
@@ -296,6 +297,260 @@ export const defaultPreferences: EditorPreferences = {
   defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE
 };
 
+const complexDiagramPresets = (): readonly ObjectPreset[] => {
+  const label = (name: string, text: string, x: number, y: number, fontSize = 0.24): TextShape => createText({ name, text, x, y, fontSize, textBox: false });
+  const box = (name: string, text: string, x: number, y: number, width = 2.2, height = 0.9, fill = '#f7f9fc'): readonly CanvasShape[] => [
+    createRectangle({ name, x, y, width, height, fill, cornerRadius: 0.16 }),
+    label(`${name} label`, text, x + width / 2, y + height / 2, 0.24)
+  ];
+  const arrow = (name: string, from: Point, to: Point, dashed = false): LineShape =>
+    createLine({ name, from, to, arrowEnd: true, arrowType: 'latex', strokeStyle: dashed ? 'dashed' : 'solid', strokeWidth: 0.07 });
+
+  const sequenceActors = ['Client', 'API', 'Service', 'DB'];
+  const sequenceX = [-4.5, -1.5, 1.5, 4.5];
+  const sequenceShapes: CanvasShape[] = sequenceActors.flatMap((actor, index) => [
+    ...box(`Sequence ${actor}`, actor, sequenceX[index] - 0.9, 2.6, 1.8, 0.72, '#eef4ff'),
+    createLine({ name: `${actor} lifeline`, from: { x: sequenceX[index], y: 2.6 }, to: { x: sequenceX[index], y: -3.3 }, strokeStyle: 'dashed' })
+  ]);
+  const sequenceMessages = [
+    [-4.5, -1.5, 1.7, 'request', false],
+    [-1.5, 1.5, 0.85, 'validate', false],
+    [1.5, 4.5, 0, 'query', false],
+    [4.5, 1.5, -0.85, 'rows', true],
+    [1.5, -1.5, -1.7, 'result', true],
+    [-1.5, -4.5, -2.55, 'response', true]
+  ] as const;
+  for (const [fromX, toX, y, text, dashed] of sequenceMessages) {
+    sequenceShapes.push(arrow(`Sequence ${text}`, { x: fromX, y }, { x: toX, y }, dashed), label(`Sequence ${text} label`, text, (fromX + toX) / 2, y + 0.27));
+  }
+
+  const layeredShapes: CanvasShape[] = [];
+  ['Presentation', 'Application', 'Domain', 'Infrastructure'].forEach((text, index) => {
+    const y = 2.35 - index * 1.55;
+    layeredShapes.push(...box(`${text} layer`, `${text} layer`, -4.8, y, 9.6, 1.02, index % 2 ? '#f8fafc' : '#eef4ff'));
+    ['A', 'B', 'C'].forEach((suffix, column) =>
+      layeredShapes.push(...box(`${text} ${suffix}`, `${text.slice(0, 4)} ${suffix}`, -3.9 + column * 3, y + 0.18, 1.8, 0.66, '#ffffff'))
+    );
+    if (index < 3) {
+      layeredShapes.push(arrow(`${text} dependency`, { x: 0, y }, { x: 0, y: y - 0.53 }));
+    }
+  });
+
+  const networkPoints = [
+    { x: -2.6, y: 1.2, text: 'A1' },
+    { x: -0.8, y: 2.2, text: 'A2' },
+    { x: 1.4, y: 1.2, text: 'A3' },
+    { x: -0.4, y: -0.2, text: 'A4' }
+  ];
+  const clusteredNetwork: CanvasShape[] = [
+    createRectangle({ name: 'Cluster frame', x: -3.5, y: -1.1, width: 6, height: 4.25, fill: '#f8fafc', cornerRadius: 0.3 })
+  ];
+  networkPoints.forEach((point) =>
+    clusteredNetwork.push(
+      createCircle({ name: point.text, cx: point.x, cy: point.y, r: 0.48, fill: '#ffffff' }),
+      label(`${point.text} label`, point.text, point.x, point.y)
+    )
+  );
+  [
+    [0, 1, '0.91'],
+    [1, 2, 'sync'],
+    [2, 3, '0.31'],
+    [3, 0, 'link']
+  ].forEach(([from, to, text], index) => {
+    const a = networkPoints[Number(from)];
+    const b = networkPoints[Number(to)];
+    clusteredNetwork.push(
+      arrow(`Cluster ${text}`, a, b, index === 2),
+      label(`Cluster ${text} label`, String(text), (a.x + b.x) / 2, (a.y + b.y) / 2 + 0.28, 0.2)
+    );
+  });
+  clusteredNetwork.push(label('Cluster title', 'Cluster A', -0.5, 2.8, 0.3));
+
+  const statePoints = [
+    { x: -4.6, y: 0.8, text: 'Created' },
+    { x: -2, y: 2, text: 'Validated' },
+    { x: 0.8, y: 0.8, text: 'Pending' },
+    { x: 3.5, y: 2, text: 'Executed' },
+    { x: 5.5, y: 0.8, text: 'Closed' },
+    { x: -1.8, y: -2, text: 'Rejected' },
+    { x: 2.5, y: -2, text: 'Cancelled' }
+  ];
+  const stateMachine: CanvasShape[] = [];
+  statePoints.forEach((point) =>
+    stateMachine.push(
+      createCircle({ name: point.text, cx: point.x, cy: point.y, r: 0.67, fill: '#ffffff' }),
+      label(`${point.text} label`, point.text, point.x, point.y, 0.2)
+    )
+  );
+  [
+    [0, 1, 'valid'],
+    [1, 2, 'confirm'],
+    [2, 3, 'process'],
+    [3, 4, 'balance'],
+    [0, 5, 'invalid'],
+    [2, 6, 'stop'],
+    [6, 4, 'resolve']
+  ].forEach(([from, to, text]) => {
+    const a = statePoints[Number(from)];
+    const b = statePoints[Number(to)];
+    stateMachine.push(arrow(`State ${text}`, a, b), label(`State ${text} label`, String(text), (a.x + b.x) / 2, (a.y + b.y) / 2 + 0.26, 0.18));
+  });
+
+  const serviceArchitecture: CanvasShape[] = [];
+  ['Web UI', 'REST API', 'App service', 'Domain model'].forEach((text, index) =>
+    serviceArchitecture.push(...box(`Service ${text}`, text, -5.4 + index * 3.05, 2, 2.25, 0.82, '#ffffff'))
+  );
+  serviceArchitecture.push(...box('Event bus', 'Event bus / commands', -2.65, 0, 6.4, 0.85, '#eef4ff'));
+  serviceArchitecture.push(
+    ...box('Cache store', 'Cache', -5, -2.2, 1.8, 1, '#f8fafc'),
+    ...box('SQL store', 'SQL DB', -0.9, -2.2, 1.8, 1, '#f8fafc'),
+    ...box('Async worker', 'Async worker', 3.2, -2.2, 2.2, 1, '#f8fafc')
+  );
+  [
+    [-3.15, -2.35],
+    [-0.1, 0.7],
+    [2.95, 3.75]
+  ].forEach(([fromX, toX], index) => serviceArchitecture.push(arrow(`Service top ${index}`, { x: fromX, y: 2.41 }, { x: toX, y: 2.41 })));
+  serviceArchitecture.push(
+    arrow('API cache', { x: -4.25, y: 2 }, { x: -4.1, y: -1.2 }, true),
+    arrow('Service DB', { x: 0.025, y: 2 }, { x: 0, y: -1.2 }),
+    arrow('Bus worker', { x: 3.75, y: 0.42 }, { x: 4.3, y: -1.2 })
+  );
+
+  const processPoints = Array.from({ length: 6 }, (_, index) => {
+    const angle = Math.PI / 2 - index * (Math.PI / 3);
+    return { x: Math.cos(angle) * 3.4, y: Math.sin(angle) * 3.4, text: ['Plan', 'Build', 'Test', 'Deploy', 'Monitor', 'Improve'][index] };
+  });
+  const circularProcess: CanvasShape[] = [...box('Cycle center', 'Iterative cycle', -1.1, -0.45, 2.2, 0.9, '#eef4ff')];
+  processPoints.forEach((point, index) => {
+    circularProcess.push(
+      createCircle({ name: `Phase ${point.text}`, cx: point.x, cy: point.y, r: 0.66, fill: '#ffffff' }),
+      label(`Phase ${point.text} label`, point.text, point.x, point.y, 0.2)
+    );
+    const next = processPoints[(index + 1) % processPoints.length];
+    circularProcess.push(arrow(`Phase arrow ${index}`, point, next));
+  });
+
+  const timeline: CanvasShape[] = [arrow('Timeline axis', { x: -5, y: 0 }, { x: 5, y: 0 })];
+  ['Planning', 'Prototype', 'Testing', 'Release'].forEach((text, index) => {
+    const x = -3.75 + index * 2.5;
+    const above = index % 2 === 0;
+    timeline.push(
+      createCircle({ name: `Milestone ${index + 1}`, cx: x, cy: 0, r: 0.38, fill: '#ffffff' }),
+      label(`Milestone number ${index + 1}`, String(index + 1), x, 0, 0.18),
+      ...box(`Timeline ${text}`, text, x - 0.95, above ? 1 : -1.75, 1.9, 0.7, '#f8fafc'),
+      createLine({ name: `Timeline tick ${index + 1}`, from: { x, y: above ? 0.38 : -0.38 }, to: { x, y: above ? 1 : -1.05 } })
+    );
+  });
+
+  const entities = [
+    { x: -4.8, y: 0.8, title: 'Customer', fields: 'id\nname\nfiscalNumber' },
+    { x: -0.9, y: 0.8, title: 'Invoice', fields: 'id\ncustomerId\ntotalAmount' },
+    { x: -0.9, y: -2.4, title: 'InvoiceLine', fields: 'id\ninvoiceId\nnetAmount' },
+    { x: -4.8, y: -2.4, title: 'Payment', fields: 'id\ninvoiceId\npaidAmount' }
+  ];
+  const entityDiagram: CanvasShape[] = [];
+  entities.forEach((entity) =>
+    entityDiagram.push(
+      ...box(`Entity ${entity.title}`, entity.title, entity.x, entity.y, 2.8, 2.15, '#ffffff'),
+      createLine({ name: `${entity.title} divider`, from: { x: entity.x, y: entity.y + 1.48 }, to: { x: entity.x + 2.8, y: entity.y + 1.48 } }),
+      createText({
+        name: `${entity.title} fields`,
+        text: entity.fields,
+        x: entity.x + 0.25,
+        y: entity.y + 0.72,
+        textBox: true,
+        boxWidth: 2.3,
+        fontSize: 0.2,
+        textAlign: 'left'
+      })
+    )
+  );
+  entityDiagram.push(
+    arrow('Customer invoices', { x: -2, y: 1.88 }, { x: -0.9, y: 1.88 }),
+    label('Customer invoices label', '1:N', -1.45, 2.18, 0.18),
+    arrow('Invoice lines', { x: 0.5, y: 0.8 }, { x: 0.5, y: -0.25 }),
+    label('Invoice lines label', '1:N', 0.85, 0.25, 0.18),
+    arrow('Invoice payments', { x: -0.9, y: 0.8 }, { x: -2, y: -1.3 }),
+    label('Invoice payments label', '1:N', -1.25, -0.15, 0.18)
+  );
+
+  const isometric: CanvasShape[] = [];
+  [
+    [-4, 0, 'Core'],
+    [0, 0, 'API'],
+    [4, 0, 'DB'],
+    [0, 3, 'Cache']
+  ].forEach(([rawX, rawY, rawText]) => {
+    const x = Number(rawX),
+      y = Number(rawY),
+      text = String(rawText);
+    const p = [
+      { x: x - 1.2, y: y - 0.8 },
+      { x: x + 0.8, y: y - 0.8 },
+      { x: x + 1.4, y: y - 0.25 },
+      { x: x - 0.6, y: y - 0.25 },
+      { x: x - 1.2, y: y - 0.8 },
+      { x: x - 1.2, y: y + 0.7 },
+      { x: x + 0.8, y: y + 0.7 },
+      { x: x + 1.4, y: y + 1.25 },
+      { x: x + 1.4, y: y - 0.25 }
+    ];
+    for (let i = 0; i < p.length - 1; i++) {
+      isometric.push(createLine({ name: `${text} edge ${i}`, from: p[i], to: p[i + 1] }));
+    }
+    isometric.push(
+      createLine({ name: `${text} back edge`, from: { x: x - 0.6, y: y - 0.25 }, to: { x: x - 0.6, y: y + 1.25 } }),
+      createLine({ name: `${text} top edge`, from: { x: x - 0.6, y: y + 1.25 }, to: { x: x + 1.4, y: y + 1.25 } }),
+      label(`${text} cube label`, text, x + 0.1, y + 0.25, 0.24)
+    );
+  });
+  isometric.push(
+    arrow('Core API', { x: -2.5, y: 0.2 }, { x: -1.4, y: 0.2 }),
+    arrow('API DB', { x: 1.5, y: 0.2 }, { x: 2.6, y: 0.2 }),
+    arrow('API Cache', { x: 0.7, y: 1.35 }, { x: 0.7, y: 2.15 })
+  );
+
+  return [
+    createPreset('sequence-diagram', 'flow', 'arrow', 'Sequence diagram', 'Actors, lifelines, messages and return values.', sequenceShapes, {
+      preserveStyle: true,
+      searchTerms: ['sequence', 'uml', 'lifeline', 'messages']
+    }),
+    createPreset('layered-architecture', 'concepts', 'server', 'Layered architecture', 'Four editable layers with modules and dependencies.', layeredShapes, {
+      preserveStyle: true,
+      searchTerms: ['architecture', 'layers', 'modules']
+    }),
+    createPreset('clustered-network', 'concepts', 'hub', 'Clustered network', 'Grouped network with weighted and dashed links.', clusteredNetwork, {
+      preserveStyle: true,
+      searchTerms: ['cluster', 'network', 'weighted']
+    }),
+    createPreset('state-machine', 'flow', 'graphCycle', 'State machine', 'States, transitions and readable condition labels.', stateMachine, {
+      preserveStyle: true,
+      searchTerms: ['state', 'machine', 'transitions', 'uml']
+    }),
+    createPreset('service-architecture', 'concepts', 'server', 'Service architecture', 'UI, API, domain, bus, stores and worker.', serviceArchitecture, {
+      preserveStyle: true,
+      searchTerms: ['service', 'architecture', 'bus', 'database']
+    }),
+    createPreset('circular-process', 'flow', 'graphCycle', 'Circular process', 'Six-stage iterative process around a central idea.', circularProcess, {
+      preserveStyle: true,
+      searchTerms: ['cycle', 'process', 'iterative']
+    }),
+    createPreset('project-timeline', 'data', 'timeline', 'Project timeline', 'Alternating milestone cards with a directional timeline.', timeline, {
+      preserveStyle: true,
+      searchTerms: ['timeline', 'milestones', 'project']
+    }),
+    createPreset('entity-relationship', 'data', 'table', 'Entity relationship', 'Editable entities, fields and cardinality labels.', entityDiagram, {
+      preserveStyle: true,
+      searchTerms: ['entity', 'relationship', 'erd', 'database']
+    }),
+    createPreset('isometric-architecture', 'geometry', 'cube', 'Isometric architecture', 'Wireframe service blocks with directional links.', isometric, {
+      preserveStyle: true,
+      searchTerms: ['isometric', '3d', 'cuboid', 'architecture']
+    })
+  ];
+};
+
 export const objectPresets: readonly ObjectPreset[] = [
   createPreset('segment', 'essentials', 'segment', 'Line', 'Straight segment for geometry and diagrams.', [createLine({ name: 'Line' })], {
     quickAccess: true,
@@ -349,6 +604,7 @@ export const objectPresets: readonly ObjectPreset[] = [
     quickAccess: true,
     searchTerms: ['image', 'photo', 'picture', 'asset']
   }),
+  ...complexDiagramPresets(),
   createPreset(
     'decision',
     'flow',

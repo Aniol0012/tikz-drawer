@@ -211,6 +211,31 @@ describe('presets', () => {
     expect(triangle.apexOffset).toBe(0.5);
   });
 
+  it('offers the complex TikZ validation diagrams as editable library presets', () => {
+    const ids = [
+      'sequence-diagram',
+      'layered-architecture',
+      'clustered-network',
+      'state-machine',
+      'service-architecture',
+      'circular-process',
+      'project-timeline',
+      'entity-relationship',
+      'isometric-architecture'
+    ];
+
+    for (const id of ids) {
+      const preset = objectPresets.find((candidate) => candidate.id === id);
+      expect(preset, id).toBeDefined();
+      expect(preset?.shapes.length, id).toBeGreaterThan(5);
+      expect(preset?.preserveStyle, id).toBe(true);
+    }
+
+    const sequence = objectPresets.find((preset) => preset.id === 'sequence-diagram');
+    expect(sequence?.shapes.filter((shape) => shape.kind === 'line' && shape.arrowEnd)).toHaveLength(6);
+    expect(sequence?.shapes.some((shape) => shape.kind === 'text' && shape.text === 'response')).toBe(true);
+  });
+
   it('builds tables as structured selections with consistent metadata', () => {
     const shapes = buildTablePresetShapes({ rows: 2, columns: 4 });
     const selection = getTableSelectionInfo(shapes);
