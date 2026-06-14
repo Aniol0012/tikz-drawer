@@ -234,6 +234,21 @@ describe('presets', () => {
     const sequence = objectPresets.find((preset) => preset.id === 'sequence-diagram');
     expect(sequence?.shapes.filter((shape) => shape.kind === 'line' && shape.arrowEnd)).toHaveLength(6);
     expect(sequence?.shapes.some((shape) => shape.kind === 'text' && shape.text === 'response')).toBe(true);
+
+    const serviceArchitecture = objectPresets.find((preset) => preset.id === 'service-architecture');
+    const architectureRectangles = serviceArchitecture?.shapes.filter((shape) => shape.kind === 'rectangle') ?? [];
+    const architectureLines = serviceArchitecture?.shapes.filter((shape) => shape.kind === 'line') ?? [];
+    expect(architectureRectangles).toHaveLength(8);
+    expect(architectureLines).toHaveLength(6);
+    expect(architectureLines.every((line) => line.kind === 'line' && line.fromAttachment && line.toAttachment)).toBe(true);
+    expect(new Set(architectureRectangles.map((shape) => shape.mergeId)).size).toBe(8);
+    expect(serviceArchitecture?.shapes.filter((shape) => shape.kind === 'text').every((shape) => shape.fontSize === 0.72)).toBe(true);
+    expect(architectureRectangles.find((shape) => shape.name === 'Event bus')).toMatchObject({
+      x: -2.874,
+      y: 21.515,
+      width: 26.374,
+      height: 3.829
+    });
   });
 
   it('builds tables as structured selections with consistent metadata', () => {

@@ -48,8 +48,11 @@ const createLine = (overrides: Partial<LineShape> = {}): LineShape => ({
   stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? DEFAULT_LINE_STROKE_WIDTH,
+  mergeId: overrides.mergeId,
   from: overrides.from ?? { x: -2, y: 0 },
   to: overrides.to ?? { x: 2, y: 0 },
+  fromAttachment: overrides.fromAttachment,
+  toAttachment: overrides.toAttachment,
   anchors: overrides.anchors ?? [],
   lineMode: overrides.lineMode ?? 'straight',
   strokeStyle: overrides.strokeStyle ?? 'solid',
@@ -73,6 +76,7 @@ const createRectangle = (overrides: Partial<RectangleShape> = {}): RectangleShap
   stroke: overrides.stroke ?? DEFAULT_LINE_COLOR,
   strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? DEFAULT_SHAPE_STROKE_WIDTH,
+  mergeId: overrides.mergeId,
   x: overrides.x ?? -2,
   y: overrides.y ?? DEFAULT_RECTANGLE_Y,
   width: overrides.width ?? DEFAULT_RECTANGLE_WIDTH,
@@ -135,6 +139,7 @@ const createText = (overrides: Partial<TextShape> = {}): TextShape => ({
   stroke: overrides.stroke ?? 'none',
   strokeOpacity: overrides.strokeOpacity ?? 1,
   strokeWidth: overrides.strokeWidth ?? 0,
+  mergeId: overrides.mergeId,
   x: overrides.x ?? 0,
   y: overrides.y ?? 0,
   text: overrides.text ?? 'label',
@@ -396,25 +401,141 @@ const complexDiagramPresets = (): readonly ObjectPreset[] => {
     stateMachine.push(arrow(`State ${text}`, a, b), label(`State ${text} label`, String(text), (a.x + b.x) / 2, (a.y + b.y) / 2 + 0.26, 0.18));
   });
 
-  const serviceArchitecture: CanvasShape[] = [];
-  ['Web UI', 'REST API', 'App service', 'Domain model'].forEach((text, index) =>
-    serviceArchitecture.push(...box(`Service ${text}`, text, -5.4 + index * 3.05, 2, 2.25, 0.82, '#ffffff'))
-  );
-  serviceArchitecture.push(...box('Event bus', 'Event bus / commands', -2.65, 0, 6.4, 0.85, '#eef4ff'));
+  const architectureBox = (name: string, text: string, x: number, y: number, width: number, height: number, fill: string) => {
+    const mergeId = crypto.randomUUID();
+    const rectangle = createRectangle({
+      name,
+      x,
+      y,
+      width,
+      height,
+      fill,
+      cornerRadius: 0.659,
+      stroke: '#1f1f1f',
+      strokeWidth: 0.08,
+      mergeId
+    });
+    const textShape = createText({
+      name: `${name} label`,
+      text,
+      x: x + width / 2,
+      y: y + height / 2,
+      fontSize: 0.72,
+      color: '#161616',
+      textBox: false,
+      mergeId
+    });
+    return { rectangle, text: textShape };
+  };
+  const webUi = architectureBox('Service Web UI', 'Web UI', -27.144, 29.304, 9.272, 3.694, '#ffffff');
+  const restApi = architectureBox('Service REST API', 'REST API', -14.576, 29.304, 9.272, 3.694, '#ffffff');
+  const appService = architectureBox('Service App service', 'App service', -2.007, 29.304, 9.272, 3.694, '#ffffff');
+  const domainModel = architectureBox('Service Domain model', 'Domain model', 10.562, 29.304, 9.272, 3.694, '#ffffff');
+  const eventBus = architectureBox('Event bus', 'Event bus / commands', -2.874, 21.515, 26.374, 3.829, '#eef4ff');
+  const cache = architectureBox('Cache store', 'Cache', -26.205, 10.631, 7.417, 4.506, '#f8fafc');
+  const sqlDb = architectureBox('SQL store', 'SQL DB', -13.646, 10.512, 7.418, 4.505, '#f8fafc');
+  const asyncWorker = architectureBox('Async worker', 'Async worker', 5.784, 10.898, 9.066, 4.506, '#f8fafc');
+  const serviceArchitecture: CanvasShape[] = [
+    webUi.rectangle,
+    webUi.text,
+    restApi.rectangle,
+    restApi.text,
+    appService.rectangle,
+    appService.text,
+    domainModel.rectangle,
+    domainModel.text,
+    eventBus.rectangle,
+    eventBus.text,
+    cache.rectangle,
+    cache.text,
+    sqlDb.rectangle,
+    sqlDb.text,
+    asyncWorker.rectangle,
+    asyncWorker.text
+  ];
+  const attachedArchitectureArrow = (
+    name: string,
+    fromShape: RectangleShape,
+    from: Point,
+    fromAnchor: Point,
+    toShape: RectangleShape,
+    to: Point,
+    toAnchor: Point,
+    dashed = false
+  ): LineShape =>
+    createLine({
+      name,
+      from,
+      to,
+      fromAttachment: { shapeId: fromShape.id, anchor: fromAnchor },
+      toAttachment: { shapeId: toShape.id, anchor: toAnchor },
+      arrowEnd: true,
+      arrowType: 'latex',
+      arrowOpen: true,
+      arrowScale: 1.35,
+      strokeStyle: dashed ? 'dashed' : 'solid',
+      strokeWidth: 0.07
+    });
+  const leftAnchor = { x: -1, y: 0 };
+  const rightAnchor = { x: 1, y: 0 };
+  const topAnchor = { x: 0, y: 1 };
+  const bottomAnchor = { x: 0, y: -1 };
   serviceArchitecture.push(
-    ...box('Cache store', 'Cache', -5, -2.2, 1.8, 1, '#f8fafc'),
-    ...box('SQL store', 'SQL DB', -0.9, -2.2, 1.8, 1, '#f8fafc'),
-    ...box('Async worker', 'Async worker', 3.2, -2.2, 2.2, 1, '#f8fafc')
-  );
-  [
-    [-3.15, -2.35],
-    [-0.1, 0.7],
-    [2.95, 3.75]
-  ].forEach(([fromX, toX], index) => serviceArchitecture.push(arrow(`Service top ${index}`, { x: fromX, y: 2.41 }, { x: toX, y: 2.41 })));
-  serviceArchitecture.push(
-    arrow('API cache', { x: -4.25, y: 2 }, { x: -4.1, y: -1.2 }, true),
-    arrow('Service DB', { x: 0.025, y: 2 }, { x: 0, y: -1.2 }),
-    arrow('Bus worker', { x: 3.75, y: 0.42 }, { x: 4.3, y: -1.2 })
+    attachedArchitectureArrow(
+      'Web UI to REST API',
+      webUi.rectangle,
+      { x: -17.872, y: 31.151 },
+      rightAnchor,
+      restApi.rectangle,
+      { x: -14.576, y: 31.151 },
+      leftAnchor
+    ),
+    attachedArchitectureArrow(
+      'REST API to App service',
+      restApi.rectangle,
+      { x: -5.304, y: 31.151 },
+      rightAnchor,
+      appService.rectangle,
+      { x: -2.007, y: 31.151 },
+      leftAnchor
+    ),
+    attachedArchitectureArrow(
+      'App service to Domain model',
+      appService.rectangle,
+      { x: 7.265, y: 31.151 },
+      rightAnchor,
+      domainModel.rectangle,
+      { x: 10.562, y: 31.151 },
+      leftAnchor
+    ),
+    attachedArchitectureArrow(
+      'Web UI to Cache',
+      webUi.rectangle,
+      { x: -22.508, y: 29.304 },
+      bottomAnchor,
+      cache.rectangle,
+      { x: -22.497, y: 15.137 },
+      topAnchor,
+      true
+    ),
+    attachedArchitectureArrow(
+      'REST API to SQL DB',
+      restApi.rectangle,
+      { x: -9.94, y: 29.304 },
+      bottomAnchor,
+      sqlDb.rectangle,
+      { x: -9.937, y: 15.017 },
+      topAnchor
+    ),
+    attachedArchitectureArrow(
+      'Event bus to Async worker',
+      eventBus.rectangle,
+      { x: 10.313, y: 21.515 },
+      bottomAnchor,
+      asyncWorker.rectangle,
+      { x: 10.317, y: 15.404 },
+      topAnchor
+    )
   );
 
   const processPoints = Array.from({ length: 6 }, (_, index) => {
