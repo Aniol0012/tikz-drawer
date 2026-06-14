@@ -212,6 +212,7 @@ export class AppConfigurationDialogComponent {
   );
   readonly shortcutRows: readonly ShortcutRow[] = [
     { action: 'figureSearch', labelKey: 'shortcutAction.figureSearch' },
+    { action: 'openImport', labelKey: 'shortcutAction.openImport' },
     { action: 'openSettings', labelKey: 'shortcutAction.openSettings' },
     { action: 'selectTool', labelKey: 'shortcutAction.selectTool' },
     { action: 'pencilTool', labelKey: 'shortcutAction.pencilTool' },

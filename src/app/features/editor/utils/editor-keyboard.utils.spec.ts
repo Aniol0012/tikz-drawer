@@ -7,6 +7,7 @@ import {
   isDeleteShortcutKey,
   isEscapeShortcutKey,
   isFindShortcut,
+  isOpenImportShortcut,
   isOpenSettingsShortcut,
   isPasteShortcut,
   isRedoShortcut,
@@ -97,6 +98,13 @@ describe('editor-keyboard utils', () => {
     expect(isOpenSettingsShortcut(shortcutEvent({ key: ',', ctrlKey: true }))).toBe(true);
     expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true, altKey: true }))).toBe(true);
     expect(isOpenSettingsShortcut(shortcutEvent({ key: 's', metaKey: true }))).toBe(false);
+  });
+
+  it('opens import with the configured ctrl/cmd shortcut', () => {
+    expect(isOpenImportShortcut(shortcutEvent({ key: 'i', ctrlKey: true }))).toBe(true);
+    expect(isOpenImportShortcut(shortcutEvent({ key: 'i', metaKey: true }))).toBe(true);
+    expect(isOpenImportShortcut(shortcutEvent({ key: 'k', ctrlKey: true }), { openImport: 'Mod+K' })).toBe(true);
+    expect(isOpenImportShortcut(shortcutEvent({ key: 'i' }))).toBe(false);
   });
 
   it('captures shortcuts from keyboard events while waiting for a non-modifier key', () => {

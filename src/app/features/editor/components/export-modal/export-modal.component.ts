@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import type { ThemeMode } from '../../models/tikz.models';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import type { CodeHighlightTheme, ExportMode } from '../editor-page/editor-page.types';
@@ -38,6 +38,7 @@ export class ExportModalComponent {
   readonly downloadProjectJson = output<void>();
   readonly openSettings = output<void>();
   readonly downloadTex = output<void>();
+  readonly downloadsMenuOpen = signal(false);
 
   icon(key: string): string {
     return this.iconMap()[key] ?? '';
@@ -45,5 +46,25 @@ export class ExportModalComponent {
 
   codeThemeStyle(): string {
     return this.codeHighlightThemeService.cssVariableStyle(this.codeTheme());
+  }
+
+  toggleDownloadsMenu(event: Event): void {
+    event.stopPropagation();
+    this.downloadsMenuOpen.update((open) => !open);
+  }
+
+  closeDownloadsMenu(): void {
+    this.downloadsMenuOpen.set(false);
+  }
+
+  runDownload(action: 'png' | 'svg' | 'json' | 'tex'): void {
+    this.closeDownloadsMenu();
+    const outputByAction = {
+      png: this.downloadPng,
+      svg: this.downloadSvg,
+      json: this.downloadProjectJson,
+      tex: this.downloadTex
+    } as const;
+    outputByAction[action].emit();
   }
 }

@@ -380,6 +380,7 @@
   "resetShortcutsConfirmDescription": "All shortcuts will return to their defaults.",
   "shortcutAction.figureSearch": "Search shapes",
   "shortcutAction.openSettings": "Open settings",
+  "shortcutAction.openImport": "Open import panel",
   "shortcutAction.selectTool": "Select tool",
   "shortcutAction.pencilTool": "Pencil",
   "shortcutAction.segmentTool": "Line",

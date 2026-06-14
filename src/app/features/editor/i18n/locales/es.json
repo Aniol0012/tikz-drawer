@@ -380,6 +380,7 @@
   "resetShortcutsConfirmDescription": "Todos los atajos volverán a sus valores por defecto.",
   "shortcutAction.figureSearch": "Buscar figuras",
   "shortcutAction.openSettings": "Abrir configuración",
+  "shortcutAction.openImport": "Abrir panel de importación",
   "shortcutAction.selectTool": "Herramienta de selección",
   "shortcutAction.pencilTool": "Lápiz",
   "shortcutAction.segmentTool": "Línea",

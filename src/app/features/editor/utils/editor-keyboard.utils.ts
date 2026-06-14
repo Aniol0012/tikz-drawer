@@ -10,6 +10,7 @@ export type KeyboardShortcutAction =
   | 'undo'
   | 'redo'
   | 'figureSearch'
+  | 'openImport'
   | 'openSettings'
   | 'delete'
   | 'zoomIn'
@@ -56,6 +57,7 @@ export const DEFAULT_KEYBOARD_SHORTCUTS: KeyboardShortcutConfig = {
   undo: 'Mod+Z',
   redo: 'Mod+Y',
   figureSearch: 'Mod+F',
+  openImport: 'Mod+I',
   openSettings: 'Mod+,',
   delete: 'Delete',
   zoomIn: '+',
@@ -237,6 +239,9 @@ export const isFindShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial
 
 export const isOpenSettingsShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
   isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'openSettings')) || isKeyboardShortcut(event, 'Mod+Alt+S');
+
+export const isOpenImportShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
+  isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'openImport'));
 
 export const toolIdFromShortcutEvent = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): string | null => {
   for (const action of TOOL_ACTIONS) {

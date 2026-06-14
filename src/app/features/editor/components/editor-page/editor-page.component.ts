@@ -189,6 +189,7 @@ import {
   isEscapeShortcutKey,
   isFigureSearchShortcut,
   isOpenSettingsShortcut,
+  isOpenImportShortcut,
   isPasteShortcut,
   isRedoShortcut,
   isSelectAllShortcut,
@@ -5088,6 +5089,13 @@ export class EditorPageComponent {
 
   private handleWindowDialogShortcut(event: KeyboardEvent): boolean {
     const shortcuts = this.configuration.generalConfig().keyboardShortcuts;
+    if (isOpenImportShortcut(event, shortcuts)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.openImportModal();
+      return true;
+    }
+
     if (isOpenSettingsShortcut(event, shortcuts)) {
       event.preventDefault();
       event.stopPropagation();

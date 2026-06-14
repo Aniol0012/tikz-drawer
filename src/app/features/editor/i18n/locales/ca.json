@@ -380,6 +380,7 @@
   "resetShortcutsConfirmDescription": "Es tornaran a posar totes les dreceres per defecte.",
   "shortcutAction.figureSearch": "Cercar figures",
   "shortcutAction.openSettings": "Obrir configuració",
+  "shortcutAction.openImport": "Obrir el panell d'importació",
   "shortcutAction.selectTool": "Eina de selecció",
   "shortcutAction.pencilTool": "Llapis",
   "shortcutAction.segmentTool": "Línia",
