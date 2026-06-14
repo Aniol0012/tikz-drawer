@@ -1777,6 +1777,8 @@ const inlineLabelShape = (
 ): TextShape => {
   const nodeStyles = resolveStyleMap(inlineNode.styles, context);
   const textContent = parseTextNodeContent(replaceTikzVariables(inlineNode.text, context.variables));
+  const horizontalOffset = nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0;
+  const verticalOffset = nodeStyles['above'] ? parseDimension(nodeStyles['above'], 0.35) : nodeStyles['below'] ? -parseDimension(nodeStyles['below'], 0.35) : 0;
   return {
     id: createId(),
     name: 'Imported label',
@@ -1784,10 +1786,8 @@ const inlineLabelShape = (
     stroke: 'none',
     strokeOpacity: 1,
     strokeWidth: 0,
-    x:
-      (from.x + to.x) / 2 +
-      (nodeStyles['right'] ? parseDimension(nodeStyles['right'], 0.35) : nodeStyles['left'] ? -parseDimension(nodeStyles['left'], 0.35) : 0),
-    y: (from.y + to.y) / 2,
+    x: (from.x + to.x) / 2 + horizontalOffset,
+    y: (from.y + to.y) / 2 + verticalOffset,
     text: textContent.text,
     textBox: textContent.text.includes('\n'),
     boxWidth: DEFAULT_TEXT_BOX_WIDTH,
@@ -1898,12 +1898,20 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
     return null;
   }
 
-  const from = parseCoordinateExpression(fromToken.token, context);
+  let from = parseCoordinateExpression(fromToken.token, context);
   if (!from) {
     return null;
   }
 
   rest = fromToken.rest;
+  if (rest.startsWith('+')) {
+    const shiftedFrom = readPathCoordinateToken(rest, context, from);
+    if (!shiftedFrom) {
+      return null;
+    }
+    from = shiftedFrom.point;
+    rest = shiftedFrom.rest;
+  }
   if (rest.startsWith('arc')) {
     rest = rest.slice(3).trimStart();
     const arcOptions = readOptionalBalanced(rest, '[', ']');

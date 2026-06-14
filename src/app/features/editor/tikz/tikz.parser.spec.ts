@@ -498,6 +498,34 @@ note/.style={draw, rounded corners=2pt, fill=gray!8, align=center, font=\scripts
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Release')).toBe(true);
   });
 
+  it('imports sequence messages with shifted anchored endpoints and labels', () => {
+    const result = parseTikz(String.raw`\begin{tikzpicture}[
+actor/.style={rectangle, draw, thick, rounded corners, minimum width=2.2cm, minimum height=0.75cm, align=center},
+lifeline/.style={dashed, thick},
+message/.style={-{Latex[length=2.6mm]}, thick},
+return/.style={-{Latex[length=2.6mm]}, thick, dashed}
+]
+\node[actor] (client) at (0, 0) {Client};
+\node[actor] (api) at (3.5, 0) {API};
+\node[actor] (service) at (7, 0) {Service};
+\node[actor] (db) at (10.5, 0) {DB};
+\draw[lifeline] (client) -- ++(0, -6);
+\draw[lifeline] (api) -- ++(0, -6);
+\draw[lifeline] (service) -- ++(0, -6);
+\draw[lifeline] (db) -- ++(0, -6);
+\draw[message] (client.south) ++(0, -0.7) -- node[above] {request} ($(api.south)+(0,-0.7)$);
+\draw[message] (api.south) ++(0, -1.7) -- node[above] {validate} ($(service.south)+(0,-1.7)$);
+\draw[return] (service.south) ++(0, -4.7) -- node[above] {result} ($(api.south)+(0,-4.7)$);
+\end{tikzpicture}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'line')).toHaveLength(7);
+    const request = result.scene.shapes.find((shape) => shape.kind === 'text' && shape.text === 'request');
+    expect(request).toMatchObject({ kind: 'text', x: 1.75 });
+    expect(request?.kind === 'text' ? request.y : 0).toBeGreaterThan(-1.1);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'line' && shape.strokeStyle === 'dashed' && shape.arrowEnd)).toBe(true);
+  });
+
   it('imports rectangle split entity nodes as separated rows without visible nodepart commands', () => {
     const result = parseTikz(String.raw`\begin{tikzpicture}[
     entity/.style={
