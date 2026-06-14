@@ -173,7 +173,7 @@ import {
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil } from '../../utils/editor-export-svg.utils';
-import { parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
+import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
@@ -335,6 +335,7 @@ export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
+  private readonly librarySectionsStorageKey = EDITOR_STORAGE_KEYS.librarySections;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
@@ -453,6 +454,7 @@ export class EditorPageComponent {
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
   readonly rightSidebarCollapsed = signal(false);
+  private readonly librarySectionIds = new Set<string>(['savedTemplates', 'scenePresets', ...categoryOrder]);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
     scenePresets: false,
@@ -463,7 +465,8 @@ export class EditorPageComponent {
     interface: true,
     concepts: true,
     properties: false,
-    layers: false
+    layers: false,
+    ...this.restoredLibrarySectionState()
   });
   readonly spacePressed = signal(false);
   readonly shiftPressed = signal(false);
@@ -1316,10 +1319,25 @@ export class EditorPageComponent {
   }
 
   toggleSection(sectionId: string): void {
-    this.collapsedSections.update((sections) => ({
-      ...sections,
-      [sectionId]: !(sections[sectionId] ?? false)
-    }));
+    this.collapsedSections.update((sections) => {
+      const nextSections = {
+        ...sections,
+        [sectionId]: !(sections[sectionId] ?? false)
+      };
+      if (this.librarySectionIds.has(sectionId)) {
+        this.editorStorage.setJson(this.librarySectionsStorageKey, this.persistedLibrarySectionState(nextSections));
+      }
+      return nextSections;
+    });
+  }
+
+  private persistedLibrarySectionState(sections: Readonly<Record<string, boolean>>): Readonly<Record<string, boolean>> {
+    return Object.fromEntries([...this.librarySectionIds].map((sectionId) => [sectionId, sections[sectionId] ?? false]));
+  }
+
+  private restoredLibrarySectionState(): Readonly<Record<string, boolean>> {
+    const storedSections = parseCollapsedSectionsFromStorage(this.editorStorage.getString(this.librarySectionsStorageKey));
+    return Object.fromEntries(Object.entries(storedSections).filter(([sectionId]) => this.librarySectionIds.has(sectionId)));
   }
 
   toggleSidebarCollapsed(side: SidebarSide): void {

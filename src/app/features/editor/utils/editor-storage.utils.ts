@@ -40,6 +40,23 @@ export const parsePinnedToolIdsFromStorage = (raw: string | null | undefined, te
   }
 };
 
+export const parseCollapsedSectionsFromStorage = (raw: string | null | undefined): Readonly<Record<string, boolean>> => {
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'));
+  } catch {
+    return {};
+  }
+};
+
 export const restoreCodeHighlightThemeFromStorage = (raw: string | null | undefined, fallback: CodeHighlightTheme = 'aurora'): CodeHighlightTheme =>
   isOneOf(raw, CODE_HIGHLIGHT_THEMES) ? raw : fallback;
 

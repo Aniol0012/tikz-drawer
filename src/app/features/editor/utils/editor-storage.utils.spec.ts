@@ -3,6 +3,7 @@ import { DEFAULT_LATEX_EXPORT_CONFIG } from '../config/latex-export.config';
 import { restoreLanguage } from '../i18n/editor-page.i18n';
 import {
   normalizeLatexExportConfig,
+  parseCollapsedSectionsFromStorage,
   parsePinnedToolIdsFromStorage,
   parseSavedTemplatesFromStorage,
   parseStoredLatexExportConfig,
@@ -32,6 +33,15 @@ const templates: readonly SavedTemplate[] = [
 ];
 
 describe('editor-storage utils', () => {
+  it('restores arbitrary collapsed section ids and ignores invalid values', () => {
+    expect(parseCollapsedSectionsFromStorage('{"flow":true,"future-category":false,"invalid":"yes"}')).toEqual({
+      flow: true,
+      'future-category': false
+    });
+    expect(parseCollapsedSectionsFromStorage('[]')).toEqual({});
+    expect(parseCollapsedSectionsFromStorage('broken')).toEqual({});
+  });
+
   it('parses templates safely from storage', () => {
     expect(parseSavedTemplatesFromStorage(null)).toEqual([]);
     expect(parseSavedTemplatesFromStorage('{invalid')).toEqual([]);
