@@ -2029,8 +2029,9 @@ kbd {
 }
 
 .selected-shape-card {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px;
   border: 1px solid var(--tool-border);
   border-radius: 12px;
@@ -2038,7 +2039,19 @@ kbd {
   text-align: left;
 }
 
+.selected-shape-card svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .selected-shape-card__title {
+  min-width: 0;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
