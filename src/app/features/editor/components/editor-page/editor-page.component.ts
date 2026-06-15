@@ -3561,12 +3561,14 @@ export class EditorPageComponent {
 
     this.recentTextTap.set({ shapeId: shape.id, timestamp: Date.now() });
     if (!isSelectionModifierPressed(event) && !this.selectionContainsShape(shape.id)) {
-      event.preventDefault();
-      event.stopPropagation();
       this.selectShapeSet(shape);
       this.setInspectorTab('properties');
-      this.ignoreNextCanvasClick.set(true);
-      return true;
+      if (event.pointerType === 'touch') {
+        event.preventDefault();
+        event.stopPropagation();
+        this.ignoreNextCanvasClick.set(true);
+        return true;
+      }
     }
 
     return false;
@@ -4264,7 +4266,6 @@ export class EditorPageComponent {
 
     this.runSceneMutation(() => {
       this.store.addShapes(this.remapShapeSetIds(previewShapes, () => crypto.randomUUID()));
-      this.store.selectShape(null);
       this.activeTool.set('select');
       this.inspectorTab.set('properties');
     });
