@@ -293,6 +293,85 @@ const isStrokedArrowTip = (shape: LineShape): boolean =>
 const supportsArrowBending = (shape: LineShape): boolean =>
   shape.arrowType === 'straight-barb' || shape.arrowType === 'triangle' || shape.arrowType === 'latex' || shape.arrowType === 'stealth';
 
+const tikzLibraryInferences: readonly { readonly library: string; readonly pattern: RegExp }[] = [
+  {
+    library: 'arrows.meta',
+    pattern: /[-<]?\{(?:Latex|Triangle|Stealth|Circle|Bar|Hooks|Bracket|Kite|Square|Parenthesis|Straight Barb)\b/
+  },
+  {
+    library: 'bending',
+    pattern: /\b(?:flex'?|bend)\b/
+  },
+  {
+    library: 'calc',
+    pattern: /\$\s*\(|\([^)]*\)\s*!\s*-?\d+(?:\.\d+)?\s*!|\([^)]*\)\s*!\s*\([^)]*\)\s*!/
+  },
+  {
+    library: 'positioning',
+    pattern: /\b(?:above|below|left|right)(?:\s+(?:left|right))?\s*=\s*(?:[^,\]]+\s+)?of\s+[A-Za-z][\w-]*/
+  },
+  {
+    library: 'fit',
+    pattern: /\bfit\s*=/
+  },
+  {
+    library: 'backgrounds',
+    pattern: /\bon background layer\b|\\begin\{pgfonlayer\}\{background\}/
+  },
+  {
+    library: 'shapes.geometric',
+    pattern: /\b(?:diamond|trapezium|regular polygon|star|isosceles triangle|kite|dart|cylinder)\b/
+  },
+  {
+    library: 'shapes.multipart',
+    pattern: /\brectangle split\b|\\nodepart\b/
+  },
+  {
+    library: 'shapes.symbols',
+    pattern: /\b(?:cloud|signal|tape|magnetic tape|forbidden sign)\b/
+  },
+  {
+    library: 'decorations.pathreplacing',
+    pattern: /\bdecoration\s*=\s*\{?\s*(?:brace|calligraphic brace)\b/
+  },
+  {
+    library: 'decorations.pathmorphing',
+    pattern: /\bdecoration\s*=\s*\{?\s*(?:snake|zigzag|coil|bumps|saw)\b/
+  },
+  {
+    library: 'decorations.markings',
+    pattern: /\b(?:markings|mark\s*=)\b/
+  },
+  {
+    library: 'patterns',
+    pattern: /\bpattern\s*=/
+  },
+  {
+    library: 'matrix',
+    pattern: /\\matrix\b|\bmatrix of nodes\b/
+  },
+  {
+    library: 'graphs',
+    pattern: /\\graph\b/
+  },
+  {
+    library: 'quotes',
+    pattern: /\b(?:edge|to)\s*(?:\[[^\]]*\])?\s*["']/
+  }
+];
+
+const inferredTikzLibrariesFromCode = (code: string): readonly string[] =>
+  tikzLibraryInferences.filter(({ pattern }) => pattern.test(code)).map(({ library }) => library);
+
+const isGeneratedImagePlaceholder = (shape: ImageShape): boolean => shape.src.startsWith('data:image/svg+xml;utf8,');
+
+const requiresGraphicx = (scene: TikzScene, code: string): boolean =>
+  scene.shapes.some((shape) => shape.kind === 'image' && !isGeneratedImagePlaceholder(shape)) || /\\includegraphics\b/.test(code);
+
+const rawLineReferencesNamedTikzNode = (line: string): boolean => /\([A-Za-z][\w-]*(?:\.[A-Za-z ]+)?\)/.test(line);
+
+const exportableRawTikzLines = (scene: TikzScene): readonly string[] => (scene.rawTikzLines ?? []).filter((line) => !rawLineReferencesNamedTikzNode(line));
+
 const transparentArrowEntries = (shape: LineShape): string[] => {
   const entries = [`draw=${shape.arrowColor}`, `line width=${formatNumber(shape.strokeWidth)}pt`, `fill opacity=${formatNumber(shape.arrowOpacity)}`];
 
@@ -438,7 +517,30 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
   return String.raw`\node[${nodeOptions.join(', ')}] at (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) ${content};`;
 };
 
+const imagePlaceholderLabel = (shape: ImageShape): string => shape.latexSource.split(/[\\/]/).at(-1) ?? shape.name;
+
+const imagePlaceholderToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
+  const centerX = shape.x + shape.width / 2;
+  const centerY = shape.y + shape.height / 2;
+  const drawOptions = [
+    `draw=${context.registerColor(shape.stroke === 'none' ? '#9db7f2' : shape.stroke)}`,
+    `draw opacity=${formatNumber(shape.strokeOpacity)}`,
+    `line width=${formatNumber(Math.max(shape.strokeWidth, 0.08))}pt`,
+    'fill={rgb,255:red,238;green,244;blue,255}'
+  ];
+  const labelOptions = ['text={rgb,255:red,50;green,81;blue,168}', 'text opacity=1', 'scale=0.9', 'anchor=center'];
+
+  return [
+    String.raw`\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`,
+    String.raw`\node[${labelOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {${imagePlaceholderLabel(shape)}};`
+  ].join('\n  ');
+};
+
 const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string => {
+  if (isGeneratedImagePlaceholder(shape)) {
+    return imagePlaceholderToTikz(shape, context);
+  }
+
   const centerX = shape.x + shape.width / 2;
   const centerY = shape.y + shape.height / 2;
   const nodeOptions = ['inner sep=0pt'];
@@ -490,14 +592,17 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
 
 export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions = {}): TikzExportBundle => {
   const context = createTikzGenerationContext(options);
-  const lines = [...scene.shapes.map((shape) => shapeToTikz(shape, context)), ...(scene.rawTikzLines ?? [])];
+  const lines = [...scene.shapes.map((shape) => shapeToTikz(shape, context)), ...exportableRawTikzLines(scene)];
+  const code = [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join('\n');
+  const tikzLibraries = new Set([
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? ['arrows.meta'] : []),
+    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none' && supportsArrowBending(shape)) ? ['bending'] : []),
+    ...inferredTikzLibrariesFromCode(code)
+  ]);
   const imports = [
     String.raw`\usepackage{tikz}`,
-    ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? [String.raw`\usetikzlibrary{arrows.meta}`] : []),
-    ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none' && supportsArrowBending(shape))
-      ? [String.raw`\usetikzlibrary{bending}`]
-      : []),
-    ...(scene.shapes.some((shape) => shape.kind === 'image') ? [String.raw`\usepackage{graphicx}`] : []),
+    ...Array.from(tikzLibraries).map((library) => String.raw`\usetikzlibrary{${library}}`),
+    ...(requiresGraphicx(scene, code) ? [String.raw`\usepackage{graphicx}`] : []),
     ...(context.colorMode === 'define-colors'
       ? Array.from(context.colorMap.entries()).map(([hex, name]) => String.raw`\definecolor{${name}}{HTML}{${hex}}`)
       : [])
@@ -505,7 +610,7 @@ export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions =
 
   return {
     imports: imports.join('\n'),
-    code: [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join('\n')
+    code
   };
 };
 

@@ -133,6 +133,81 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('-{Square[');
   });
 
+  it('adds calc when preserved raw TikZ uses calculated coordinates', () => {
+    const scene: TikzScene = {
+      name: 'Raw calc scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [],
+      rawTikzLines: [String.raw`\draw ($(0,0)+(1,1)$) -- (2,2);`]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{calc}`);
+  });
+
+  it('omits preserved raw TikZ that references named nodes no longer present after import', () => {
+    const scene: TikzScene = {
+      name: 'Raw named node scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [],
+      rawTikzLines: [String.raw`\draw[message] (client.south) ++(0, -0.7) -- node[above] {request} ($(api.south)+(0,-0.7)$);`]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).not.toContain(String.raw`\draw[message]`);
+    expect(bundle.code).not.toContain('client.south');
+    expect(bundle.code).not.toContain('api.south');
+  });
+
+  it('infers TikZ libraries and packages required by preserved raw TikZ', () => {
+    const scene: TikzScene = {
+      name: 'Raw advanced TikZ scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [],
+      rawTikzLines: [
+        String.raw`\node[rectangle split, rectangle split parts=3, diamond] at (0,0) {A\nodepart{two}B};`,
+        String.raw`\begin{scope}[on background layer] \draw (0,0) rectangle (1,1); \end{scope}`,
+        String.raw`\draw[decorate, decoration={brace}] (0,0) -- (1,0);`,
+        String.raw`\draw[pattern=north east lines] (0,0) rectangle (1,1);`,
+        String.raw`\matrix[matrix of nodes] {A & B\\};`,
+        String.raw`\node {\includegraphics[width=1cm]{diagram.png}};`
+      ]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{backgrounds}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{shapes.geometric}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{shapes.multipart}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{decorations.pathreplacing}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{patterns}`);
+    expect(bundle.imports).toContain(String.raw`\usetikzlibrary{matrix}`);
+    expect(bundle.imports).toContain(String.raw`\usepackage{graphicx}`);
+  });
+
+  it('exports imported image placeholders without requiring missing external files', () => {
+    const scene: TikzScene = {
+      name: 'Imported placeholder image scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [
+        {
+          ...translucentImage,
+          src: 'data:image/svg+xml;utf8,%3Csvg%3E%3C/svg%3E',
+          latexSource: 'images/example.png'
+        }
+      ]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).not.toContain(String.raw`\includegraphics`);
+    expect(bundle.code).toContain('rectangle');
+    expect(bundle.code).toContain('{example.png}');
+    expect(bundle.imports).not.toContain(String.raw`\usepackage{graphicx}`);
+  });
+
   it('exports latex arrow tips as open strokes to match the editor preview', () => {
     const scene: TikzScene = {
       name: 'Latex arrow tip scene',
