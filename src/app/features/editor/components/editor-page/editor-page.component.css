@@ -2017,35 +2017,72 @@ kbd {
 
 .selected-shape-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .selected-shape-list--inline {
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .selected-shape-list--inline .selected-shape-card {
-  padding: 10px;
+  min-height: 56px;
 }
 
 .selected-shape-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 12px 8px 8px;
   border: 1px solid var(--tool-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--tool-surface);
+  color: var(--app-foreground);
   text-align: left;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
 }
 
-.selected-shape-card svg {
-  width: 20px;
-  height: 20px;
+.selected-shape-card:hover,
+.selected-shape-card:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--tool-border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--tool-surface));
+}
+
+.selected-shape-card:active {
+  transform: translateY(1px);
+}
+
+.selected-shape-card__icon {
+  position: relative;
+  display: grid;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--app-foreground) 5%, transparent);
+  color: var(--muted-foreground);
+}
+
+.selected-shape-card__icon::after {
+  position: absolute;
+  top: 5px;
+  right: -7px;
+  width: 1px;
+  height: 24px;
+  background: var(--tool-border);
+  content: '';
+}
+
+.selected-shape-card__icon svg {
+  width: 18px;
+  height: 18px;
   fill: none;
-  stroke: var(--muted-foreground);
-  stroke-width: 1.8;
+  stroke: currentColor;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -2053,6 +2090,7 @@ kbd {
 .selected-shape-card__title {
   min-width: 0;
   font-weight: 700;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 

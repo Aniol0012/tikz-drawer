@@ -1891,9 +1891,11 @@
               <div class="selected-shape-list selected-shape-list--inline">
                 @for (shape of selectedShapes(); track shape.id) {
                   <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="shapeIcon(shape)"></path>
-                    </svg>
+                    <span class="selected-shape-card__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path [attr.d]="shapeIcon(shape)"></path>
+                      </svg>
+                    </span>
                     <span class="selected-shape-card__title">{{ shape.name }}</span>
                   </button>
                 }
@@ -1980,9 +1982,11 @@
                 <div class="selected-shape-list selected-shape-list--inline">
                   @for (shape of selectedShapes(); track shape.id) {
                     <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path [attr.d]="shapeIcon(shape)"></path>
-                      </svg>
+                      <span class="selected-shape-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path [attr.d]="shapeIcon(shape)"></path>
+                        </svg>
+                      </span>
                       <span class="selected-shape-card__title">{{ shape.name }}</span>
                     </button>
                   }
@@ -2940,9 +2944,11 @@
               <div class="selected-shape-list">
                 @for (shape of selectedShapes(); track shape.id) {
                   <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="shapeIcon(shape)"></path>
-                    </svg>
+                    <span class="selected-shape-card__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path [attr.d]="shapeIcon(shape)"></path>
+                      </svg>
+                    </span>
                     <span class="selected-shape-card__title">{{ shape.name }}</span>
                   </button>
                 }
