@@ -157,6 +157,39 @@ describe('editor-page utils', () => {
     expect(secondShape.height).toBeCloseTo(6);
   });
 
+  it('scales grouped text with the dominant resize axis', () => {
+    const shapes: readonly CanvasShape[] = [
+      groupedShapes[0],
+      {
+        id: 'text-1',
+        name: 'Label',
+        kind: 'text',
+        stroke: 'none',
+        strokeOpacity: 1,
+        strokeWidth: 0,
+        mergeId: 'group-1',
+        x: 1,
+        y: 1,
+        text: 'Label',
+        textBox: false,
+        boxWidth: 4,
+        fontSize: 0.5,
+        color: '#111111',
+        colorOpacity: 1,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        textDecoration: 'none',
+        textAlign: 'center',
+        rotation: 0
+      }
+    ];
+
+    const resizedShapes = resizeGroupedShapes(shapes, { left: 0, right: 2, bottom: 0, top: 2 }, 'e', { x: 4, y: 1 });
+    const resizedText = resizedShapes.find((shape): shape is Extract<CanvasShape, { kind: 'text' }> => shape.kind === 'text');
+
+    expect(resizedText?.fontSize).toBeCloseTo(1);
+  });
+
   it('formats numbers and highlights latex safely', () => {
     expect(formatValue(3)).toBe('3');
     expect(formatValue(3.456)).toBe('3.46');

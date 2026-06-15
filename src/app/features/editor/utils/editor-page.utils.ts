@@ -5,8 +5,7 @@ import {
   MIN_SCALE_FACTOR,
   MIN_SHAPE_DIMENSION,
   MIN_TEXT_BOX_WIDTH,
-  MIN_TEXT_FONT_SIZE,
-  MIN_TEXT_SCALE_FACTOR
+  MIN_TEXT_FONT_SIZE
 } from '../constants/editor.constants';
 import type { SharedScenePayload } from '../i18n/editor-page.i18n';
 import type { CanvasShape, Point } from '../models/tikz.models';
@@ -91,7 +90,7 @@ export const transformCanvasShape = (shape: CanvasShape, options: TransformCanva
         x: (shape.x - normalizedOptions.originX) * normalizedOptions.scaleX + normalizedOptions.originX + normalizedOptions.deltaX,
         y: (shape.y - normalizedOptions.originY) * normalizedOptions.scaleY + normalizedOptions.originY + normalizedOptions.deltaY,
         boxWidth: shape.textBox ? Math.max(shape.boxWidth * normalizedOptions.scaleX, MIN_TEXT_BOX_WIDTH) : shape.boxWidth,
-        fontSize: Math.max(shape.fontSize * Math.max(Math.min(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_TEXT_SCALE_FACTOR), MIN_TEXT_FONT_SIZE)
+        fontSize: Math.max(shape.fontSize * Math.max(normalizedOptions.scaleX, normalizedOptions.scaleY), MIN_TEXT_FONT_SIZE)
       };
     case 'image':
       return {

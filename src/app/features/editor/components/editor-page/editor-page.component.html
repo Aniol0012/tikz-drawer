@@ -1888,6 +1888,14 @@
                 <strong>{{ 'preset.table.title' | translate }}</strong>
                 <span>{{ tableDimensionsLabel(table.columns, table.rows) }}</span>
               </div>
+              <div class="selected-shape-list selected-shape-list--inline">
+                @for (shape of selectedShapes(); track shape.id) {
+                  <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
+                    <span class="selected-shape-card__title">{{ shape.name }}</span>
+                    <span class="selected-shape-card__meta">{{ localizedShapeKind(shape.kind) }}</span>
+                  </button>
+                }
+              </div>
               <div class="inline-actions">
                 <button
                   class="primary-button"
@@ -1967,9 +1975,13 @@
               </div>
             } @else if (multiEditSelection(); as multiEdit) {
               @if (multiEditShape(); as shape) {
-                <div class="selection-title">
-                  <strong>{{ selectionCount() }} {{ ('objects' | translate).toLowerCase() }}</strong>
-                  <span>{{ localizedMultiEditKind(multiEdit) }}</span>
+                <div class="selected-shape-list selected-shape-list--inline">
+                  @for (shape of selectedShapes(); track shape.id) {
+                    <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
+                      <span class="selected-shape-card__title">{{ shape.name }}</span>
+                      <span class="selected-shape-card__meta">{{ localizedShapeKind(shape.kind) }}</span>
+                    </button>
+                  }
                 </div>
                 <div class="property-group property-group--actions">
                   <div class="inline-actions">

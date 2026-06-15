@@ -2020,6 +2020,14 @@ kbd {
   gap: 10px;
 }
 
+.selected-shape-list--inline {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.selected-shape-list--inline .selected-shape-card {
+  padding: 10px;
+}
+
 .selected-shape-card {
   display: grid;
   gap: 4px;
