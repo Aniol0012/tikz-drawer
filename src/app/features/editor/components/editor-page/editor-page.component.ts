@@ -3529,11 +3529,7 @@ export class EditorPageComponent {
     );
   }
 
-  private groupedTextShapeInsideShapeAtPoint(
-    point: Point,
-    shape: CanvasShape,
-    groupedTextShapes: readonly TextCanvasShape[]
-  ): TextCanvasShape | null {
+  private groupedTextShapeInsideShapeAtPoint(point: Point, shape: CanvasShape, groupedTextShapes: readonly TextCanvasShape[]): TextCanvasShape | null {
     const shapeBounds = this.shapeBounds(shape);
     if (!shapeBounds || !this.pointInsideBounds(point, shapeBounds)) {
       return null;
@@ -3542,9 +3538,10 @@ export class EditorPageComponent {
     return (
       groupedTextShapes
         .map((textShape) => ({ shape: textShape, center: this.textShapeBoundsCenter(textShape) }))
-        .filter((entry): entry is { readonly shape: TextCanvasShape; readonly center: Point } => !!entry.center && this.pointInsideBounds(entry.center, shapeBounds))
-        .sort((a, b) => Math.hypot(point.x - a.center.x, point.y - a.center.y) - Math.hypot(point.x - b.center.x, point.y - b.center.y))[0]?.shape ??
-      null
+        .filter(
+          (entry): entry is { readonly shape: TextCanvasShape; readonly center: Point } => !!entry.center && this.pointInsideBounds(entry.center, shapeBounds)
+        )
+        .sort((a, b) => Math.hypot(point.x - a.center.x, point.y - a.center.y) - Math.hypot(point.x - b.center.x, point.y - b.center.y))[0]?.shape ?? null
     );
   }
 
