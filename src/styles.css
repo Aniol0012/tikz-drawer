@@ -131,6 +131,21 @@ a {
   text-decoration: none;
 }
 
+.settings-gear-button svg {
+  transform-origin: 50% 50%;
+}
+
+.settings-gear-button:active svg {
+  transform: rotate(25deg);
+  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-gear-button:active svg {
+    transform: none;
+  }
+}
+
 .tikz-code-theme .tok-command {
   color: var(--code-command, #4a78dc);
 }

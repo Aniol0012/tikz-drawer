@@ -34,6 +34,7 @@
             [id]="'configuration-tab-' + tab.id"
             [attr.data-tab]="tab.id"
             [class.is-active]="activeTab() === tab.id"
+            [class.settings-gear-button]="tab.id === 'general'"
             [attr.aria-selected]="activeTab() === tab.id"
             [attr.aria-controls]="'configuration-panel-' + tab.id"
             [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
