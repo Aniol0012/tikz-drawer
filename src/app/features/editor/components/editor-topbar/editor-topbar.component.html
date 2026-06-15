@@ -116,7 +116,11 @@
                       <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
                     </svg>
                   </button>
-                  <button class="icon-button settings-gear-button" type="button" [title]="t('settings')" (click)="settingsOpen.emit(); fileMenuClose.emit()">
+                  <button
+                    class="icon-button settings-gear-button"
+                    type="button"
+                    [title]="t('settings')"
+                    (click)="settingsOpen.emit(); fileMenuClose.emit()">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path [attr.d]="icon('settings')"></path>
                     </svg>
