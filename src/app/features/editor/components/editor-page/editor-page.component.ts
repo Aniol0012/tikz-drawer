@@ -6192,7 +6192,7 @@ export class EditorPageComponent {
           ...shape,
           color: preferences.defaultTextColor,
           colorOpacity: 1,
-          fontSize: preferences.defaultTextFontSize
+          fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE)
         };
     }
   }
