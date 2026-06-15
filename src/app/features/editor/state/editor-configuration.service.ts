@@ -12,11 +12,13 @@ import { EditorLocalStorageService } from './editor-local-storage.service';
 
 export interface EditorGeneralConfig {
   readonly showHelpTooltips: boolean;
+  readonly whiteCanvasInDarkMode: boolean;
   readonly keyboardShortcuts: KeyboardShortcutConfig;
 }
 
 export const DEFAULT_EDITOR_GENERAL_CONFIG: EditorGeneralConfig = {
   showHelpTooltips: true,
+  whiteCanvasInDarkMode: false,
   keyboardShortcuts: DEFAULT_KEYBOARD_SHORTCUTS
 };
 
@@ -135,6 +137,8 @@ export class EditorConfigurationService {
   private normalizeGeneralConfig(config: Partial<EditorGeneralConfig> | null | undefined): EditorGeneralConfig {
     return {
       showHelpTooltips: typeof config?.showHelpTooltips === 'boolean' ? config.showHelpTooltips : DEFAULT_EDITOR_GENERAL_CONFIG.showHelpTooltips,
+      whiteCanvasInDarkMode:
+        typeof config?.whiteCanvasInDarkMode === 'boolean' ? config.whiteCanvasInDarkMode : DEFAULT_EDITOR_GENERAL_CONFIG.whiteCanvasInDarkMode,
       keyboardShortcuts: normalizedKeyboardShortcuts(config?.keyboardShortcuts)
     };
   }

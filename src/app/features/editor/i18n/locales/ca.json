@@ -364,6 +364,7 @@
   "showGrid": "Mostrar graella",
   "showAxes": "Mostrar eixos",
   "showHelpTooltips": "Mostrar tooltips d'ajuda",
+  "whiteCanvasInDarkMode": "Usar llenç blanc",
   "keyboardShortcuts": "Dreceres de teclat",
   "keyboardShortcutsDescription": "Consulta i canvia les dreceres principals de l'editor.",
   "shortcutCaptureInstruction": "Prem la nova combinació. Esc cancel·la.",

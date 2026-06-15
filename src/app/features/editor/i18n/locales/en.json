@@ -364,6 +364,7 @@
   "showGrid": "Show grid",
   "showAxes": "Show axes",
   "showHelpTooltips": "Show help tooltips",
+  "whiteCanvasInDarkMode": "Use white canvas",
   "keyboardShortcuts": "Keyboard shortcuts",
   "keyboardShortcutsDescription": "View and change the editor's main shortcuts.",
   "shortcutCaptureInstruction": "Press the new shortcut. Esc cancels.",

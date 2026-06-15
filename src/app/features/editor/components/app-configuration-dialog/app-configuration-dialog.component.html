@@ -73,6 +73,12 @@
                       <span>{{ 'theme' | translate }}</span>
                       <app-select [value]="preferences().theme" [options]="themeOptions()" (valueChange)="setTheme($event)"></app-select>
                     </label>
+                    @if (showWhiteCanvasInDarkModeOption()) {
+                      <app-toggle-field
+                        [checked]="generalConfig().whiteCanvasInDarkMode"
+                        [label]="'whiteCanvasInDarkMode' | translate"
+                        (checkedChange)="updateGeneralBoolean('whiteCanvasInDarkMode', $event)"></app-toggle-field>
+                    }
                     <label class="field">
                       <span>{{ 'language' | translate }}</span>
                       <app-select

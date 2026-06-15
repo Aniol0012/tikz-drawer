@@ -262,6 +262,7 @@
         [attr.aria-label]="'canvas' | translate"
         [class.is-panning]="interactionState()?.kind === 'pan' || interactionState()?.kind === 'pending-pan'"
         [class.is-insert]="activeTool() !== 'select'"
+        [class.canvas-viewport--white-mode]="preferences().theme === 'dark' && configuration.generalConfig().whiteCanvasInDarkMode"
         [style.cursor]="interactionCursor()"
         (pointerdown)="onCanvasViewportPointerDown($event)"
         (touchstart)="onCanvasTouchStart($event)"

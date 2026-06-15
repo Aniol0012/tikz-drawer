@@ -1174,6 +1174,13 @@ kbd {
   user-select: none;
 }
 
+.canvas-viewport--white-mode {
+  --canvas-background: #ffffff;
+  --canvas-crosshair: rgba(20, 20, 20, 0.06);
+  --grid-line: rgba(20, 20, 20, 0.05);
+  --axis-line: rgba(20, 20, 20, 0.12);
+}
+
 .canvas-viewport:focus {
   outline: none;
 }

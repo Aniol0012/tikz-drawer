@@ -242,6 +242,7 @@ export class AppConfigurationDialogComponent {
     }))
   );
   readonly zoomPercent = computed(() => Math.round((this.preferences().scale / DEFAULT_EDITOR_SCALE) * 100));
+  readonly showWhiteCanvasInDarkModeOption = computed(() => this.preferences().theme === 'dark');
   readonly settingsAreDefault = computed(
     () =>
       this.preferencesEqual(this.preferences(), defaultPreferences) &&
@@ -366,7 +367,7 @@ export class AppConfigurationDialogComponent {
     }
   }
 
-  updateGeneralBoolean(key: 'showHelpTooltips', checked: boolean): void {
+  updateGeneralBoolean(key: 'showHelpTooltips' | 'whiteCanvasInDarkMode', checked: boolean): void {
     this.configuration.patchGeneralConfig({ [key]: checked });
   }
 
@@ -856,6 +857,7 @@ export class AppConfigurationDialogComponent {
   private generalConfigEqual(current: EditorGeneralConfig): boolean {
     return (
       current.showHelpTooltips === DEFAULT_EDITOR_GENERAL_CONFIG.showHelpTooltips &&
+      current.whiteCanvasInDarkMode === DEFAULT_EDITOR_GENERAL_CONFIG.whiteCanvasInDarkMode &&
       this.shortcutConfigEqual(current.keyboardShortcuts, DEFAULT_EDITOR_GENERAL_CONFIG.keyboardShortcuts)
     );
   }

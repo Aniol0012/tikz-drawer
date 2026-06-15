@@ -125,8 +125,11 @@ describe('AppConfigurationDialogComponent', () => {
 
   it('updates general configuration and editable keyboard shortcuts', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
+    component.updateGeneralBoolean('whiteCanvasInDarkMode', true);
 
     expect(configuration.generalConfig().showHelpTooltips).toBe(false);
+    expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(true);
+    expect(component.settingsAreDefault()).toBe(false);
 
     component.openShortcutSettings();
     component.updateShortcut('figureSearch', 'Mod+K');
@@ -153,6 +156,15 @@ describe('AppConfigurationDialogComponent', () => {
 
     expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe(DEFAULT_KEYBOARD_SHORTCUTS.figureSearch);
     expect(component.shortcutsAreDefault()).toBe(true);
+  });
+
+  it('shows the white canvas option only while dark mode is selected', () => {
+    expect(component.t('whiteCanvasInDarkMode')).toBe('Use white canvas');
+    expect(component.showWhiteCanvasInDarkModeOption()).toBe(false);
+
+    store.patchPreferences({ theme: 'dark' });
+
+    expect(component.showWhiteCanvasInDarkModeOption()).toBe(true);
   });
 
   it('centralizes LaTeX and code-theme configuration through the dialog', () => {
@@ -187,6 +199,7 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.latexExportConfig().wrapInFigure).toBe(false);
     expect(configuration.codeHighlightTheme()).toBe('aurora');
     expect(configuration.generalConfig().showHelpTooltips).toBe(true);
+    expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(false);
     expect(component.settingsAreDefault()).toBe(true);
     expect(component.resetConfirmationOpen()).toBe(false);
   });

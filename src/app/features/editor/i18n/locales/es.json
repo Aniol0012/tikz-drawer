@@ -364,6 +364,7 @@
   "showGrid": "Mostrar rejilla",
   "showAxes": "Mostrar ejes",
   "showHelpTooltips": "Mostrar tooltips de ayuda",
+  "whiteCanvasInDarkMode": "Usar lienzo blanco",
   "keyboardShortcuts": "Atajos de teclado",
   "keyboardShortcutsDescription": "Consulta y cambia los atajos principales del editor.",
   "shortcutCaptureInstruction": "Pulsa el nuevo atajo. Esc cancela.",
