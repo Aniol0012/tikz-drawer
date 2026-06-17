@@ -17,6 +17,7 @@ describe('EditorTopbarComponent template', () => {
     expect(importIndex).toBeGreaterThanOrEqual(0);
     expect(exportIndex).toBeGreaterThan(importIndex);
     expect(primaryActions).toContain('primary-button--import');
+    expect(primaryActions).toContain("icon('import')");
     expect(primaryActions).toContain("{{ t('importCode') }}");
     expect(primaryActions).toContain("{{ t('export') }}");
   });
