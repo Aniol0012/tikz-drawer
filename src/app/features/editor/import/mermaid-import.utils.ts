@@ -35,7 +35,6 @@ const FLOW_NODE_GAP = 2.8;
 const FLOW_LAYER_GAP = 2.1;
 const MINDMAP_NODE_GAP = 3.2;
 const MINDMAP_LEVEL_GAP = 2.35;
-const TEXT_BASELINE_CENTER_OFFSET_FACTOR = 0.32;
 
 export const importMermaidToScene = (source: string): TikzScene => {
   const graph = parseMermaidSource(source);
@@ -342,10 +341,10 @@ const mermaidNodeShapes = (node: MermaidRenderedNode): readonly CanvasShape[] =>
     stroke: 'none',
     strokeOpacity: 1,
     strokeWidth: 0,
-    x: node.center.x - Math.max(node.width - 0.28, 0.4) / 2,
-    y: node.center.y - DEFAULT_TEXT_FONT_SIZE * TEXT_BASELINE_CENTER_OFFSET_FACTOR,
+    x: node.center.x,
+    y: node.center.y,
     text: node.label,
-    textBox: true,
+    textBox: false,
     boxWidth: Math.max(node.width - 0.28, 0.4),
     fontSize: DEFAULT_TEXT_FONT_SIZE,
     color: DEFAULT_LINE_COLOR,

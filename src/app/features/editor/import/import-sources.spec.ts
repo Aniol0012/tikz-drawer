@@ -79,7 +79,7 @@ describe('import sources', () => {
     expect(labels).toEqual(expect.arrayContaining(['Problem', 'Cause A', 'Cause B', 'Cause C', 'Cause D', 'Cause E']));
     expect(lines).toHaveLength(5);
     expect(lines.every((line) => line.arrowEnd === false && line.fromAttachment && line.toAttachment)).toBe(true);
-    expect(texts.every((shape) => shape.textBox && shape.textAlign === 'center')).toBe(true);
+    expect(texts.every((shape) => !shape.textBox && shape.textAlign === 'center')).toBe(true);
     expect(Math.abs((causeD?.x ?? 0) - (causeC?.x ?? 0))).toBeGreaterThan(2);
   });
 
