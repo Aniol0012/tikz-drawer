@@ -77,7 +77,7 @@
 }
 
 :host(.topbar-copy-button) {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
 }
 
 :host(.topbar-copy-button) .copy-button--secondary {
@@ -91,9 +91,9 @@
   min-height: 36px;
   justify-content: flex-start;
   padding: 0 10px;
-  border: 0;
+  border: 1px solid var(--tool-border);
   border-radius: 8px;
-  background: transparent;
+  background: var(--tool-surface);
   color: inherit;
   text-align: left;
 }

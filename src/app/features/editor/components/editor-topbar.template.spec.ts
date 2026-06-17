@@ -50,6 +50,26 @@ describe('EditorTopbarComponent template', () => {
     expect(sceneInput).toContain('max-width: 180px;');
     expect(sceneInput).toContain('flex: 0 1 180px;');
   });
+
+  it('keeps left actions readable until the menu is needed', async () => {
+    const styles = await readStyles();
+    const topbarActions = sectionBetween(styles, '.topbar-actions {', '}');
+    const toolbarButton = sectionBetween(styles, '.secondary-button--toolbar {', '}');
+
+    expect(topbarActions).toContain('flex: 0 0 auto;');
+    expect(topbarActions).toContain('overflow: visible;');
+    expect(toolbarButton).toContain('flex: 0 0 auto;');
+  });
+
+  it('keeps mobile menu controls and primary actions compact', async () => {
+    const styles = await readStyles();
+    const inlineMenu = sectionBetween(styles, '.dropdown-menu__topbar-inline {', '}');
+    const mobileTopbarActions = sectionBetweenAfter(styles, '@media (max-width: 760px)', '.topbar-primary-actions {', '}');
+
+    expect(inlineMenu).toContain('grid-template-columns: minmax(96px, 1fr) auto auto auto;');
+    expect(mobileTopbarActions).toContain('width: auto;');
+    expect(mobileTopbarActions).toContain('display: flex;');
+  });
 });
 
 function sectionBetween(template: string, startMarker: string, endMarker: string): string {
