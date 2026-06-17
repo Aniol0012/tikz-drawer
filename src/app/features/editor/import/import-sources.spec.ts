@@ -58,22 +58,29 @@ describe('import sources', () => {
 
   it('imports Mermaid mindmaps as a hierarchy with anchored branches', () => {
     const result = importMermaidSource(`
+      ---
+      title: Simple Approach to Cause and Effect Diagrams (Flowchart)
+      ---
       mindmap
-      root{{Marketing Problem}}
-        (Product/Service)
-          Cause
-        (Price)
-          Cause
-          Cause
+      root((Problem))
+        Cause A
+          Cause C
+        Cause B
+          Cause D
+          Cause E
     `);
 
-    const labels = result.scene.shapes.filter((shape) => shape.kind === 'text').map((shape) => shape.text);
+    const texts = result.scene.shapes.filter((shape) => shape.kind === 'text');
+    const labels = texts.map((shape) => shape.text);
     const lines = result.scene.shapes.filter((shape) => shape.kind === 'line');
+    const causeC = texts.find((shape) => shape.text === 'Cause C');
+    const causeD = texts.find((shape) => shape.text === 'Cause D');
 
-    expect(labels).toEqual(expect.arrayContaining(['Marketing Problem', 'Product/Service', 'Price', 'Cause']));
-    expect(labels.filter((label) => label === 'Cause')).toHaveLength(3);
+    expect(labels).toEqual(expect.arrayContaining(['Problem', 'Cause A', 'Cause B', 'Cause C', 'Cause D', 'Cause E']));
     expect(lines).toHaveLength(5);
     expect(lines.every((line) => line.arrowEnd === false && line.fromAttachment && line.toAttachment)).toBe(true);
+    expect(texts.every((shape) => shape.textBox && shape.textAlign === 'center')).toBe(true);
+    expect(Math.abs((causeD?.x ?? 0) - (causeC?.x ?? 0))).toBeGreaterThan(2);
   });
 
   it('imports draw.io connectors between vertices with arrow and intermediate anchors', () => {

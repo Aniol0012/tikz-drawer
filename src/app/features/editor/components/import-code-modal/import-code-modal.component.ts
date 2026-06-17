@@ -5,6 +5,7 @@ import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { parseTikz } from '../../tikz/tikz.parser';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
+import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import {
   detectImportSourceKind,
@@ -22,6 +23,7 @@ import {
   importTikzSource,
   type ExtractedTikzDiagram
 } from '../../import/import-sources';
+import { EDITOR_STORAGE_KEYS } from '../../constants/editor.constants';
 import { latexEnvironmentBeginRegex, latexEnvironmentEndRegex, REGEX } from '../../../../shared/regex/regex.utils';
 
 const hasUnbalancedDelimiters = (source: string): boolean => {
@@ -89,6 +91,8 @@ interface ImportWarningView {
   readonly isRawTikz: boolean;
 }
 
+const importSourceKinds = new Set<ImportSourceKind>(['tikz', 'tex', 'project-json', 'drawio', 'svg', 'mermaid', 'dot', 'csv', 'image']);
+
 @Component({
   selector: 'app-import-code-modal',
   imports: [EditorTranslatePipe, ToggleFieldComponent],
@@ -99,6 +103,7 @@ interface ImportWarningView {
 export class ImportCodeModalComponent {
   private readonly languageService = inject(EditorLanguageService);
   private readonly codeHighlightThemeService = inject(CodeHighlightThemeService);
+  private readonly editorStorage = inject(EditorLocalStorageService);
 
   readonly closeIconPath = getIconPath('close');
   readonly trashIconPath = getIconPath('trash');
@@ -125,7 +130,7 @@ export class ImportCodeModalComponent {
   readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly parsedInput = computed(() => parseTikz(this.code()));
   readonly codeInputFocused = signal(false);
-  readonly sourceKind = signal<ImportSourceKind>('tikz');
+  readonly sourceKind = signal<ImportSourceKind>(this.readStoredSourceKind());
   readonly fileName = signal('');
   readonly fileContent = signal('');
   readonly imageDataUrl = signal('');
@@ -338,7 +343,7 @@ export class ImportCodeModalComponent {
   }
 
   updateSourceKind(kind: ImportSourceKind): void {
-    this.sourceKind.set(kind);
+    this.setSourceKind(kind);
     this.warningDetailsExpanded.set(false);
     this.fileError.set('');
     this.fileName.set('');
@@ -386,7 +391,7 @@ export class ImportCodeModalComponent {
     this.fileName.set(file.name);
     const detectedFileKind = detectImportSourceKind('', file.name);
     if (detectedFileKind && detectedFileKind !== this.sourceKind()) {
-      this.sourceKind.set(detectedFileKind);
+      this.setSourceKind(detectedFileKind);
     }
     const reader = new FileReader();
     reader.onerror = () => this.fileError.set(this.t('import.errorFileRead'));
@@ -477,7 +482,7 @@ export class ImportCodeModalComponent {
   }
 
   private applyDetectedTextSource(kind: ImportSourceKind, content: string, fileName = ''): void {
-    this.sourceKind.set(kind);
+    this.setSourceKind(kind);
     this.warningDetailsExpanded.set(false);
     this.fileError.set('');
     this.fileName.set(fileName);
@@ -501,6 +506,20 @@ export class ImportCodeModalComponent {
       this.texDiagrams.set(diagrams);
       this.selectedTexDiagramIndexes.set(diagrams.map((_, index) => index));
     }
+  }
+
+  private setSourceKind(kind: ImportSourceKind): void {
+    this.sourceKind.set(kind);
+    this.editorStorage.setString(EDITOR_STORAGE_KEYS.importSourceKind, kind);
+  }
+
+  private readStoredSourceKind(): ImportSourceKind {
+    const stored = this.editorStorage.getString(EDITOR_STORAGE_KEYS.importSourceKind);
+    return this.isImportSourceKind(stored) ? stored : 'tikz';
+  }
+
+  private isImportSourceKind(value: string | null): value is ImportSourceKind {
+    return value !== null && importSourceKinds.has(value as ImportSourceKind);
   }
 
   private describeWarning(warning: string): ImportWarningView {

@@ -33,9 +33,9 @@ interface MermaidRenderedNode extends MermaidNode {
 
 const FLOW_NODE_GAP = 2.8;
 const FLOW_LAYER_GAP = 2.1;
-const MINDMAP_BRANCH_GAP = 2.7;
-const MINDMAP_CHILD_SPREAD = Math.PI / 2.4;
-const MINDMAP_MIN_CHILD_SPREAD = Math.PI / 7;
+const MINDMAP_NODE_GAP = 3.2;
+const MINDMAP_LEVEL_GAP = 2.35;
+const TEXT_BASELINE_CENTER_OFFSET_FACTOR = 0.32;
 
 export const importMermaidToScene = (source: string): TikzScene => {
   const graph = parseMermaidSource(source);
@@ -58,7 +58,7 @@ export const importMermaidToScene = (source: string): TikzScene => {
 };
 
 const parseMermaidSource = (source: string): MermaidGraph => {
-  const content = source.replace(REGEX.importSources.mermaidFrontMatter, '').trim();
+  const content = source.trim().replace(REGEX.importSources.mermaidFrontMatter, '').trim();
   return REGEX.importSources.mermaidMindmapHeader.test(content) ? parseMindmap(content) : parseFlowchart(content);
 };
 
@@ -265,37 +265,43 @@ const layoutMindmap = (graph: MermaidGraph): readonly MermaidRenderedNode[] => {
     return [];
   }
 
-  const rendered: MermaidRenderedNode[] = [renderNode(root, { x: 0, y: 0 }, true)];
-  const firstLevel = childrenById.get(root.id) ?? [];
-  firstLevel.forEach((child, index) => {
-    const angle = -Math.PI / 2 + (index * Math.PI * 2) / Math.max(firstLevel.length, 1);
-    layoutMindmapBranch(child, angle, 1, { x: 0, y: 0 }, childrenById, rendered);
-  });
+  const leafCounts = mindmapLeafCounts(root, childrenById);
+  const rendered: MermaidRenderedNode[] = [];
+  layoutMindmapSubtree(root, 0, 0, childrenById, leafCounts, rendered);
 
   return rendered;
 };
 
-const layoutMindmapBranch = (
+const mindmapLeafCounts = (
   node: MermaidNode,
-  angle: number,
-  depth: number,
-  parentCenter: Point,
   childrenById: ReadonlyMap<string, readonly MermaidNode[]>,
+  leafCounts = new Map<string, number>()
+): ReadonlyMap<string, number> => {
+  const children = childrenById.get(node.id) ?? [];
+  const count = children.length ? children.reduce((total, child) => total + (mindmapLeafCounts(child, childrenById, leafCounts).get(child.id) ?? 1), 0) : 1;
+  leafCounts.set(node.id, count);
+  return leafCounts;
+};
+
+const layoutMindmapSubtree = (
+  node: MermaidNode,
+  depth: number,
+  centerX: number,
+  childrenById: ReadonlyMap<string, readonly MermaidNode[]>,
+  leafCounts: ReadonlyMap<string, number>,
   rendered: MermaidRenderedNode[]
 ): void => {
-  const distance = MINDMAP_BRANCH_GAP + Math.max(depth - 1, 0) * 0.35;
-  const center = {
-    x: parentCenter.x + Math.cos(angle) * distance,
-    y: parentCenter.y + Math.sin(angle) * distance
-  };
-  rendered.push(renderNode(node, center, false));
+  rendered.push(renderNode(node, { x: centerX, y: depth * MINDMAP_LEVEL_GAP }, depth === 0));
 
   const children = childrenById.get(node.id) ?? [];
-  const spread = Math.max(MINDMAP_MIN_CHILD_SPREAD, MINDMAP_CHILD_SPREAD / Math.max(depth, 1));
-  const startAngle = angle - ((children.length - 1) * spread) / 2;
-  children.forEach((child, index) => {
-    layoutMindmapBranch(child, startAngle + index * spread, depth + 1, center, childrenById, rendered);
-  });
+  const totalLeaves = children.reduce((total, child) => total + (leafCounts.get(child.id) ?? 1), 0);
+  let nextLeft = centerX - ((Math.max(totalLeaves, 1) - 1) * MINDMAP_NODE_GAP) / 2;
+  for (const child of children) {
+    const childLeaves = leafCounts.get(child.id) ?? 1;
+    const childCenterX = nextLeft + ((childLeaves - 1) * MINDMAP_NODE_GAP) / 2;
+    layoutMindmapSubtree(child, depth + 1, childCenterX, childrenById, leafCounts, rendered);
+    nextLeft += childLeaves * MINDMAP_NODE_GAP;
+  }
 };
 
 const renderNode = (node: MermaidNode, center: Point, isRoot: boolean): MermaidRenderedNode => {
@@ -336,8 +342,8 @@ const mermaidNodeShapes = (node: MermaidRenderedNode): readonly CanvasShape[] =>
     stroke: 'none',
     strokeOpacity: 1,
     strokeWidth: 0,
-    x: node.center.x,
-    y: node.center.y,
+    x: node.center.x - Math.max(node.width - 0.28, 0.4) / 2,
+    y: node.center.y - DEFAULT_TEXT_FONT_SIZE * TEXT_BASELINE_CENTER_OFFSET_FACTOR,
     text: node.label,
     textBox: true,
     boxWidth: Math.max(node.width - 0.28, 0.4),
