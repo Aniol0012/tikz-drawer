@@ -761,13 +761,13 @@ export class EditorStore {
     return parsed;
   }
 
-  applyImportedScene(scene: TikzScene, importCode: string, warnings: readonly string[], replaceScene = false): void {
+  applyImportedScene(scene: TikzScene, importCode: string, warnings: readonly string[], replaceScene = false, preserveImportCode = false): void {
     if (replaceScene) {
       this.setScene(scene);
     } else {
       this.appendImportedScene(scene);
     }
-    this.importCode.set(importCode || sceneToTikz(scene));
+    this.importCode.set(preserveImportCode ? importCode : importCode || sceneToTikz(scene));
     this.parserWarnings.set(warnings);
   }
 

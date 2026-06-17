@@ -2426,7 +2426,7 @@ export class EditorPageComponent {
 
   applyImportDialogResultConfirmed(result: ImportDialogResult): void {
     this.runSceneMutation(() => {
-      this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true);
+      this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true, result.preserveImportCode === true);
       this.viewportCenter.set({ x: 0, y: 0 });
       this.inspectorTab.set('scene');
     });

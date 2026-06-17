@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectImportSourceKind, importDrawioSource, importProjectJson } from './import-sources';
+import { detectImportSourceKind, importDrawioSource, importMermaidSource, importProjectJson } from './import-sources';
 import type { PersistedEditorState } from '../models/tikz.models';
 import { defaultPreferences } from '../presets/presets';
 
@@ -26,6 +26,54 @@ describe('import sources', () => {
   it('uses file extension as a fallback when content is empty or ambiguous', () => {
     expect(detectImportSourceKind('', 'diagram.mmd')).toBe('mermaid');
     expect(detectImportSourceKind('Node A', 'figure.tex')).toBe('tex');
+  });
+
+  it('imports Mermaid flowchart fan-out as separate anchored edges and nodes', () => {
+    const result = importMermaidSource(`
+      ---
+      title: Simple Approach to Cause and Effect Diagrams (Flowchart)
+      ---
+      flowchart TD
+        a[Cause A]
+        b[Cause B]
+        c[Cause C]
+        d[Cause D]
+        e[Cause E]
+        problem --> a & b
+        a --> c
+        b --> d & e
+    `);
+
+    const labels = result.scene.shapes.filter((shape) => shape.kind === 'text').map((shape) => shape.text);
+    const lines = result.scene.shapes.filter((shape) => shape.kind === 'line');
+
+    expect(result.importCode).toBe('');
+    expect(result.preserveImportCode).toBe(true);
+    expect(labels).toEqual(expect.arrayContaining(['problem', 'Cause A', 'Cause B', 'Cause C', 'Cause D', 'Cause E']));
+    expect(labels).not.toContain('a & b');
+    expect(labels).not.toContain('d & e');
+    expect(lines).toHaveLength(5);
+    expect(lines.every((line) => line.fromAttachment && line.toAttachment)).toBe(true);
+  });
+
+  it('imports Mermaid mindmaps as a hierarchy with anchored branches', () => {
+    const result = importMermaidSource(`
+      mindmap
+      root{{Marketing Problem}}
+        (Product/Service)
+          Cause
+        (Price)
+          Cause
+          Cause
+    `);
+
+    const labels = result.scene.shapes.filter((shape) => shape.kind === 'text').map((shape) => shape.text);
+    const lines = result.scene.shapes.filter((shape) => shape.kind === 'line');
+
+    expect(labels).toEqual(expect.arrayContaining(['Marketing Problem', 'Product/Service', 'Price', 'Cause']));
+    expect(labels.filter((label) => label === 'Cause')).toHaveLength(3);
+    expect(lines).toHaveLength(5);
+    expect(lines.every((line) => line.arrowEnd === false && line.fromAttachment && line.toAttachment)).toBe(true);
   });
 
   it('imports draw.io connectors between vertices with arrow and intermediate anchors', () => {

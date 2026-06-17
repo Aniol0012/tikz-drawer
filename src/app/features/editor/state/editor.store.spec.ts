@@ -70,4 +70,10 @@ describe('EditorStore import application', () => {
     });
     expect(store.parserWarnings()).toEqual(['warning']);
   });
+
+  it('can preserve an intentionally empty import code for non-LaTeX imports', () => {
+    store.applyImportedScene(importedScene('mermaid'), '', [], false, true);
+
+    expect(store.importCode()).toBe('');
+  });
 });

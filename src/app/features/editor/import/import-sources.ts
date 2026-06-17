@@ -2,6 +2,7 @@ import type { CanvasShape, LineShape, PersistedEditorState, TikzScene } from '..
 import { DEFAULT_TEXT_BOX_WIDTH, DEFAULT_TEXT_FONT_SIZE } from '../constants/editor.constants';
 import { parseTikz } from '../tikz/tikz.parser';
 import { keyValueRegex, REGEX } from '../../../shared/regex/regex.utils';
+import { importMermaidToScene } from './mermaid-import.utils';
 
 export type ImportSourceKind = 'tikz' | 'tex' | 'project-json' | 'drawio' | 'svg' | 'mermaid' | 'dot' | 'csv' | 'image';
 
@@ -10,6 +11,7 @@ export interface ImportDialogResult {
   readonly importCode: string;
   readonly warnings: readonly string[];
   readonly clearScene?: boolean;
+  readonly preserveImportCode?: boolean;
 }
 
 export interface ExtractedTikzDiagram {
@@ -473,8 +475,12 @@ export const importDrawioSource = (source: string): ImportDialogResult => {
   return { scene: makeScene('Imported Draw.io diagram', shapes), importCode: source, warnings: [] };
 };
 
-export const importMermaidSource = (source: string): ImportDialogResult =>
-  graphSourceToScene(source, REGEX.importSources.mermaidEdge, 'Imported Mermaid graph');
+export const importMermaidSource = (source: string): ImportDialogResult => ({
+  scene: importMermaidToScene(source),
+  importCode: '',
+  warnings: [],
+  preserveImportCode: true
+});
 
 export const importDotSource = (source: string): ImportDialogResult => graphSourceToScene(source, REGEX.importSources.dotEdge, 'Imported DOT graph');
 
