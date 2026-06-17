@@ -26,12 +26,6 @@
           [resolveValue]="shareLinkCopyValue()"
           (copied)="onShareLinkCopied($event)"
           (copyError)="copyError.emit($event)"></app-copy-button>
-        <button class="secondary-button secondary-button--toolbar" type="button" [title]="t('importCode')" (click)="importOpen.emit()">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('open')"></path>
-          </svg>
-          <span>{{ t('importCode') }}</span>
-        </button>
       }
     </div>
 
@@ -60,12 +54,6 @@
                 [resolveValue]="shareLinkCopyValue()"
                 (copied)="onShareLinkCopied($event, true)"
                 (copyError)="copyError.emit($event)"></app-copy-button>
-              <button class="dropdown-row" type="button" (click)="importOpen.emit(); fileMenuClose.emit()">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path [attr.d]="icon('open')"></path>
-                </svg>
-                <span>{{ t('importCode') }}</span>
-              </button>
             }
 
             @if (overlayLibraryLayout()) {
@@ -126,13 +114,6 @@
                     </svg>
                   </button>
                 </div>
-
-                <button class="primary-button primary-button--wide" type="button" (click)="exportOpen.emit()">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path [attr.d]="icon('export')"></path>
-                  </svg>
-                  <span>{{ t('export') }}</span>
-                </button>
               </div>
             }
           </div>
@@ -187,8 +168,8 @@
     </div>
   </div>
 
-  @if (!mobileLayout()) {
-    <div class="topbar__right">
+  <div class="topbar__right">
+    @if (!mobileLayout()) {
       @if (devMode()) {
         <app-badge tone="dev" size="sm" [iconPath]="icon('code')">{{ t('devMode') }}</app-badge>
       }
@@ -245,11 +226,17 @@
           <path [attr.d]="icon('settings')"></path>
         </svg>
       </button>
+    }
 
+    <div class="topbar-primary-actions">
+      <button class="primary-button primary-button--import" type="button" (click)="importOpen.emit()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('open')"></path></svg>
+        <span>{{ t('importCode') }}</span>
+      </button>
       <button class="primary-button" type="button" (click)="exportOpen.emit()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('export')"></path></svg>
         <span>{{ t('export') }}</span>
       </button>
     </div>
-  }
+  </div>
 </header>

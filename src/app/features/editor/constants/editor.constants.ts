@@ -50,9 +50,9 @@ export const MIN_CIRCLE_RADIUS = 0.1;
 export const MIN_ELLIPSE_RADIUS = 0.1;
 export const MIN_TEXT_FONT_SIZE = 0.2;
 export const MIN_TEXT_SCALE_FACTOR = 0.7;
-export const MIN_TEXT_BOX_WIDTH = 1.2;
-export const MIN_TEXT_RESIZE_WIDTH = 0.4;
-export const MIN_TEXT_RESIZE_HEIGHT = 0.24;
+export const MIN_TEXT_BOX_WIDTH = 2.2;
+export const MIN_TEXT_RESIZE_WIDTH = 1.2;
+export const MIN_TEXT_RESIZE_HEIGHT = 0.42;
 
 export const TEXT_WRAP_CHAR_WIDTH_FACTOR = 0.48;
 export const TEXT_WRAP_MIN_CHAR_WIDTH = 0.12;
@@ -122,7 +122,7 @@ export const EDITOR_INLINE_TEXT_EDITOR_METRICS = {
   minFontSize: 14,
   minPaddingX: 6,
   minPaddingY: 4,
-  minBoxWidth: 56,
+  minBoxWidth: 96,
   minLineWidth: 36,
   characterWidthFactor: 0.56,
   minLineWidthFactor: 1.4,

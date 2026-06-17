@@ -1,5 +1,13 @@
 import type { CanvasShape } from '../models/tikz.models';
 import type { LineCanvasShape, ResizeHandle } from '../components/editor-page/editor-page.types';
+import {
+  MIN_SHAPE_DIMENSION,
+  MIN_TEXT_BOX_WIDTH,
+  MIN_TEXT_FONT_SIZE,
+  MIN_TEXT_RESIZE_HEIGHT,
+  MIN_TEXT_RESIZE_WIDTH,
+  TEXT_MIN_HEIGHT_FACTOR
+} from '../constants/editor.constants';
 import type { SelectionBounds } from './editor-page.utils';
 import { resizeSelection, resizeShape, type ResizeShapeOptions } from './editor-resize.utils';
 
@@ -89,12 +97,12 @@ const resizeOptions = (selectedShapeKind: CanvasShape['kind'] | null = null): Re
   lineArrowControlScale: () => 2.5,
   selectedShapeKind,
   shiftPressed: false,
-  minShapeDimension: 0.2,
-  minTextResizeWidth: 0.4,
-  minTextResizeHeight: 0.24,
-  minTextBoxWidth: 1.2,
-  minTextFontSize: 0.2,
-  textMinHeightFactor: 0.72
+  minShapeDimension: MIN_SHAPE_DIMENSION,
+  minTextResizeWidth: MIN_TEXT_RESIZE_WIDTH,
+  minTextResizeHeight: MIN_TEXT_RESIZE_HEIGHT,
+  minTextBoxWidth: MIN_TEXT_BOX_WIDTH,
+  minTextFontSize: MIN_TEXT_FONT_SIZE,
+  textMinHeightFactor: TEXT_MIN_HEIGHT_FACTOR
 });
 
 describe('editor-resize utils', () => {
@@ -238,6 +246,16 @@ describe('editor-resize utils', () => {
 
     expect(resized.boxWidth).toBeGreaterThan(textShape.boxWidth);
     expect(resized.fontSize).toBeGreaterThanOrEqual(0.2);
+  });
+
+  it('keeps textbox resize above the canvas minimum width', () => {
+    const resized = resizeShape(textShape, 'e', { x: textShape.x + 0.1, y: 1 }, resizeOptions());
+    expect(resized.kind).toBe('text');
+    if (resized.kind !== 'text') {
+      throw new Error('Expected text');
+    }
+
+    expect(resized.boxWidth).toBe(MIN_TEXT_BOX_WIDTH);
   });
 
   it('resizes line arrow controls through callback', () => {
