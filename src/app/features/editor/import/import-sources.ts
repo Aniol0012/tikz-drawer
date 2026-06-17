@@ -17,6 +17,93 @@ export interface ExtractedTikzDiagram {
   readonly code: string;
 }
 
+interface ImportSourceDetectionContext {
+  readonly source: string;
+  readonly trimmedSource: string;
+  readonly lines: readonly string[];
+}
+
+interface ImportSourceDetectionRule {
+  readonly kind: ImportSourceKind;
+  readonly matches: (context: ImportSourceDetectionContext) => boolean;
+}
+
+const extensionKindMap: Readonly<Record<string, ImportSourceKind>> = {
+  csv: 'csv',
+  drawio: 'drawio',
+  jpeg: 'image',
+  jpg: 'image',
+  json: 'project-json',
+  mermaid: 'mermaid',
+  mmd: 'mermaid',
+  png: 'image',
+  svg: 'svg',
+  tex: 'tex',
+  tikz: 'tikz',
+  tsv: 'csv',
+  xml: 'drawio'
+};
+
+const hasPattern =
+  (pattern: RegExp): ImportSourceDetectionRule['matches'] =>
+  ({ trimmedSource }) =>
+    pattern.test(trimmedSource);
+
+const anyMatcher =
+  (matchers: readonly ImportSourceDetectionRule['matches'][]): ImportSourceDetectionRule['matches'] =>
+  (context) =>
+    matchers.some((matcher) => matcher(context));
+
+const hasAnyPattern = (patterns: readonly RegExp[]): ImportSourceDetectionRule['matches'] => anyMatcher(patterns.map((pattern) => hasPattern(pattern)));
+
+const hasLinePattern =
+  (pattern: RegExp): ImportSourceDetectionRule['matches'] =>
+  ({ lines }) =>
+    lines.some((line) => pattern.test(line));
+
+const hasLinePatternPair =
+  (firstPattern: RegExp, secondPattern: RegExp): ImportSourceDetectionRule['matches'] =>
+  ({ lines }) =>
+    lines.some((line) => firstPattern.test(line) && secondPattern.test(line));
+
+const importSourceDetectionRules: readonly ImportSourceDetectionRule[] = [
+  {
+    kind: 'project-json',
+    matches: ({ trimmedSource }) => isProjectJsonSource(trimmedSource)
+  },
+  {
+    kind: 'svg',
+    matches: hasPattern(REGEX.importSources.svgDocument)
+  },
+  {
+    kind: 'drawio',
+    matches: hasPattern(REGEX.importSources.drawioDocument)
+  },
+  {
+    kind: 'tex',
+    matches: hasAnyPattern([REGEX.importSources.latexDocumentClass, REGEX.importSources.latexDocumentBegin])
+  },
+  {
+    kind: 'tikz',
+    matches: hasAnyPattern([REGEX.tikzParser.tikzBeginCommand, REGEX.importModal.drawLikeCommand])
+  },
+  {
+    kind: 'mermaid',
+    matches: anyMatcher([hasPattern(REGEX.importSources.mermaidDirective), hasLinePattern(REGEX.importSources.mermaidEdgeLike)])
+  },
+  {
+    kind: 'dot',
+    matches: anyMatcher([
+      hasPattern(REGEX.importSources.dotGraphDocument),
+      hasLinePatternPair(REGEX.importSources.dotEdge, REGEX.importSources.dotStatementTerminator)
+    ])
+  },
+  {
+    kind: 'csv',
+    matches: ({ source }) => hasTabularRows(source)
+  }
+];
+
 const defaultSceneBounds = {
   width: 960,
   height: 640
@@ -125,6 +212,20 @@ export const extractTikzDiagrams = (source: string): readonly ExtractedTikzDiagr
   }
 
   return diagrams;
+};
+
+export const detectImportSourceKind = (source: string, fileName = ''): ImportSourceKind | null => {
+  const trimmed = source.trim();
+  if (trimmed) {
+    const context: ImportSourceDetectionContext = {
+      source,
+      trimmedSource: trimmed,
+      lines: trimmed.split(REGEX.shared.lineBreak).map((line) => line.trim())
+    };
+    return importSourceDetectionRules.find((rule) => rule.matches(context))?.kind ?? extensionKind(fileName);
+  }
+
+  return extensionKind(fileName);
 };
 
 export const importTikzSource = (source: string, name = 'Imported TikZ scene'): ImportDialogResult => {
@@ -540,6 +641,33 @@ const decodeHtml = (value: string): string => {
   const element = document.createElement('textarea');
   element.innerHTML = value.replaceAll(REGEX.importSources.htmlBreak, '\n').replaceAll(REGEX.importSources.htmlTag, '');
   return element.value.trim();
+};
+
+const extensionKind = (fileName: string): ImportSourceKind | null => {
+  const extension = fileName.trim().toLowerCase().match(REGEX.importSources.fileExtension)?.[1] ?? '';
+  return extensionKindMap[extension] ?? null;
+};
+
+const isProjectJsonSource = (source: string): boolean => {
+  if (!source.startsWith('{')) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(source) as Partial<PersistedEditorState> & {
+      readonly format?: string;
+      readonly state?: Partial<PersistedEditorState>;
+    };
+    const state = parsed.state ?? parsed;
+    return parsed.format === 'tikz-drawer-project' || Boolean(state.scene?.shapes);
+  } catch {
+    return false;
+  }
+};
+
+const hasTabularRows = (source: string): boolean => {
+  const rows = parseCsvRows(source);
+  return rows.length >= 2 && rows[0].length >= 2 && rows.slice(1).some((row) => row.length === rows[0].length);
 };
 
 const graphSourceToScene = (source: string, edgePattern: RegExp, name: string): ImportDialogResult => {

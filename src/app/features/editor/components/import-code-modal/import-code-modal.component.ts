@@ -7,6 +7,7 @@ import { parseTikz } from '../../tikz/tikz.parser';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
 import {
+  detectImportSourceKind,
   extractTikzDiagrams,
   importCsvSource,
   importDotSource,
@@ -326,7 +327,13 @@ export class ImportCodeModalComponent {
   });
 
   onCodeInput(event: Event): void {
-    this.codeChange.emit((event.target as HTMLTextAreaElement).value);
+    const value = (event.target as HTMLTextAreaElement).value;
+    const detectedKind = detectImportSourceKind(value);
+    if (detectedKind && detectedKind !== this.sourceKind()) {
+      this.applyDetectedTextSource(detectedKind, value);
+    } else {
+      this.codeChange.emit(value);
+    }
     this.syncScroll();
   }
 
@@ -377,6 +384,10 @@ export class ImportCodeModalComponent {
     }
 
     this.fileName.set(file.name);
+    const detectedFileKind = detectImportSourceKind('', file.name);
+    if (detectedFileKind && detectedFileKind !== this.sourceKind()) {
+      this.sourceKind.set(detectedFileKind);
+    }
     const reader = new FileReader();
     reader.onerror = () => this.fileError.set(this.t('import.errorFileRead'));
 
@@ -388,17 +399,8 @@ export class ImportCodeModalComponent {
 
     reader.onload = () => {
       const content = String(reader.result ?? '');
-      if (this.sourceKind() === 'tikz' || this.sourceKind() === 'mermaid') {
-        this.codeChange.emit(content);
-        return;
-      }
-
-      this.fileContent.set(content);
-      if (this.sourceKind() === 'tex') {
-        const diagrams = extractTikzDiagrams(content);
-        this.texDiagrams.set(diagrams);
-        this.selectedTexDiagramIndexes.set(diagrams.map((_, index) => index));
-      }
+      const detectedKind = detectImportSourceKind(content, file.name) ?? this.sourceKind();
+      this.applyDetectedTextSource(detectedKind, content, file.name);
     };
     reader.readAsText(file);
   }
@@ -472,6 +474,33 @@ export class ImportCodeModalComponent {
 
   private isEscapeKey(event: KeyboardEvent): boolean {
     return event.key === 'Escape' || event.key === 'Esc' || event.code === 'Escape';
+  }
+
+  private applyDetectedTextSource(kind: ImportSourceKind, content: string, fileName = ''): void {
+    this.sourceKind.set(kind);
+    this.warningDetailsExpanded.set(false);
+    this.fileError.set('');
+    this.fileName.set(fileName);
+    this.imageDataUrl.set('');
+    this.texDiagrams.set([]);
+    this.selectedTexDiagramIndexes.set([]);
+
+    if (kind === 'tikz' || kind === 'mermaid') {
+      this.fileContent.set('');
+      this.codeChange.emit(content);
+      return;
+    }
+
+    this.fileContent.set(content);
+    if (this.code()) {
+      this.codeChange.emit('');
+    }
+
+    if (kind === 'tex') {
+      const diagrams = extractTikzDiagrams(content);
+      this.texDiagrams.set(diagrams);
+      this.selectedTexDiagramIndexes.set(diagrams.map((_, index) => index));
+    }
   }
 
   private describeWarning(warning: string): ImportWarningView {

@@ -265,6 +265,9 @@ Angular’s security guide covers built-in XSS protections, `DomSanitizer`, and 
 
 Use the code style defined in the [Angular Style Guide](https://angular.dev/style-guide#) and format with [Prettier](https://prettier.io/). So, the code must be formatted properly.
 
+- Keep reusable regular expressions in `src/app/shared/regex/regex.utils.ts` under the `REGEX` namespace. Feature code should reference those constants instead of adding inline regex literals, especially for parsers, import detection, validation, and template contract tests.
+- For code/import type detection, prefer an ordered, declarative rule list with shared matcher helpers over chained one-off conditionals. New formats should be added by registering a rule and, when needed, an extension fallback.
+
 ## Libraries usage
 
 Make sure to use the right libraries for the job, and prefer official Angular solutions when they exist. If you need to use a third-party library, make sure it is well-maintained, widely adopted,

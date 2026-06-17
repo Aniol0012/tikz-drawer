@@ -1,9 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { importDrawioSource, importProjectJson } from './import-sources';
+import { detectImportSourceKind, importDrawioSource, importProjectJson } from './import-sources';
 import type { PersistedEditorState } from '../models/tikz.models';
 import { defaultPreferences } from '../presets/presets';
 
 describe('import sources', () => {
+  it('detects Mermaid from graph code even without a Mermaid file extension', () => {
+    expect(
+      detectImportSourceKind(`
+        flowchart TD
+          Start --> Stop
+      `)
+    ).toBe('mermaid');
+  });
+
+  it('detects TikZ before generic graph syntax when LaTeX drawing commands are present', () => {
+    expect(
+      detectImportSourceKind(`
+        \\begin{tikzpicture}
+          \\draw (0,0) -- (1,1);
+        \\end{tikzpicture}
+      `)
+    ).toBe('tikz');
+  });
+
+  it('uses file extension as a fallback when content is empty or ambiguous', () => {
+    expect(detectImportSourceKind('', 'diagram.mmd')).toBe('mermaid');
+    expect(detectImportSourceKind('Node A', 'figure.tex')).toBe('tex');
+  });
+
   it('imports draw.io connectors between vertices with arrow and intermediate anchors', () => {
     const result = importDrawioSource(`
       <mxfile>
