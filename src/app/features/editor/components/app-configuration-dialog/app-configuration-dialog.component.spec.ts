@@ -35,7 +35,9 @@ describe('AppConfigurationDialogComponent', () => {
     ['keyboard-shortcut-capture.component.html', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
     ['keyboard-shortcut-capture.component.css', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
     ['ai-sparkles-icon.component.html', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')],
-    ['ai-sparkles-icon.component.css', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')]
+    ['ai-sparkles-icon.component.css', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')],
+    ['scene-icon.component.html', resolve(process.cwd(), 'src/app/features/editor/components/scene-icon')],
+    ['scene-icon.component.css', resolve(process.cwd(), 'src/app/features/editor/components/scene-icon')]
   ]);
 
   beforeAll(async () => {

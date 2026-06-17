@@ -153,7 +153,8 @@
 .primary-button--import {
   --import-action-color: #0f9f6e;
   background: var(--import-action-color);
-  border-color: color-mix(in srgb, var(--import-action-color) 70%, black 16%);
+  border-color: color-mix(in srgb, var(--import-action-color) 76%, black 10%);
+  box-shadow: none;
   color: #ffffff;
 }
 
@@ -637,7 +638,8 @@
 }
 
 .primary-button--import:hover {
-  background: color-mix(in srgb, var(--import-action-color) 88%, black 8%);
+  border-color: color-mix(in srgb, var(--import-action-color) 64%, black 18%);
+  background: color-mix(in srgb, var(--import-action-color) 92%, black 8%);
 }
 
 .transfer-icon__arrow,
@@ -660,18 +662,45 @@
   transform: translateY(-2.5px);
 }
 
+.theme-toggle-icon {
+  overflow: visible;
+}
+
 .theme-toggle-icon__sun,
-.theme-toggle-icon__moon {
+.theme-toggle-icon__moon,
+.theme-toggle-icon__sun-core,
+.theme-toggle-icon__sun-rays {
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.theme-toggle-icon__sun,
+.theme-toggle-icon__moon {
   transition:
-    opacity 240ms var(--ease-out),
-    transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 220ms ease,
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-toggle-icon__sun-core,
+.theme-toggle-icon__sun-rays {
+  transition:
+    opacity 220ms ease,
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-toggle-icon__sun-core {
+  fill: currentColor;
+  stroke: none;
 }
 
 .theme-toggle-icon__sun {
   opacity: 0;
-  transform: scale(0.45) rotate(-90deg);
+  transform: scale(0.38) rotate(-120deg);
+}
+
+.theme-toggle-icon__sun-rays {
+  opacity: 0;
+  transform: scale(0.55) rotate(-35deg);
 }
 
 .theme-toggle-icon__moon {
@@ -684,9 +713,14 @@
   transform: scale(1) rotate(0deg);
 }
 
+.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun-rays {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
 .theme-toggle-button.is-dark-theme .theme-toggle-icon__moon {
   opacity: 0;
-  transform: scale(0.45) rotate(90deg);
+  transform: scale(0.62) rotate(105deg);
 }
 
 .theme-toggle-button:active .theme-toggle-icon {
@@ -760,6 +794,11 @@ button:disabled {
   .transfer-icon__arrow,
   .theme-toggle-icon__sun,
   .theme-toggle-icon__moon {
+    transition: none !important;
+  }
+
+  .theme-toggle-icon__sun-core,
+  .theme-toggle-icon__sun-rays {
     transition: none !important;
   }
 }

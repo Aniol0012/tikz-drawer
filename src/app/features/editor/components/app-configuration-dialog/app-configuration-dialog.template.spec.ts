@@ -1,0 +1,15 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+describe('AppConfigurationDialogComponent template', () => {
+  const readTemplate = (): Promise<string> =>
+    readFile(resolve(process.cwd(), 'src/app/features/editor/components/app-configuration-dialog/app-configuration-dialog.component.html'), 'utf8');
+
+  it('uses the shared scene icon component for the scene settings tab', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('@else if (tab.sceneIcon)');
+    expect(template).toContain('<app-scene-icon></app-scene-icon>');
+  });
+});

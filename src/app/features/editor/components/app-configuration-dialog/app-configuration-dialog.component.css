@@ -126,7 +126,8 @@
   stroke-width: 1.9;
 }
 
-.configuration-tab app-ai-sparkles-icon {
+.configuration-tab app-ai-sparkles-icon,
+.configuration-tab app-scene-icon {
   width: 17px;
   height: 17px;
 }
@@ -902,7 +903,8 @@
   }
 
   .configuration-tab svg,
-  .configuration-tab app-ai-sparkles-icon {
+  .configuration-tab app-ai-sparkles-icon,
+  .configuration-tab app-scene-icon {
     width: 15px;
     height: 15px;
   }

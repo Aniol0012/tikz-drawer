@@ -3,10 +3,11 @@ import { ChangeDetectionStrategy, Component, input, viewChild } from '@angular/c
 import type { EditorPageComponent } from '../editor-page/editor-page.component';
 import { iconPaths } from '../../config/editor-icons';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
+import { SceneIconComponent } from '../scene-icon/scene-icon.component';
 
 @Component({
   selector: 'app-editor-right-sidebar',
-  imports: [AiSparklesIconComponent],
+  imports: [AiSparklesIconComponent, SceneIconComponent],
   templateUrl: './editor-right-sidebar.component.html',
   styleUrl: './editor-right-sidebar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

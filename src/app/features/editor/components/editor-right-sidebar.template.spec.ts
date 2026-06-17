@@ -14,15 +14,17 @@ describe('EditorRightSidebarComponent template', () => {
     expect(template).toContain('sidebar-tab--properties');
     expect(template).toContain('sidebar-tab--scene');
     expect(template).toContain('sidebar-tab--assistant');
-    expect(template).toContain('sidebar-tab__icon');
+    expect(template).toContain('properties-tab-icon__knob');
+    expect(template).toContain('app-scene-icon');
   });
 
-  it('animates properties and scene tab icons on hover', async () => {
+  it('animates properties knobs and delegates scene icon animation to the shared component', async () => {
     const styles = await readStyles();
 
-    expect(styles).toContain('@keyframes sidebar-properties-pins');
-    expect(styles).toContain('.sidebar-tab--properties:hover .sidebar-tab__icon');
-    expect(styles).toContain('.sidebar-tab--scene:hover .sidebar-tab__icon');
-    expect(styles).toContain('transform: scale(0.82);');
+    expect(styles).toContain('@keyframes sidebar-property-knob-top');
+    expect(styles).toContain('@keyframes sidebar-property-knob-middle');
+    expect(styles).toContain('@keyframes sidebar-property-knob-bottom');
+    expect(styles).toContain('.sidebar-tab--properties:hover .properties-tab-icon__knob--top');
+    expect(styles).toContain('.sidebar-tab__scene-icon');
   });
 });

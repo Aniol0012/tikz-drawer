@@ -46,6 +46,9 @@
               <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{
                 'devMode' | translate
               }}</app-badge>
+            } @else if (tab.sceneIcon) {
+              <app-scene-icon></app-scene-icon>
+              <span>{{ tab.labelKey | translate }}</span>
             } @else {
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="tab.iconPath"></path>

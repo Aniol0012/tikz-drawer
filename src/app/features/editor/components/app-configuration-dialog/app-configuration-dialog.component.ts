@@ -40,6 +40,7 @@ import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
+import { SceneIconComponent } from '../scene-icon/scene-icon.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { REGEX } from '../../../../shared/regex/regex.utils';
 
@@ -55,6 +56,7 @@ type ConfigurationTabDescriptor = {
   readonly labelKey: string;
   readonly iconPath?: string;
   readonly aiIcon?: boolean;
+  readonly sceneIcon?: boolean;
 };
 
 type ShortcutRow = {
@@ -75,6 +77,7 @@ const PREVIEW_VIEWBOX_HEIGHT = 220;
     KeyboardShortcutCaptureComponent,
     EditorTranslatePipe,
     AiSparklesIconComponent,
+    SceneIconComponent,
     BadgeComponent
   ],
   templateUrl: './app-configuration-dialog.component.html',
@@ -140,7 +143,7 @@ export class AppConfigurationDialogComponent {
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
-    { id: 'scene', labelKey: 'settingsTabScene', iconPath: iconPaths.scene },
+    { id: 'scene', labelKey: 'settingsTabScene', sceneIcon: true },
     { id: 'latex', labelKey: 'settingsTabLatex', iconPath: iconPaths.latex },
     { id: 'ai', labelKey: 'ai.settingsTitle', aiIcon: true }
   ];

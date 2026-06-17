@@ -82,23 +82,44 @@
   stroke-width: 2;
 }
 
-.sidebar-tab__icon {
+.properties-tab-icon {
+  flex: 0 1 auto;
+  width: clamp(11px, 3.2vw, 15px);
+  height: clamp(11px, 3.2vw, 15px);
+  min-width: 0;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.properties-tab-icon__knob {
   transform-box: fill-box;
   transform-origin: center;
 }
 
-.sidebar-tab--properties:hover .sidebar-tab__icon,
-.sidebar-tab--properties:focus-visible .sidebar-tab__icon {
-  animation: sidebar-properties-pins 920ms ease-in-out infinite;
+.sidebar-tab--properties:hover .properties-tab-icon__knob--top,
+.sidebar-tab--properties:focus-visible .properties-tab-icon__knob--top {
+  animation: sidebar-property-knob-top 940ms ease-in-out infinite;
 }
 
-.sidebar-tab--scene .sidebar-tab__icon {
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+.sidebar-tab--properties:hover .properties-tab-icon__knob--middle,
+.sidebar-tab--properties:focus-visible .properties-tab-icon__knob--middle {
+  animation: sidebar-property-knob-middle 940ms ease-in-out infinite;
 }
 
-.sidebar-tab--scene:hover .sidebar-tab__icon,
-.sidebar-tab--scene:focus-visible .sidebar-tab__icon {
-  transform: scale(0.82);
+.sidebar-tab--properties:hover .properties-tab-icon__knob--bottom,
+.sidebar-tab--properties:focus-visible .properties-tab-icon__knob--bottom {
+  animation: sidebar-property-knob-bottom 940ms ease-in-out infinite;
+}
+
+.sidebar-tab__scene-icon {
+  flex: 0 1 auto;
+  width: clamp(11px, 3.2vw, 15px);
+  height: clamp(11px, 3.2vw, 15px);
+  min-width: 0;
 }
 
 .sidebar-tabs button app-ai-sparkles-icon {
@@ -203,29 +224,39 @@
     transition: none;
   }
 
-  .sidebar-tab--properties:hover .sidebar-tab__icon,
-  .sidebar-tab--properties:focus-visible .sidebar-tab__icon {
+  .sidebar-tab--properties:hover .properties-tab-icon__knob,
+  .sidebar-tab--properties:focus-visible .properties-tab-icon__knob {
     animation: none;
-  }
-
-  .sidebar-tab--scene .sidebar-tab__icon {
-    transition: none;
   }
 }
 
-@keyframes sidebar-properties-pins {
+@keyframes sidebar-property-knob-top {
   0%,
   100% {
     transform: translateX(0);
   }
-  28% {
-    transform: translateX(1.4px);
+  45% {
+    transform: translateX(2.1px);
   }
-  56% {
-    transform: translateX(-1.2px);
+}
+
+@keyframes sidebar-property-knob-middle {
+  0%,
+  100% {
+    transform: translateX(0);
   }
-  78% {
-    transform: translateY(-0.8px);
+  45% {
+    transform: translateX(-1.8px);
+  }
+}
+
+@keyframes sidebar-property-knob-bottom {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(1.5px);
   }
 }
 

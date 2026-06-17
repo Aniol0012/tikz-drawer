@@ -106,7 +106,12 @@
                     [title]="t('theme')"
                     (click)="themeToggle.emit()">
                     <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path class="theme-toggle-icon__sun" [attr.d]="icon('sun')"></path>
+                      <g class="theme-toggle-icon__sun">
+                        <circle class="theme-toggle-icon__sun-core" cx="12" cy="12" r="4"></circle>
+                        <path
+                          class="theme-toggle-icon__sun-rays"
+                          d="M12 3.5v2.25M12 18.25v2.25M20.5 12h-2.25M5.75 12H3.5m14.51-5.01-1.59 1.59M7.58 16.42l-1.59 1.59m12.02 0-1.59-1.59M7.58 7.58 5.99 5.99"></path>
+                      </g>
                       <path class="theme-toggle-icon__moon" [attr.d]="icon('moon')"></path>
                     </svg>
                   </button>
@@ -228,7 +233,12 @@
         [title]="t('theme')"
         (click)="themeToggle.emit()">
         <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path class="theme-toggle-icon__sun" [attr.d]="icon('sun')"></path>
+          <g class="theme-toggle-icon__sun">
+            <circle class="theme-toggle-icon__sun-core" cx="12" cy="12" r="4"></circle>
+            <path
+              class="theme-toggle-icon__sun-rays"
+              d="M12 3.5v2.25M12 18.25v2.25M20.5 12h-2.25M5.75 12H3.5m14.51-5.01-1.59 1.59M7.58 16.42l-1.59 1.59m12.02 0-1.59-1.59M7.58 7.58 5.99 5.99"></path>
+          </g>
           <path class="theme-toggle-icon__moon" [attr.d]="icon('moon')"></path>
         </svg>
       </button>

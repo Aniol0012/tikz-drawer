@@ -41,9 +41,13 @@ describe('EditorTopbarComponent template', () => {
     const styles = await readStyles();
 
     expect(template).toContain('theme-toggle-icon__sun');
+    expect(template).toContain('theme-toggle-icon__sun-core');
+    expect(template).toContain('theme-toggle-icon__sun-rays');
     expect(template).toContain('theme-toggle-icon__moon');
+    expect(template).not.toContain('theme-toggle-icon__moon-star');
     expect(template).toContain('[class.is-dark-theme]="theme() === \'dark\'"');
     expect(styles).toContain('.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun');
+    expect(styles).not.toContain('theme-toggle-icon__moon-star');
     expect(styles).toContain('@keyframes theme-toggle-pop');
   });
 

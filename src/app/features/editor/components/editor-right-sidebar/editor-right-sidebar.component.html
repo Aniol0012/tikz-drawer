@@ -5,8 +5,11 @@
       type="button"
       [class.is-active]="editor().inspectorTab() === 'properties'"
       (click)="editor().setInspectorTab('properties')">
-      <svg class="sidebar-tab__icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="iconMap.sliders"></path>
+      <svg class="properties-tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="properties-tab-icon__track" d="M5 7h14M5 12h14M5 17h14"></path>
+        <path class="properties-tab-icon__knob properties-tab-icon__knob--top" d="M14 5v4"></path>
+        <path class="properties-tab-icon__knob properties-tab-icon__knob--middle" d="M10 10v4"></path>
+        <path class="properties-tab-icon__knob properties-tab-icon__knob--bottom" d="M16 15v4"></path>
       </svg>
       <span>{{ editor().t('properties') }}</span>
     </button>
@@ -15,9 +18,7 @@
       type="button"
       [class.is-active]="editor().inspectorTab() === 'scene'"
       (click)="editor().openSceneLayers()">
-      <svg class="sidebar-tab__icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="iconMap.scene"></path>
-      </svg>
+      <app-scene-icon class="sidebar-tab__scene-icon"></app-scene-icon>
       <span>{{ editor().t('sceneTab') }}</span>
     </button>
     <button
