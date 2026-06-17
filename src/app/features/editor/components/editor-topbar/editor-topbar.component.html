@@ -99,9 +99,15 @@
                     </svg>
                   </a>
 
-                  <button class="icon-button" type="button" [title]="t('theme')" (click)="themeToggle.emit()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
+                  <button
+                    class="icon-button theme-toggle-button"
+                    type="button"
+                    [class.is-dark-theme]="theme() === 'dark'"
+                    [title]="t('theme')"
+                    (click)="themeToggle.emit()">
+                    <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <path class="theme-toggle-icon__sun" [attr.d]="icon('sun')"></path>
+                      <path class="theme-toggle-icon__moon" [attr.d]="icon('moon')"></path>
                     </svg>
                   </button>
                   <button
@@ -215,9 +221,15 @@
         </svg>
       </a>
 
-      <button class="icon-button" type="button" [title]="t('theme')" (click)="themeToggle.emit()">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="theme() === 'dark' ? icon('sun') : icon('moon')"></path>
+      <button
+        class="icon-button theme-toggle-button"
+        type="button"
+        [class.is-dark-theme]="theme() === 'dark'"
+        [title]="t('theme')"
+        (click)="themeToggle.emit()">
+        <svg class="theme-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="theme-toggle-icon__sun" [attr.d]="icon('sun')"></path>
+          <path class="theme-toggle-icon__moon" [attr.d]="icon('moon')"></path>
         </svg>
       </button>
 
@@ -229,12 +241,18 @@
     }
 
     <div class="topbar-primary-actions">
-      <button class="primary-button primary-button--import" type="button" (click)="importOpen.emit()">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('import')"></path></svg>
+      <button class="primary-button primary-button--import primary-button--animated-arrow" type="button" (click)="importOpen.emit()">
+        <svg class="transfer-icon transfer-icon--import" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="transfer-icon__arrow" [attr.d]="icon('importArrow')"></path>
+          <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+        </svg>
         <span>{{ t('importCode') }}</span>
       </button>
-      <button class="primary-button" type="button" (click)="exportOpen.emit()">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="icon('export')"></path></svg>
+      <button class="primary-button primary-button--export primary-button--animated-arrow" type="button" (click)="exportOpen.emit()">
+        <svg class="transfer-icon transfer-icon--export" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="transfer-icon__arrow" [attr.d]="icon('exportArrow')"></path>
+          <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+        </svg>
         <span>{{ t('export') }}</span>
       </button>
     </div>

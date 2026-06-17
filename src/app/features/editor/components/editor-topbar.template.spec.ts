@@ -17,9 +17,34 @@ describe('EditorTopbarComponent template', () => {
     expect(importIndex).toBeGreaterThanOrEqual(0);
     expect(exportIndex).toBeGreaterThan(importIndex);
     expect(primaryActions).toContain('primary-button--import');
-    expect(primaryActions).toContain("icon('import')");
+    expect(primaryActions).toContain("icon('importArrow')");
+    expect(primaryActions).toContain("icon('exportArrow')");
+    expect(primaryActions).toContain("icon('exportTray')");
     expect(primaryActions).toContain("{{ t('importCode') }}");
     expect(primaryActions).toContain("{{ t('export') }}");
+  });
+
+  it('uses split icon parts for primary action arrow animations', async () => {
+    const template = await readTemplate();
+    const styles = await readStyles();
+    const primaryActions = sectionBetween(template, '<div class="topbar-primary-actions">', '</div>');
+
+    expect(primaryActions).toContain('transfer-icon__arrow');
+    expect(primaryActions).toContain('transfer-icon__tray');
+    expect(styles).toContain('.transfer-icon__arrow');
+    expect(styles).toContain('transform: translateY(2.5px);');
+    expect(styles).toContain('transform: translateY(-2.5px);');
+  });
+
+  it('keeps theme toggle icons layered for sun moon transitions', async () => {
+    const template = await readTemplate();
+    const styles = await readStyles();
+
+    expect(template).toContain('theme-toggle-icon__sun');
+    expect(template).toContain('theme-toggle-icon__moon');
+    expect(template).toContain('[class.is-dark-theme]="theme() === \'dark\'"');
+    expect(styles).toContain('.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun');
+    expect(styles).toContain('@keyframes theme-toggle-pop');
   });
 
   it('does not put import code in the burger menu', async () => {

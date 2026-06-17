@@ -640,6 +640,59 @@
   background: color-mix(in srgb, var(--import-action-color) 88%, black 8%);
 }
 
+.transfer-icon__arrow,
+.transfer-icon__tray {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.transfer-icon__arrow {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.primary-button--animated-arrow:hover .transfer-icon--import .transfer-icon__arrow,
+.primary-button--animated-arrow:focus-visible .transfer-icon--import .transfer-icon__arrow {
+  transform: translateY(2.5px);
+}
+
+.primary-button--animated-arrow:hover .transfer-icon--export .transfer-icon__arrow,
+.primary-button--animated-arrow:focus-visible .transfer-icon--export .transfer-icon__arrow {
+  transform: translateY(-2.5px);
+}
+
+.theme-toggle-icon__sun,
+.theme-toggle-icon__moon {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-toggle-icon__sun {
+  opacity: 0;
+  transform: scale(0.45) rotate(-90deg);
+}
+
+.theme-toggle-icon__moon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle-button.is-dark-theme .theme-toggle-icon__moon {
+  opacity: 0;
+  transform: scale(0.45) rotate(90deg);
+}
+
+.theme-toggle-button:active .theme-toggle-icon {
+  animation: theme-toggle-pop 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .menu-button:active,
 .tool-button:active,
 .icon-button:active,
@@ -698,6 +751,26 @@ button:disabled {
   .secondary-button,
   .dropdown-row {
     transition-duration: 0ms !important;
+  }
+
+  .theme-toggle-button:active .theme-toggle-icon {
+    animation: none !important;
+  }
+
+  .transfer-icon__arrow,
+  .theme-toggle-icon__sun,
+  .theme-toggle-icon__moon {
+    transition: none !important;
+  }
+}
+
+@keyframes theme-toggle-pop {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(0.88) rotate(18deg);
   }
 }
 

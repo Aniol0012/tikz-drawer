@@ -1,19 +1,27 @@
 @if (showSidebarContent()) {
   <div class="sidebar-tabs" [attr.data-active-tab]="editor().inspectorTab()">
-    <button type="button" [class.is-active]="editor().inspectorTab() === 'properties'" (click)="editor().setInspectorTab('properties')">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+    <button
+      class="sidebar-tab sidebar-tab--properties"
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'properties'"
+      (click)="editor().setInspectorTab('properties')">
+      <svg class="sidebar-tab__icon" viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconMap.sliders"></path>
       </svg>
       <span>{{ editor().t('properties') }}</span>
     </button>
-    <button type="button" [class.is-active]="editor().inspectorTab() === 'scene'" (click)="editor().openSceneLayers()">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+    <button
+      class="sidebar-tab sidebar-tab--scene"
+      type="button"
+      [class.is-active]="editor().inspectorTab() === 'scene'"
+      (click)="editor().openSceneLayers()">
+      <svg class="sidebar-tab__icon" viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconMap.scene"></path>
       </svg>
       <span>{{ editor().t('sceneTab') }}</span>
     </button>
     <button
-      class="ai-sparkles-trigger"
+      class="sidebar-tab sidebar-tab--assistant ai-sparkles-trigger"
       type="button"
       [class.is-active]="editor().inspectorTab() === 'assistant'"
       (click)="editor().openAssistant()">
