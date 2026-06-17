@@ -225,7 +225,7 @@
   "selection": "Selección",
   "freeDraw": "Lápiz",
   "generatedCode": "Código generado",
-  "importCode": "Importar código",
+  "importCode": "Importar",
   "import": "Importar",
   "import.sourceSelectorLabel": "Fuente de importación",
   "import.source.tikz.label": "Código TikZ",

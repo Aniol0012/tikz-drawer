@@ -225,7 +225,7 @@
   "selection": "Selecció",
   "freeDraw": "Llapis",
   "generatedCode": "Codi generat",
-  "importCode": "Importar codi",
+  "importCode": "Importar",
   "import": "Importar",
   "import.sourceSelectorLabel": "Font d'importació",
   "import.source.tikz.label": "Codi TikZ",

@@ -9,7 +9,7 @@
   right: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   min-height: var(--topbar-height);
@@ -32,15 +32,18 @@
   min-width: 0;
   flex-wrap: nowrap;
   overflow: visible;
+  max-width: 100%;
 }
 
 .topbar__center {
   justify-content: center;
   min-width: 0;
+  width: 100%;
   overflow: hidden;
 }
 
 .topbar__right {
+  min-width: 0;
   justify-content: flex-end;
   flex-wrap: nowrap;
 }
@@ -73,9 +76,10 @@
 .scene-input {
   display: grid;
   gap: 6px;
-  width: min(150px, 100%);
-  flex: 1 1 150px;
-  max-width: 300px;
+  width: min(180px, 100%);
+  flex: 0 1 180px;
+  max-width: 180px;
+  min-width: 92px;
 }
 
 .scene-input input {
@@ -159,9 +163,13 @@
 }
 
 .tool-cluster {
+  width: max-content;
+  max-width: 100%;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
   flex-wrap: nowrap;
   padding: 2px;
   border: 1px solid var(--tool-border);

@@ -225,7 +225,7 @@
   "selection": "Selection",
   "freeDraw": "Pencil",
   "generatedCode": "Generated code",
-  "importCode": "Import code",
+  "importCode": "Import",
   "import": "Import",
   "import.sourceSelectorLabel": "Import source",
   "import.source.tikz.label": "TikZ code",
