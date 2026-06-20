@@ -21,6 +21,6 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(aboutButton).toBeGreaterThan(tablistEnd);
     expect(template).toContain('https://github.com/Aniol0012/tikz-drawer');
     expect(template).toContain('Aniol0012/tikz-drawer');
-    expect(template).toContain('src="icons/icon-192x192.png"');
+    expect(template).toContain('src="logo.png"');
   });
 });

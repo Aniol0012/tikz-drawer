@@ -704,7 +704,6 @@
   padding: 3px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--input-background);
   object-fit: contain;
 }
 
