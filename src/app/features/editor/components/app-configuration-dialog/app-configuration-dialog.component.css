@@ -65,18 +65,55 @@
   line-height: 1.5;
 }
 
+.configuration-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 22px;
+}
+
 .configuration-tabs {
   position: relative;
   width: min(680px, calc(100% - 44px));
   display: grid;
   grid-template-columns: repeat(var(--configuration-tab-count, 3), minmax(0, 1fr));
   gap: 4px;
-  margin: 12px 22px;
+  margin: 0;
   padding: 4px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--panel-background);
+}
+
+.about-button {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted-foreground);
+  background: var(--panel-background);
+  font: 800 1rem/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.about-button span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1.8px solid currentColor;
+  border-radius: 50%;
+  font-family: ui-serif, Georgia, serif;
+  font-size: 0.8rem;
+}
+
+.about-button:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel-background));
 }
 
 .configuration-tabs::before {
@@ -627,6 +664,83 @@
   box-shadow: var(--floating-shadow);
 }
 
+.about-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.about-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.about-dialog__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.about-dialog__content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.about-dialog__mark {
+  width: 52px;
+  height: 52px;
+  display: block;
+  grid-row: span 2;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.about-dialog__content p {
+  margin: 5px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.about-dialog__link {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  grid-column: 2;
+  width: fit-content;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--app-foreground);
+  background: var(--input-background);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.about-dialog__link:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+
+.about-dialog__link svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
 .shortcuts-dialog__header,
 .shortcuts-dialog__footer {
   display: flex;
@@ -885,13 +999,35 @@
     font-size: 1rem;
   }
 
+  .configuration-navigation {
+    gap: 6px;
+    margin: 8px 10px;
+  }
+
   .configuration-tabs {
+    flex: 1 1 auto;
     width: auto;
     display: grid;
     grid-template-columns: repeat(var(--configuration-tab-count, 3), minmax(0, 1fr));
     gap: 6px;
-    margin: 8px 10px;
+    margin: 0;
     padding: 4px;
+  }
+
+  .about-button {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+  }
+
+  .about-dialog__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about-dialog__mark,
+  .about-dialog__link {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .configuration-tab {

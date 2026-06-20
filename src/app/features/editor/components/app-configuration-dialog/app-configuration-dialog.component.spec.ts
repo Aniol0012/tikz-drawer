@@ -212,6 +212,18 @@ describe('AppConfigurationDialogComponent', () => {
     expect(closeSpy).toHaveBeenCalledOnce();
   });
 
+  it('opens the about dialog separately from the configuration tabs and closes it on Escape', () => {
+    component.openAboutDialog();
+
+    expect(component.aboutDialogOpen()).toBe(true);
+    expect(component.activeTab()).toBe('general');
+
+    component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(component.aboutDialogOpen()).toBe(false);
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
   it('closes only the topmost settings layer on Escape', () => {
     component.openShortcutSettings();
     component.updateShortcut('figureSearch', 'Mod+K');

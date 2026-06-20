@@ -12,4 +12,15 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('@else if (tab.sceneIcon)');
     expect(template).toContain('<app-scene-icon></app-scene-icon>');
   });
+
+  it('keeps the about action outside the tablist and links to the project repository', async () => {
+    const template = await readTemplate();
+    const tablistEnd = template.indexOf('</div>', template.indexOf('role="tablist"'));
+    const aboutButton = template.indexOf('class="about-button"');
+
+    expect(aboutButton).toBeGreaterThan(tablistEnd);
+    expect(template).toContain('https://github.com/Aniol0012/tikz-drawer');
+    expect(template).toContain('Aniol0012/tikz-drawer');
+    expect(template).toContain('src="icons/icon-192x192.png"');
+  });
 });

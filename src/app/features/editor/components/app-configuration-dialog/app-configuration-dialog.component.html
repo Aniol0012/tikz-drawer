@@ -19,44 +19,49 @@
         </button>
       </header>
 
-      <div
-        class="configuration-tabs"
-        role="tablist"
-        [attr.aria-label]="'settings' | translate"
-        [style.--configuration-tab-count]="visibleTabs().length"
-        [style.--configuration-active-tab]="activeTabIndex()">
-        @for (tab of visibleTabs(); track tab.id) {
-          <button
-            #configurationTab
-            class="configuration-tab"
-            type="button"
-            role="tab"
-            [id]="'configuration-tab-' + tab.id"
-            [attr.data-tab]="tab.id"
-            [class.is-active]="activeTab() === tab.id"
-            [class.settings-gear-button]="tab.id === 'general'"
-            [attr.aria-selected]="activeTab() === tab.id"
-            [attr.aria-controls]="'configuration-panel-' + tab.id"
-            [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
-            (click)="selectTab(tab.id)"
-            (keydown)="onTabKeydown($event, tab.id)">
-            @if (tab.aiIcon) {
-              <span>{{ tab.labelKey | translate }}</span>
-              <app-ai-sparkles-icon></app-ai-sparkles-icon>
-              <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{
-                'devMode' | translate
-              }}</app-badge>
-            } @else if (tab.sceneIcon) {
-              <app-scene-icon></app-scene-icon>
-              <span>{{ tab.labelKey | translate }}</span>
-            } @else {
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path [attr.d]="tab.iconPath"></path>
-              </svg>
-              <span>{{ tab.labelKey | translate }}</span>
-            }
-          </button>
-        }
+      <div class="configuration-navigation">
+        <div
+          class="configuration-tabs"
+          role="tablist"
+          [attr.aria-label]="'settings' | translate"
+          [style.--configuration-tab-count]="visibleTabs().length"
+          [style.--configuration-active-tab]="activeTabIndex()">
+          @for (tab of visibleTabs(); track tab.id) {
+            <button
+              #configurationTab
+              class="configuration-tab"
+              type="button"
+              role="tab"
+              [id]="'configuration-tab-' + tab.id"
+              [attr.data-tab]="tab.id"
+              [class.is-active]="activeTab() === tab.id"
+              [class.settings-gear-button]="tab.id === 'general'"
+              [attr.aria-selected]="activeTab() === tab.id"
+              [attr.aria-controls]="'configuration-panel-' + tab.id"
+              [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
+              (click)="selectTab(tab.id)"
+              (keydown)="onTabKeydown($event, tab.id)">
+              @if (tab.aiIcon) {
+                <span>{{ tab.labelKey | translate }}</span>
+                <app-ai-sparkles-icon></app-ai-sparkles-icon>
+                <app-badge class="configuration-tab__badge" tone="dev" size="xs" [iconPath]="devModeIconPath">{{
+                  'devMode' | translate
+                }}</app-badge>
+              } @else if (tab.sceneIcon) {
+                <app-scene-icon></app-scene-icon>
+                <span>{{ tab.labelKey | translate }}</span>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="tab.iconPath"></path>
+                </svg>
+                <span>{{ tab.labelKey | translate }}</span>
+              }
+            </button>
+          }
+        </div>
+        <button class="about-button" type="button" [attr.aria-label]="'about' | translate" (click)="openAboutDialog()">
+          <span aria-hidden="true">i</span>
+        </button>
       </div>
 
       <div class="configuration-body">
@@ -699,6 +704,40 @@
                 {{ 'apply' | translate }}
               </button>
             </footer>
+          </section>
+        </div>
+      }
+
+      @if (aboutDialogOpen()) {
+        <div class="nested-dialog-backdrop" (click)="closeAboutDialog()">
+          <section
+            class="about-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="about-dialog-title"
+            (click)="$event.stopPropagation()">
+            <header class="about-dialog__header">
+              <h3 id="about-dialog-title">{{ 'about' | translate }}</h3>
+              <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeAboutDialog()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m7 7 10 10M17 7 7 17"></path>
+                </svg>
+              </button>
+            </header>
+            <div class="about-dialog__content">
+              <img class="about-dialog__mark" src="icons/icon-192x192.png" alt="" aria-hidden="true" />
+              <div>
+                <strong>TikZ Drawer</strong>
+                <p>{{ 'aboutProjectDescription' | translate }}</p>
+                <p>{{ 'aboutCreatedBy' | translate }} <strong>Aniol0012</strong></p>
+              </div>
+              <a class="about-dialog__link" href="https://github.com/Aniol0012/tikz-drawer" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="githubIconPath"></path>
+                </svg>
+                <span>Aniol0012/tikz-drawer</span>
+              </a>
+            </div>
           </section>
         </div>
       }

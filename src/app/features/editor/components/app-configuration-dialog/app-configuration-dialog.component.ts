@@ -103,6 +103,7 @@ export class AppConfigurationDialogComponent {
   @Input({ required: true }) set open(value: boolean) {
     this.isOpen.set(value);
     if (value) {
+      this.aboutDialogOpen.set(false);
       const tab = this.availableInitialTab(this.initialTabValue);
       this.activeTab.set(tab);
       this.prepareAlignmentSwitch(tab);
@@ -136,6 +137,7 @@ export class AppConfigurationDialogComponent {
   readonly showDevAiConfiguration = this.devModeService.enabled;
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
+  readonly aboutDialogOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
   readonly shortcutResetConfirmationOpen = signal(false);
   readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
@@ -159,6 +161,7 @@ export class AppConfigurationDialogComponent {
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
   readonly devModeIconPath = iconPaths.code;
+  readonly githubIconPath = iconPaths.github;
   readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
     const localUnavailable = this.localProviderUnavailable();
     const webLlmUnavailable = this.webLlmUnavailable();
@@ -341,6 +344,10 @@ export class AppConfigurationDialogComponent {
     event.stopPropagation();
     if (event.key === 'Escape') {
       event.preventDefault();
+      if (this.aboutDialogOpen()) {
+        this.aboutDialogOpen.set(false);
+        return;
+      }
       if (this.shortcutsDialogOpen()) {
         if (this.shortcutResetConfirmationOpen()) {
           this.shortcutResetConfirmationOpen.set(false);
@@ -505,6 +512,15 @@ export class AppConfigurationDialogComponent {
     this.shortcutsDialogOpen.set(true);
     this.resetConfirmationOpen.set(false);
     this.shortcutResetConfirmationOpen.set(false);
+  }
+
+  openAboutDialog(): void {
+    this.aboutDialogOpen.set(true);
+    this.resetConfirmationOpen.set(false);
+  }
+
+  closeAboutDialog(): void {
+    this.aboutDialogOpen.set(false);
   }
 
   closeShortcutSettings(): void {
