@@ -377,7 +377,7 @@ export class AppConfigurationDialogComponent {
     }
   }
 
-  updateGeneralBoolean(key: 'showHelpTooltips' | 'whiteCanvasInDarkMode', checked: boolean): void {
+  updateGeneralBoolean(key: 'showHelpTooltips' | 'whiteCanvasInDarkMode' | 'showInspectorOnlyWithSelection', checked: boolean): void {
     this.configuration.patchGeneralConfig({ [key]: checked });
   }
 
@@ -877,6 +877,7 @@ export class AppConfigurationDialogComponent {
     return (
       current.showHelpTooltips === DEFAULT_EDITOR_GENERAL_CONFIG.showHelpTooltips &&
       current.whiteCanvasInDarkMode === DEFAULT_EDITOR_GENERAL_CONFIG.whiteCanvasInDarkMode &&
+      current.showInspectorOnlyWithSelection === DEFAULT_EDITOR_GENERAL_CONFIG.showInspectorOnlyWithSelection &&
       this.shortcutConfigEqual(current.keyboardShortcuts, DEFAULT_EDITOR_GENERAL_CONFIG.keyboardShortcuts)
     );
   }

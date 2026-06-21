@@ -6,7 +6,8 @@ import {
   highlightLatex,
   resizeGroupedShapes,
   transformCanvasShape,
-  translateShapeBy
+  translateShapeBy,
+  viewportCenterAfterHorizontalResize
 } from './editor-page.utils';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import type { CanvasShape, EditorPreferences, LineShape } from '../models/tikz.models';
@@ -94,6 +95,20 @@ afterEach(() => {
 });
 
 describe('editor-page utils', () => {
+  it('keeps world coordinates at the same screen position after an inspector resize', () => {
+    const scale = 100;
+    const previousWidth = 1000;
+    const nextWidth = 660;
+    const previousCenter = { x: 0, y: 2 };
+    const nextCenter = viewportCenterAfterHorizontalResize(previousCenter, previousWidth, nextWidth, scale);
+    const worldX = 3;
+    const previousScreenX = previousWidth / 2 + (worldX - previousCenter.x) * scale;
+    const nextScreenX = nextWidth / 2 + (worldX - nextCenter.x) * scale;
+
+    expect(nextCenter).toEqual({ x: -1.7, y: 2 });
+    expect(nextScreenX).toBe(previousScreenX);
+  });
+
   it('translates line points and anchors consistently', () => {
     const translated = translateShapeBy(lineShape, 3, -2);
 

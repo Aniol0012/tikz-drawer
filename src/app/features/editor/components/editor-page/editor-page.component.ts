@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import type { ElementRef } from '@angular/core';
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, afterRenderEffect, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
 import packageManifest from '../../../../../../package.json';
 import {
   DEFAULT_ARROW_TIP_LENGTH,
@@ -169,7 +169,8 @@ import {
   type SelectionBounds,
   transformCanvasShape,
   type TransformCanvasShapeOptions,
-  translateShapeBy
+  translateShapeBy,
+  viewportCenterAfterHorizontalResize
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
@@ -455,6 +456,7 @@ export class EditorPageComponent {
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
   readonly rightSidebarCollapsed = signal(false);
+  readonly inspectorPanelVisible = computed(() => !this.configuration.generalConfig().showInspectorOnlyWithSelection || this.selectionCount() > 0);
   private readonly librarySectionIds = new Set<string>(['savedTemplates', 'scenePresets', ...categoryOrder]);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
@@ -1082,14 +1084,39 @@ export class EditorPageComponent {
       this.scheduleContextMenuReposition();
     });
 
+    let previousInspectorPanelVisible = this.inspectorPanelVisible();
+    afterRenderEffect({
+      earlyRead: () => {
+        const viewport = this.canvasViewport().nativeElement;
+        return {
+          inspectorPanelVisible: this.inspectorPanelVisible(),
+          viewportWidth: Math.round(viewport.clientWidth),
+          viewportHeight: Math.round(viewport.clientHeight)
+        };
+      },
+      write: (measurement) => {
+        const { inspectorPanelVisible, viewportWidth, viewportHeight } = measurement();
+        const nextCanvasWidth = Math.max(EDITOR_CANVAS_MIN_WIDTH, viewportWidth);
+        if (inspectorPanelVisible !== previousInspectorPanelVisible && nextCanvasWidth !== this.canvasWidth()) {
+          this.viewportCenter.update((center) => viewportCenterAfterHorizontalResize(center, this.canvasWidth(), nextCanvasWidth, this.preferences().scale));
+        }
+        previousInspectorPanelVisible = inspectorPanelVisible;
+        this.canvasViewportWidth.set(viewportWidth);
+        this.canvasWidth.set(nextCanvasWidth);
+        this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, viewportHeight));
+      }
+    });
+
     afterNextRender(() => {
       const viewport = this.canvasViewport().nativeElement;
       const canvasSvg = this.canvasSvg().nativeElement;
       const mobileLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_MOBILE_BREAKPOINT_PX}px)`) ?? null;
       const sidebarsOverlayLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX}px)`) ?? null;
       const updateCanvasSize = () => {
-        this.canvasViewportWidth.set(Math.round(viewport.clientWidth));
-        this.canvasWidth.set(Math.max(EDITOR_CANVAS_MIN_WIDTH, Math.round(viewport.clientWidth)));
+        const nextViewportWidth = Math.round(viewport.clientWidth);
+        const nextCanvasWidth = Math.max(EDITOR_CANVAS_MIN_WIDTH, nextViewportWidth);
+        this.canvasViewportWidth.set(nextViewportWidth);
+        this.canvasWidth.set(nextCanvasWidth);
         this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, Math.round(viewport.clientHeight)));
       };
 

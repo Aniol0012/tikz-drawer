@@ -129,6 +129,18 @@
                     </div>
                   </div>
                 </section>
+
+                <section class="settings-card settings-card--wide">
+                  <div class="settings-card__header">
+                    <h3>{{ 'behavior' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <app-toggle-field
+                      [checked]="generalConfig().showInspectorOnlyWithSelection"
+                      [label]="'showInspectorOnlyWithSelection' | translate"
+                      (checkedChange)="updateGeneralBoolean('showInspectorOnlyWithSelection', $event)"></app-toggle-field>
+                  </div>
+                </section>
               </div>
             </section>
           }

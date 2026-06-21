@@ -23,4 +23,13 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('Aniol0012/tikz-drawer');
     expect(template).toContain('src="logo.png"');
   });
+
+  it('keeps behavior below the two-column general settings row', async () => {
+    const template = await readTemplate();
+    const codePreview = template.indexOf("{{ 'codePreview' | translate }}");
+    const behavior = template.indexOf("{{ 'behavior' | translate }}");
+
+    expect(behavior).toBeGreaterThan(codePreview);
+    expect(template.slice(behavior - 120, behavior)).toContain('settings-card settings-card--wide');
+  });
 });

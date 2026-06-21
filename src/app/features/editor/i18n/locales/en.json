@@ -207,6 +207,8 @@
   "generalSettings": "General settings",
   "sceneSettings": "Scene settings",
   "interface": "Interface",
+  "behavior": "Behavior",
+  "showInspectorOnlyWithSelection": "Show the inspector panel only when there is a selection",
   "workspace": "Workspace",
   "editorView": "Editor view",
   "codePreview": "Code preview",

@@ -371,10 +371,21 @@
   min-height: 0;
   height: calc(100dvh - var(--topbar-height));
   display: grid;
-  grid-template-columns:
-    minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr)
-    10px minmax(var(--right-sidebar-min-width, 280px), var(--right-sidebar-width, 340px));
+  grid-template-columns: var(
+    --workspace-grid-columns,
+    minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr) 10px
+      minmax(var(--right-sidebar-min-width, 280px), var(--right-sidebar-width, 340px))
+  );
   overflow: hidden;
+}
+
+.workspace.is-inspector-hidden {
+  --workspace-grid-columns: minmax(var(--left-sidebar-min-width, 240px), var(--left-sidebar-width, 288px)) 10px minmax(0, 1fr);
+}
+
+.workspace.is-inspector-hidden .sidebar-resizer--right,
+.workspace.is-inspector-hidden .right-sidebar {
+  display: none;
 }
 
 .left-sidebar,

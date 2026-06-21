@@ -207,6 +207,8 @@
   "generalSettings": "Configuració general",
   "sceneSettings": "Configuració d'escena",
   "interface": "Interfície",
+  "behavior": "Comportament",
+  "showInspectorOnlyWithSelection": "Mostra el panell d'inspecció només quan hi hagi una selecció",
   "workspace": "Espai de treball",
   "editorView": "Vista de l'editor",
   "codePreview": "Previsualització del codi",

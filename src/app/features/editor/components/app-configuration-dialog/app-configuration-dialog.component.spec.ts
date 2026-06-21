@@ -128,9 +128,11 @@ describe('AppConfigurationDialogComponent', () => {
   it('updates general configuration and editable keyboard shortcuts', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
     component.updateGeneralBoolean('whiteCanvasInDarkMode', true);
+    component.updateGeneralBoolean('showInspectorOnlyWithSelection', true);
 
     expect(configuration.generalConfig().showHelpTooltips).toBe(false);
     expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(true);
+    expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(true);
     expect(component.settingsAreDefault()).toBe(false);
 
     component.openShortcutSettings();
@@ -202,6 +204,7 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.codeHighlightTheme()).toBe('aurora');
     expect(configuration.generalConfig().showHelpTooltips).toBe(true);
     expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(false);
+    expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(false);
     expect(component.settingsAreDefault()).toBe(true);
     expect(component.resetConfirmationOpen()).toBe(false);
   });

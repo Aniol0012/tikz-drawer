@@ -31,6 +31,11 @@ export interface TransformCanvasShapeOptions {
   readonly id?: string;
 }
 
+export const viewportCenterAfterHorizontalResize = (viewportCenter: Point, previousWidth: number, nextWidth: number, scale: number): Point => ({
+  x: viewportCenter.x + (nextWidth - previousWidth) / (2 * scale),
+  y: viewportCenter.y
+});
+
 const transformRoundedBoxShape = (
   shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
   options: Required<TransformCanvasShapeOptions>

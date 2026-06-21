@@ -207,6 +207,8 @@
   "generalSettings": "Configuración general",
   "sceneSettings": "Configuración de escena",
   "interface": "Interfaz",
+  "behavior": "Comportamiento",
+  "showInspectorOnlyWithSelection": "Mostrar el panel de inspección solo cuando haya una selección",
   "workspace": "Espacio de trabajo",
   "editorView": "Vista del editor",
   "codePreview": "Previsualización del código",
