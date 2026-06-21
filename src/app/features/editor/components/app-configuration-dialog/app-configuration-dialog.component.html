@@ -330,6 +330,32 @@
                   </div>
                 </section>
 
+                <section class="settings-card settings-card--images">
+                  <div class="settings-card__header">
+                    <h3>{{ 'defaultImages' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--single">
+                    <label class="field">
+                      <span>{{ 'defaultImagePath' | translate }}</span>
+                      <input
+                        type="text"
+                        required
+                        spellcheck="false"
+                        autocomplete="off"
+                        [value]="preferences().defaultImagePath"
+                        [attr.aria-invalid]="defaultImagePathInvalid()"
+                        aria-describedby="default-image-path-help default-image-path-error"
+                        (input)="updateDefaultImagePath($event)" />
+                    </label>
+                    <p id="default-image-path-help" class="settings-note">{{ 'defaultImagePathHelp' | translate }}</p>
+                    @if (defaultImagePathInvalid()) {
+                      <p id="default-image-path-error" class="settings-note settings-note--error" role="alert">
+                        {{ 'defaultImagePathInvalid' | translate }}
+                      </p>
+                    }
+                  </div>
+                </section>
+
                 <section class="settings-card settings-card--text">
                   <div class="settings-card__header">
                     <h3>{{ 'defaultText' | translate }}</h3>

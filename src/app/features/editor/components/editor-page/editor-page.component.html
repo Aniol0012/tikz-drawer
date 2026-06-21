@@ -1854,7 +1854,12 @@
                   ></label>
                   <label class="field field--full">
                     <span>{{ 'latexImageSource' | translate }}</span>
-                    <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
+                    <span class="image-path-input">
+                      <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
+                      @if (isDefaultLatexImagePath(shape)) {
+                        <span class="image-path-input__warning" role="img" [attr.aria-label]="'latexImagePathWarning' | translate">⚠</span>
+                      }
+                    </span>
                   </label>
                   <div class="field field--full">
                     <span>{{ 'uploadImage' | translate }}</span>
@@ -2848,7 +2853,14 @@
                           ></label>
                           <label class="field field--full">
                             <span>{{ 'latexImageSource' | translate }}</span>
-                            <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
+                            <span class="image-path-input">
+                              <input type="text" [value]="shape.latexSource" (input)="updateImageText('latexSource', $event)" />
+                              @if (isDefaultLatexImagePath(shape)) {
+                                <span class="image-path-input__warning" role="img" [attr.aria-label]="'latexImagePathWarning' | translate"
+                                  >⚠</span
+                                >
+                              }
+                            </span>
                           </label>
                         </div>
                       </div>

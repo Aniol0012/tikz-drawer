@@ -8,6 +8,7 @@ import {
   EDITOR_STORAGE_KEYS
 } from '../constants/editor.constants';
 import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '../presets/presets';
+import { normalizeImageDirectoryPath } from '../utils/editor-image-path.utils';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { parseTikz } from '../tikz/tikz.parser';
 import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
@@ -368,7 +369,8 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
     ...defaultPreferences,
     ...preferences,
     theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
-    scale: normalizedScale
+    scale: normalizedScale,
+    defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
   };
 };
 

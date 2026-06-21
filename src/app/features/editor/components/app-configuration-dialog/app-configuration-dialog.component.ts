@@ -43,6 +43,7 @@ import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-fie
 import { RangeInputCardComponent } from '../range-input-card/range-input-card.component';
 import { KeyboardShortcutCaptureComponent, type KeyboardShortcutAssignment } from '../keyboard-shortcut-capture/keyboard-shortcut-capture.component';
 import { DEFAULT_KEYBOARD_SHORTCUTS, keyboardShortcutLabel, type KeyboardShortcutAction, type KeyboardShortcutConfig } from '../../utils/editor-keyboard.utils';
+import { isValidImageDirectoryPath, normalizeImageDirectoryPath } from '../../utils/editor-image-path.utils';
 import { AiSettingsService, REMOTE_AI_MODEL_OPTIONS, WEB_LLM_MODEL_OPTIONS } from '../../ai/ai-settings.service';
 import type { AiProviderType } from '../../ai/ai-provider-result.model';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
@@ -164,6 +165,7 @@ export class AppConfigurationDialogComponent {
   readonly draggedContextMenuAction = signal<EditorContextMenuAction | null>(null);
   readonly contextMenuDropTarget = signal<EditorContextMenuAction | null>(null);
   readonly contextMenuDropPlacement = signal<'before' | 'after' | null>(null);
+  readonly defaultImagePathInvalid = signal(false);
   readonly alignmentSwitchReady = signal(false);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
@@ -735,6 +737,15 @@ export class AppConfigurationDialogComponent {
     this.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
   }
 
+  updateDefaultImagePath(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    const valid = isValidImageDirectoryPath(value);
+    this.defaultImagePathInvalid.set(!valid);
+    if (valid) {
+      this.patchPreferences({ defaultImagePath: normalizeImageDirectoryPath(value) });
+    }
+  }
+
   updateZoomPercent(event: Event): void {
     const percent = Number((event.target as HTMLInputElement).value);
     if (!Number.isFinite(percent)) {
@@ -1022,7 +1033,8 @@ export class AppConfigurationDialogComponent {
       current.defaultLineStrokeStyle === expected.defaultLineStrokeStyle &&
       current.defaultCornerRadius === expected.defaultCornerRadius &&
       current.defaultTextColor === expected.defaultTextColor &&
-      current.defaultTextFontSize === expected.defaultTextFontSize
+      current.defaultTextFontSize === expected.defaultTextFontSize &&
+      current.defaultImagePath === expected.defaultImagePath
     );
   }
 

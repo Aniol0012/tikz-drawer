@@ -178,6 +178,7 @@ import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/edi
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
 import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
+import { imagePathForFile } from '../../utils/editor-image-path.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
   shapeSetIds as shapeSetIdsUtil,
@@ -2497,8 +2498,19 @@ export class EditorPageComponent {
   }
 
   applyImportDialogResultConfirmed(result: ImportDialogResult): void {
+    const importedScene =
+      result.sourceKind === 'image'
+        ? {
+            ...result.scene,
+            shapes: result.scene.shapes.map((shape) =>
+              shape.kind === 'image'
+                ? ({ ...shape, latexSource: imagePathForFile(this.preferences().defaultImagePath, shape.latexSource) } as CanvasShape)
+                : shape
+            )
+          }
+        : result.scene;
     this.runSceneMutation(() => {
-      this.store.applyImportedScene(result.scene, result.importCode, result.warnings, result.clearScene === true, result.preserveImportCode === true);
+      this.store.applyImportedScene(importedScene, result.importCode, result.warnings, result.clearScene === true, result.preserveImportCode === true);
       this.viewportCenter.set({ x: 0, y: 0 });
       this.inspectorTab.set('scene');
     });
@@ -2867,7 +2879,7 @@ export class EditorPageComponent {
                   height: Math.max(shape.width / Math.max(dimensions.width / dimensions.height, EDITOR_IMAGE_ASPECT_RATIO_EPSILON), MIN_SHAPE_DIMENSION)
                 }
               : {}),
-            latexSource: shape.latexSource || file.name
+            latexSource: imagePathForFile(this.preferences().defaultImagePath, file.name)
           } as CanvasShape)
         : shape
     );
@@ -6321,6 +6333,7 @@ export class EditorPageComponent {
       case 'image':
         return {
           ...shape,
+          latexSource: shape.latexSource === 'images/example.png' ? imagePathForFile(preferences.defaultImagePath, 'example.png') : shape.latexSource,
           stroke: preferences.defaultStroke,
           strokeOpacity: 1,
           strokeWidth: preferences.defaultStrokeWidth
@@ -6333,6 +6346,10 @@ export class EditorPageComponent {
           fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE)
         };
     }
+  }
+
+  isDefaultLatexImagePath(shape: Extract<CanvasShape, { kind: 'image' }>): boolean {
+    return shape.latexSource.split(REGEX.imagePath.separator).at(-1)?.toLowerCase() === 'example.png';
   }
 
   private buildInsertionPreviewShapes(toolId: string, startPoint: Point, currentPoint: Point): readonly CanvasShape[] {
@@ -7255,7 +7272,7 @@ export class EditorPageComponent {
       height,
       aspectRatio,
       src: dataUrl,
-      latexSource: file.name
+      latexSource: imagePathForFile(this.preferences().defaultImagePath, file.name)
     });
 
     this.selectedImageFilename.set(file.name);

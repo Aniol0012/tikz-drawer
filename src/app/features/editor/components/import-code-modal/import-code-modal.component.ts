@@ -626,6 +626,7 @@ export class ImportCodeModalComponent {
 
     return {
       ...result,
+      sourceKind: this.sourceKind(),
       clearScene: this.sceneHasContent() && this.clearSceneBeforeImport()
     };
   }

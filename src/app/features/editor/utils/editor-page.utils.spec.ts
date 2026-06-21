@@ -30,7 +30,8 @@ const preferences: EditorPreferences = {
   defaultLineStrokeStyle: 'solid',
   defaultCornerRadius: 0.14,
   defaultTextColor: '#161616',
-  defaultTextFontSize: 0.42
+  defaultTextFontSize: 0.42,
+  defaultImagePath: 'images'
 };
 
 const lineShape: LineShape = {

@@ -56,6 +56,14 @@ export const REGEX = {
     importFooterActions: /<div class="import-code-modal__footer-actions">([\s\S]*?)<\/div>/,
     importInputPanel: /<section class="import-input-panel"[\s\S]*?<section class="import-workspace">/
   },
+  imagePath: {
+    unixPrefix: /^(?:\/(?!\/)|\.\.?\/)/,
+    windowsPrefix: /^[a-zA-Z]:[\\/]/,
+    relative: /^[^/\\]+(?:[/\\][^/\\]+)*$/,
+    trailingSeparators: /[\\/]+$/,
+    leadingSeparators: /^[/\\]+/,
+    separator: /[\\/]/
+  },
   importModal: {
     drawLikeCommand: /\\(?:draw|node|path|fill|filldraw|clip)\b/,
     diagramRawTikzWarning: /^(.*?): Unsupported line preserved as raw TikZ: (.*)$/,

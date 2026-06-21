@@ -10,6 +10,7 @@ export interface ImportDialogResult {
   readonly scene: TikzScene;
   readonly importCode: string;
   readonly warnings: readonly string[];
+  readonly sourceKind?: ImportSourceKind;
   readonly clearScene?: boolean;
   readonly preserveImportCode?: boolean;
 }

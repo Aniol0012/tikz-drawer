@@ -2658,6 +2658,28 @@ kbd {
   padding-left: 18px;
 }
 
+.image-path-input {
+  position: relative;
+  display: block;
+}
+
+.image-path-input input {
+  width: 100%;
+  padding-right: 38px;
+}
+
+.image-path-input__warning {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--warning);
+  font-size: 1rem;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
 .context-menu {
   position: fixed;
   z-index: 60;

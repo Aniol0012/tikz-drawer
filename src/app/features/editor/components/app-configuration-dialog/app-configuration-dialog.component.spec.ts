@@ -92,6 +92,18 @@ describe('AppConfigurationDialogComponent', () => {
     });
   });
 
+  it('accepts only explicit image directory paths while allowing spaces', () => {
+    component.updateDefaultImagePath({ target: { value: '/project/image assets/' } } as unknown as Event);
+
+    expect(store.preferences().defaultImagePath).toBe('/project/image assets');
+    expect(component.defaultImagePathInvalid()).toBe(false);
+
+    component.updateDefaultImagePath({ target: { value: 'https://example.com/images' } } as unknown as Event);
+
+    expect(store.preferences().defaultImagePath).toBe('/project/image assets');
+    expect(component.defaultImagePathInvalid()).toBe(true);
+  });
+
   it('uses the editor zoom range and clamps through the same scale constants', () => {
     component.updateZoomPercent({ target: { value: '999' } } as unknown as Event);
 

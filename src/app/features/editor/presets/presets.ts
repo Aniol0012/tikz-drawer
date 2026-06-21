@@ -299,7 +299,8 @@ export const defaultPreferences: EditorPreferences = {
   defaultLineStrokeStyle: 'solid',
   defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
   defaultTextColor: DEFAULT_TEXT_COLOR,
-  defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE
+  defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE,
+  defaultImagePath: 'images'
 };
 
 const complexDiagramPresets = (): readonly ObjectPreset[] => {

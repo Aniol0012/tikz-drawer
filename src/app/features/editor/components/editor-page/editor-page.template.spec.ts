@@ -13,4 +13,14 @@ describe('EditorPageComponent template', () => {
     expect(template).toContain('(click)="openAssistant(); $event.stopPropagation()"');
     expect(template).not.toContain('is-inspector-hidden');
   });
+
+  it('shows a tooltip-free LaTeX warning inside the input for the example placeholder', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('class="image-path-input"');
+    expect(template).toContain('@if (isDefaultLatexImagePath(shape))');
+    expect(template).toContain('class="image-path-input__warning"');
+    expect(template).not.toContain('[attr.data-tooltip]="\'latexImagePathWarning\' | translate"');
+    expect(template).not.toContain('class="image-path-warning');
+  });
 });

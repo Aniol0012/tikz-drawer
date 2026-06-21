@@ -48,4 +48,13 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('[style.--context-menu-action-rows]="contextMenuActionColumnSize()"');
     expect(template).not.toContain('context-menu-action-drag-handle');
   });
+
+  it('exposes an accessible default image path with validation feedback', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('preferences().defaultImagePath');
+    expect(template).toContain('aria-describedby="default-image-path-help default-image-path-error"');
+    expect(template).toContain('defaultImagePathInvalid()');
+    expect(template).toContain('role="alert"');
+  });
 });

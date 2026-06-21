@@ -177,6 +177,7 @@ export interface EditorPreferences {
   readonly defaultCornerRadius: number;
   readonly defaultTextColor: string;
   readonly defaultTextFontSize: number;
+  readonly defaultImagePath: string;
 }
 
 export interface PersistedEditorState {
