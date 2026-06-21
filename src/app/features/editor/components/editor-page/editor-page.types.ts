@@ -20,7 +20,6 @@ export type ImageTextKey = 'src' | 'latexSource';
 export type ImageDimensionKey = 'width' | 'height';
 export type TextTransformMode = 'uppercase' | 'lowercase' | 'titlecase';
 export type LineBooleanKey = 'arrowStart' | 'arrowEnd' | 'arrowOpen' | 'arrowRound';
-export type ContextAction = 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'front' | 'back' | 'group' | 'ungroup' | 'png';
 export type LineEndpoint = 'from' | 'to';
 export type ArrowEndpoint = 'start' | 'end';
 export type ArrowScaleKind = 'length' | 'width';

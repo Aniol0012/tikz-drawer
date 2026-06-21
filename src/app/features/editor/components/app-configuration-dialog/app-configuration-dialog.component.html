@@ -134,11 +134,31 @@
                   <div class="settings-card__header">
                     <h3>{{ 'behavior' | translate }}</h3>
                   </div>
-                  <div class="form-grid form-grid--single">
+                  <div class="form-grid form-grid--behavior-options">
                     <app-toggle-field
+                      class="toggle-field--compact"
                       [checked]="generalConfig().showInspectorOnlyWithSelection"
                       [label]="'showInspectorOnlyWithSelection' | translate"
                       (checkedChange)="updateGeneralBoolean('showInspectorOnlyWithSelection', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      class="toggle-field--compact"
+                      [checked]="generalConfig().showMinimap"
+                      [label]="'showMinimap' | translate"
+                      (checkedChange)="updateGeneralBoolean('showMinimap', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      class="toggle-field--compact"
+                      [checked]="generalConfig().confirmSceneReplacement"
+                      [label]="'confirmSceneReplacement' | translate"
+                      (checkedChange)="updateGeneralBoolean('confirmSceneReplacement', $event)"></app-toggle-field>
+                    <button class="settings-action-row settings-action-row--compact" type="button" (click)="openContextMenuSettings()">
+                      <span>
+                        <strong>{{ 'contextMenuSettings' | translate }}</strong>
+                        <small>{{ 'contextMenuSettingsDescription' | translate }}</small>
+                      </span>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path [attr.d]="contextMenuSettingsIconPath"></path>
+                      </svg>
+                    </button>
                   </div>
                 </section>
               </div>
@@ -713,6 +733,52 @@
                 {{ 'resetShortcuts' | translate }}
               </button>
               <button class="primary-button" type="button" (click)="saveShortcutSettings()">
+                {{ 'apply' | translate }}
+              </button>
+            </footer>
+          </section>
+        </div>
+      }
+
+      @if (contextMenuSettingsDialogOpen()) {
+        <div class="nested-dialog-backdrop" (click)="closeContextMenuSettings()">
+          <section
+            class="shortcuts-dialog context-menu-settings-dialog"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'contextMenuSettings' | translate"
+            (click)="$event.stopPropagation()">
+            <header class="shortcuts-dialog__header">
+              <div>
+                <h3>{{ 'contextMenuSettings' | translate }}</h3>
+                <p>{{ 'contextMenuSettingsDialogDescription' | translate }}</p>
+              </div>
+              <button class="icon-button" type="button" [attr.aria-label]="'close' | translate" (click)="closeContextMenuSettings()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m7 7 10 10M17 7 7 17"></path>
+                </svg>
+              </button>
+            </header>
+
+            <div class="context-menu-action-list">
+              @for (row of contextMenuActionRows; track row.action) {
+                <app-toggle-field
+                  class="toggle-field--compact"
+                  [checked]="editableContextMenuActions()[row.action]"
+                  [label]="row.labelKey | translate"
+                  (checkedChange)="updateContextMenuAction(row.action, $event)"></app-toggle-field>
+              }
+            </div>
+
+            <footer class="shortcuts-dialog__footer">
+              <button
+                class="secondary-button"
+                type="button"
+                [disabled]="contextMenuActionsAreDefault()"
+                (click)="resetContextMenuActions()">
+                {{ 'resetDefaults' | translate }}
+              </button>
+              <button class="primary-button" type="button" (click)="saveContextMenuSettings()">
                 {{ 'apply' | translate }}
               </button>
             </footer>

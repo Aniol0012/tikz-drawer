@@ -97,7 +97,6 @@ import {
   type ArrowEndpoint,
   type ArrowScaleKind,
   type ClipboardShapeSet,
-  type ContextAction,
   type ContextMenuState,
   type CssTextAlign,
   type ExportMode,
@@ -233,7 +232,7 @@ import {
   type GraphPresetId
 } from '../../models/graph.models';
 import { buildGraphShapes, normalizeGraphDimensions } from '../../utils/graph.utils';
-import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { EditorConfigurationService, type EditorContextMenuAction as ContextAction } from '../../state/editor-configuration.service';
 import { buildTableShapes, getTableSelectionInfo, normalizeTableDimensions, remapStructuralShapeIds, tableSizeLabel } from '../../utils/table.utils';
 import {
   arrowMarkerFill as arrowMarkerFillUtil,
@@ -1038,6 +1037,7 @@ export class EditorPageComponent {
   });
   readonly shareUrl = signal('');
   readonly sceneReplaceDialog = signal<SceneReplaceDialogState | null>(null);
+  readonly skipFutureSceneReplaceConfirmations = signal(false);
   private shareUrlRequestId = 0;
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
@@ -3307,8 +3307,15 @@ export class EditorPageComponent {
       case 'png':
         this.runAsync(this.downloadCanvasPng());
         break;
+      case 'saveTemplate':
+        this.openSaveTemplateDialog();
+        break;
     }
     this.closeContextMenu();
+  }
+
+  contextMenuActionEnabled(action: ContextAction): boolean {
+    return this.configuration.generalConfig().contextMenuActions[action];
   }
 
   onCanvasViewportPointerDown(event: PointerEvent): void {
@@ -5970,7 +5977,7 @@ export class EditorPageComponent {
   }
 
   private requestSceneReplacement(presetId: string): void {
-    if (this.scene().shapes.length === 0) {
+    if (this.scene().shapes.length === 0 || !this.configuration.generalConfig().confirmSceneReplacement) {
       if (presetId === 'blank') {
         this.resetSceneConfirmed();
       } else {
@@ -5980,6 +5987,7 @@ export class EditorPageComponent {
     }
 
     const preset = presetId === 'blank' ? null : (this.scenePresets.find((entry) => entry.id === presetId) ?? null);
+    this.skipFutureSceneReplaceConfirmations.set(false);
     this.sceneReplaceDialog.set({
       presetId,
       title: this.sceneReplacementTitle(presetId, preset)
@@ -6000,7 +6008,11 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.skipFutureSceneReplaceConfirmations()) {
+      this.configuration.patchGeneralConfig({ confirmSceneReplacement: false });
+    }
     this.sceneReplaceDialog.set(null);
+    this.skipFutureSceneReplaceConfirmations.set(false);
     if (dialog.presetId === 'blank') {
       this.resetSceneConfirmed();
       return;
@@ -6010,6 +6022,7 @@ export class EditorPageComponent {
 
   closeSceneReplaceDialog(): void {
     this.sceneReplaceDialog.set(null);
+    this.skipFutureSceneReplaceConfirmations.set(false);
   }
 
   private setScaleFromViewportCenter(nextScale: number): void {

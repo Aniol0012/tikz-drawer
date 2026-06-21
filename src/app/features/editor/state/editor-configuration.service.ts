@@ -10,10 +10,22 @@ import {
 } from '../utils/editor-storage.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 
+export const EDITOR_CONTEXT_MENU_ACTIONS = ['copy', 'cut', 'paste', 'duplicate', 'delete', 'front', 'back', 'group', 'ungroup', 'png', 'saveTemplate'] as const;
+
+export type EditorContextMenuAction = (typeof EDITOR_CONTEXT_MENU_ACTIONS)[number];
+export type EditorContextMenuActionsConfig = Readonly<Record<EditorContextMenuAction, boolean>>;
+
+export const DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS: EditorContextMenuActionsConfig = Object.fromEntries(
+  EDITOR_CONTEXT_MENU_ACTIONS.map((action) => [action, true])
+) as unknown as EditorContextMenuActionsConfig;
+
 export interface EditorGeneralConfig {
   readonly showHelpTooltips: boolean;
   readonly whiteCanvasInDarkMode: boolean;
   readonly showInspectorOnlyWithSelection: boolean;
+  readonly showMinimap: boolean;
+  readonly confirmSceneReplacement: boolean;
+  readonly contextMenuActions: EditorContextMenuActionsConfig;
   readonly keyboardShortcuts: KeyboardShortcutConfig;
 }
 
@@ -21,6 +33,9 @@ export const DEFAULT_EDITOR_GENERAL_CONFIG: EditorGeneralConfig = {
   showHelpTooltips: true,
   whiteCanvasInDarkMode: false,
   showInspectorOnlyWithSelection: false,
+  showMinimap: true,
+  confirmSceneReplacement: true,
+  contextMenuActions: DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS,
   keyboardShortcuts: DEFAULT_KEYBOARD_SHORTCUTS
 };
 
@@ -75,6 +90,15 @@ export class EditorConfigurationService {
       this.normalizeGeneralConfig({
         ...config,
         keyboardShortcuts: normalizedKeyboardShortcuts(shortcuts)
+      })
+    );
+  }
+
+  setContextMenuActions(actions: Partial<EditorContextMenuActionsConfig> | null | undefined): void {
+    this.generalConfig.update((config) =>
+      this.normalizeGeneralConfig({
+        ...config,
+        contextMenuActions: this.normalizeContextMenuActions(actions)
       })
     );
   }
@@ -145,7 +169,17 @@ export class EditorConfigurationService {
         typeof config?.showInspectorOnlyWithSelection === 'boolean'
           ? config.showInspectorOnlyWithSelection
           : DEFAULT_EDITOR_GENERAL_CONFIG.showInspectorOnlyWithSelection,
+      showMinimap: typeof config?.showMinimap === 'boolean' ? config.showMinimap : DEFAULT_EDITOR_GENERAL_CONFIG.showMinimap,
+      confirmSceneReplacement:
+        typeof config?.confirmSceneReplacement === 'boolean' ? config.confirmSceneReplacement : DEFAULT_EDITOR_GENERAL_CONFIG.confirmSceneReplacement,
+      contextMenuActions: this.normalizeContextMenuActions(config?.contextMenuActions),
       keyboardShortcuts: normalizedKeyboardShortcuts(config?.keyboardShortcuts)
     };
+  }
+
+  private normalizeContextMenuActions(actions: Partial<EditorContextMenuActionsConfig> | null | undefined): EditorContextMenuActionsConfig {
+    return Object.fromEntries(
+      EDITOR_CONTEXT_MENU_ACTIONS.map((action) => [action, typeof actions?.[action] === 'boolean' ? actions[action] : true])
+    ) as unknown as EditorContextMenuActionsConfig;
   }
 }

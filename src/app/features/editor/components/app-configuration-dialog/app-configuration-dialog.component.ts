@@ -23,7 +23,15 @@ import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { detectLanguage, getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { EditorStore } from '../../state/editor.store';
-import { DEFAULT_EDITOR_GENERAL_CONFIG, EditorConfigurationService, type EditorGeneralConfig } from '../../state/editor-configuration.service';
+import {
+  DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS,
+  DEFAULT_EDITOR_GENERAL_CONFIG,
+  EDITOR_CONTEXT_MENU_ACTIONS,
+  EditorConfigurationService,
+  type EditorContextMenuAction,
+  type EditorContextMenuActionsConfig,
+  type EditorGeneralConfig
+} from '../../state/editor-configuration.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
 import { iconPaths } from '../../config/editor-icons';
@@ -61,6 +69,11 @@ type ConfigurationTabDescriptor = {
 
 type ShortcutRow = {
   readonly action: KeyboardShortcutAction;
+  readonly labelKey: string;
+};
+
+type ContextMenuActionRow = {
+  readonly action: EditorContextMenuAction;
   readonly labelKey: string;
 };
 
@@ -139,8 +152,10 @@ export class AppConfigurationDialogComponent {
   readonly resetConfirmationOpen = signal(false);
   readonly aboutDialogOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
+  readonly contextMenuSettingsDialogOpen = signal(false);
   readonly shortcutResetConfirmationOpen = signal(false);
   readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
+  readonly editableContextMenuActions = signal<EditorContextMenuActionsConfig>(DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS);
   readonly alignmentSwitchReady = signal(false);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
@@ -160,6 +175,7 @@ export class AppConfigurationDialogComponent {
   readonly minZoomPercent = Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100);
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
+  readonly contextMenuSettingsIconPath = iconPaths.menu;
   readonly devModeIconPath = iconPaths.code;
   readonly githubIconPath = iconPaths.github;
   readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
@@ -236,6 +252,19 @@ export class AppConfigurationDialogComponent {
     { action: 'zoomIn', labelKey: 'zoomIn' },
     { action: 'zoomOut', labelKey: 'zoomOut' }
   ];
+  readonly contextMenuActionRows: readonly ContextMenuActionRow[] = [
+    { action: 'copy', labelKey: 'copy' },
+    { action: 'cut', labelKey: 'cut' },
+    { action: 'paste', labelKey: 'paste' },
+    { action: 'duplicate', labelKey: 'duplicate' },
+    { action: 'delete', labelKey: 'delete' },
+    { action: 'front', labelKey: 'bringToFront' },
+    { action: 'back', labelKey: 'sendToBack' },
+    { action: 'group', labelKey: 'groupFigures' },
+    { action: 'ungroup', labelKey: 'ungroupFigures' },
+    { action: 'png', labelKey: 'downloadPng' },
+    { action: 'saveTemplate', labelKey: 'saveAsTemplate' }
+  ];
   readonly highlightedCodeThemePreview = this.codeHighlightThemeService.highlightedPreviewSource;
   readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
@@ -294,6 +323,7 @@ export class AppConfigurationDialogComponent {
     this.prepareAlignmentSwitch(tab);
     this.resetConfirmationOpen.set(false);
     this.shortcutsDialogOpen.set(false);
+    this.contextMenuSettingsDialogOpen.set(false);
     this.shortcutResetConfirmationOpen.set(false);
     if (focus) {
       queueMicrotask(() => this.focusActiveTab());
@@ -356,6 +386,10 @@ export class AppConfigurationDialogComponent {
         }
         return;
       }
+      if (this.contextMenuSettingsDialogOpen()) {
+        this.contextMenuSettingsDialogOpen.set(false);
+        return;
+      }
       if (this.resetConfirmationOpen()) {
         this.resetConfirmationOpen.set(false);
         return;
@@ -377,7 +411,10 @@ export class AppConfigurationDialogComponent {
     }
   }
 
-  updateGeneralBoolean(key: 'showHelpTooltips' | 'whiteCanvasInDarkMode' | 'showInspectorOnlyWithSelection', checked: boolean): void {
+  updateGeneralBoolean(
+    key: 'showHelpTooltips' | 'whiteCanvasInDarkMode' | 'showInspectorOnlyWithSelection' | 'showMinimap' | 'confirmSceneReplacement',
+    checked: boolean
+  ): void {
     this.configuration.patchGeneralConfig({ [key]: checked });
   }
 
@@ -512,6 +549,33 @@ export class AppConfigurationDialogComponent {
     this.shortcutsDialogOpen.set(true);
     this.resetConfirmationOpen.set(false);
     this.shortcutResetConfirmationOpen.set(false);
+  }
+
+  openContextMenuSettings(): void {
+    this.editableContextMenuActions.set({ ...this.generalConfig().contextMenuActions });
+    this.contextMenuSettingsDialogOpen.set(true);
+    this.resetConfirmationOpen.set(false);
+  }
+
+  closeContextMenuSettings(): void {
+    this.contextMenuSettingsDialogOpen.set(false);
+  }
+
+  updateContextMenuAction(action: EditorContextMenuAction, checked: boolean): void {
+    this.editableContextMenuActions.update((actions) => ({ ...actions, [action]: checked }));
+  }
+
+  resetContextMenuActions(): void {
+    this.editableContextMenuActions.set({ ...DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS });
+  }
+
+  saveContextMenuSettings(): void {
+    this.configuration.setContextMenuActions(this.editableContextMenuActions());
+    this.contextMenuSettingsDialogOpen.set(false);
+  }
+
+  contextMenuActionsAreDefault(): boolean {
+    return EDITOR_CONTEXT_MENU_ACTIONS.every((action) => this.editableContextMenuActions()[action]);
   }
 
   openAboutDialog(): void {
@@ -878,6 +942,9 @@ export class AppConfigurationDialogComponent {
       current.showHelpTooltips === DEFAULT_EDITOR_GENERAL_CONFIG.showHelpTooltips &&
       current.whiteCanvasInDarkMode === DEFAULT_EDITOR_GENERAL_CONFIG.whiteCanvasInDarkMode &&
       current.showInspectorOnlyWithSelection === DEFAULT_EDITOR_GENERAL_CONFIG.showInspectorOnlyWithSelection &&
+      current.showMinimap === DEFAULT_EDITOR_GENERAL_CONFIG.showMinimap &&
+      current.confirmSceneReplacement === DEFAULT_EDITOR_GENERAL_CONFIG.confirmSceneReplacement &&
+      EDITOR_CONTEXT_MENU_ACTIONS.every((action) => current.contextMenuActions[action] === DEFAULT_EDITOR_GENERAL_CONFIG.contextMenuActions[action]) &&
       this.shortcutConfigEqual(current.keyboardShortcuts, DEFAULT_EDITOR_GENERAL_CONFIG.keyboardShortcuts)
     );
   }

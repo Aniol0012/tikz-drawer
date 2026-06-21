@@ -129,10 +129,14 @@ describe('AppConfigurationDialogComponent', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
     component.updateGeneralBoolean('whiteCanvasInDarkMode', true);
     component.updateGeneralBoolean('showInspectorOnlyWithSelection', true);
+    component.updateGeneralBoolean('showMinimap', false);
+    component.updateGeneralBoolean('confirmSceneReplacement', false);
 
     expect(configuration.generalConfig().showHelpTooltips).toBe(false);
     expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(true);
     expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(true);
+    expect(configuration.generalConfig().showMinimap).toBe(false);
+    expect(configuration.generalConfig().confirmSceneReplacement).toBe(false);
     expect(component.settingsAreDefault()).toBe(false);
 
     component.openShortcutSettings();
@@ -160,6 +164,26 @@ describe('AppConfigurationDialogComponent', () => {
 
     expect(configuration.generalConfig().keyboardShortcuts.figureSearch).toBe(DEFAULT_KEYBOARD_SHORTCUTS.figureSearch);
     expect(component.shortcutsAreDefault()).toBe(true);
+  });
+
+  it('configures visible context-menu actions through a staged dialog', () => {
+    component.openContextMenuSettings();
+    component.updateContextMenuAction('cut', false);
+    component.updateContextMenuAction('saveTemplate', false);
+
+    expect(configuration.generalConfig().contextMenuActions.cut).toBe(true);
+
+    component.saveContextMenuSettings();
+
+    expect(configuration.generalConfig().contextMenuActions.cut).toBe(false);
+    expect(configuration.generalConfig().contextMenuActions.saveTemplate).toBe(false);
+    expect(component.settingsAreDefault()).toBe(false);
+
+    component.openContextMenuSettings();
+    component.resetContextMenuActions();
+    component.saveContextMenuSettings();
+
+    expect(Object.values(configuration.generalConfig().contextMenuActions).every(Boolean)).toBe(true);
   });
 
   it('shows the white canvas option only while dark mode is selected', () => {
@@ -205,6 +229,9 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.generalConfig().showHelpTooltips).toBe(true);
     expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(false);
     expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(false);
+    expect(configuration.generalConfig().showMinimap).toBe(true);
+    expect(configuration.generalConfig().confirmSceneReplacement).toBe(true);
+    expect(Object.values(configuration.generalConfig().contextMenuActions).every(Boolean)).toBe(true);
     expect(component.settingsAreDefault()).toBe(true);
     expect(component.resetConfirmationOpen()).toBe(false);
   });

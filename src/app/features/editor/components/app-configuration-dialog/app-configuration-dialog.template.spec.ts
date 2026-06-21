@@ -32,4 +32,14 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(behavior).toBeGreaterThan(codePreview);
     expect(template.slice(behavior - 120, behavior)).toContain('settings-card settings-card--wide');
   });
+
+  it('uses a compact behavior grid and exposes context-menu configuration', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('form-grid--behavior-options');
+    expect(template).toContain('generalConfig().showMinimap');
+    expect(template).toContain('generalConfig().confirmSceneReplacement');
+    expect(template).toContain('(click)="openContextMenuSettings()"');
+    expect(template).toContain('@for (row of contextMenuActionRows; track row.action)');
+  });
 });
