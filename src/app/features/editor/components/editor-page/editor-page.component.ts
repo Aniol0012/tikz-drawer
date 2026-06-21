@@ -70,6 +70,7 @@ import {
   EDITOR_WHEEL_ZOOM_SENSITIVITY,
   EDITOR_ZOOM_STEP,
   FREEHAND_POINT_MIN_DISTANCE,
+  FREEHAND_SIMPLIFICATION_TOLERANCE,
   LINE_DASH_DOTTED_PATTERN,
   LINE_DASHED_PATTERN,
   LINE_DOTTED_PATTERN,
@@ -165,12 +166,13 @@ import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import {
   decodeSharePayload,
   encodeSharePayload,
+  simplifyPolyline,
   type SelectionBounds,
+  shouldAutoCollapseInspector,
   transformCanvasShape,
   type TransformCanvasShapeOptions,
   translateShapeBy,
-  viewportCenterAfterHorizontalResize,
-  shouldAutoCollapseInspector
+  viewportCenterAfterHorizontalResize
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
@@ -863,6 +865,10 @@ export class EditorPageComponent {
   });
   readonly aiSelectionStandaloneIconLayout = computed(() => (this.aiSelectionBubbleLayout() ? null : this.aiSelectionIconLayout()));
   readonly selectionHandles = computed<readonly HandleDescriptor[]>(() => {
+    const interactionKind = this.interactionState()?.kind;
+    if (interactionKind === 'move' || interactionKind === 'resize' || interactionKind === 'rotate') {
+      return [];
+    }
     const selectedShapes = this.selectedShapes();
     const singleSelectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
     if (!selectedShapes.length) {
@@ -1070,6 +1076,8 @@ export class EditorPageComponent {
   private themeToggleCooldownHandle: ReturnType<typeof setTimeout> | null = null;
   private themeToggleLocked = false;
   private contextMenuPositionRafHandle: number | null = null;
+  private freehandPointerRafHandle: number | null = null;
+  private pendingFreehandPoint: { readonly pointerId: number; readonly point: Point } | null = null;
   private keyboardNavigationRafHandle: number | null = null;
   private keyboardNavigationLastTimestamp: number | null = null;
   private keyboardNavigationHistoryActive = false;
@@ -1092,6 +1100,9 @@ export class EditorPageComponent {
       }
       if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
+      }
+      if (this.freehandPointerRafHandle !== null && this.document.defaultView) {
+        this.document.defaultView.cancelAnimationFrame(this.freehandPointerRafHandle);
       }
       if (this.keyboardNavigationRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.keyboardNavigationRafHandle);
@@ -3983,22 +3994,53 @@ export class EditorPageComponent {
   }
 
   private handleFreehandPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'freehand' }>): void {
-    const nextPoint = this.toScenePoint(event.clientX, event.clientY);
+    this.pendingFreehandPoint = {
+      pointerId: interactionState.pointerId,
+      point: this.toScenePoint(event.clientX, event.clientY)
+    };
+    if (this.freehandPointerRafHandle !== null) {
+      return;
+    }
+
+    const view = this.document.defaultView;
+    if (!view) {
+      this.flushPendingFreehandPoint();
+      return;
+    }
+    this.freehandPointerRafHandle = view.requestAnimationFrame(() => {
+      this.freehandPointerRafHandle = null;
+      this.flushPendingFreehandPoint();
+    });
+  }
+
+  private flushPendingFreehandPoint(): void {
+    const pending = this.pendingFreehandPoint;
+    this.pendingFreehandPoint = null;
+    const currentState = this.interactionState();
+    if (!pending || currentState?.kind !== 'freehand' || currentState.pointerId !== pending.pointerId) {
+      return;
+    }
+    this.interactionState.set(this.freehandStateWithPoint(currentState, pending.point));
+  }
+
+  private freehandStateWithPoint(
+    interactionState: Extract<InteractionState, { kind: 'freehand' }>,
+    nextPoint: Point
+  ): Extract<InteractionState, { kind: 'freehand' }> {
     const lastPoint = interactionState.points.at(-1);
     if (!lastPoint) {
-      this.interactionState.set({ ...interactionState, points: [nextPoint] });
-      return;
+      return { ...interactionState, points: [nextPoint] };
     }
 
     const distance = Math.hypot(nextPoint.x - lastPoint.x, nextPoint.y - lastPoint.y);
     if (distance < FREEHAND_POINT_MIN_DISTANCE) {
-      return;
+      return interactionState;
     }
 
-    this.interactionState.set({
+    return {
       ...interactionState,
       points: [...interactionState.points, nextPoint]
-    });
+    };
   }
 
   private handleResizePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'resize' }>): void {
@@ -4310,7 +4352,12 @@ export class EditorPageComponent {
         this.finishInsertInteraction(interactionState);
         break;
       case 'freehand':
-        this.finishFreehandInteraction(interactionState);
+        if (this.freehandPointerRafHandle !== null && this.document.defaultView) {
+          this.document.defaultView.cancelAnimationFrame(this.freehandPointerRafHandle);
+          this.freehandPointerRafHandle = null;
+        }
+        this.pendingFreehandPoint = null;
+        this.finishFreehandInteraction(this.freehandStateWithPoint(interactionState, this.toScenePoint(event.clientX, event.clientY)));
         break;
       case 'move':
         this.finishMoveInteraction(event, interactionState);
@@ -6371,7 +6418,7 @@ export class EditorPageComponent {
   }
 
   private buildFreehandLine(points: readonly Point[], id: string = crypto.randomUUID()): LineShape | null {
-    const simplified = points.reduce<Point[]>((accumulator, point, index) => {
+    const sampled = points.reduce<Point[]>((accumulator, point, index) => {
       if (index === 0) {
         accumulator.push(point);
         return accumulator;
@@ -6384,6 +6431,7 @@ export class EditorPageComponent {
       return accumulator;
     }, []);
 
+    const simplified = simplifyPolyline(sampled, FREEHAND_SIMPLIFICATION_TOLERANCE);
     if (simplified.length < 2) {
       return null;
     }

@@ -5,6 +5,7 @@ import {
   formatValue,
   highlightLatex,
   resizeGroupedShapes,
+  simplifyPolyline,
   shouldAutoCollapseInspector,
   transformCanvasShape,
   translateShapeBy,
@@ -96,6 +97,30 @@ afterEach(() => {
 });
 
 describe('editor-page utils', () => {
+  it('simplifies dense polylines without losing endpoints or meaningful corners', () => {
+    const points = [
+      { x: 0, y: 0 },
+      { x: 0.25, y: 0.01 },
+      { x: 0.5, y: -0.01 },
+      { x: 1, y: 0 },
+      { x: 1, y: 1 },
+      { x: 1.5, y: 1.01 },
+      { x: 2, y: 1 }
+    ];
+
+    expect(simplifyPolyline(points, 0.05)).toEqual([points[0], points[3], points[4], points[6]]);
+  });
+
+  it('keeps short and zero-tolerance polylines unchanged', () => {
+    const points = [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+      { x: 2, y: 2 }
+    ];
+
+    expect(simplifyPolyline(points.slice(0, 2), 0.1)).toEqual(points.slice(0, 2));
+    expect(simplifyPolyline(points, 0)).toEqual(points);
+  });
   it('auto-collapses the inspector only when enabled and the selection is empty', () => {
     expect(shouldAutoCollapseInspector(true, 0)).toBe(true);
     expect(shouldAutoCollapseInspector(true, 1)).toBe(false);

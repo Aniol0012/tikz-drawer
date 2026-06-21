@@ -38,6 +38,51 @@ export const viewportCenterAfterHorizontalResize = (viewportCenter: Point, previ
 
 export const shouldAutoCollapseInspector = (enabled: boolean, selectionCount: number): boolean => enabled && selectionCount === 0;
 
+const squaredDistanceToSegment = (point: Point, from: Point, to: Point): number => {
+  const deltaX = to.x - from.x;
+  const deltaY = to.y - from.y;
+  if (deltaX === 0 && deltaY === 0) {
+    return (point.x - from.x) ** 2 + (point.y - from.y) ** 2;
+  }
+
+  const projection = Math.min(Math.max(((point.x - from.x) * deltaX + (point.y - from.y) * deltaY) / (deltaX ** 2 + deltaY ** 2), 0), 1);
+  const projectedX = from.x + projection * deltaX;
+  const projectedY = from.y + projection * deltaY;
+  return (point.x - projectedX) ** 2 + (point.y - projectedY) ** 2;
+};
+
+/** Reduces a sampled stroke while keeping every retained point within `tolerance` of the original polyline. */
+export const simplifyPolyline = (points: readonly Point[], tolerance: number): readonly Point[] => {
+  if (points.length <= 2 || tolerance <= 0) {
+    return [...points];
+  }
+
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  keep[points.length - 1] = 1;
+  const ranges: [number, number][] = [[0, points.length - 1]];
+  const squaredTolerance = tolerance ** 2;
+
+  while (ranges.length) {
+    const [start, end] = ranges.pop()!;
+    let furthestIndex = -1;
+    let furthestDistance = squaredTolerance;
+    for (let index = start + 1; index < end; index += 1) {
+      const distance = squaredDistanceToSegment(points[index], points[start], points[end]);
+      if (distance > furthestDistance) {
+        furthestDistance = distance;
+        furthestIndex = index;
+      }
+    }
+    if (furthestIndex >= 0) {
+      keep[furthestIndex] = 1;
+      ranges.push([start, furthestIndex], [furthestIndex, end]);
+    }
+  }
+
+  return points.filter((_, index) => keep[index] === 1);
+};
+
 const transformRoundedBoxShape = (
   shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
   options: Required<TransformCanvasShapeOptions>
