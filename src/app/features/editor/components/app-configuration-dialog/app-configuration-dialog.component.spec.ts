@@ -260,7 +260,7 @@ describe('AppConfigurationDialogComponent', () => {
     expect(configuration.codeHighlightTheme()).toBe('aurora');
     expect(configuration.generalConfig().showHelpTooltips).toBe(true);
     expect(configuration.generalConfig().whiteCanvasInDarkMode).toBe(false);
-    expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(false);
+    expect(configuration.generalConfig().showInspectorOnlyWithSelection).toBe(true);
     expect(configuration.generalConfig().showMinimap).toBe(true);
     expect(configuration.generalConfig().confirmSceneReplacement).toBe(true);
     expect(Object.values(configuration.generalConfig().contextMenuActions).every(Boolean)).toBe(true);
