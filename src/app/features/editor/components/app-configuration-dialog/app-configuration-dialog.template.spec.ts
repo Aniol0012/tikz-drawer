@@ -40,6 +40,12 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('generalConfig().showMinimap');
     expect(template).toContain('generalConfig().confirmSceneReplacement');
     expect(template).toContain('(click)="openContextMenuSettings()"');
-    expect(template).toContain('@for (row of contextMenuActionRows; track row.action)');
+    expect(template).toContain('@for (row of contextMenuActionRows(); track row.action)');
+    expect(template).toContain('[iconPath]="row.iconPath"');
+    expect(template).toContain('(dragstart)="startContextMenuActionDrag(row.action, $event)"');
+    expect(template).toContain('(dragover)="previewContextMenuActionMove(row.action, $event)"');
+    expect(template).toContain('{{ $index + 1 }}');
+    expect(template).toContain('[style.--context-menu-action-rows]="contextMenuActionColumnSize()"');
+    expect(template).not.toContain('context-menu-action-drag-handle');
   });
 });

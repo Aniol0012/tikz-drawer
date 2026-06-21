@@ -15,6 +15,7 @@ import { ChangeDetectionStrategy, Component, input, output, signal } from '@angu
 export class ToggleFieldComponent implements AfterViewInit {
   readonly checked = input.required<boolean>();
   readonly label = input.required<string>();
+  readonly iconPath = input<string | null>(null);
   readonly disabled = input(false);
   readonly ready = signal(false);
 

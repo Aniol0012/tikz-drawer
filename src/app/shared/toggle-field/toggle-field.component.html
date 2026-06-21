@@ -1,5 +1,12 @@
 <label>
-  <span>{{ label() }}</span>
+  <span class="toggle-field__label">
+    @if (iconPath(); as path) {
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="path"></path>
+      </svg>
+    }
+    <span>{{ label() }}</span>
+  </span>
   <input
     type="checkbox"
     [checked]="checked()"

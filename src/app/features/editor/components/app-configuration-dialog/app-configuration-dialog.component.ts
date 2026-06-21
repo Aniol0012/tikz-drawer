@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output, signal, viewChildren } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import {
@@ -75,6 +76,7 @@ type ShortcutRow = {
 type ContextMenuActionRow = {
   readonly action: EditorContextMenuAction;
   readonly labelKey: string;
+  readonly iconPath: string;
 };
 
 const PREVIEW_VIEWBOX_WIDTH = 300;
@@ -110,6 +112,8 @@ export class AppConfigurationDialogComponent {
   private readonly devModeService = inject(EditorDevModeService);
   private readonly webLlmProvider = inject(WebLlmLocalAiProvider);
   private readonly browserLocalProvider = inject(BrowserLocalAiProvider);
+  private readonly document = inject(DOCUMENT);
+  private contextMenuDragPreview: HTMLElement | null = null;
 
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
@@ -156,6 +160,10 @@ export class AppConfigurationDialogComponent {
   readonly shortcutResetConfirmationOpen = signal(false);
   readonly editableShortcuts = signal<KeyboardShortcutConfig>(DEFAULT_KEYBOARD_SHORTCUTS);
   readonly editableContextMenuActions = signal<EditorContextMenuActionsConfig>(DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS);
+  readonly editableContextMenuOrder = signal<readonly EditorContextMenuAction[]>(EDITOR_CONTEXT_MENU_ACTIONS);
+  readonly draggedContextMenuAction = signal<EditorContextMenuAction | null>(null);
+  readonly contextMenuDropTarget = signal<EditorContextMenuAction | null>(null);
+  readonly contextMenuDropPlacement = signal<'before' | 'after' | null>(null);
   readonly alignmentSwitchReady = signal(false);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
@@ -252,19 +260,26 @@ export class AppConfigurationDialogComponent {
     { action: 'zoomIn', labelKey: 'zoomIn' },
     { action: 'zoomOut', labelKey: 'zoomOut' }
   ];
-  readonly contextMenuActionRows: readonly ContextMenuActionRow[] = [
-    { action: 'copy', labelKey: 'copy' },
-    { action: 'cut', labelKey: 'cut' },
-    { action: 'paste', labelKey: 'paste' },
-    { action: 'duplicate', labelKey: 'duplicate' },
-    { action: 'delete', labelKey: 'delete' },
-    { action: 'front', labelKey: 'bringToFront' },
-    { action: 'back', labelKey: 'sendToBack' },
-    { action: 'group', labelKey: 'groupFigures' },
-    { action: 'ungroup', labelKey: 'ungroupFigures' },
-    { action: 'png', labelKey: 'downloadPng' },
-    { action: 'saveTemplate', labelKey: 'saveAsTemplate' }
+  readonly contextMenuActionDescriptors: readonly ContextMenuActionRow[] = [
+    { action: 'copy', labelKey: 'copy', iconPath: iconPaths.copy },
+    { action: 'cut', labelKey: 'cut', iconPath: iconPaths.minus },
+    { action: 'paste', labelKey: 'paste', iconPath: iconPaths.plus },
+    { action: 'duplicate', labelKey: 'duplicate', iconPath: iconPaths.copy },
+    { action: 'delete', labelKey: 'delete', iconPath: iconPaths.trash },
+    { action: 'front', labelKey: 'bringToFront', iconPath: iconPaths.front },
+    { action: 'back', labelKey: 'sendToBack', iconPath: iconPaths.back },
+    { action: 'group', labelKey: 'groupFigures', iconPath: iconPaths.layers },
+    { action: 'ungroup', labelKey: 'ungroupFigures', iconPath: iconPaths.ungroup },
+    { action: 'png', labelKey: 'downloadPng', iconPath: iconPaths.download },
+    { action: 'saveTemplate', labelKey: 'saveAsTemplate', iconPath: iconPaths.library }
   ];
+  readonly contextMenuActionRows = computed<readonly ContextMenuActionRow[]>(() =>
+    this.editableContextMenuOrder().flatMap((action) => {
+      const descriptor = this.contextMenuActionDescriptors.find((row) => row.action === action);
+      return descriptor ? [descriptor] : [];
+    })
+  );
+  readonly contextMenuActionColumnSize = computed(() => Math.ceil(this.contextMenuActionRows().length / 2));
   readonly highlightedCodeThemePreview = this.codeHighlightThemeService.highlightedPreviewSource;
   readonly codeThemeStyle = computed(() => this.codeHighlightThemeService.cssVariableStyle(this.codeTheme()));
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
@@ -553,12 +568,14 @@ export class AppConfigurationDialogComponent {
 
   openContextMenuSettings(): void {
     this.editableContextMenuActions.set({ ...this.generalConfig().contextMenuActions });
+    this.editableContextMenuOrder.set([...this.generalConfig().contextMenuOrder]);
     this.contextMenuSettingsDialogOpen.set(true);
     this.resetConfirmationOpen.set(false);
   }
 
   closeContextMenuSettings(): void {
     this.contextMenuSettingsDialogOpen.set(false);
+    this.finishContextMenuActionDrag();
   }
 
   updateContextMenuAction(action: EditorContextMenuAction, checked: boolean): void {
@@ -567,15 +584,105 @@ export class AppConfigurationDialogComponent {
 
   resetContextMenuActions(): void {
     this.editableContextMenuActions.set({ ...DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS });
+    this.editableContextMenuOrder.set([...EDITOR_CONTEXT_MENU_ACTIONS]);
   }
 
   saveContextMenuSettings(): void {
-    this.configuration.setContextMenuActions(this.editableContextMenuActions());
+    this.configuration.setContextMenuConfiguration(this.editableContextMenuActions(), this.editableContextMenuOrder());
     this.contextMenuSettingsDialogOpen.set(false);
   }
 
   contextMenuActionsAreDefault(): boolean {
-    return EDITOR_CONTEXT_MENU_ACTIONS.every((action) => this.editableContextMenuActions()[action]);
+    return (
+      EDITOR_CONTEXT_MENU_ACTIONS.every((action) => this.editableContextMenuActions()[action]) &&
+      EDITOR_CONTEXT_MENU_ACTIONS.every((action, index) => this.editableContextMenuOrder()[index] === action)
+    );
+  }
+
+  startContextMenuActionDrag(action: EditorContextMenuAction, event: DragEvent): void {
+    this.draggedContextMenuAction.set(action);
+    this.contextMenuDropTarget.set(action);
+    event.dataTransfer?.setData('text/plain', action);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      const row = event.currentTarget;
+      if (row instanceof HTMLElement) {
+        this.createContextMenuDragPreview(row, event.dataTransfer);
+      }
+    }
+  }
+
+  previewContextMenuActionMove(target: EditorContextMenuAction, event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    const source = this.draggedContextMenuAction();
+    const targetElement = event.currentTarget;
+    if (!source || !(targetElement instanceof HTMLElement)) {
+      return;
+    }
+    const targetBounds = targetElement.getBoundingClientRect();
+    const placement = event.clientY < targetBounds.top + targetBounds.height / 2 ? 'before' : 'after';
+    this.contextMenuDropTarget.set(target);
+    this.contextMenuDropPlacement.set(placement);
+    this.moveContextMenuAction(source, target, placement);
+  }
+
+  dropContextMenuAction(event: DragEvent): void {
+    event.preventDefault();
+    this.finishContextMenuActionDrag();
+  }
+
+  finishContextMenuActionDrag(): void {
+    this.draggedContextMenuAction.set(null);
+    this.contextMenuDropTarget.set(null);
+    this.contextMenuDropPlacement.set(null);
+    this.contextMenuDragPreview?.remove();
+    this.contextMenuDragPreview = null;
+  }
+
+  moveContextMenuActionByKeyboard(action: EditorContextMenuAction, event: KeyboardEvent): void {
+    const delta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+    if (!delta) {
+      return;
+    }
+    event.preventDefault();
+    const order = [...this.editableContextMenuOrder()];
+    const sourceIndex = order.indexOf(action);
+    const targetIndex = sourceIndex + delta;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= order.length) {
+      return;
+    }
+    [order[sourceIndex], order[targetIndex]] = [order[targetIndex], order[sourceIndex]];
+    this.editableContextMenuOrder.set(order);
+  }
+
+  private moveContextMenuAction(source: EditorContextMenuAction, target: EditorContextMenuAction, placement: 'before' | 'after'): void {
+    if (source === target) {
+      return;
+    }
+    const order = [...this.editableContextMenuOrder()];
+    const sourceIndex = order.indexOf(source);
+    const targetIndex = order.indexOf(target);
+    if (sourceIndex < 0 || targetIndex < 0) {
+      return;
+    }
+    order.splice(sourceIndex, 1);
+    const adjustedTargetIndex = order.indexOf(target);
+    order.splice(adjustedTargetIndex + (placement === 'after' ? 1 : 0), 0, source);
+    this.editableContextMenuOrder.set(order);
+  }
+
+  private createContextMenuDragPreview(row: HTMLElement, dataTransfer: DataTransfer): void {
+    this.contextMenuDragPreview?.remove();
+    const preview = row.cloneNode(true) as HTMLElement;
+    preview.classList.remove('is-dragging', 'is-drop-target');
+    preview.classList.add('context-menu-action-drag-preview');
+    preview.style.width = `${row.getBoundingClientRect().width}px`;
+    this.document.body.append(preview);
+    dataTransfer.setDragImage(preview, 28, row.getBoundingClientRect().height / 2);
+    this.contextMenuDragPreview = preview;
   }
 
   openAboutDialog(): void {
@@ -945,6 +1052,7 @@ export class AppConfigurationDialogComponent {
       current.showMinimap === DEFAULT_EDITOR_GENERAL_CONFIG.showMinimap &&
       current.confirmSceneReplacement === DEFAULT_EDITOR_GENERAL_CONFIG.confirmSceneReplacement &&
       EDITOR_CONTEXT_MENU_ACTIONS.every((action) => current.contextMenuActions[action] === DEFAULT_EDITOR_GENERAL_CONFIG.contextMenuActions[action]) &&
+      EDITOR_CONTEXT_MENU_ACTIONS.every((action, index) => current.contextMenuOrder[index] === action) &&
       this.shortcutConfigEqual(current.keyboardShortcuts, DEFAULT_EDITOR_GENERAL_CONFIG.keyboardShortcuts)
     );
   }

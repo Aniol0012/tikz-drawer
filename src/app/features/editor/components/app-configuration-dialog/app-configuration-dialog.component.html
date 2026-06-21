@@ -760,13 +760,30 @@
               </button>
             </header>
 
-            <div class="context-menu-action-list">
-              @for (row of contextMenuActionRows; track row.action) {
-                <app-toggle-field
-                  class="toggle-field--compact"
-                  [checked]="editableContextMenuActions()[row.action]"
-                  [label]="row.labelKey | translate"
-                  (checkedChange)="updateContextMenuAction(row.action, $event)"></app-toggle-field>
+            <div class="context-menu-action-list" [style.--context-menu-action-rows]="contextMenuActionColumnSize()">
+              @for (row of contextMenuActionRows(); track row.action) {
+                <div
+                  class="context-menu-action-row"
+                  [class.is-dragging]="draggedContextMenuAction() === row.action"
+                  [class.is-drop-target]="contextMenuDropTarget() === row.action && draggedContextMenuAction() !== row.action"
+                  [class.is-drop-before]="contextMenuDropTarget() === row.action && contextMenuDropPlacement() === 'before'"
+                  [class.is-drop-after]="contextMenuDropTarget() === row.action && contextMenuDropPlacement() === 'after'"
+                  [attr.aria-label]="'reorderContextMenuAction' | translate"
+                  tabindex="0"
+                  draggable="true"
+                  (dragstart)="startContextMenuActionDrag(row.action, $event)"
+                  (dragover)="previewContextMenuActionMove(row.action, $event)"
+                  (drop)="dropContextMenuAction($event)"
+                  (dragend)="finishContextMenuActionDrag()"
+                  (keydown)="moveContextMenuActionByKeyboard(row.action, $event)">
+                  <span class="context-menu-action-order" aria-hidden="true">{{ $index + 1 }}</span>
+                  <app-toggle-field
+                    class="toggle-field--compact"
+                    [checked]="editableContextMenuActions()[row.action]"
+                    [iconPath]="row.iconPath"
+                    [label]="row.labelKey | translate"
+                    (checkedChange)="updateContextMenuAction(row.action, $event)"></app-toggle-field>
+                </div>
               }
             </div>
 

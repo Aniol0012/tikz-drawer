@@ -477,6 +477,32 @@ export class EditorPageComponent {
   readonly altPressed = signal(false);
   readonly ignoreNextCanvasClick = signal(false);
   readonly iconMap = iconPaths;
+  readonly contextMenuIconPaths: Readonly<Record<ContextAction, string>> = {
+    copy: iconPaths.copy,
+    cut: iconPaths.minus,
+    paste: iconPaths.plus,
+    duplicate: iconPaths.copy,
+    delete: iconPaths.trash,
+    front: iconPaths.front,
+    back: iconPaths.back,
+    group: iconPaths.layers,
+    ungroup: iconPaths.ungroup,
+    png: iconPaths.download,
+    saveTemplate: iconPaths.library
+  };
+  readonly contextMenuLabelKeys: Readonly<Record<ContextAction, string>> = {
+    copy: 'copy',
+    cut: 'cut',
+    paste: 'paste',
+    duplicate: 'duplicate',
+    delete: 'delete',
+    front: 'bringToFront',
+    back: 'sendToBack',
+    group: 'groupFigures',
+    ungroup: 'ungroupFigures',
+    png: 'downloadPng',
+    saveTemplate: 'saveAsTemplate'
+  };
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
@@ -3316,6 +3342,23 @@ export class EditorPageComponent {
 
   contextMenuActionEnabled(action: ContextAction): boolean {
     return this.configuration.generalConfig().contextMenuActions[action];
+  }
+
+  contextMenuActionAvailable(action: ContextAction): boolean {
+    if (action === 'group') {
+      return this.canGroupSelection();
+    }
+    if (action === 'ungroup') {
+      return this.canUngroupSelection();
+    }
+    return true;
+  }
+
+  contextMenuActionDisabled(action: ContextAction): boolean {
+    if (action === 'paste') {
+      return !this.clipboardShapes()?.shapes.length;
+    }
+    return action !== 'png' && this.selectionCount() === 0;
   }
 
   onCanvasViewportPointerDown(event: PointerEvent): void {

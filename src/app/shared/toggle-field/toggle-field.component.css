@@ -58,21 +58,39 @@ label {
   padding-inline: 14px;
 }
 
-span {
+.toggle-field__label {
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   color: var(--app-foreground);
   font-size: 0.82rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-:host.toggle-field--compact span {
+.toggle-field__label svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.toggle-field__label span {
+  min-width: 0;
+}
+
+:host.toggle-field--compact .toggle-field__label {
   font-size: 0.78rem;
 }
 
-:host-context(.export-settings-layout) span {
+:host-context(.export-settings-layout) .toggle-field__label {
   font-size: 0.75rem;
   letter-spacing: 0;
 }
@@ -148,7 +166,7 @@ input[type='checkbox']:focus-visible {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
-:host-context([data-theme='dark']):host-context(.export-settings-layout) span {
+:host-context([data-theme='dark']):host-context(.export-settings-layout) .toggle-field__label {
   color: color-mix(in srgb, white 74%, var(--muted-foreground));
 }
 

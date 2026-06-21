@@ -3021,93 +3021,15 @@
       role="menu"
       (click)="$event.stopPropagation()"
       (keydown)="$event.stopPropagation()">
-      @if (contextMenuActionEnabled('copy')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('copy')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.copy"></path>
-          </svg>
-          <span>{{ 'copy' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('cut')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('cut')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.minus"></path>
-          </svg>
-          <span>{{ 'cut' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('paste')) {
-        <button type="button" [disabled]="!clipboardShapes()?.shapes?.length" (click)="runContextAction('paste')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.plus"></path>
-          </svg>
-          <span>{{ 'paste' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('duplicate')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('duplicate')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.copy"></path>
-          </svg>
-          <span>{{ 'duplicate' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('delete')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('delete')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.trash"></path>
-          </svg>
-          <span>{{ 'delete' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('front')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('front')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.front"></path>
-          </svg>
-          <span>{{ 'bringToFront' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('back')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('back')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.back"></path>
-          </svg>
-          <span>{{ 'sendToBack' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('png')) {
-        <button type="button" (click)="runContextAction('png')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.download"></path>
-          </svg>
-          <span>{{ 'downloadPng' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('saveTemplate')) {
-        <button type="button" [disabled]="selectionCount() === 0" (click)="runContextAction('saveTemplate')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.library"></path>
-          </svg>
-          <span>{{ 'saveAsTemplate' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('group') && canGroupSelection()) {
-        <button type="button" (click)="runContextAction('group')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.layers"></path>
-          </svg>
-          <span>{{ 'groupFigures' | translate }}</span>
-        </button>
-      }
-      @if (contextMenuActionEnabled('ungroup') && canUngroupSelection()) {
-        <button type="button" (click)="runContextAction('ungroup')">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="iconMap.ungroup"></path>
-          </svg>
-          <span>{{ 'ungroupFigures' | translate }}</span>
-        </button>
+      @for (action of configuration.generalConfig().contextMenuOrder; track action) {
+        @if (contextMenuActionEnabled(action) && contextMenuActionAvailable(action)) {
+          <button type="button" [disabled]="contextMenuActionDisabled(action)" (click)="runContextAction(action)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="contextMenuIconPaths[action]"></path>
+            </svg>
+            <span>{{ contextMenuLabelKeys[action] | translate }}</span>
+          </button>
+        }
       }
     </div>
   }

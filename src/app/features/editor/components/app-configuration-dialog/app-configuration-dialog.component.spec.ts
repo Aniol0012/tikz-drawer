@@ -10,7 +10,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorStore } from '../../state/editor.store';
-import { EditorConfigurationService } from '../../state/editor-configuration.service';
+import { EDITOR_CONTEXT_MENU_ACTIONS, EditorConfigurationService } from '../../state/editor-configuration.service';
 import { DEFAULT_KEYBOARD_SHORTCUTS } from '../../utils/editor-keyboard.utils';
 import { AppConfigurationDialogComponent, type ApplicationConfigurationTab } from './app-configuration-dialog.component';
 
@@ -170,6 +170,7 @@ describe('AppConfigurationDialogComponent', () => {
     component.openContextMenuSettings();
     component.updateContextMenuAction('cut', false);
     component.updateContextMenuAction('saveTemplate', false);
+    component.moveContextMenuActionByKeyboard('copy', new KeyboardEvent('keydown', { key: 'ArrowDown' }));
 
     expect(configuration.generalConfig().contextMenuActions.cut).toBe(true);
 
@@ -177,6 +178,7 @@ describe('AppConfigurationDialogComponent', () => {
 
     expect(configuration.generalConfig().contextMenuActions.cut).toBe(false);
     expect(configuration.generalConfig().contextMenuActions.saveTemplate).toBe(false);
+    expect(configuration.generalConfig().contextMenuOrder.slice(0, 2)).toEqual(['cut', 'copy']);
     expect(component.settingsAreDefault()).toBe(false);
 
     component.openContextMenuSettings();
@@ -184,6 +186,36 @@ describe('AppConfigurationDialogComponent', () => {
     component.saveContextMenuSettings();
 
     expect(Object.values(configuration.generalConfig().contextMenuActions).every(Boolean)).toBe(true);
+    expect(configuration.generalConfig().contextMenuOrder).toEqual(EDITOR_CONTEXT_MENU_ACTIONS);
+  });
+
+  it('previews context-menu reordering while dragging over a row', () => {
+    component.openContextMenuSettings();
+    expect(component.contextMenuActionColumnSize()).toBe(6);
+    component.draggedContextMenuAction.set('copy');
+    const target = document.createElement('div');
+    vi.spyOn(target, 'getBoundingClientRect').mockReturnValue({
+      top: 0,
+      bottom: 100,
+      height: 100,
+      left: 0,
+      right: 100,
+      width: 100,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
+
+    component.previewContextMenuActionMove('paste', {
+      preventDefault: vi.fn(),
+      currentTarget: target,
+      clientY: 75,
+      dataTransfer: null
+    } as unknown as DragEvent);
+
+    expect(component.editableContextMenuOrder().slice(0, 3)).toEqual(['cut', 'paste', 'copy']);
+    expect(component.contextMenuDropTarget()).toBe('paste');
+    expect(component.contextMenuDropPlacement()).toBe('after');
   });
 
   it('shows the white canvas option only while dark mode is selected', () => {
