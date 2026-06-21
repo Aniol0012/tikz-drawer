@@ -1,7 +1,7 @@
 # tikz-drawer
 
 <div align="center">
-  <img width="250" height="250" alt="tikz-drawer" src="public/logo.png" />
+  <img width="250" height="250" alt="tikz-drawer" src="public/logo-github.png" />
 
 [![Version](https://img.shields.io/badge/version-1.2.53-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/Aniol0012/tikz-drawer)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftikzdrawer.com%2F&up_message=online&down_message=offline&style=flat-square&logo=github&logoColor=white)](https://tikzdrawer.com/)
