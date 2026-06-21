@@ -169,7 +169,8 @@ import {
   transformCanvasShape,
   type TransformCanvasShapeOptions,
   translateShapeBy,
-  viewportCenterAfterHorizontalResize
+  viewportCenterAfterHorizontalResize,
+  shouldAutoCollapseInspector
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
@@ -454,8 +455,9 @@ export class EditorPageComponent {
   readonly sidebarsOverlayLayout = signal(false);
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
-  readonly rightSidebarCollapsed = signal(false);
-  readonly inspectorPanelVisible = computed(() => !this.configuration.generalConfig().showInspectorOnlyWithSelection || this.selectionCount() > 0);
+  readonly rightSidebarCollapsed = signal(
+    shouldAutoCollapseInspector(this.configuration.generalConfig().showInspectorOnlyWithSelection, this.selectionCount())
+  );
   private readonly librarySectionIds = new Set<string>(['savedTemplates', 'scenePresets', ...categoryOrder]);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
@@ -1110,23 +1112,29 @@ export class EditorPageComponent {
       this.scheduleContextMenuReposition();
     });
 
-    let previousInspectorPanelVisible = this.inspectorPanelVisible();
+    effect(() => {
+      const autoCollapseInspector = this.configuration.generalConfig().showInspectorOnlyWithSelection;
+      const selectionCount = this.selectionCount();
+      this.rightSidebarCollapsed.set(shouldAutoCollapseInspector(autoCollapseInspector, selectionCount));
+    });
+
+    let previousRightSidebarCollapsed = this.rightSidebarCollapsed();
     afterRenderEffect({
       earlyRead: () => {
         const viewport = this.canvasViewport().nativeElement;
         return {
-          inspectorPanelVisible: this.inspectorPanelVisible(),
+          rightSidebarCollapsed: this.rightSidebarCollapsed(),
           viewportWidth: Math.round(viewport.clientWidth),
           viewportHeight: Math.round(viewport.clientHeight)
         };
       },
       write: (measurement) => {
-        const { inspectorPanelVisible, viewportWidth, viewportHeight } = measurement();
+        const { rightSidebarCollapsed, viewportWidth, viewportHeight } = measurement();
         const nextCanvasWidth = Math.max(EDITOR_CANVAS_MIN_WIDTH, viewportWidth);
-        if (inspectorPanelVisible !== previousInspectorPanelVisible && nextCanvasWidth !== this.canvasWidth()) {
+        if (rightSidebarCollapsed !== previousRightSidebarCollapsed && nextCanvasWidth !== this.canvasWidth()) {
           this.viewportCenter.update((center) => viewportCenterAfterHorizontalResize(center, this.canvasWidth(), nextCanvasWidth, this.preferences().scale));
         }
-        previousInspectorPanelVisible = inspectorPanelVisible;
+        previousRightSidebarCollapsed = rightSidebarCollapsed;
         this.canvasViewportWidth.set(viewportWidth);
         this.canvasWidth.set(nextCanvasWidth);
         this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, viewportHeight));

@@ -5,6 +5,7 @@ import {
   formatValue,
   highlightLatex,
   resizeGroupedShapes,
+  shouldAutoCollapseInspector,
   transformCanvasShape,
   translateShapeBy,
   viewportCenterAfterHorizontalResize
@@ -95,6 +96,12 @@ afterEach(() => {
 });
 
 describe('editor-page utils', () => {
+  it('auto-collapses the inspector only when enabled and the selection is empty', () => {
+    expect(shouldAutoCollapseInspector(true, 0)).toBe(true);
+    expect(shouldAutoCollapseInspector(true, 1)).toBe(false);
+    expect(shouldAutoCollapseInspector(false, 0)).toBe(false);
+  });
+
   it('keeps world coordinates at the same screen position after an inspector resize', () => {
     const scale = 100;
     const previousWidth = 1000;

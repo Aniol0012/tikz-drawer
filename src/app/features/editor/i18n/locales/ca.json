@@ -208,7 +208,7 @@
   "sceneSettings": "Configuració d'escena",
   "interface": "Interfície",
   "behavior": "Comportament",
-  "showInspectorOnlyWithSelection": "Mostra el panell d'inspecció només quan hi hagi una selecció",
+  "showInspectorOnlyWithSelection": "Col·lapsa el panell d'inspecció quan no hi hagi cap selecció",
   "showMinimap": "Mostra el minimapa",
   "confirmSceneReplacement": "Confirma abans de substituir l'escena",
   "doNotAskAgain": "No ho tornis a preguntar",

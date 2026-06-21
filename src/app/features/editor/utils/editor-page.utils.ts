@@ -36,6 +36,8 @@ export const viewportCenterAfterHorizontalResize = (viewportCenter: Point, previ
   y: viewportCenter.y
 });
 
+export const shouldAutoCollapseInspector = (enabled: boolean, selectionCount: number): boolean => enabled && selectionCount === 0;
+
 const transformRoundedBoxShape = (
   shape: Extract<CanvasShape, { cornerRadius: number; height: number; width: number; x: number; y: number }>,
   options: Required<TransformCanvasShapeOptions>

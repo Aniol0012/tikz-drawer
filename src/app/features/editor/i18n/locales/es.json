@@ -208,7 +208,7 @@
   "sceneSettings": "Configuración de escena",
   "interface": "Interfaz",
   "behavior": "Comportamiento",
-  "showInspectorOnlyWithSelection": "Mostrar el panel de inspección solo cuando haya una selección",
+  "showInspectorOnlyWithSelection": "Contraer el panel de inspección cuando no haya ninguna selección",
   "showMinimap": "Mostrar el minimapa",
   "confirmSceneReplacement": "Confirmar antes de sustituir la escena",
   "doNotAskAgain": "No volver a preguntar",

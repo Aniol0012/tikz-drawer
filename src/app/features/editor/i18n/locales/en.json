@@ -208,7 +208,7 @@
   "sceneSettings": "Scene settings",
   "interface": "Interface",
   "behavior": "Behavior",
-  "showInspectorOnlyWithSelection": "Show the inspector panel only when there is a selection",
+  "showInspectorOnlyWithSelection": "Collapse the inspector panel when nothing is selected",
   "showMinimap": "Show the minimap",
   "confirmSceneReplacement": "Confirm before replacing the scene",
   "doNotAskAgain": "Don't ask again",
