@@ -33,4 +33,17 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain('readonly rightSidebarCollapsed = signal(false);');
     expect(component).toContain("if (this.inspectorTab() === 'assistant')");
   });
+
+  it('keeps direct double-click text insertion wired on shapes', async () => {
+    const template = await readTemplate();
+    const component = await readComponent();
+
+    expect(template).toContain('(dblclick)="onShapeDoubleClick($event, shape)"');
+    expect(component).toContain('onCanvasDoubleClickCapture(event: MouseEvent)');
+    expect(component).toContain('const shape = this.sceneShapeAtEvent(event);');
+    expect(component).toContain("if (shape.kind !== 'text')");
+    expect(component).toContain('this.isRepeatedSelectedShapeTap(shape.id)');
+    expect(component).toContain('this.store.selectShape(shape.id);');
+    expect(component).toContain('this.insertCenteredTextForSelectedShape(shape)');
+  });
 });

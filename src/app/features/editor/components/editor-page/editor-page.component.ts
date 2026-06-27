@@ -2389,13 +2389,25 @@ export class EditorPageComponent {
     }
 
     const textShape = this.sceneEditableTextShapeAtEvent(event);
-    if (!textShape) {
+    if (textShape) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.startTextEditing(textShape);
+      return;
+    }
+
+    const shape = this.sceneShapeAtEvent(event);
+    if (!shape || shape.kind === 'text') {
       return;
     }
 
     event.preventDefault();
     event.stopPropagation();
-    this.startTextEditing(textShape);
+    this.store.selectShape(shape.id);
+    const centeredTextShape = this.insertCenteredTextForSelectedShape(shape);
+    if (centeredTextShape) {
+      this.openInlineTextEditor(centeredTextShape);
+    }
   }
 
   private consumeIgnoredShapeClick(shapeId: string): boolean {
@@ -2471,6 +2483,15 @@ export class EditorPageComponent {
     const textShape = this.editableTextShapeAtEvent(event, shape);
     if (textShape) {
       this.startTextEditing(textShape);
+      return;
+    }
+
+    if (shape.kind !== 'text') {
+      this.store.selectShape(shape.id);
+      const centeredTextShape = this.insertCenteredTextForSelectedShape(shape);
+      if (centeredTextShape) {
+        this.openInlineTextEditor(centeredTextShape);
+      }
     }
   }
 
@@ -3519,6 +3540,16 @@ export class EditorPageComponent {
       return;
     }
 
+    if (shape.kind !== 'text' && plainPrimaryGesture && isSingleSelectedShape && (event.detail >= 2 || this.isRepeatedSelectedShapeTap(shape.id))) {
+      event.preventDefault();
+      event.stopPropagation();
+      const centeredTextShape = this.insertCenteredTextForSelectedShape(shape);
+      if (centeredTextShape) {
+        this.openInlineTextEditor(centeredTextShape);
+      }
+      return;
+    }
+
     if (shape.kind === 'text' && !this.textMovesWithShapeSet(shape)) {
       if (this.handleMoveStartForTextShape(event, shape)) {
         return;
@@ -3620,6 +3651,16 @@ export class EditorPageComponent {
       .find((entry) => this.pointHitsShapeBounds(pointerPoint, entry));
 
     return shapeHit ? this.groupedTextShapeAtPoint(pointerPoint, shapeHit) : null;
+  }
+
+  private sceneShapeAtEvent(event: Pick<MouseEvent, 'clientX' | 'clientY'>): CanvasShape | null {
+    const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
+    return (
+      this.scene()
+        .shapes.slice()
+        .reverse()
+        .find((shape) => this.pointerHitsShape(event, shape) && this.pointHitsShapeBounds(pointerPoint, shape)) ?? null
+    );
   }
 
   private pointHitsTextShape(point: Point, shape: TextCanvasShape): boolean {
