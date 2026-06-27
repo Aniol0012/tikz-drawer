@@ -402,6 +402,8 @@
   "shortcutAction.circleTool": "Cercle",
   "shortcutAction.labelTool": "Text",
   "snapToGrid": "Ajustar a la graella",
+  "snapToObjects": "Imantar entre figures",
+  "showObjectSnapGuides": "Mostrar línies d'imantació",
   "gridSize": "Zoom de la graella",
   "snapTolerance": "Pas de l'ajust",
   "defaultStroke": "Línia per defecte",

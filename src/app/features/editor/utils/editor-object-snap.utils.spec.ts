@@ -1,0 +1,32 @@
+import { describe, expect, it } from 'vitest';
+import { objectSnapResult, type ObjectSnapBounds } from './editor-object-snap.utils';
+
+const snapBounds = (id: string, left: number, bottom: number, right: number, top: number): ObjectSnapBounds => ({
+  id,
+  bounds: { left, bottom, right, top }
+});
+
+describe('objectSnapResult', () => {
+  it('snaps a moving edge to the nearest target edge', () => {
+    const result = objectSnapResult([snapBounds('moving', 0, 0, 2, 2)], [snapBounds('target', 2.2, 3, 4.2, 5)], 0.25);
+
+    expect(result.offset.x).toBeCloseTo(0.2);
+    expect(result.offset.y).toBe(0);
+    expect(result.guides).toEqual([{ axis: 'x', position: 2.2, start: 0, end: 5 }]);
+  });
+
+  it('snaps centers independently from edges', () => {
+    const result = objectSnapResult([snapBounds('moving', 0, 1.9, 2, 3.9)], [snapBounds('target', 6, 0, 8, 2)], 0.15);
+
+    expect(result.offset.x).toBe(0);
+    expect(result.offset.y).toBeCloseTo(0.1);
+    expect(result.guides).toEqual([{ axis: 'y', position: 2, start: 0, end: 8 }]);
+  });
+
+  it('does not snap beyond the tolerance', () => {
+    const result = objectSnapResult([snapBounds('moving', 0, 0, 2, 2)], [snapBounds('target', 2.4, 4, 4.4, 6)], 0.25);
+
+    expect(result.offset).toEqual({ x: 0, y: 0 });
+    expect(result.guides).toEqual([]);
+  });
+});

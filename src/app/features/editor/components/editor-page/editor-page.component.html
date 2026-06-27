@@ -674,6 +674,19 @@
             </foreignObject>
           }
 
+          @if (objectSnapGuides().length) {
+            <g class="object-snap-guides">
+              @for (guide of objectSnapGuides(); track objectSnapGuideTrackBy($index, guide)) {
+                <line
+                  class="object-snap-guide"
+                  [attr.x1]="guide.axis === 'x' ? toSvgX(guide.position) : toSvgX(guide.start)"
+                  [attr.y1]="guide.axis === 'x' ? toSvgY(guide.end) : toSvgY(guide.position)"
+                  [attr.x2]="guide.axis === 'x' ? toSvgX(guide.position) : toSvgX(guide.end)"
+                  [attr.y2]="guide.axis === 'x' ? toSvgY(guide.start) : toSvgY(guide.position)"></line>
+              }
+            </g>
+          }
+
           @if (lineSelectionPath(); as selectionPath) {
             <path class="selection-line" [class.selection-outline--ai]="aiSelectionActive()" [attr.d]="selectionPath"></path>
           } @else if (singleSelectedTriangle(); as triangle) {

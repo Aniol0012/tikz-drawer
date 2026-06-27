@@ -288,6 +288,8 @@ export const buildTablePresetShapes = (overrides: Partial<typeof DEFAULT_TABLE_G
 export const defaultPreferences: EditorPreferences = {
   theme: 'light',
   snapToGrid: true,
+  snapToObjects: true,
+  showObjectSnapGuides: true,
   showGrid: true,
   showAxes: true,
   scale: 24,

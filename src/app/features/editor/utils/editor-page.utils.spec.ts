@@ -18,6 +18,8 @@ import { afterEach, vi } from 'vitest';
 const preferences: EditorPreferences = {
   theme: 'light',
   snapToGrid: true,
+  snapToObjects: true,
+  showObjectSnapGuides: true,
   showGrid: true,
   showAxes: true,
   scale: 100,

@@ -402,6 +402,8 @@
   "shortcutAction.circleTool": "Círculo",
   "shortcutAction.labelTool": "Texto",
   "snapToGrid": "Ajustar a rejilla",
+  "snapToObjects": "Imantar entre figuras",
+  "showObjectSnapGuides": "Mostrar líneas de imantación",
   "gridSize": "Zoom de rejilla",
   "snapTolerance": "Paso del ajuste",
   "defaultStroke": "Trazo por defecto",

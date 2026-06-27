@@ -428,6 +428,16 @@
                       [checked]="preferences().snapToGrid"
                       [label]="'snapToGrid' | translate"
                       (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
+                    <app-toggle-field
+                      [checked]="preferences().snapToObjects"
+                      [label]="'snapToObjects' | translate"
+                      (checkedChange)="updatePreferenceBoolean('snapToObjects', $event)"></app-toggle-field>
+                    @if (preferences().snapToObjects) {
+                      <app-toggle-field
+                        [checked]="preferences().showObjectSnapGuides"
+                        [label]="'showObjectSnapGuides' | translate"
+                        (checkedChange)="updatePreferenceBoolean('showObjectSnapGuides', $event)"></app-toggle-field>
+                    }
                   </div>
                 </section>
 

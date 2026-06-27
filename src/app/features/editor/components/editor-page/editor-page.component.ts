@@ -41,6 +41,7 @@ import {
   EDITOR_MOBILE_BREAKPOINT_PX,
   EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
   EDITOR_NOTIFICATION_DURATION_MS,
+  EDITOR_OBJECT_SNAP_TOLERANCE_PX,
   EDITOR_PASTE_OFFSET_STEP,
   EDITOR_PNG_EXPORT_SCALE,
   EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
@@ -179,6 +180,7 @@ import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDa
 import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import { imagePathForFile } from '../../utils/editor-image-path.utils';
+import { objectSnapResult, type ObjectSnapBounds, type ObjectSnapGuide } from '../../utils/editor-object-snap.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
   shapeSetIds as shapeSetIdsUtil,
@@ -395,6 +397,7 @@ export class EditorPageComponent {
   readonly canvasHeight = signal(EDITOR_CANVAS_DEFAULT_HEIGHT);
   readonly canvasViewportWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
   readonly interactionState = signal<InteractionState | null>(null);
+  readonly objectSnapGuides = signal<readonly ObjectSnapGuide[]>([]);
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly contextMenuPosition = signal<{ readonly left: number; readonly top: number } | null>(null);
   readonly fileMenuOpen = signal(false);
@@ -3895,11 +3898,48 @@ export class EditorPageComponent {
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
     const translatedShapes = interactionState.initialShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
-    const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
+    const snappedShapes = this.applyObjectSnapToMovedShapes(translatedShapes, event.altKey);
+    const attachmentShapeById = this.lineAttachmentShapeMap(snappedShapes);
     const nextShapes = event.altKey
-      ? translatedShapes.map((shape) => this.withLineAttachmentsDetached(shape))
-      : translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
+      ? snappedShapes.map((shape) => this.withLineAttachmentsDetached(shape))
+      : snappedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
     this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
+  }
+
+  private applyObjectSnapToMovedShapes(movedShapes: readonly CanvasShape[], disabled: boolean): readonly CanvasShape[] {
+    if (disabled || !this.preferences().snapToObjects || this.altPressed()) {
+      this.objectSnapGuides.set([]);
+      return movedShapes;
+    }
+
+    const movedShapeIds = new Set(movedShapes.map((shape) => shape.id));
+    const sourceBounds = this.objectSnapBoundsForShapes(movedShapes);
+    const targetBounds = this.objectSnapBoundsForShapes(
+      this.scene().shapes.filter((shape) => !movedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, movedShapeIds))
+    );
+    const snapResult = objectSnapResult(sourceBounds, targetBounds, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
+
+    if (snapResult.offset.x === 0 && snapResult.offset.y === 0) {
+      return movedShapes;
+    }
+
+    return movedShapes.map((shape) => translateShapeBy(shape, snapResult.offset.x, snapResult.offset.y));
+  }
+
+  private objectSnapBoundsForShapes(shapes: readonly CanvasShape[]): readonly ObjectSnapBounds[] {
+    return shapes.flatMap((shape): readonly ObjectSnapBounds[] => {
+      const bounds = this.shapeBounds(shape);
+      return bounds ? [{ id: shape.id, bounds }] : [];
+    });
+  }
+
+  private isLineAttachedToMovedShape(shape: CanvasShape, movedShapeIds: ReadonlySet<string>): boolean {
+    return (
+      shape.kind === 'line' &&
+      ((shape.fromAttachment ? movedShapeIds.has(shape.fromAttachment.shapeId) : false) ||
+        (shape.toAttachment ? movedShapeIds.has(shape.toAttachment.shapeId) : false))
+    );
   }
 
   private lineAttachmentShapeMap(movedShapes: readonly CanvasShape[]): ReadonlyMap<string, CanvasShape> {
@@ -4381,6 +4421,7 @@ export class EditorPageComponent {
         break;
       case 'pending-pan':
         this.releaseCanvasPointerCapture(event.pointerId);
+        this.objectSnapGuides.set([]);
         this.interactionState.set(null);
         return;
       case 'resize':
@@ -4391,6 +4432,7 @@ export class EditorPageComponent {
 
     this.releaseCanvasPointerCapture(event.pointerId);
     this.ignoreNextCanvasClick.set(true);
+    this.objectSnapGuides.set([]);
     this.interactionState.set(null);
   }
 
@@ -5355,6 +5397,10 @@ export class EditorPageComponent {
     return handle.id;
   }
 
+  objectSnapGuideTrackBy(index: number, guide: ObjectSnapGuide): string {
+    return `${index}-${guide.axis}-${guide.position}-${guide.start}-${guide.end}`;
+  }
+
   handleWindowKeydown(event: KeyboardEvent): void {
     if (this.isDevModeToggleShortcut(event)) {
       event.preventDefault();
@@ -5742,6 +5788,7 @@ export class EditorPageComponent {
     this.controlPressed.set(false);
     this.metaPressed.set(false);
     this.altPressed.set(false);
+    this.objectSnapGuides.set([]);
     this.pressedArrowNavigationKeys.clear();
     this.stopKeyboardNavigationLoop();
     this.ignoreNextShapeClickId.set(null);
@@ -7401,6 +7448,9 @@ export class EditorPageComponent {
         return;
       case 'alt':
         this.altPressed.set(pressed);
+        if (pressed) {
+          this.objectSnapGuides.set([]);
+        }
         return;
     }
   }
