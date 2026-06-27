@@ -35,6 +35,7 @@ import {
 import { REGULAR_POLYGON_PRESET_ID } from '../models/regular-polygon.models';
 import { DEFAULT_TABLE_GEOMETRY } from '../models/table.models';
 import { DEFAULT_GRAPH_DIMENSIONS, GRAPH_PRESET_ID_BY_KIND, type GraphPresetKind } from '../models/graph.models';
+import { DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
 import { buildGraphShapes } from '../utils/graph.utils';
 import { buildRegularPolygonShapes } from '../utils/regular-polygon.utils';
 import { buildTableShapes } from '../utils/table.utils';
@@ -295,7 +296,7 @@ export const defaultPreferences: EditorPreferences = {
   defaultFill: '#f1f1f1',
   defaultStrokeWidth: 0.28,
   defaultArrowScale: 1.35,
-  defaultArrowType: 'latex',
+  defaultArrowType: DEFAULT_ARROW_TIP_KIND,
   defaultLineStrokeStyle: 'solid',
   defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
   defaultTextColor: DEFAULT_TEXT_COLOR,

@@ -22,6 +22,8 @@ const ARROW_TIP_IDS = [
   'parenthesis'
 ] as const satisfies readonly ArrowTipKind[];
 
+export const DEFAULT_ARROW_TIP_KIND: ArrowTipKind = ARROW_TIP_IDS[0];
+
 const arrowTipLabelKey = (arrowType: ArrowTipKind): string => {
   switch (arrowType) {
     case 'latex':

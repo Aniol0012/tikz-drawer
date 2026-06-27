@@ -3,6 +3,7 @@ import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { EditorStore } from './editor.store';
 import type { TikzScene } from '../models/tikz.models';
+import { DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
 
 const importedScene = (name: string): TikzScene => ({
   name,
@@ -75,5 +76,11 @@ describe('EditorStore import application', () => {
     store.applyImportedScene(importedScene('mermaid'), '', [], false, true);
 
     expect(store.importCode()).toBe('');
+  });
+
+  it('falls back to the first arrow tip when a stored preference is empty', () => {
+    store.patchPreferences({ defaultArrowType: '' as never });
+
+    expect(store.preferences().defaultArrowType).toBe(DEFAULT_ARROW_TIP_KIND);
   });
 });

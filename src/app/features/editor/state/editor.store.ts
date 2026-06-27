@@ -11,11 +11,12 @@ import { defaultPreferences, defaultScene, objectPresets, scenePresets } from '.
 import { normalizeImageDirectoryPath } from '../utils/editor-image-path.utils';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import { parseTikz } from '../tikz/tikz.parser';
-import type { CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
+import type { ArrowTipKind, CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
 import { remapStructuralShapeIds } from '../utils/table.utils';
 import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 import { normalizeAppTheme } from './app-theme.service';
+import { ARROW_TIP_OPTIONS, DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
 
 const cloneShape = (shape: CanvasShape): CanvasShape => ({
   ...structuredClone(shape),
@@ -364,15 +365,20 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
 const normalizePreferences = (preferences: Partial<EditorPreferences> | undefined): EditorPreferences => {
   const scale = Number(preferences?.scale);
   const normalizedScale = Number.isFinite(scale) ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale)) : DEFAULT_EDITOR_SCALE;
+  const defaultArrowType = normalizeArrowTipKind(preferences?.defaultArrowType);
 
   return {
     ...defaultPreferences,
     ...preferences,
     theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
     scale: normalizedScale,
+    defaultArrowType,
     defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
   };
 };
+
+const normalizeArrowTipKind = (value: unknown): ArrowTipKind =>
+  ARROW_TIP_OPTIONS.some((option) => option.id === value) ? (value as ArrowTipKind) : DEFAULT_ARROW_TIP_KIND;
 
 @Injectable()
 export class EditorStore {
