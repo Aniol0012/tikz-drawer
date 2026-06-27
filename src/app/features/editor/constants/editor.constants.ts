@@ -17,7 +17,7 @@ export const EDITOR_STORAGE_KEYS = {
 } as const;
 
 export const EDITOR_HISTORY_LIMIT = 80;
-export const EDITOR_THEME_TOGGLE_COOLDOWN_MS = 180;
+export const EDITOR_THEME_TOGGLE_COOLDOWN_MS = 260;
 export const DEFAULT_EDITOR_SCALE = 24;
 export const DEFAULT_ARROW_TIP_LENGTH = 8;
 export const DEFAULT_ARROW_TIP_WIDTH = 6;

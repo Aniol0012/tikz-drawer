@@ -51,6 +51,9 @@
   background: var(--app-background);
   overflow: hidden;
   padding-top: var(--topbar-height);
+  transition:
+    background-color 260ms ease,
+    color 260ms ease;
 }
 
 .topbar {
@@ -67,6 +70,10 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--panel-background);
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease;
 }
 
 .toast-stack {

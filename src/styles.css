@@ -113,6 +113,29 @@ body {
   font-size: 14px;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 260ms ease,
+    color 260ms ease;
+}
+
+body,
+button,
+input,
+textarea,
+select,
+sl-button,
+sl-option,
+sl-dialog,
+sl-dropdown,
+sl-menu,
+sl-menu-item {
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease,
+    box-shadow 260ms ease,
+    fill 260ms ease,
+    stroke 260ms ease;
 }
 
 button,
@@ -141,6 +164,20 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body,
+  button,
+  input,
+  textarea,
+  select,
+  sl-button,
+  sl-option,
+  sl-dialog,
+  sl-dropdown,
+  sl-menu,
+  sl-menu-item {
+    transition: none;
+  }
+
   .settings-gear-button:active svg {
     transform: none;
   }
