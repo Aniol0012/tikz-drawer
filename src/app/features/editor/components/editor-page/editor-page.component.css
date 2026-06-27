@@ -3,6 +3,9 @@
   min-height: 100dvh;
   background: var(--app-background);
   color: var(--app-foreground);
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .print-canvas {
@@ -51,6 +54,9 @@
   background: var(--app-background);
   overflow: hidden;
   padding-top: var(--topbar-height);
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .topbar {
@@ -67,6 +73,10 @@
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   background: var(--panel-background);
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .toast-stack {

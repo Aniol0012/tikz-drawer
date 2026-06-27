@@ -113,6 +113,29 @@ body {
   font-size: 14px;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body,
+button,
+input,
+textarea,
+select,
+sl-button,
+sl-option,
+sl-dialog,
+sl-dropdown,
+sl-menu,
+sl-menu-item {
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 button,
@@ -141,6 +164,20 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  body,
+  button,
+  input,
+  textarea,
+  select,
+  sl-button,
+  sl-option,
+  sl-dialog,
+  sl-dropdown,
+  sl-menu,
+  sl-menu-item {
+    transition: none;
+  }
+
   .settings-gear-button:active svg {
     transform: none;
   }

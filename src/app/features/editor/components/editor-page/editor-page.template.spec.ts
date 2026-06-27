@@ -46,4 +46,16 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain('this.store.selectShape(shape.id);');
     expect(component).toContain('this.insertCenteredTextForSelectedShape(shape)');
   });
+
+  it('keeps theme changes direct without overlay transitions', async () => {
+    const template = await readTemplate();
+    const component = await readComponent();
+
+    expect(template).not.toContain('themeBubbleTransition');
+    expect(template).not.toContain('theme-bubble-transition');
+    expect(component).not.toContain('transitionThemeWithBubble');
+    expect(component).not.toContain('themeBubbleTransition');
+    expect(component).toContain('this.store.setTheme(nextTheme);');
+    expect(component).not.toContain('startViewTransition');
+  });
 });
