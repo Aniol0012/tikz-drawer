@@ -1,5 +1,8 @@
 import type { LatexColorMode } from '../tikz/tikz.codegen';
 
+export const LATEX_EXPORT_MODES = ['snippet', 'standalone'] as const;
+export type LatexExportMode = (typeof LATEX_EXPORT_MODES)[number];
+
 export const LATEX_ALIGNMENTS = ['center', 'left', 'right'] as const;
 export type LatexAlignment = (typeof LATEX_ALIGNMENTS)[number];
 
@@ -12,6 +15,7 @@ export type LatexExportNumberKey = 'maxWidthPercent' | 'standaloneBorderMm';
 export type LatexExportBooleanKey = 'wrapInFigure' | 'scaleToWidth' | 'includeFrame' | 'includeCaption' | 'includeLabel';
 
 export interface LatexExportConfig {
+  readonly preferredExportMode: LatexExportMode;
   readonly colorMode: LatexColorMode;
   readonly wrapInFigure: boolean;
   readonly figurePlacement: string;
@@ -28,6 +32,7 @@ export interface LatexExportConfig {
 }
 
 export const DEFAULT_LATEX_EXPORT_CONFIG = {
+  preferredExportMode: 'snippet',
   colorMode: 'direct-rgb',
   wrapInFigure: false,
   figurePlacement: 'H',

@@ -118,17 +118,9 @@ body {
     color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-body,
-button,
 input,
 textarea,
-select,
-sl-button,
-sl-option,
-sl-dialog,
-sl-dropdown,
-sl-menu,
-sl-menu-item {
+select {
   transition:
     background 420ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 420ms cubic-bezier(0.22, 1, 0.36, 1),

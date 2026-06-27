@@ -1,5 +1,5 @@
 import type { LatexExportConfig, SavedTemplate } from '../components/editor-page/editor-page.types';
-import { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../components/editor-page/editor-page.types';
+import { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_EXPORT_MODES, LATEX_FONT_SIZES } from '../components/editor-page/editor-page.types';
 import { CODE_HIGHLIGHT_THEMES, type CodeHighlightTheme } from '../config/latex-export.config';
 
 const isOneOf = <const T extends readonly string[]>(value: unknown, options: T): value is T[number] => typeof value === 'string' && options.includes(value);
@@ -76,6 +76,7 @@ export const normalizeLatexExportConfig = (
 
   return {
     ...defaultConfig,
+    preferredExportMode: isOneOf(config?.preferredExportMode, LATEX_EXPORT_MODES) ? config.preferredExportMode : defaultConfig.preferredExportMode,
     colorMode: isOneOf(config?.colorMode, LATEX_COLOR_MODES) ? config.colorMode : defaultConfig.colorMode,
     wrapInFigure: typeof config?.wrapInFigure === 'boolean' ? config.wrapInFigure : defaultConfig.wrapInFigure,
     figurePlacement,

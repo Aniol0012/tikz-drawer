@@ -69,7 +69,8 @@ describe('editor-storage utils', () => {
         standaloneBorderMm: -2,
         caption: 'Hello',
         label: 'fig:test',
-        colorMode: 'invalid' as never
+        colorMode: 'invalid' as never,
+        preferredExportMode: 'standalone'
       },
       defaultLatexExportConfig
     );
@@ -80,11 +81,16 @@ describe('editor-storage utils', () => {
     expect(normalized.caption).toBe('Hello');
     expect(normalized.label).toBe('fig:test');
     expect(normalized.colorMode).toBe(defaultLatexExportConfig.colorMode);
+    expect(normalized.preferredExportMode).toBe('standalone');
 
-    const parsed = parseStoredLatexExportConfig(JSON.stringify({ maxWidthPercent: 55, caption: 'x', label: 'y' }), defaultLatexExportConfig);
+    const parsed = parseStoredLatexExportConfig(
+      JSON.stringify({ maxWidthPercent: 55, caption: 'x', label: 'y', preferredExportMode: 'invalid' }),
+      defaultLatexExportConfig
+    );
     expect(parsed.maxWidthPercent).toBe(55);
     expect(parsed.caption).toBe('');
     expect(parsed.label).toBe('');
+    expect(parsed.preferredExportMode).toBe(defaultLatexExportConfig.preferredExportMode);
   });
 
   it('serializes latex export config without free text', () => {

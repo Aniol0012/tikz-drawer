@@ -252,12 +252,14 @@ describe('AppConfigurationDialogComponent', () => {
 
   it('centralizes LaTeX and code-theme configuration through the dialog', () => {
     component.updateLatexExportBoolean('wrapInFigure', true);
+    component.setPreferredLatexExportMode('standalone');
     component.setLatexAlignment('right');
     component.updateLatexExportNumber('maxWidthPercent', { target: { value: '120' } } as unknown as Event, 10, 100);
     component.applySuggestedCaptionAndLabel();
     component.setCodeHighlightTheme('forest');
 
     expect(configuration.latexExportConfig()).toMatchObject({
+      preferredExportMode: 'standalone',
       wrapInFigure: true,
       alignment: 'right',
       maxWidthPercent: 100,

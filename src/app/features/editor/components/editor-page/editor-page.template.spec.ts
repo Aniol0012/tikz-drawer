@@ -58,4 +58,11 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain('this.store.setTheme(nextTheme);');
     expect(component).not.toContain('startViewTransition');
   });
+
+  it('opens export with the configured preferred LaTeX mode', async () => {
+    const component = await readComponent();
+
+    expect(component).toContain('openExportModal(mode: ExportMode = this.latexExportConfig().preferredExportMode)');
+    expect(component).toContain('this.exportMode.set(mode);');
+  });
 });

@@ -100,6 +100,7 @@ export const isLanguageCode = (value: unknown): value is LanguageCode => typeof 
 export interface SharedScenePayload extends PersistedEditorState {
   readonly viewportCenter: Point;
   readonly latexExportConfig?: {
+    readonly preferredExportMode?: 'snippet' | 'standalone';
     readonly colorMode?: 'direct-rgb' | 'define-colors';
     readonly wrapInFigure?: boolean;
     readonly figurePlacement?: string;

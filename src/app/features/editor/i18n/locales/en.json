@@ -605,6 +605,7 @@
   "latexSettingsTitle": "LaTeX configuration",
   "latexSettingsDescription": "Adjust how the snippet and standalone file are generated.",
   "latexEnvironment": "Environment",
+  "latexPreferredExportType": "Preferred export type",
   "latexWrapFigure": "Wrap TikZ inside a figure environment",
   "latexFigurePlacement": "Figure placement",
   "latexPlacementH": "Fixed here (H)",

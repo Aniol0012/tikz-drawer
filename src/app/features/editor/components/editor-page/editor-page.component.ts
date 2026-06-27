@@ -1637,7 +1637,7 @@ export class EditorPageComponent {
     }
   }
 
-  openExportModal(mode: ExportMode = 'snippet'): void {
+  openExportModal(mode: ExportMode = this.latexExportConfig().preferredExportMode): void {
     this.closeFileMenu();
     this.exportMode.set(mode);
     this.exportModalOpen.set(true);

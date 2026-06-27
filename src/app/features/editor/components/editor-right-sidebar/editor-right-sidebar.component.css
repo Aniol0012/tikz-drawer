@@ -9,6 +9,9 @@
   padding: 0;
   border-left: 1px solid var(--border);
   background: var(--panel-background);
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :host(.is-collapsed) {
@@ -26,6 +29,9 @@
   border: 1px solid var(--tool-border);
   border-radius: 9px;
   background: var(--tool-surface);
+  transition:
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sidebar-tabs::before {
@@ -37,7 +43,9 @@
   width: calc((100% - 12px) / 3);
   border-radius: 8px;
   background: var(--accent-soft);
-  transition: transform 180ms cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    background 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sidebar-tabs[data-active-tab='scene']::before {
@@ -68,6 +76,7 @@
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
+  transition: color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sidebar-tabs button svg {

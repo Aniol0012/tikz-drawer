@@ -6,10 +6,12 @@ import {
   DEFAULT_LATEX_EXPORT_CONFIG,
   LATEX_ALIGNMENT_OPTIONS,
   LATEX_COLOR_MODE_OPTIONS,
+  LATEX_EXPORT_MODES,
   LATEX_FIGURE_PLACEMENT_OPTIONS,
   LATEX_FONT_SIZE_OPTIONS,
   LATEX_FONT_SIZES,
   type LatexAlignment,
+  type LatexExportMode,
   type LatexExportBooleanKey,
   type LatexExportConfig,
   type LatexExportNumberKey,
@@ -306,6 +308,12 @@ export class AppConfigurationDialogComponent {
   );
   readonly themeOptions = computed<readonly AppSelectOption[]>(() => this.appThemeService.options((key) => this.t(key)));
   readonly codeThemeSelectOptions = computed<readonly AppSelectOption[]>(() => this.translatedSelectOptions(this.codeThemeOptions));
+  readonly preferredLatexExportModeOptions = computed<readonly AppSelectOption[]>(() =>
+    LATEX_EXPORT_MODES.map((mode) => ({
+      value: mode,
+      label: this.t(mode)
+    }))
+  );
   readonly lineStrokeStyleSelectOptions = computed<readonly AppSelectOption[]>(() =>
     this.lineStrokeStyleOptions.map((style) => ({
       value: style.id,
@@ -808,6 +816,12 @@ export class AppConfigurationDialogComponent {
     }
   }
 
+  setPreferredLatexExportMode(mode: string): void {
+    if (LATEX_EXPORT_MODES.includes(mode as LatexExportMode)) {
+      this.patchLatexExportConfig({ preferredExportMode: mode as LatexExportMode });
+    }
+  }
+
   setCodeHighlightTheme(theme: string): void {
     this.configuration.setCodeHighlightTheme(theme);
   }
@@ -1043,6 +1057,7 @@ export class AppConfigurationDialogComponent {
   private latexExportConfigEqual(current: LatexExportConfig, expected: LatexExportConfig): boolean {
     return (
       current.colorMode === expected.colorMode &&
+      current.preferredExportMode === expected.preferredExportMode &&
       current.wrapInFigure === expected.wrapInFigure &&
       current.figurePlacement === expected.figurePlacement &&
       current.alignment === expected.alignment &&

@@ -1,8 +1,9 @@
 import type { ArrowTipKind, CanvasShape, ObjectPreset, Point, PresetCategory } from '../../models/tikz.models';
 import type { SelectionBounds } from '../../utils/editor-page.utils';
+import type { LatexExportMode } from '../../config/latex-export.config';
 
 export type InspectorTab = 'properties' | 'scene' | 'assistant';
-export type ExportMode = 'snippet' | 'standalone';
+export type ExportMode = LatexExportMode;
 export type NotificationTone = 'info' | 'warning';
 export type SidebarSide = 'left' | 'right';
 export type SidebarResizeTarget = SidebarSide | 'mobile-left' | 'mobile-right';
@@ -62,7 +63,7 @@ export interface ToastNotification {
   readonly tone: NotificationTone;
 }
 
-export { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_FONT_SIZES } from '../../config/latex-export.config';
+export { LATEX_ALIGNMENTS, LATEX_COLOR_MODES, LATEX_EXPORT_MODES, LATEX_FONT_SIZES } from '../../config/latex-export.config';
 export type {
   CodeHighlightTheme,
   LatexAlignment,

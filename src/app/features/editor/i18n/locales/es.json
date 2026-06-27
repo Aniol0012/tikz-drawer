@@ -605,6 +605,7 @@
   "latexSettingsTitle": "Configuración LaTeX",
   "latexSettingsDescription": "Ajusta cómo se genera el fragmento y el fichero standalone.",
   "latexEnvironment": "Entorno",
+  "latexPreferredExportType": "Tipo de exportación preferido",
   "latexWrapFigure": "Meter el TikZ dentro de un entorno figure",
   "latexFigurePlacement": "Posicionamiento",
   "latexPlacementH": "Fijo aquí (H)",
