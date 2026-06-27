@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output, signal, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output, signal, viewChild, viewChildren } from '@angular/core';
 import type { ElementRef } from '@angular/core';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
@@ -23,7 +23,7 @@ import { LINE_STROKE_STYLE_OPTIONS } from '../../config/line-stroke-style.config
 import { DEFAULT_EDITOR_SCALE, EDITOR_SCALE_MAX, EDITOR_SCALE_MIN } from '../../constants/editor.constants';
 import { defaultPreferences } from '../../presets/presets';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
-import { detectLanguage, getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
+import { detectLanguage, getLanguageOptions, isLanguageCode, type LanguageCode } from '../../i18n/editor-page.i18n';
 import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import { EditorStore } from '../../state/editor.store';
 import {
@@ -55,6 +55,7 @@ import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.co
 import { SceneIconComponent } from '../scene-icon/scene-icon.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { REGEX } from '../../../../shared/regex/regex.utils';
+import type { AiSettings } from '../../ai/ai-settings.service';
 
 export type ApplicationConfigurationTab = 'general' | 'scene' | 'latex' | 'ai';
 
@@ -81,6 +82,17 @@ type ContextMenuActionRow = {
   readonly labelKey: string;
   readonly iconPath: string;
 };
+
+interface ExportedEditorConfiguration {
+  readonly tikzDrawerConfigurationVersion: 1;
+  readonly exportedAt: string;
+  readonly preferences: EditorPreferences;
+  readonly latexExportConfig: LatexExportConfig;
+  readonly generalConfig: EditorGeneralConfig;
+  readonly codeHighlightTheme: string;
+  readonly language: LanguageCode;
+  readonly aiSettings?: AiSettings;
+}
 
 const PREVIEW_VIEWBOX_WIDTH = 300;
 const PREVIEW_VIEWBOX_HEIGHT = 220;
@@ -118,6 +130,7 @@ export class AppConfigurationDialogComponent {
   private readonly document = inject(DOCUMENT);
   private contextMenuDragPreview: HTMLElement | null = null;
 
+  private readonly configurationImportInput = viewChild<ElementRef<HTMLInputElement>>('configurationImportInput');
   private readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>('configurationTab');
 
   @Input({ required: true }) set open(value: boolean) {
@@ -188,6 +201,8 @@ export class AppConfigurationDialogComponent {
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
   readonly contextMenuSettingsIconPath = iconPaths.menu;
+  readonly configurationImportIconPath = iconPaths.import;
+  readonly configurationExportIconPath = iconPaths.export;
   readonly devModeIconPath = iconPaths.code;
   readonly githubIconPath = iconPaths.github;
   readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
@@ -381,6 +396,52 @@ export class AppConfigurationDialogComponent {
         event.preventDefault();
         this.selectTab(tabs[tabs.length - 1].id, true);
         break;
+    }
+  }
+
+  triggerConfigurationImport(): void {
+    const input = this.configurationImportInput()?.nativeElement;
+    if (!input) {
+      return;
+    }
+
+    input.value = '';
+    input.click();
+  }
+
+  exportConfiguration(): void {
+    const payload: ExportedEditorConfiguration = {
+      tikzDrawerConfigurationVersion: 1,
+      exportedAt: new Date().toISOString(),
+      preferences: structuredClone(this.preferences()),
+      latexExportConfig: structuredClone(this.latexExportConfig()),
+      generalConfig: structuredClone(this.generalConfig()),
+      codeHighlightTheme: this.codeTheme(),
+      language: this.language(),
+      aiSettings: structuredClone(this.aiSettings())
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = this.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `tikz-drawer-configuration-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async importConfiguration(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(await this.readFileAsText(file)) as Partial<ExportedEditorConfiguration>;
+      this.applyImportedConfiguration(payload);
+    } catch {
+      this.configurationImportError.set(this.t('configurationImportError'));
     }
   }
 
@@ -999,8 +1060,51 @@ export class AppConfigurationDialogComponent {
     this.shortcutResetConfirmationOpen.set(false);
   }
 
+  readonly configurationImportError = signal('');
+
+  dismissConfigurationImportError(): void {
+    this.configurationImportError.set('');
+  }
+
   private patchPreferences(patch: Partial<EditorPreferences>): void {
     this.store.patchPreferences(patch);
+  }
+
+  private applyImportedConfiguration(payload: Partial<ExportedEditorConfiguration> | null | undefined): void {
+    if (!payload || typeof payload !== 'object') {
+      this.configurationImportError.set(this.t('configurationImportError'));
+      return;
+    }
+
+    if (payload.preferences) {
+      this.store.patchPreferences(payload.preferences);
+    }
+    if (payload.latexExportConfig) {
+      this.configuration.setLatexExportConfig(payload.latexExportConfig);
+    }
+    if (payload.generalConfig) {
+      this.configuration.patchGeneralConfig(payload.generalConfig);
+    }
+    if (typeof payload.codeHighlightTheme === 'string') {
+      this.configuration.setCodeHighlightTheme(payload.codeHighlightTheme);
+    }
+    if (isLanguageCode(payload.language)) {
+      this.languageService.setLanguage(payload.language);
+    }
+    if (payload.aiSettings) {
+      this.aiSettingsService.patchSettings(payload.aiSettings);
+    }
+
+    this.configurationImportError.set('');
+  }
+
+  private readFileAsText(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(reader.error ?? new Error('Failed to read configuration file.'));
+      reader.readAsText(file);
+    });
   }
 
   private prepareAlignmentSwitch(tab: ApplicationConfigurationTab): void {

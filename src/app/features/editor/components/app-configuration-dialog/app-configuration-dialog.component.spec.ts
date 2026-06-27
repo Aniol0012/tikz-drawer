@@ -103,6 +103,16 @@ describe('AppConfigurationDialogComponent', () => {
     expect(guideSnapIndex).toBeGreaterThan(guideSnapConditionIndex);
   });
 
+  it('exposes configuration import and export actions in the navigation', async () => {
+    const template = await readFile(resolve(componentDir, 'app-configuration-dialog.component.html'), 'utf8');
+
+    expect(template).toContain('#configurationImportInput');
+    expect(template).toContain('(change)="importConfiguration($event)"');
+    expect(template).toContain('(click)="triggerConfigurationImport()"');
+    expect(template).toContain('(click)="exportConfiguration()"');
+    expect(template).toContain('configurationImportError()');
+  });
+
   it('accepts only explicit image directory paths while allowing spaces', () => {
     component.updateDefaultImagePath({ target: { value: '/project/image assets/' } } as unknown as Event);
 
@@ -267,6 +277,55 @@ describe('AppConfigurationDialogComponent', () => {
       label: 'fig:suggested'
     });
     expect(configuration.codeHighlightTheme()).toBe('forest');
+  });
+
+  it('imports a shared configuration payload with normalization', () => {
+    const importer = component as unknown as {
+      applyImportedConfiguration(payload: unknown): void;
+    };
+
+    importer.applyImportedConfiguration({
+      preferences: {
+        theme: 'dark',
+        snapStep: 999,
+        defaultStroke: '#123456'
+      },
+      latexExportConfig: {
+        preferredExportMode: 'standalone',
+        maxWidthPercent: 5
+      },
+      generalConfig: {
+        showHelpTooltips: false,
+        showMinimap: false
+      },
+      codeHighlightTheme: 'forest',
+      language: 'ca',
+      aiSettings: {
+        temperature: 2,
+        maxTokens: 100
+      }
+    });
+
+    expect(store.preferences()).toMatchObject({
+      theme: 'dark',
+      snapStep: 999,
+      defaultStroke: '#123456'
+    });
+    expect(configuration.latexExportConfig()).toMatchObject({
+      preferredExportMode: 'standalone',
+      maxWidthPercent: 10
+    });
+    expect(configuration.generalConfig()).toMatchObject({
+      showHelpTooltips: false,
+      showMinimap: false
+    });
+    expect(configuration.codeHighlightTheme()).toBe('forest');
+    expect(component.language()).toBe('ca');
+    expect(component.aiSettings()).toMatchObject({
+      temperature: 1.2,
+      maxTokens: 250
+    });
+    expect(component.configurationImportError()).toBe('');
   });
 
   it('asks before resetting editor, scene and LaTeX settings to defaults', () => {

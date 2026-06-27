@@ -90,6 +90,102 @@
   background: var(--panel-background);
 }
 
+.configuration-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.configuration-import-input {
+  display: none;
+}
+
+.configuration-file-action {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-background);
+  color: var(--app-foreground);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.configuration-file-action svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
+.configuration-file-action:hover,
+.configuration-file-action:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel-background));
+  color: var(--accent);
+}
+
+.configuration-import-error {
+  position: absolute;
+  top: 132px;
+  left: 22px;
+  right: 22px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 9%, var(--panel-background));
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.configuration-import-error button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.configuration-import-error button:hover,
+.configuration-import-error button:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.configuration-import-error svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
 .about-button {
   width: 46px;
   min-width: 46px;

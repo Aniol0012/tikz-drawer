@@ -59,10 +59,51 @@
             </button>
           }
         </div>
+        <div class="configuration-file-actions">
+          <input
+            #configurationImportInput
+            class="configuration-import-input"
+            type="file"
+            accept="application/json,.json"
+            (change)="importConfiguration($event)" />
+          <button
+            class="configuration-file-action"
+            type="button"
+            [attr.aria-label]="'configurationImport' | translate"
+            [title]="'configurationImport' | translate"
+            (click)="triggerConfigurationImport()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="configurationImportIconPath"></path>
+            </svg>
+            <span>{{ 'configurationImport' | translate }}</span>
+          </button>
+          <button
+            class="configuration-file-action"
+            type="button"
+            [attr.aria-label]="'configurationExport' | translate"
+            [title]="'configurationExport' | translate"
+            (click)="exportConfiguration()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="configurationExportIconPath"></path>
+            </svg>
+            <span>{{ 'configurationExport' | translate }}</span>
+          </button>
+        </div>
         <button class="about-button" type="button" [attr.aria-label]="'about' | translate" (click)="openAboutDialog()">
           <span aria-hidden="true">i</span>
         </button>
       </div>
+
+      @if (configurationImportError()) {
+        <div class="configuration-import-error" role="alert">
+          <span>{{ configurationImportError() }}</span>
+          <button type="button" [attr.aria-label]="'close' | translate" (click)="dismissConfigurationImportError()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m7 7 10 10M17 7 7 17"></path>
+            </svg>
+          </button>
+        </div>
+      }
 
       <div class="configuration-body">
         @switch (activeTab()) {
