@@ -8,8 +8,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Aniol0012_tikz-drawer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Aniol0012_tikz-drawer)
 [![Tests Status](https://img.shields.io/github/actions/workflow/status/Aniol0012/tikz-drawer/tests.yml?branch=master&style=flat-square&logo=githubactions&logoColor=white&label=tests)](https://github.com/Aniol0012/tikz-drawer/actions/workflows/tests.yml)
 
-[![Angular](https://img.shields.io/badge/Angular-21.2.17-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
+[![Angular](https://img.shields.io/badge/Angular-22.0.4-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0.3-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/docs/)
 [![RxJS](https://img.shields.io/badge/RxJS-7.8.0-B7178C?style=flat-square&logo=reactivex&logoColor=white)](https://rxjs.dev/)
 [![Shoelace](https://img.shields.io/badge/Shoelace-2.20.1-1E88E5?style=flat-square&logo=shoelace&logoColor=white)](https://shoelace.style/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1.9-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
