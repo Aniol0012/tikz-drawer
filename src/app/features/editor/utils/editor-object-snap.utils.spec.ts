@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { objectResizeSnapResult, objectSnapResult, type ObjectSnapBounds } from './editor-object-snap.utils';
+import { expandObjectSnapBounds, objectResizeSnapResult, objectSnapResult, type ObjectSnapBounds } from './editor-object-snap.utils';
 
 const snapBounds = (id: string, left: number, bottom: number, right: number, top: number): ObjectSnapBounds => ({
   id,
@@ -7,6 +7,15 @@ const snapBounds = (id: string, left: number, bottom: number, right: number, top
 });
 
 describe('objectSnapResult', () => {
+  it('expands snap bounds by visual stroke padding', () => {
+    expect(expandObjectSnapBounds({ left: 1, bottom: 2, right: 3, top: 4 }, 0.25)).toEqual({
+      left: 0.75,
+      bottom: 1.75,
+      right: 3.25,
+      top: 4.25
+    });
+  });
+
   it('snaps a moving edge to the nearest target edge', () => {
     const result = objectSnapResult([snapBounds('moving', 0, 0, 2, 2)], [snapBounds('target', 2.2, 3, 4.2, 5)], 0.25);
 

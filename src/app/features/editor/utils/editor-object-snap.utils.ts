@@ -43,6 +43,19 @@ interface SnapMatch {
 
 const center = (start: number, end: number): number => (start + end) / 2;
 
+export const expandObjectSnapBounds = (bounds: SelectionBounds, padding: number): SelectionBounds => {
+  if (padding <= 0) {
+    return bounds;
+  }
+
+  return {
+    left: bounds.left - padding,
+    right: bounds.right + padding,
+    bottom: bounds.bottom - padding,
+    top: bounds.top + padding
+  };
+};
+
 const candidatesForAxis = (entry: ObjectSnapBounds, axis: ObjectSnapAxis, role?: ObjectSnapRole): readonly SnapCandidate[] => {
   const { bounds } = entry;
   const candidates: readonly SnapCandidate[] =

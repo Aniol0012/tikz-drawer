@@ -181,6 +181,7 @@ import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parse
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import { imagePathForFile } from '../../utils/editor-image-path.utils';
 import {
+  expandObjectSnapBounds,
   objectResizeSnapResult,
   objectSnapResult,
   type ObjectResizeSnapRoles,
@@ -3936,8 +3937,16 @@ export class EditorPageComponent {
   private objectSnapBoundsForShapes(shapes: readonly CanvasShape[]): readonly ObjectSnapBounds[] {
     return shapes.flatMap((shape): readonly ObjectSnapBounds[] => {
       const bounds = this.shapeBounds(shape);
-      return bounds ? [{ id: shape.id, bounds }] : [];
+      return bounds ? [{ id: shape.id, bounds: expandObjectSnapBounds(bounds, this.objectSnapStrokePadding(shape)) }] : [];
     });
+  }
+
+  private objectSnapStrokePadding(shape: CanvasShape): number {
+    if (shape.stroke === 'none' || shape.strokeOpacity <= 0 || shape.strokeWidth <= 0) {
+      return 0;
+    }
+
+    return renderedStrokeWidthForScale(shape.strokeWidth, this.preferences().scale) / Math.max(this.preferences().scale, 1) / 2;
   }
 
   private isLineAttachedToMovedShape(shape: CanvasShape, movedShapeIds: ReadonlySet<string>): boolean {
