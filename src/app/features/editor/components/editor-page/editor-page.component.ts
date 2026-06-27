@@ -180,7 +180,13 @@ import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDa
 import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import { imagePathForFile } from '../../utils/editor-image-path.utils';
-import { objectSnapResult, type ObjectSnapBounds, type ObjectSnapGuide } from '../../utils/editor-object-snap.utils';
+import {
+  objectResizeSnapResult,
+  objectSnapResult,
+  type ObjectResizeSnapRoles,
+  type ObjectSnapBounds,
+  type ObjectSnapGuide
+} from '../../utils/editor-object-snap.utils';
 import {
   selectionContainsShape as selectionContainsShapeUtil,
   shapeSetIds as shapeSetIdsUtil,
@@ -4107,6 +4113,7 @@ export class EditorPageComponent {
       (interactionState.initialShape?.kind === 'rectangle' || interactionState.initialShape?.kind === 'triangle') &&
       interactionState.handle.startsWith('corner-radius-')
     ) {
+      this.objectSnapGuides.set([]);
       const nextCornerRadius = this.cornerRadiusFromPointer(interactionState.initialShape, interactionState.handle, adjustedPointerPoint);
       this.replaceShapesAndSyncAttachedLines([{ ...interactionState.initialShape, cornerRadius: nextCornerRadius } as CanvasShape]);
       return;
@@ -4116,10 +4123,12 @@ export class EditorPageComponent {
       ? this.snapResizePointer(interactionState.initialShape, adjustedPointerPoint)
       : this.snapScenePoint(adjustedPointerPoint);
     if (interactionState.initialShape) {
+      const provisionalShape = this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint);
+      const snappedPoint = this.objectSnapAdjustedResizePoint(nextPoint, [provisionalShape], interactionState.handle, event.altKey);
       const resizedShape = this.withLineEndpointAttachment(
-        this.resizeShape(interactionState.initialShape, interactionState.handle, nextPoint),
+        this.resizeShape(interactionState.initialShape, interactionState.handle, snappedPoint),
         interactionState.handle,
-        nextPoint,
+        snappedPoint,
         event.altKey
       );
       this.replaceShapesAndSyncAttachedLines([resizedShape]);
@@ -4130,9 +4139,55 @@ export class EditorPageComponent {
       return;
     }
 
+    const provisionalShapes = this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint);
+    const snappedPoint = this.objectSnapAdjustedResizePoint(nextPoint, provisionalShapes, interactionState.handle, event.altKey);
     this.replaceShapesAndSyncAttachedLines(
-      this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, nextPoint)
+      this.resizeShapeSelection(interactionState.initialShapes, interactionState.initialBounds, interactionState.handle, snappedPoint)
     );
+  }
+
+  private objectSnapAdjustedResizePoint(point: Point, resizedShapes: readonly CanvasShape[], handle: ResizeHandle, disabled: boolean): Point {
+    const roles = this.objectSnapRolesForResizeHandle(handle);
+    if (disabled || !this.preferences().snapToObjects || this.altPressed() || (!roles.x && !roles.y)) {
+      this.objectSnapGuides.set([]);
+      return point;
+    }
+
+    const resizedShapeIds = new Set(resizedShapes.map((shape) => shape.id));
+    const sourceBounds = this.objectSnapBoundsForShapes(resizedShapes);
+    const targetBounds = this.objectSnapBoundsForShapes(
+      this.scene().shapes.filter((shape) => !resizedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, resizedShapeIds))
+    );
+    const snapResult = objectResizeSnapResult(sourceBounds, targetBounds, roles, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
+
+    return {
+      x: point.x + (roles.x ? snapResult.offset.x : 0),
+      y: point.y + (roles.y ? snapResult.offset.y : 0)
+    };
+  }
+
+  private objectSnapRolesForResizeHandle(handle: ResizeHandle): ObjectResizeSnapRoles {
+    switch (handle) {
+      case 'nw':
+        return { x: 'min', y: 'max' };
+      case 'n':
+        return { y: 'max' };
+      case 'ne':
+        return { x: 'max', y: 'max' };
+      case 'e':
+        return { x: 'max' };
+      case 'se':
+        return { x: 'max', y: 'min' };
+      case 's':
+        return { y: 'min' };
+      case 'sw':
+        return { x: 'min', y: 'min' };
+      case 'w':
+        return { x: 'min' };
+      default:
+        return {};
+    }
   }
 
   private withLineEndpointAttachment(shape: CanvasShape, handle: ResizeHandle, point: Point, forceDetach = false): CanvasShape {

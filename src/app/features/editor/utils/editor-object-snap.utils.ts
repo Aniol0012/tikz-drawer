@@ -23,6 +23,11 @@ export interface ObjectSnapResult {
   readonly guides: readonly ObjectSnapGuide[];
 }
 
+export interface ObjectResizeSnapRoles {
+  readonly x?: ObjectSnapRole;
+  readonly y?: ObjectSnapRole;
+}
+
 interface SnapCandidate {
   readonly id: string;
   readonly role: ObjectSnapRole;
@@ -38,28 +43,31 @@ interface SnapMatch {
 
 const center = (start: number, end: number): number => (start + end) / 2;
 
-const candidatesForAxis = (entry: ObjectSnapBounds, axis: ObjectSnapAxis): readonly SnapCandidate[] => {
+const candidatesForAxis = (entry: ObjectSnapBounds, axis: ObjectSnapAxis, role?: ObjectSnapRole): readonly SnapCandidate[] => {
   const { bounds } = entry;
-  return axis === 'x'
-    ? [
-        { id: entry.id, role: 'min', position: bounds.left, bounds },
-        { id: entry.id, role: 'center', position: center(bounds.left, bounds.right), bounds },
-        { id: entry.id, role: 'max', position: bounds.right, bounds }
-      ]
-    : [
-        { id: entry.id, role: 'min', position: bounds.bottom, bounds },
-        { id: entry.id, role: 'center', position: center(bounds.bottom, bounds.top), bounds },
-        { id: entry.id, role: 'max', position: bounds.top, bounds }
-      ];
+  const candidates: readonly SnapCandidate[] =
+    axis === 'x'
+      ? [
+          { id: entry.id, role: 'min', position: bounds.left, bounds },
+          { id: entry.id, role: 'center', position: center(bounds.left, bounds.right), bounds },
+          { id: entry.id, role: 'max', position: bounds.right, bounds }
+        ]
+      : [
+          { id: entry.id, role: 'min', position: bounds.bottom, bounds },
+          { id: entry.id, role: 'center', position: center(bounds.bottom, bounds.top), bounds },
+          { id: entry.id, role: 'max', position: bounds.top, bounds }
+        ];
+  return role ? candidates.filter((candidate) => candidate.role === role) : candidates;
 };
 
 const bestMatchForAxis = (
   axis: ObjectSnapAxis,
   sourceEntries: readonly ObjectSnapBounds[],
   targetEntries: readonly ObjectSnapBounds[],
-  tolerance: number
+  tolerance: number,
+  sourceRole?: ObjectSnapRole
 ): SnapMatch | null => {
-  const sourceCandidates = sourceEntries.flatMap((entry) => candidatesForAxis(entry, axis));
+  const sourceCandidates = sourceEntries.flatMap((entry) => candidatesForAxis(entry, axis, sourceRole));
   const targetCandidates = targetEntries.flatMap((entry) => candidatesForAxis(entry, axis));
 
   return sourceCandidates.reduce<SnapMatch | null>((bestMatch, source) => {
@@ -122,6 +130,29 @@ export const objectSnapResult = (
 
   const xMatch = bestMatchForAxis('x', sourceEntries, targetEntries, tolerance);
   const yMatch = bestMatchForAxis('y', sourceEntries, targetEntries, tolerance);
+  const offset = {
+    x: xMatch?.delta ?? 0,
+    y: yMatch?.delta ?? 0
+  };
+
+  return {
+    offset,
+    guides: [...(xMatch ? [guideFromMatch('x', xMatch, offset)] : []), ...(yMatch ? [guideFromMatch('y', yMatch, offset)] : [])]
+  };
+};
+
+export const objectResizeSnapResult = (
+  sourceEntries: readonly ObjectSnapBounds[],
+  targetEntries: readonly ObjectSnapBounds[],
+  roles: ObjectResizeSnapRoles,
+  tolerance: number
+): ObjectSnapResult => {
+  if (sourceEntries.length === 0 || targetEntries.length === 0 || tolerance <= 0 || (!roles.x && !roles.y)) {
+    return { offset: { x: 0, y: 0 }, guides: [] };
+  }
+
+  const xMatch = roles.x ? bestMatchForAxis('x', sourceEntries, targetEntries, tolerance, roles.x) : null;
+  const yMatch = roles.y ? bestMatchForAxis('y', sourceEntries, targetEntries, tolerance, roles.y) : null;
   const offset = {
     x: xMatch?.delta ?? 0,
     y: yMatch?.delta ?? 0

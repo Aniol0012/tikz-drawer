@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { objectSnapResult, type ObjectSnapBounds } from './editor-object-snap.utils';
+import { objectResizeSnapResult, objectSnapResult, type ObjectSnapBounds } from './editor-object-snap.utils';
 
 const snapBounds = (id: string, left: number, bottom: number, right: number, top: number): ObjectSnapBounds => ({
   id,
@@ -25,6 +25,21 @@ describe('objectSnapResult', () => {
 
   it('does not snap beyond the tolerance', () => {
     const result = objectSnapResult([snapBounds('moving', 0, 0, 2, 2)], [snapBounds('target', 2.4, 4, 4.4, 6)], 0.25);
+
+    expect(result.offset).toEqual({ x: 0, y: 0 });
+    expect(result.guides).toEqual([]);
+  });
+
+  it('snaps only the active resize edge', () => {
+    const result = objectResizeSnapResult([snapBounds('resizing', 0, 0, 2.15, 2)], [snapBounds('target', 2.25, 4, 4.25, 6)], { x: 'max' }, 0.2);
+
+    expect(result.offset.x).toBeCloseTo(0.1);
+    expect(result.offset.y).toBe(0);
+    expect(result.guides).toEqual([{ axis: 'x', position: 2.25, start: 0, end: 6 }]);
+  });
+
+  it('does not resize-snap inactive edges even when they are closer', () => {
+    const result = objectResizeSnapResult([snapBounds('resizing', 2.05, 0, 5, 2)], [snapBounds('target', 2, 4, 7, 6)], { x: 'max' }, 0.1);
 
     expect(result.offset).toEqual({ x: 0, y: 0 });
     expect(result.guides).toEqual([]);

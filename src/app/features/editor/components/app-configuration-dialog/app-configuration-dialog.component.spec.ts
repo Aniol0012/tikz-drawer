@@ -92,6 +92,17 @@ describe('AppConfigurationDialogComponent', () => {
     });
   });
 
+  it('keeps object snap guide settings nested under object snapping in the scene template', async () => {
+    const template = await readFile(resolve(componentDir, 'app-configuration-dialog.component.html'), 'utf8');
+    const objectSnapIndex = template.indexOf('[label]="\'snapToObjects\' | translate"');
+    const guideSnapConditionIndex = template.indexOf('@if (preferences().snapToObjects)');
+    const guideSnapIndex = template.indexOf('[label]="\'showObjectSnapGuides\' | translate"');
+
+    expect(objectSnapIndex).toBeGreaterThan(-1);
+    expect(guideSnapConditionIndex).toBeGreaterThan(objectSnapIndex);
+    expect(guideSnapIndex).toBeGreaterThan(guideSnapConditionIndex);
+  });
+
   it('accepts only explicit image directory paths while allowing spaces', () => {
     component.updateDefaultImagePath({ target: { value: '/project/image assets/' } } as unknown as Event);
 
