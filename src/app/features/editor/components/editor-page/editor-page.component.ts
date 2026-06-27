@@ -388,7 +388,7 @@ export class EditorPageComponent {
   readonly canRedo = this.store.canRedo;
 
   readonly language = this.languageService.language;
-  readonly inspectorTab = signal<InspectorTab>('properties');
+  readonly inspectorTab = signal<InspectorTab>('assistant');
   readonly activeTool = signal<string>('select');
   readonly viewportCenter = signal<Point>({ x: 0, y: 0 });
   readonly canvasWidth = signal(EDITOR_VIEWPORT_FALLBACK_WIDTH);
@@ -458,9 +458,7 @@ export class EditorPageComponent {
   readonly sidebarsOverlayLayout = signal(false);
   readonly mobileLibraryPanelOpen = signal(false);
   readonly leftSidebarCollapsed = signal(false);
-  readonly rightSidebarCollapsed = signal(
-    shouldAutoCollapseInspector(this.configuration.generalConfig().showInspectorOnlyWithSelection, this.selectionCount())
-  );
+  readonly rightSidebarCollapsed = signal(false);
   private readonly librarySectionIds = new Set<string>(['savedTemplates', 'scenePresets', ...categoryOrder]);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
@@ -1127,6 +1125,10 @@ export class EditorPageComponent {
     effect(() => {
       const autoCollapseInspector = this.configuration.generalConfig().showInspectorOnlyWithSelection;
       const selectionCount = this.selectionCount();
+      if (this.inspectorTab() === 'assistant') {
+        this.rightSidebarCollapsed.set(false);
+        return;
+      }
       this.rightSidebarCollapsed.set(shouldAutoCollapseInspector(autoCollapseInspector, selectionCount));
     });
 
