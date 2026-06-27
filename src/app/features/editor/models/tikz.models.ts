@@ -164,6 +164,8 @@ export interface TikzScene {
 export interface EditorPreferences {
   readonly theme: ThemeMode;
   readonly snapToGrid: boolean;
+  readonly snapToObjects: boolean;
+  readonly showObjectSnapGuides: boolean;
   readonly showGrid: boolean;
   readonly showAxes: boolean;
   readonly scale: number;

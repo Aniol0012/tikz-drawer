@@ -1021,6 +1021,8 @@ export class AppConfigurationDialogComponent {
     return (
       current.theme === expected.theme &&
       current.snapToGrid === expected.snapToGrid &&
+      current.snapToObjects === expected.snapToObjects &&
+      current.showObjectSnapGuides === expected.showObjectSnapGuides &&
       current.showGrid === expected.showGrid &&
       current.showAxes === expected.showAxes &&
       current.scale === expected.scale &&

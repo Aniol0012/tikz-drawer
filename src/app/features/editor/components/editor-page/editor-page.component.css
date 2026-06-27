@@ -1345,6 +1345,17 @@ kbd {
   fill: none;
 }
 
+.object-snap-guides {
+  pointer-events: none;
+}
+
+.object-snap-guide {
+  stroke: #0ea5ff;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: crispEdges;
+}
+
 .selection-rotate-guide {
   stroke: color-mix(in srgb, var(--accent) 72%, transparent);
   stroke-width: 1;

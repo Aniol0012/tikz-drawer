@@ -402,6 +402,8 @@
   "shortcutAction.circleTool": "Circle",
   "shortcutAction.labelTool": "Text",
   "snapToGrid": "Snap to grid",
+  "snapToObjects": "Snap between figures",
+  "showObjectSnapGuides": "Show snapping guides",
   "gridSize": "Grid zoom",
   "snapTolerance": "Snap step",
   "defaultStroke": "Default stroke",
