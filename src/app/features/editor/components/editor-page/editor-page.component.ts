@@ -3940,10 +3940,9 @@ export class EditorPageComponent {
     this.ensureDragAutoPanLoop();
   }
 
-  private isViewportDragInteraction(interactionState: InteractionState | null): interactionState is Extract<
-    InteractionState,
-    { kind: 'move' | 'resize' | 'rotate' | 'marquee' | 'insert' | 'freehand' }
-  > {
+  private isViewportDragInteraction(
+    interactionState: InteractionState | null
+  ): interactionState is Extract<InteractionState, { kind: 'move' | 'resize' | 'rotate' | 'marquee' | 'insert' | 'freehand' }> {
     return (
       interactionState?.kind === 'move' ||
       interactionState?.kind === 'resize' ||
@@ -3973,8 +3972,7 @@ export class EditorPageComponent {
       return;
     }
 
-    const deltaSeconds =
-      this.dragAutoPanLastTimestamp === null ? 1 / 60 : Math.min((timestamp - this.dragAutoPanLastTimestamp) / 1000, 1 / 30);
+    const deltaSeconds = this.dragAutoPanLastTimestamp === null ? 1 / 60 : Math.min((timestamp - this.dragAutoPanLastTimestamp) / 1000, 1 / 30);
     this.dragAutoPanLastTimestamp = timestamp;
     const velocity = this.dragAutoPanVelocity(clientPoint);
     if (velocity.x !== 0 || velocity.y !== 0) {
@@ -4073,7 +4071,10 @@ export class EditorPageComponent {
     });
   }
 
-  private handleMovePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>, interactionState: Extract<InteractionState, { kind: 'move' }>): void {
+  private handleMovePointerMove(
+    event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>,
+    interactionState: Extract<InteractionState, { kind: 'move' }>
+  ): void {
     const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
@@ -4285,7 +4286,10 @@ export class EditorPageComponent {
     };
   }
 
-  private handleResizePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>, interactionState: Extract<InteractionState, { kind: 'resize' }>): void {
+  private handleResizePointerMove(
+    event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>,
+    interactionState: Extract<InteractionState, { kind: 'resize' }>
+  ): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
     const adjustedPointerPoint = {
       x: pointerPoint.x + interactionState.pointerOffset.x,
