@@ -19,6 +19,10 @@ import {
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
   EDITOR_CONTEXT_MENU_VIEWPORT_PADDING,
   EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR,
+  EDITOR_DRAG_AUTO_PAN_EDGE_PX,
+  EDITOR_DRAG_AUTO_PAN_MAX_SPEED_PX_PER_SECOND,
+  EDITOR_DRAG_WHEEL_PAN_EASING,
+  EDITOR_DRAG_WHEEL_PAN_MAX_STEP_PX,
   EDITOR_DEFAULT_SLIDER_RANGE,
   EDITOR_IMAGE_ASPECT_RATIO_EPSILON,
   EDITOR_IMAGE_INSERT_MAX_RENDERED_LONG_EDGE_PX,
@@ -1087,6 +1091,11 @@ export class EditorPageComponent {
   private contextMenuPositionRafHandle: number | null = null;
   private freehandPointerRafHandle: number | null = null;
   private pendingFreehandPoint: { readonly pointerId: number; readonly point: Point } | null = null;
+  private dragAutoPanRafHandle: number | null = null;
+  private dragAutoPanLastTimestamp: number | null = null;
+  private dragAutoPanClientPoint: Point | null = null;
+  private dragWheelPanRafHandle: number | null = null;
+  private dragWheelPanDelta = { x: 0, y: 0 };
   private keyboardNavigationRafHandle: number | null = null;
   private keyboardNavigationLastTimestamp: number | null = null;
   private keyboardNavigationHistoryActive = false;
@@ -1113,6 +1122,8 @@ export class EditorPageComponent {
       if (this.freehandPointerRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.freehandPointerRafHandle);
       }
+      this.cancelDragAutoPan();
+      this.cancelDragWheelPan();
       if (this.keyboardNavigationRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.keyboardNavigationRafHandle);
       }
@@ -3889,6 +3900,7 @@ export class EditorPageComponent {
     if (event.altKey !== this.altPressed()) {
       this.altPressed.set(event.altKey);
     }
+    this.trackDragAutoPanPointer(event, interactionState);
 
     switch (interactionState.kind) {
       case 'pending-pan':
@@ -3918,6 +3930,126 @@ export class EditorPageComponent {
     }
   }
 
+  private trackDragAutoPanPointer(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: InteractionState): void {
+    if (!this.isViewportDragInteraction(interactionState)) {
+      this.cancelDragAutoPan();
+      return;
+    }
+
+    this.dragAutoPanClientPoint = { x: event.clientX, y: event.clientY };
+    this.ensureDragAutoPanLoop();
+  }
+
+  private isViewportDragInteraction(interactionState: InteractionState | null): interactionState is Extract<
+    InteractionState,
+    { kind: 'move' | 'resize' | 'rotate' | 'marquee' | 'insert' | 'freehand' }
+  > {
+    return (
+      interactionState?.kind === 'move' ||
+      interactionState?.kind === 'resize' ||
+      interactionState?.kind === 'rotate' ||
+      interactionState?.kind === 'marquee' ||
+      interactionState?.kind === 'insert' ||
+      interactionState?.kind === 'freehand'
+    );
+  }
+
+  private ensureDragAutoPanLoop(): void {
+    const view = this.document.defaultView;
+    if (!view || this.dragAutoPanRafHandle !== null) {
+      return;
+    }
+
+    this.dragAutoPanRafHandle = view.requestAnimationFrame((timestamp) => this.runDragAutoPanFrame(timestamp));
+  }
+
+  private runDragAutoPanFrame(timestamp: number): void {
+    this.dragAutoPanRafHandle = null;
+    const clientPoint = this.dragAutoPanClientPoint;
+    const interactionState = this.interactionState();
+    const view = this.document.defaultView;
+    if (!clientPoint || !this.isViewportDragInteraction(interactionState) || !view) {
+      this.dragAutoPanLastTimestamp = null;
+      return;
+    }
+
+    const deltaSeconds =
+      this.dragAutoPanLastTimestamp === null ? 1 / 60 : Math.min((timestamp - this.dragAutoPanLastTimestamp) / 1000, 1 / 30);
+    this.dragAutoPanLastTimestamp = timestamp;
+    const velocity = this.dragAutoPanVelocity(clientPoint);
+    if (velocity.x !== 0 || velocity.y !== 0) {
+      this.panViewportByClientDelta(velocity.x * deltaSeconds, velocity.y * deltaSeconds);
+      this.replayActiveDragAtClientPoint(clientPoint);
+      this.dragAutoPanRafHandle = view.requestAnimationFrame((nextTimestamp) => this.runDragAutoPanFrame(nextTimestamp));
+      return;
+    }
+
+    this.dragAutoPanLastTimestamp = null;
+  }
+
+  private dragAutoPanVelocity(clientPoint: Point): Point {
+    const rect = this.canvasViewport().nativeElement.getBoundingClientRect();
+    return {
+      x: this.dragAutoPanAxisVelocity(clientPoint.x - rect.left, rect.width),
+      y: this.dragAutoPanAxisVelocity(clientPoint.y - rect.top, rect.height)
+    };
+  }
+
+  private dragAutoPanAxisVelocity(position: number, size: number): number {
+    const edge = Math.min(EDITOR_DRAG_AUTO_PAN_EDGE_PX, Math.max(size / 2, 0));
+    if (edge <= 0) {
+      return 0;
+    }
+    if (position < edge) {
+      const strength = (edge - position) / edge;
+      return -EDITOR_DRAG_AUTO_PAN_MAX_SPEED_PX_PER_SECOND * Math.min(Math.max(strength, 0), 1);
+    }
+    if (position > size - edge) {
+      const strength = (position - (size - edge)) / edge;
+      return EDITOR_DRAG_AUTO_PAN_MAX_SPEED_PX_PER_SECOND * Math.min(Math.max(strength, 0), 1);
+    }
+    return 0;
+  }
+
+  private replayActiveDragAtClientPoint(clientPoint: Point): void {
+    const interactionState = this.interactionState();
+    if (!this.isViewportDragInteraction(interactionState)) {
+      return;
+    }
+
+    const altKey = this.altPressed();
+    switch (interactionState.kind) {
+      case 'move':
+        this.handleMovePointerMove({ clientX: clientPoint.x, clientY: clientPoint.y, altKey }, interactionState);
+        return;
+      case 'marquee':
+        this.handleMarqueePointerMove({ clientX: clientPoint.x, clientY: clientPoint.y }, interactionState);
+        return;
+      case 'insert':
+        this.handleInsertPointerMove({ clientX: clientPoint.x, clientY: clientPoint.y }, interactionState);
+        return;
+      case 'freehand':
+        this.handleFreehandPointerMove({ clientX: clientPoint.x, clientY: clientPoint.y }, interactionState);
+        return;
+      case 'resize':
+        this.handleResizePointerMove({ clientX: clientPoint.x, clientY: clientPoint.y, altKey }, interactionState);
+        return;
+      case 'rotate':
+        this.handleRotatePointerMove({ clientX: clientPoint.x, clientY: clientPoint.y }, interactionState);
+        return;
+    }
+  }
+
+  private cancelDragAutoPan(): void {
+    const view = this.document.defaultView;
+    if (this.dragAutoPanRafHandle !== null && view) {
+      view.cancelAnimationFrame(this.dragAutoPanRafHandle);
+    }
+    this.dragAutoPanRafHandle = null;
+    this.dragAutoPanLastTimestamp = null;
+    this.dragAutoPanClientPoint = null;
+  }
+
   private handlePendingPanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pending-pan' }>): void {
     const deltaClientX = event.clientX - interactionState.startClientPoint.x;
     const deltaClientY = event.clientY - interactionState.startClientPoint.y;
@@ -3941,7 +4073,7 @@ export class EditorPageComponent {
     });
   }
 
-  private handleMovePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'move' }>): void {
+  private handleMovePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>, interactionState: Extract<InteractionState, { kind: 'move' }>): void {
     const nextWorldPoint = this.toScenePoint(event.clientX, event.clientY);
     const deltaX = this.snap(nextWorldPoint.x - interactionState.startWorldPoint.x);
     const deltaY = this.snap(nextWorldPoint.y - interactionState.startWorldPoint.y);
@@ -4089,21 +4221,21 @@ export class EditorPageComponent {
     this.interactionState.set({ ...interactionState, lastClientPoint: { x: event.clientX, y: event.clientY } });
   }
 
-  private handleMarqueePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'marquee' }>): void {
+  private handleMarqueePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: Extract<InteractionState, { kind: 'marquee' }>): void {
     this.interactionState.set({
       ...interactionState,
       currentWorldPoint: this.toScenePoint(event.clientX, event.clientY)
     });
   }
 
-  private handleInsertPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
+  private handleInsertPointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
     this.interactionState.set({
       ...interactionState,
       currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
     });
   }
 
-  private handleFreehandPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'freehand' }>): void {
+  private handleFreehandPointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: Extract<InteractionState, { kind: 'freehand' }>): void {
     this.pendingFreehandPoint = {
       pointerId: interactionState.pointerId,
       point: this.toScenePoint(event.clientX, event.clientY)
@@ -4153,7 +4285,7 @@ export class EditorPageComponent {
     };
   }
 
-  private handleResizePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'resize' }>): void {
+  private handleResizePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY' | 'altKey'>, interactionState: Extract<InteractionState, { kind: 'resize' }>): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
     const adjustedPointerPoint = {
       x: pointerPoint.x + interactionState.pointerOffset.x,
@@ -4483,7 +4615,7 @@ export class EditorPageComponent {
     };
   }
 
-  private handleRotatePointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'rotate' }>): void {
+  private handleRotatePointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: Extract<InteractionState, { kind: 'rotate' }>): void {
     const pointerPoint = this.toScenePoint(event.clientX, event.clientY);
     const angleRadians = Math.atan2(pointerPoint.y - interactionState.pivot.y, pointerPoint.x - interactionState.pivot.x);
     let rotationDeltaDegrees = ((interactionState.startAngleRadians - angleRadians) * 180) / Math.PI;
@@ -4527,6 +4659,8 @@ export class EditorPageComponent {
       case 'pending-pan':
         this.releaseCanvasPointerCapture(event.pointerId);
         this.objectSnapGuides.set([]);
+        this.cancelDragAutoPan();
+        this.cancelDragWheelPan();
         this.interactionState.set(null);
         return;
       case 'resize':
@@ -4535,6 +4669,8 @@ export class EditorPageComponent {
         break;
     }
 
+    this.cancelDragAutoPan();
+    this.cancelDragWheelPan();
     this.releaseCanvasPointerCapture(event.pointerId);
     this.ignoreNextCanvasClick.set(true);
     this.objectSnapGuides.set([]);
@@ -4646,9 +4782,13 @@ export class EditorPageComponent {
   onCanvasWheel(event: WheelEvent): void {
     event.preventDefault();
     const delta = this.normalizeWheelDelta(event);
+    const draggingViewport = this.isViewportDragInteraction(this.interactionState());
+    if (draggingViewport) {
+      this.dragAutoPanClientPoint = { x: event.clientX, y: event.clientY };
+    }
 
     const selectedShapes = this.selectedShapes();
-    if (event.altKey && this.activeTool() === 'select' && this.selectionCanRotate(selectedShapes)) {
+    if (!draggingViewport && event.altKey && this.activeTool() === 'select' && this.selectionCanRotate(selectedShapes)) {
       const axisDelta = Math.abs(delta.y) >= Math.abs(delta.x) ? delta.y : delta.x;
       if (axisDelta !== 0) {
         const magnitude = Math.max(
@@ -4670,11 +4810,11 @@ export class EditorPageComponent {
 
     if (event.shiftKey) {
       const horizontalDelta = Math.abs(delta.x) > Math.abs(delta.y) ? delta.x : delta.y;
-      this.panViewportByClientDelta(horizontalDelta, 0);
+      this.panViewportByWheelDelta(horizontalDelta, 0, draggingViewport);
       return;
     }
 
-    this.panViewportByClientDelta(delta.x, delta.y);
+    this.panViewportByWheelDelta(delta.x, delta.y, draggingViewport);
   }
 
   onCanvasTouchStart(event: TouchEvent): void {
@@ -5896,6 +6036,8 @@ export class EditorPageComponent {
     this.objectSnapGuides.set([]);
     this.pressedArrowNavigationKeys.clear();
     this.stopKeyboardNavigationLoop();
+    this.cancelDragAutoPan();
+    this.cancelDragWheelPan();
     this.ignoreNextShapeClickId.set(null);
     this.interactionState.set(null);
     this.sidebarResizeState.set(null);
@@ -6164,6 +6306,73 @@ export class EditorPageComponent {
     }));
   }
 
+  private panViewportByWheelDelta(deltaClientX: number, deltaClientY: number, smoothDragPan: boolean): void {
+    if (!smoothDragPan) {
+      this.panViewportByClientDelta(deltaClientX, deltaClientY);
+      return;
+    }
+
+    this.dragWheelPanDelta = {
+      x: this.dragWheelPanDelta.x + deltaClientX,
+      y: this.dragWheelPanDelta.y + deltaClientY
+    };
+    this.ensureDragWheelPanLoop();
+  }
+
+  private ensureDragWheelPanLoop(): void {
+    const view = this.document.defaultView;
+    if (!view || this.dragWheelPanRafHandle !== null) {
+      return;
+    }
+
+    this.dragWheelPanRafHandle = view.requestAnimationFrame(() => this.runDragWheelPanFrame());
+  }
+
+  private runDragWheelPanFrame(): void {
+    this.dragWheelPanRafHandle = null;
+    if (!this.isViewportDragInteraction(this.interactionState())) {
+      this.dragWheelPanDelta = { x: 0, y: 0 };
+      return;
+    }
+
+    const step = {
+      x: this.dragWheelPanStep(this.dragWheelPanDelta.x),
+      y: this.dragWheelPanStep(this.dragWheelPanDelta.y)
+    };
+    this.dragWheelPanDelta = {
+      x: this.dragWheelPanDelta.x - step.x,
+      y: this.dragWheelPanDelta.y - step.y
+    };
+
+    if (step.x !== 0 || step.y !== 0) {
+      this.panViewportByClientDelta(step.x, step.y);
+      if (this.dragAutoPanClientPoint) {
+        this.replayActiveDragAtClientPoint(this.dragAutoPanClientPoint);
+      }
+    }
+
+    if (Math.abs(this.dragWheelPanDelta.x) < 0.5 && Math.abs(this.dragWheelPanDelta.y) < 0.5) {
+      this.dragWheelPanDelta = { x: 0, y: 0 };
+      return;
+    }
+
+    this.ensureDragWheelPanLoop();
+  }
+
+  private dragWheelPanStep(delta: number): number {
+    const eased = delta * EDITOR_DRAG_WHEEL_PAN_EASING;
+    return Math.sign(eased) * Math.min(Math.abs(eased), EDITOR_DRAG_WHEEL_PAN_MAX_STEP_PX);
+  }
+
+  private cancelDragWheelPan(): void {
+    const view = this.document.defaultView;
+    if (this.dragWheelPanRafHandle !== null && view) {
+      view.cancelAnimationFrame(this.dragWheelPanRafHandle);
+    }
+    this.dragWheelPanRafHandle = null;
+    this.dragWheelPanDelta = { x: 0, y: 0 };
+  }
+
   private buildSharePayload(): SharedScenePayload {
     return {
       scene: this.scene(),
@@ -6358,6 +6567,8 @@ export class EditorPageComponent {
     if (canvasSvg.hasPointerCapture(interactionState.pointerId)) {
       canvasSvg.releasePointerCapture(interactionState.pointerId);
     }
+    this.cancelDragAutoPan();
+    this.cancelDragWheelPan();
     this.interactionState.set(null);
   }
 
