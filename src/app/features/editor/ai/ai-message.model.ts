@@ -44,11 +44,4 @@ export interface AiResponse {
 }
 
 export type AiResponseParseStatus =
-  | 'json'
-  | 'json-repaired'
-  | 'text-fallback'
-  | 'empty-json'
-  | 'prompt-echo'
-  | 'compact-prompt-echo'
-  | 'placeholder-json'
-  | 'local-conversation-fallback';
+  'json' | 'json-repaired' | 'text-fallback' | 'empty-json' | 'prompt-echo' | 'compact-prompt-echo' | 'placeholder-json' | 'local-conversation-fallback';

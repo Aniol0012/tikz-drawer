@@ -113,13 +113,7 @@ interface MinimapImageShape extends MinimapShapeBase {
 }
 
 type MinimapShape =
-  | MinimapLineShape
-  | MinimapRectangleShape
-  | MinimapTriangleShape
-  | MinimapCircleShape
-  | MinimapEllipseShape
-  | MinimapTextShape
-  | MinimapImageShape;
+  MinimapLineShape | MinimapRectangleShape | MinimapTriangleShape | MinimapCircleShape | MinimapEllipseShape | MinimapTextShape | MinimapImageShape;
 
 interface MinimapOverview {
   readonly viewBoxWidth: number;

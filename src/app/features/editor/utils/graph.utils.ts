@@ -765,24 +765,20 @@ const buildFlowNetworkLayout = (layers: number, nodesPerLayer: number): GraphLay
 const buildNeuralNetworkLayout = (layers: number, nodesPerLayer: number): GraphLayout => buildLayeredDagLayout(layers, nodesPerLayer);
 
 const buildPetersenLayout = (): GraphLayout => {
-  const outer = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map(
-    (node, index): GraphNodeLayout => ({
-      ...node,
-      id: `O${index + 1}`,
-      label: String(index + 1)
-    })
-  );
-  const inner = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map(
-    (node, index): GraphNodeLayout => ({
-      ...node,
-      id: `I${index + 1}`,
-      label: String(index + PETERSEN_INNER_LABEL_OFFSET),
-      position: {
-        x: node.position.x * PETERSEN_INNER_RADIUS_FACTOR,
-        y: node.position.y * PETERSEN_INNER_RADIUS_FACTOR
-      }
-    })
-  );
+  const outer = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map((node, index): GraphNodeLayout => ({
+    ...node,
+    id: `O${index + 1}`,
+    label: String(index + 1)
+  }));
+  const inner = buildCircularNodes(PETERSEN_RING_NODE_COUNT).map((node, index): GraphNodeLayout => ({
+    ...node,
+    id: `I${index + 1}`,
+    label: String(index + PETERSEN_INNER_LABEL_OFFSET),
+    position: {
+      x: node.position.x * PETERSEN_INNER_RADIUS_FACTOR,
+      y: node.position.y * PETERSEN_INNER_RADIUS_FACTOR
+    }
+  }));
 
   return {
     nodes: [...outer, ...inner],
