@@ -164,14 +164,12 @@ export class GraphDialogComponent implements OnChanges {
     const width = Math.max(bounds.maxX - bounds.minX, PREVIEW_MIN_DIMENSION);
     const height = Math.max(bounds.maxY - bounds.minY, PREVIEW_MIN_DIMENSION);
     const scale = Math.min(PREVIEW_MAX_WIDTH / width, PREVIEW_MAX_HEIGHT / height);
-    const nodes = layout.nodes.map(
-      (node): GraphPreviewNode => ({
-        id: node.id,
-        label: node.label,
-        x: PREVIEW_CENTER_X + (node.position.x - (bounds.minX + bounds.maxX) / PREVIEW_CENTER_DIVISOR) * scale,
-        y: PREVIEW_CENTER_Y - (node.position.y - (bounds.minY + bounds.maxY) / PREVIEW_CENTER_DIVISOR) * scale
-      })
-    );
+    const nodes = layout.nodes.map((node): GraphPreviewNode => ({
+      id: node.id,
+      label: node.label,
+      x: PREVIEW_CENTER_X + (node.position.x - (bounds.minX + bounds.maxX) / PREVIEW_CENTER_DIVISOR) * scale,
+      y: PREVIEW_CENTER_Y - (node.position.y - (bounds.minY + bounds.maxY) / PREVIEW_CENTER_DIVISOR) * scale
+    }));
     const nodeById = new Map(nodes.map((node) => [node.id, node]));
     const edges = layout.edges
       .map((edge) => {
