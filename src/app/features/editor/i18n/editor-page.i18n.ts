@@ -117,12 +117,14 @@ export interface SharedScenePayload extends PersistedEditorState {
   };
 }
 
-export const categoryOrder: readonly PresetCategory[] = ['essentials', 'flow', 'geometry', 'graphs', 'data', 'interface', 'concepts'];
+export const categoryOrder: readonly PresetCategory[] = ['essentials', 'flow', 'geometry', 'electricity', 'logic', 'graphs', 'data', 'interface', 'concepts'];
 
 export const categoryTranslationKey: Record<PresetCategory, string> = {
   essentials: 'categoryEssentials',
   flow: 'categoryFlow',
   geometry: 'categoryGeometry',
+  electricity: 'categoryElectricity',
+  logic: 'categoryLogic',
   graphs: 'categoryGraphs',
   data: 'categoryData',
   interface: 'categoryInterface',

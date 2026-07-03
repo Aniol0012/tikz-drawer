@@ -1,4 +1,4 @@
-import { buildTablePresetShapes, localizePresetCanvasShapes, objectPresets } from './presets';
+import { buildTablePresetShapes, localizePresetCanvasShapes, objectPresets, scenePresets } from './presets';
 import { getIconPath } from '../config/editor-icons';
 import { getTableSelectionInfo } from '../utils/table.utils';
 
@@ -139,6 +139,97 @@ describe('presets', () => {
       expect(swimlaneFrame.width).toBe(7.6);
       expect(swimlaneFrame.height).toBe(3.4);
     }
+  });
+
+  it('adds editable electricity presets without duplicating basic drawing tools', () => {
+    const electricityPresets = objectPresets.filter((preset) => preset.category === 'electricity');
+    const electricityPresetIds = electricityPresets.map((preset) => preset.id);
+
+    expect(electricityPresetIds).toEqual([
+      'end-node',
+      'junction-node',
+      'resistor-iec',
+      'resistor-american',
+      'capacitor-iec',
+      'variable-capacitor',
+      'polarized-capacitor',
+      'inductor',
+      'variable-inductor',
+      'potentiometer-iec',
+      'fuse',
+      'asymmetric-fuse',
+      'cell',
+      'battery',
+      'voltage-source',
+      'current-source',
+      'sinewave-source',
+      'squarewave-source',
+      'ammeter',
+      'voltmeter',
+      'ohmmeter',
+      'lamp',
+      'ground',
+      'diode',
+      'zener-diode',
+      'led',
+      'npn-transistor',
+      'pnp-transistor',
+      'op-amp',
+      'open-switch',
+      'closed-switch',
+      'push-button',
+      'closed-push-button'
+    ]);
+    expect(electricityPresetIds).not.toEqual(expect.arrayContaining(['label', 'segment', 'arrow', 'box', 'circle', 'ellipse', 'and-gate', 'or-gate']));
+    expect(electricityPresets.every((preset) => preset.preserveStyle)).toBe(true);
+
+    const endNode = objectPresets.find((preset) => preset.id === 'end-node');
+    const junctionNode = objectPresets.find((preset) => preset.id === 'junction-node');
+    const closedSwitch = objectPresets.find((preset) => preset.id === 'closed-switch');
+
+    expect(endNode?.shapes.some((shape) => shape.kind === 'line' && !!shape.toAttachment)).toBe(true);
+    expect(junctionNode?.shapes.filter((shape) => shape.kind === 'line').every((line) => !!line.fromAttachment || !!line.toAttachment)).toBe(true);
+    expect(closedSwitch?.shapes.some((shape) => shape.kind === 'line' && !!shape.fromAttachment && !!shape.toAttachment)).toBe(true);
+  });
+
+  it('keeps logic gates in a separate editable category', () => {
+    const logicPresets = objectPresets.filter((preset) => preset.category === 'logic');
+    const logicPresetIds = logicPresets.map((preset) => preset.id);
+
+    expect(logicPresetIds).toEqual(['and-gate', 'nand-gate', 'or-gate', 'nor-gate', 'xor-gate', 'xnor-gate', 'buffer-gate', 'not-gate']);
+    expect(logicPresets.every((preset) => preset.preserveStyle)).toBe(true);
+    expect(objectPresets.find((preset) => preset.id === 'and-gate')?.shapes.some((shape) => shape.kind === 'line' && shape.lineMode === 'curved')).toBe(true);
+    expect(objectPresets.find((preset) => preset.id === 'not-gate')?.shapes.some((shape) => shape.kind === 'circle')).toBe(true);
+  });
+
+  it('keeps callout text inside the callout body in presets and the metrics board scene', () => {
+    const calloutPreset = objectPresets.find((preset) => preset.id === 'callout');
+    const calloutBody = calloutPreset?.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Callout body');
+    const calloutText = calloutPreset?.shapes.find((shape) => shape.kind === 'text' && shape.name === 'Callout text');
+
+    expect(calloutBody?.kind).toBe('rectangle');
+    expect(calloutText?.kind).toBe('text');
+    if (calloutBody?.kind !== 'rectangle' || calloutText?.kind !== 'text') {
+      throw new Error('Expected callout preset to include a body and text');
+    }
+
+    expect(calloutText.textBox).toBe(true);
+    expect(calloutText.textAlign).toBe('left');
+    expect(calloutText.x).toBeGreaterThan(calloutBody.x);
+    expect(calloutText.x + calloutText.boxWidth).toBeLessThan(calloutBody.x + calloutBody.width);
+
+    const metricsBoard = scenePresets.find((preset) => preset.id === 'metrics-board');
+    const metricsBody = metricsBoard?.scene.shapes.find((shape) => shape.kind === 'rectangle' && shape.name === 'Callout body');
+    const metricsText = metricsBoard?.scene.shapes.find((shape) => shape.kind === 'text' && shape.name === 'Callout text');
+
+    expect(metricsBody?.kind).toBe('rectangle');
+    expect(metricsText?.kind).toBe('text');
+    if (metricsBody?.kind !== 'rectangle' || metricsText?.kind !== 'text') {
+      throw new Error('Expected metrics board scene to include a callout body and text');
+    }
+
+    expect(metricsText.x).toBeGreaterThan(metricsBody.x);
+    expect(metricsText.x + metricsText.boxWidth).toBeLessThan(metricsBody.x + metricsBody.width);
   });
 
   it('uses dedicated icons for swimlane, hexagon, table and funnel presets', () => {

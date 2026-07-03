@@ -279,6 +279,465 @@ const createGraphPreset = (
     iconStrokeWidth: options.iconStrokeWidth ?? 1.35
   });
 
+const circuitLine = (name: string, from: Point, to: Point, overrides: Partial<LineShape> = {}): LineShape =>
+  createLine({
+    name,
+    from,
+    to,
+    strokeWidth: 0.07,
+    stroke: '#1f1f1f',
+    ...overrides
+  });
+
+const circuitText = (name: string, text: string, x: number, y: number, fontSize = 0.28): TextShape =>
+  createText({
+    name,
+    text,
+    x,
+    y,
+    fontSize,
+    color: '#1f1f1f'
+  });
+
+const circuitPolyline = (name: string, points: readonly Point[], overrides: Partial<LineShape> = {}): readonly LineShape[] =>
+  points.slice(0, -1).map((point, index) => circuitLine(`${name} ${index + 1}`, point, points[index + 1], overrides));
+
+const createCircuitPreset = (
+  id: string,
+  icon: string,
+  title: string,
+  description: string,
+  shapes: readonly CanvasShape[],
+  searchTerms: readonly string[] = []
+): ObjectPreset =>
+  createPreset(id, 'electricity', icon, title, description, shapes, {
+    preserveStyle: true,
+    searchTerms: ['electricity', 'circuit', 'electronics', ...searchTerms]
+  });
+
+const createLogicPreset = (id: string, title: string, description: string, shapes: readonly CanvasShape[], searchTerms: readonly string[] = []): ObjectPreset =>
+  createPreset(id, 'logic', 'logicGate', title, description, shapes, {
+    preserveStyle: true,
+    searchTerms: ['logic', 'gate', 'digital', ...searchTerms]
+  });
+
+const endNodeShapes = (): readonly CanvasShape[] => {
+  const terminal = createCircle({ name: 'End node terminal', cx: 0, cy: 0, r: 0.24, fill: '#ffffff', strokeWidth: 0.07 });
+
+  return [circuitLine('End node lead', { x: -2.4, y: 0 }, { x: -0.24, y: 0 }, { toAttachment: { shapeId: terminal.id, anchor: { x: -1, y: 0 } } }), terminal];
+};
+
+const junctionNodeShapes = (): readonly CanvasShape[] => {
+  const dot = createCircle({ name: 'Junction dot', cx: 0, cy: 0, r: 0.18, fill: '#1f1f1f', stroke: '#1f1f1f', strokeWidth: 0.07 });
+
+  return [
+    circuitLine('Junction left branch', { x: -2.2, y: 0 }, { x: -0.18, y: 0 }, { toAttachment: { shapeId: dot.id, anchor: { x: -1, y: 0 } } }),
+    circuitLine('Junction right branch', { x: 0.18, y: 0 }, { x: 2.2, y: 0 }, { fromAttachment: { shapeId: dot.id, anchor: { x: 1, y: 0 } } }),
+    circuitLine('Junction lower branch', { x: 0, y: -1.6 }, { x: 0, y: -0.18 }, { toAttachment: { shapeId: dot.id, anchor: { x: 0, y: -1 } } }),
+    circuitLine('Junction upper branch', { x: 0, y: 0.18 }, { x: 0, y: 1.6 }, { fromAttachment: { shapeId: dot.id, anchor: { x: 0, y: 1 } } }),
+    dot
+  ];
+};
+
+const resistorIecShapes = (): readonly CanvasShape[] => [
+  circuitLine('Resistor lead left', { x: -2.8, y: 0 }, { x: -1.2, y: 0 }),
+  createRectangle({
+    name: 'Resistor body',
+    x: -1.2,
+    y: -0.38,
+    width: 2.4,
+    height: 0.76,
+    fill: 'none',
+    cornerRadius: 0.02,
+    strokeWidth: 0.07
+  }),
+  circuitLine('Resistor lead right', { x: 1.2, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const resistorAmericanShapes = (): readonly CanvasShape[] => [
+  circuitLine('American resistor lead left', { x: -2.8, y: 0 }, { x: -1.7, y: 0 }),
+  ...circuitPolyline('American resistor zigzag', [
+    { x: -1.7, y: 0 },
+    { x: -1.35, y: 0.55 },
+    { x: -0.9, y: -0.55 },
+    { x: -0.45, y: 0.55 },
+    { x: 0, y: -0.55 },
+    { x: 0.45, y: 0.55 },
+    { x: 0.9, y: -0.55 },
+    { x: 1.35, y: 0.55 },
+    { x: 1.7, y: 0 }
+  ]),
+  circuitLine('American resistor lead right', { x: 1.7, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const capacitorShapes = (options: { readonly variable?: boolean; readonly polarized?: boolean } = {}): readonly CanvasShape[] => [
+  circuitLine('Capacitor lead left', { x: -2.8, y: 0 }, { x: -0.45, y: 0 }),
+  circuitLine('Capacitor plate left', { x: -0.45, y: -1 }, { x: -0.45, y: 1 }),
+  circuitLine('Capacitor plate right', { x: 0.45, y: -1 }, { x: 0.45, y: 1 }),
+  circuitLine('Capacitor lead right', { x: 0.45, y: 0 }, { x: 2.8, y: 0 }),
+  ...(options.polarized ? [circuitText('Capacitor plus', '+', -1.05, 0.72, 0.42)] : []),
+  ...(options.variable
+    ? [circuitLine('Capacitor adjustment arrow', { x: -1.1, y: -1.1 }, { x: 1.2, y: 1.1 }, { arrowEnd: true, arrowType: 'latex', arrowOpen: true })]
+    : [])
+];
+
+const inductorShapes = (variable = false): readonly CanvasShape[] => [
+  circuitLine('Inductor lead left', { x: -2.9, y: 0 }, { x: -1.5, y: 0 }),
+  createEllipse({ name: 'Inductor coil 1', cx: -0.9, cy: 0, rx: 0.45, ry: 0.62, fill: 'none', strokeWidth: 0.07 }),
+  createEllipse({ name: 'Inductor coil 2', cx: -0.25, cy: 0, rx: 0.45, ry: 0.62, fill: 'none', strokeWidth: 0.07 }),
+  createEllipse({ name: 'Inductor coil 3', cx: 0.4, cy: 0, rx: 0.45, ry: 0.62, fill: 'none', strokeWidth: 0.07 }),
+  createEllipse({ name: 'Inductor coil 4', cx: 1.05, cy: 0, rx: 0.45, ry: 0.62, fill: 'none', strokeWidth: 0.07 }),
+  circuitLine('Inductor lead right', { x: 1.5, y: 0 }, { x: 2.9, y: 0 }),
+  ...(variable
+    ? [circuitLine('Inductor adjustment arrow', { x: -1.5, y: -1.2 }, { x: 1.5, y: 1.2 }, { arrowEnd: true, arrowType: 'latex', arrowOpen: true })]
+    : [])
+];
+
+const fuseShapes = (asymmetric = false): readonly CanvasShape[] => [
+  circuitLine('Fuse lead left', { x: -2.8, y: 0 }, { x: -1.3, y: 0 }),
+  createRectangle({ name: 'Fuse body', x: -1.3, y: -0.55, width: 2.6, height: 1.1, fill: 'none', cornerRadius: 0.12, strokeWidth: 0.07 }),
+  circuitLine('Fuse filament', { x: -0.85, y: asymmetric ? -0.16 : 0 }, { x: 0.85, y: asymmetric ? 0.24 : 0 }),
+  circuitLine('Fuse lead right', { x: 1.3, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const sourceCircleShapes = (label: string, name: string): readonly CanvasShape[] => {
+  const body = createCircle({ name: `${name} body`, cx: 0, cy: 0, r: 1.05, fill: 'none', strokeWidth: 0.07 });
+
+  return [
+    circuitLine(`${name} lead left`, { x: -2.8, y: 0 }, { x: -1.05, y: 0 }, { toAttachment: { shapeId: body.id, anchor: { x: -1, y: 0 } } }),
+    body,
+    circuitText(`${name} symbol`, label, 0, 0, label.length > 2 ? 0.26 : 0.44),
+    circuitLine(`${name} lead right`, { x: 1.05, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: body.id, anchor: { x: 1, y: 0 } } })
+  ];
+};
+
+const meterShapes = (label: string, name: string): readonly CanvasShape[] => {
+  const body = createCircle({ name: `${name} body`, cx: 0, cy: 0, r: 1.05, fill: 'none', strokeWidth: 0.07 });
+
+  return [
+    circuitLine(`${name} lead left`, { x: -2.8, y: 0 }, { x: -1.05, y: 0 }, { toAttachment: { shapeId: body.id, anchor: { x: -1, y: 0 } } }),
+    body,
+    circuitText(`${name} label`, label, 0, 0, 0.5),
+    circuitLine(`${name} lead right`, { x: 1.05, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: body.id, anchor: { x: 1, y: 0 } } })
+  ];
+};
+
+const diodeShapes = (variant: 'standard' | 'zener' | 'led' = 'standard'): readonly CanvasShape[] => [
+  circuitLine('Diode lead left', { x: -2.8, y: 0 }, { x: -0.9, y: 0 }),
+  circuitLine('Diode body top', { x: -0.9, y: -0.9 }, { x: 0.5, y: 0 }),
+  circuitLine('Diode body bottom', { x: -0.9, y: 0.9 }, { x: 0.5, y: 0 }),
+  circuitLine('Diode body back', { x: -0.9, y: -0.9 }, { x: -0.9, y: 0.9 }),
+  circuitLine('Diode cathode', { x: 0.5, y: -0.95 }, { x: 0.5, y: 0.95 }),
+  ...(variant === 'zener'
+    ? [
+        circuitLine('Zener cathode top', { x: 0.5, y: -0.95 }, { x: 0.85, y: -0.65 }),
+        circuitLine('Zener cathode bottom', { x: 0.5, y: 0.95 }, { x: 0.15, y: 0.65 })
+      ]
+    : []),
+  ...(variant === 'led'
+    ? [
+        circuitLine('LED ray 1', { x: 0.95, y: 1 }, { x: 1.75, y: 1.8 }, { arrowEnd: true, arrowType: 'latex' }),
+        circuitLine('LED ray 2', { x: 1.25, y: 0.55 }, { x: 2.05, y: 1.35 }, { arrowEnd: true, arrowType: 'latex' })
+      ]
+    : []),
+  circuitLine('Diode lead right', { x: 0.5, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const transistorShapes = (kind: 'npn' | 'pnp'): readonly CanvasShape[] => [
+  createCircle({ name: `${kind.toUpperCase()} body`, cx: 0, cy: 0, r: 1.45, fill: 'none', strokeWidth: 0.07 }),
+  circuitLine(`${kind.toUpperCase()} base`, { x: -2.6, y: 0 }, { x: -0.75, y: 0 }),
+  circuitLine(`${kind.toUpperCase()} base bar`, { x: -0.75, y: -0.8 }, { x: -0.75, y: 0.8 }),
+  circuitLine(`${kind.toUpperCase()} collector`, { x: -0.75, y: 0.55 }, { x: 1.35, y: 1.55 }),
+  circuitLine(
+    `${kind.toUpperCase()} emitter`,
+    { x: -0.75, y: -0.55 },
+    { x: 1.35, y: -1.55 },
+    { arrowEnd: kind === 'npn', arrowStart: kind === 'pnp', arrowType: 'latex' }
+  ),
+  circuitLine(`${kind.toUpperCase()} collector lead`, { x: 1.35, y: 1.55 }, { x: 2.4, y: 1.55 }),
+  circuitLine(`${kind.toUpperCase()} emitter lead`, { x: 1.35, y: -1.55 }, { x: 2.4, y: -1.55 })
+];
+
+const groundShapes = (): readonly CanvasShape[] => [
+  circuitLine('Ground stem', { x: 0, y: 1.8 }, { x: 0, y: 0.5 }),
+  circuitLine('Ground bar wide', { x: -1.1, y: 0.5 }, { x: 1.1, y: 0.5 }),
+  circuitLine('Ground bar mid', { x: -0.7, y: 0.05 }, { x: 0.7, y: 0.05 }),
+  circuitLine('Ground bar narrow', { x: -0.32, y: -0.4 }, { x: 0.32, y: -0.4 })
+];
+
+const opAmpShapes = (): readonly CanvasShape[] => [
+  ...circuitPolyline('Op amp outline', [
+    { x: -1.45, y: -1.6 },
+    { x: -1.45, y: 1.6 },
+    { x: 1.55, y: 0 },
+    { x: -1.45, y: -1.6 }
+  ]),
+  circuitLine('Op amp non-inverting input', { x: -2.8, y: 0.8 }, { x: -1.45, y: 0.8 }),
+  circuitLine('Op amp inverting input', { x: -2.8, y: -0.8 }, { x: -1.45, y: -0.8 }),
+  circuitLine('Op amp output', { x: 1.55, y: 0 }, { x: 2.8, y: 0 }),
+  circuitText('Op amp plus', '+', -1.12, 0.78, 0.34),
+  circuitText('Op amp minus', '-', -1.12, -0.8, 0.34)
+];
+
+const switchShapes = (closed = false): readonly CanvasShape[] => {
+  const leftContact = createCircle({ name: 'Switch contact left', cx: -0.8, cy: 0, r: 0.14, fill: '#ffffff', strokeWidth: 0.07 });
+  const rightContact = createCircle({ name: 'Switch contact right', cx: 0.95, cy: 0, r: 0.14, fill: '#ffffff', strokeWidth: 0.07 });
+
+  return [
+    circuitLine('Switch lead left', { x: -2.8, y: 0 }, { x: -0.94, y: 0 }, { toAttachment: { shapeId: leftContact.id, anchor: { x: -1, y: 0 } } }),
+    leftContact,
+    rightContact,
+    circuitLine(
+      'Switch blade',
+      { x: -0.8, y: 0 },
+      { x: 0.95, y: closed ? 0 : 0.7 },
+      {
+        fromAttachment: { shapeId: leftContact.id, anchor: { x: 0, y: 0 } },
+        toAttachment: closed ? { shapeId: rightContact.id, anchor: { x: 0, y: 0 } } : undefined
+      }
+    ),
+    circuitLine('Switch lead right', { x: 1.09, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: rightContact.id, anchor: { x: 1, y: 0 } } })
+  ];
+};
+
+const pushButtonShapes = (closed = false): readonly CanvasShape[] => {
+  const leftContact = createCircle({ name: 'Button contact left', cx: -0.8, cy: 0, r: 0.12, fill: '#ffffff', strokeWidth: 0.07 });
+  const rightContact = createCircle({ name: 'Button contact right', cx: 0.8, cy: 0, r: 0.12, fill: '#ffffff', strokeWidth: 0.07 });
+
+  return [
+    circuitLine('Button lead left', { x: -2.8, y: 0 }, { x: -0.92, y: 0 }, { toAttachment: { shapeId: leftContact.id, anchor: { x: -1, y: 0 } } }),
+    leftContact,
+    rightContact,
+    circuitLine(
+      'Button bridge',
+      { x: -0.8, y: closed ? 0 : 0.55 },
+      { x: 0.8, y: closed ? 0 : 0.55 },
+      {
+        fromAttachment: closed ? { shapeId: leftContact.id, anchor: { x: 0, y: 0 } } : undefined,
+        toAttachment: closed ? { shapeId: rightContact.id, anchor: { x: 0, y: 0 } } : undefined
+      }
+    ),
+    circuitLine('Button stem', { x: 0, y: 0.55 }, { x: 0, y: 1.35 }),
+    circuitLine('Button cap', { x: -0.55, y: 1.35 }, { x: 0.55, y: 1.35 }),
+    circuitLine('Button lead right', { x: 0.92, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: rightContact.id, anchor: { x: 1, y: 0 } } })
+  ];
+};
+
+const andGateShapes = (inverted = false): readonly CanvasShape[] => [
+  circuitLine('AND left edge', { x: -1.45, y: -1.3 }, { x: -1.45, y: 1.3 }),
+  circuitLine('AND top edge', { x: -1.45, y: 1.3 }, { x: 0, y: 1.3 }),
+  circuitLine('AND bottom edge', { x: -1.45, y: -1.3 }, { x: 0, y: -1.3 }),
+  circuitLine(
+    'AND curve',
+    { x: 0, y: 1.3 },
+    { x: 0, y: -1.3 },
+    {
+      lineMode: 'curved',
+      anchors: [
+        { x: 1.75, y: 0.95 },
+        { x: 1.75, y: -0.95 }
+      ]
+    }
+  ),
+  circuitLine('AND input 1', { x: -2.8, y: 0.7 }, { x: -1.45, y: 0.7 }),
+  circuitLine('AND input 2', { x: -2.8, y: -0.7 }, { x: -1.45, y: -0.7 }),
+  ...(inverted ? [createCircle({ name: 'AND inversion bubble', cx: 1.62, cy: 0, r: 0.22, fill: '#ffffff', strokeWidth: 0.07 })] : []),
+  circuitLine('AND output', { x: inverted ? 1.84 : 1.62, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const orGateShapes = (inverted = false, exclusive = false): readonly CanvasShape[] => [
+  ...(exclusive ? [circuitLine('XOR extra curve', { x: -1.82, y: -1.25 }, { x: -1.82, y: 1.25 }, { lineMode: 'curved', anchors: [{ x: -1.18, y: 0 }] })] : []),
+  circuitLine('OR left curve', { x: -1.45, y: -1.3 }, { x: -1.45, y: 1.3 }, { lineMode: 'curved', anchors: [{ x: -0.78, y: 0 }] }),
+  circuitLine(
+    'OR top curve',
+    { x: -1.45, y: 1.3 },
+    { x: 1.55, y: 0 },
+    {
+      lineMode: 'curved',
+      anchors: [
+        { x: 0.35, y: 1.38 },
+        { x: 1.25, y: 0.75 }
+      ]
+    }
+  ),
+  circuitLine(
+    'OR bottom curve',
+    { x: -1.45, y: -1.3 },
+    { x: 1.55, y: 0 },
+    {
+      lineMode: 'curved',
+      anchors: [
+        { x: 0.35, y: -1.38 },
+        { x: 1.25, y: -0.75 }
+      ]
+    }
+  ),
+  circuitLine('OR input 1', { x: -2.8, y: 0.7 }, { x: -1.22, y: 0.7 }),
+  circuitLine('OR input 2', { x: -2.8, y: -0.7 }, { x: -1.22, y: -0.7 }),
+  ...(inverted ? [createCircle({ name: 'OR inversion bubble', cx: 1.78, cy: 0, r: 0.22, fill: '#ffffff', strokeWidth: 0.07 })] : []),
+  circuitLine('OR output', { x: inverted ? 2 : 1.55, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const bufferGateShapes = (inverted = false): readonly CanvasShape[] => [
+  ...circuitPolyline('Buffer outline', [
+    { x: -1.35, y: -1.2 },
+    { x: -1.35, y: 1.2 },
+    { x: 1.15, y: 0 },
+    { x: -1.35, y: -1.2 }
+  ]),
+  circuitLine('Buffer input', { x: -2.8, y: 0 }, { x: -1.35, y: 0 }),
+  ...(inverted ? [createCircle({ name: 'NOT inversion bubble', cx: 1.38, cy: 0, r: 0.22, fill: '#ffffff', strokeWidth: 0.07 })] : []),
+  circuitLine('Buffer output', { x: inverted ? 1.6 : 1.15, y: 0 }, { x: 2.8, y: 0 })
+];
+
+const electricityPresets = (): readonly ObjectPreset[] => [
+  createCircuitPreset('end-node', 'node', 'End node', 'Open terminal node for circuit endpoints.', endNodeShapes()),
+  createCircuitPreset('junction-node', 'node', 'Junction node', 'Filled node for connected circuit branches.', junctionNodeShapes()),
+  createCircuitPreset('resistor-iec', 'resistor', 'Resistor (IEC)', 'Rectangular IEC resistor with leads.', resistorIecShapes(), ['resistor', 'iec', 'ohm']),
+  createCircuitPreset('resistor-american', 'resistor', 'American resistor', 'Zigzag resistor symbol with leads.', resistorAmericanShapes(), [
+    'resistor',
+    'american',
+    'zigzag'
+  ]),
+  createCircuitPreset('capacitor-iec', 'capacitor', 'Capacitor (IEC)', 'Two-plate capacitor symbol.', capacitorShapes(), ['capacitor']),
+  createCircuitPreset('variable-capacitor', 'capacitor', 'Variable capacitor', 'Capacitor with an adjustment arrow.', capacitorShapes({ variable: true }), [
+    'capacitor',
+    'variable',
+    'adjustable'
+  ]),
+  createCircuitPreset('polarized-capacitor', 'capacitor', 'Polarized capacitor', 'Capacitor with polarity mark.', capacitorShapes({ polarized: true }), [
+    'capacitor',
+    'polarized',
+    'electrolytic'
+  ]),
+  createCircuitPreset('inductor', 'electricity', 'Inductor', 'Coil inductor symbol with leads.', inductorShapes(), ['inductor', 'coil']),
+  createCircuitPreset('variable-inductor', 'electricity', 'Variable inductor', 'Inductor with an adjustment arrow.', inductorShapes(true), [
+    'inductor',
+    'variable',
+    'coil'
+  ]),
+  createCircuitPreset(
+    'potentiometer-iec',
+    'resistor',
+    'Potentiometer (IEC)',
+    'IEC resistor with wiper arrow.',
+    [...resistorIecShapes(), circuitLine('Potentiometer wiper', { x: 0, y: -1.55 }, { x: 0, y: -0.38 }, { arrowEnd: true, arrowType: 'latex' })],
+    ['potentiometer', 'variable resistor']
+  ),
+  createCircuitPreset('fuse', 'electricity', 'Fuse', 'Inline fuse symbol.', fuseShapes(), ['fuse']),
+  createCircuitPreset('asymmetric-fuse', 'electricity', 'Asymmetric fuse', 'Fuse with slanted inner element.', fuseShapes(true), ['fuse', 'asymmetric']),
+  createCircuitPreset(
+    'cell',
+    'capacitor',
+    'Cell',
+    'Single battery cell with long and short plates.',
+    [
+      circuitLine('Cell lead left', { x: -2.8, y: 0 }, { x: -0.45, y: 0 }),
+      circuitLine('Cell short plate', { x: -0.45, y: -0.75 }, { x: -0.45, y: 0.75 }),
+      circuitLine('Cell long plate', { x: 0.45, y: -1.1 }, { x: 0.45, y: 1.1 }),
+      circuitLine('Cell lead right', { x: 0.45, y: 0 }, { x: 2.8, y: 0 })
+    ],
+    ['cell', 'battery']
+  ),
+  createCircuitPreset(
+    'battery',
+    'capacitor',
+    'Battery',
+    'Multi-cell battery symbol.',
+    [
+      circuitLine('Battery lead left', { x: -2.8, y: 0 }, { x: -1.05, y: 0 }),
+      circuitLine('Battery plate 1 short', { x: -1.05, y: -0.65 }, { x: -1.05, y: 0.65 }),
+      circuitLine('Battery plate 1 long', { x: -0.55, y: -1.05 }, { x: -0.55, y: 1.05 }),
+      circuitLine('Battery plate 2 short', { x: 0.15, y: -0.65 }, { x: 0.15, y: 0.65 }),
+      circuitLine('Battery plate 2 long', { x: 0.65, y: -1.05 }, { x: 0.65, y: 1.05 }),
+      circuitLine('Battery lead right', { x: 0.65, y: 0 }, { x: 2.8, y: 0 })
+    ],
+    ['battery', 'cell']
+  ),
+  createCircuitPreset(
+    'voltage-source',
+    'electricity',
+    'Voltage source',
+    'Circular voltage source with polarity.',
+    sourceCircleShapes('+ -', 'Voltage source'),
+    ['source', 'voltage']
+  ),
+  createCircuitPreset(
+    'current-source',
+    'electricity',
+    'Current source',
+    'Circular current source with arrow.',
+    (() => {
+      const body = createCircle({ name: 'Current source body', cx: 0, cy: 0, r: 1.05, fill: 'none', strokeWidth: 0.07 });
+      return [
+        circuitLine('Current source lead left', { x: -2.8, y: 0 }, { x: -1.05, y: 0 }, { toAttachment: { shapeId: body.id, anchor: { x: -1, y: 0 } } }),
+        body,
+        circuitLine('Current source arrow', { x: 0, y: -0.55 }, { x: 0, y: 0.55 }, { arrowEnd: true, arrowType: 'latex' }),
+        circuitLine('Current source lead right', { x: 1.05, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: body.id, anchor: { x: 1, y: 0 } } })
+      ];
+    })(),
+    ['source', 'current']
+  ),
+  createCircuitPreset(
+    'sinewave-source',
+    'electricity',
+    'Sinewave source',
+    'Circular source marked with a sine wave.',
+    sourceCircleShapes('~', 'Sinewave source'),
+    ['source', 'sine', 'ac']
+  ),
+  createCircuitPreset(
+    'squarewave-source',
+    'electricity',
+    'Squarewave source',
+    'Circular source marked with a square wave.',
+    sourceCircleShapes('sq', 'Squarewave source'),
+    ['source', 'square', 'wave']
+  ),
+  createCircuitPreset('ammeter', 'electricity', 'Ammeter', 'Current meter symbol.', meterShapes('A', 'Ammeter'), ['meter', 'ammeter']),
+  createCircuitPreset('voltmeter', 'electricity', 'Voltmeter', 'Voltage meter symbol.', meterShapes('V', 'Voltmeter'), ['meter', 'voltmeter']),
+  createCircuitPreset('ohmmeter', 'electricity', 'Ohmmeter', 'Resistance meter symbol.', meterShapes(String.raw`\Omega`, 'Ohmmeter'), ['meter', 'ohm']),
+  createCircuitPreset(
+    'lamp',
+    'electricity',
+    'Lamp',
+    'Lamp symbol in a circle.',
+    (() => {
+      const bulb = createCircle({ name: 'Lamp bulb', cx: 0, cy: 0, r: 1.05, fill: 'none', strokeWidth: 0.07 });
+      return [
+        circuitLine('Lamp lead left', { x: -2.8, y: 0 }, { x: -1.05, y: 0 }, { toAttachment: { shapeId: bulb.id, anchor: { x: -1, y: 0 } } }),
+        bulb,
+        circuitLine('Lamp cross 1', { x: -0.58, y: -0.58 }, { x: 0.58, y: 0.58 }),
+        circuitLine('Lamp cross 2', { x: -0.58, y: 0.58 }, { x: 0.58, y: -0.58 }),
+        circuitLine('Lamp lead right', { x: 1.05, y: 0 }, { x: 2.8, y: 0 }, { fromAttachment: { shapeId: bulb.id, anchor: { x: 1, y: 0 } } })
+      ];
+    })(),
+    ['lamp', 'bulb', 'light']
+  ),
+  createCircuitPreset('ground', 'ground', 'Ground', 'Standard ground reference symbol.', groundShapes(), ['ground', 'earth']),
+  createCircuitPreset('diode', 'diode', 'Diode', 'Standard diode symbol.', diodeShapes(), ['diode']),
+  createCircuitPreset('zener-diode', 'diode', 'Zener diode', 'Diode with bent cathode marking.', diodeShapes('zener'), ['diode', 'zener']),
+  createCircuitPreset('led', 'diode', 'Light emitting diode (LED)', 'Diode with outgoing light arrows.', diodeShapes('led'), ['diode', 'led', 'light']),
+  createCircuitPreset('npn-transistor', 'electricity', 'NPN transistor', 'Bipolar NPN transistor symbol.', transistorShapes('npn'), ['transistor', 'npn']),
+  createCircuitPreset('pnp-transistor', 'electricity', 'PNP transistor', 'Bipolar PNP transistor symbol.', transistorShapes('pnp'), ['transistor', 'pnp']),
+  createCircuitPreset('op-amp', 'opAmp', 'OpAmp', 'Operational amplifier with inverting and non-inverting inputs.', opAmpShapes(), ['opamp', 'amplifier']),
+  createCircuitPreset('open-switch', 'switch', 'Open switch', 'Open single-pole switch.', switchShapes(), ['switch', 'open']),
+  createCircuitPreset('closed-switch', 'switch', 'Closed switch', 'Closed single-pole switch.', switchShapes(true), ['switch', 'closed']),
+  createCircuitPreset('push-button', 'switch', 'Push button', 'Open push button contact.', pushButtonShapes(), ['button', 'push']),
+  createCircuitPreset('closed-push-button', 'switch', 'Closed push button', 'Closed push button contact.', pushButtonShapes(true), ['button', 'push', 'closed'])
+];
+
+const logicPresets = (): readonly ObjectPreset[] => [
+  createLogicPreset('and-gate', 'AND gate', 'Two-input AND logic gate.', andGateShapes(), ['and']),
+  createLogicPreset('nand-gate', 'NAND gate', 'AND gate with inverted output.', andGateShapes(true), ['nand']),
+  createLogicPreset('or-gate', 'OR gate', 'Two-input OR logic gate.', orGateShapes(), ['or']),
+  createLogicPreset('nor-gate', 'NOR gate', 'OR gate with inverted output.', orGateShapes(true), ['nor']),
+  createLogicPreset('xor-gate', 'XOR gate', 'Exclusive OR logic gate.', orGateShapes(false, true), ['xor']),
+  createLogicPreset('xnor-gate', 'XNOR gate', 'Exclusive OR gate with inverted output.', orGateShapes(true, true), ['xnor']),
+  createLogicPreset('buffer-gate', 'Buffer', 'Digital buffer gate.', bufferGateShapes(), ['buffer']),
+  createLogicPreset('not-gate', 'NOT gate', 'Inverter logic gate.', bufferGateShapes(true), ['not', 'inverter'])
+];
+
 export const buildTablePresetShapes = (overrides: Partial<typeof DEFAULT_TABLE_GEOMETRY> = {}): readonly CanvasShape[] =>
   buildTableShapes({
     ...DEFAULT_TABLE_GEOMETRY,
@@ -729,6 +1188,8 @@ export const objectPresets: readonly ObjectPreset[] = [
     quickAccess: true,
     searchTerms: ['image', 'photo', 'picture', 'asset']
   }),
+  ...electricityPresets(),
+  ...logicPresets(),
   ...complexDiagramPresets(),
   createPreset(
     'decision',
@@ -1196,7 +1657,16 @@ export const objectPresets: readonly ObjectPreset[] = [
       }),
       createLine({ name: 'Callout leader', from: { x: -0.4, y: 0.9 }, to: { x: -2.4, y: -1.1 }, stroke: '#6d706b' }),
       createCircle({ name: 'Callout target', cx: -2.4, cy: -1.1, r: 0.12, fill: '#2f66f3', stroke: '#2f66f3' }),
-      createText({ name: 'Callout text', x: 1.8, y: 1.35, text: 'Annotation', fontSize: 0.36 })
+      createText({
+        name: 'Callout text',
+        x: 0.1,
+        y: 1.35,
+        text: 'Annotation',
+        textBox: true,
+        boxWidth: 3.4,
+        fontSize: 0.34,
+        textAlign: 'left'
+      })
     ],
     { searchTerms: ['callout', 'annotation', 'note'] }
   ),
@@ -1625,7 +2095,7 @@ const metricsCalloutShape = (shape: CanvasShape): CanvasShape => {
     case 'circle':
       return { ...shape, id: crypto.randomUUID(), cx: shape.cx + 4.2, cy: shape.cy - 2.8 };
     case 'text':
-      return { ...shape, id: crypto.randomUUID(), x: shape.x + 4.2, y: shape.y - 2.8, text: 'Growth note' };
+      return { ...shape, id: crypto.randomUUID(), x: 2.3, y: -1.45, text: 'Growth note', boxWidth: 3.3 };
     default:
       return shape;
   }

@@ -1404,6 +1404,10 @@ export class EditorPageComponent {
         return 'pipeline';
       case 'geometry':
         return 'triangle';
+      case 'electricity':
+        return 'electricity';
+      case 'logic':
+        return 'logicGate';
       case 'graphs':
         return 'graph';
       case 'data':
