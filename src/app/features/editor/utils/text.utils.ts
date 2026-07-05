@@ -48,7 +48,15 @@ const DISPLAY_TEXT_REPLACEMENTS = [
   [String.raw`\cap`, '∩']
 ] as const;
 
-export const textLines = (value: string): readonly string[] => value.split('\n').map((line) => line || ' ');
+export interface TextMetrics {
+  readonly lines: readonly string[];
+  readonly width: number;
+  readonly height: number;
+  readonly topOffset: number;
+  readonly bottomOffset: number;
+}
+
+export const textLines = (value: string): readonly string[] => value.split(REGEX.shared.lineBreak).map((line) => line || ' ');
 
 export const renderDisplayText = (value: string): string =>
   DISPLAY_TEXT_REPLACEMENTS.reduce((current, [source, replacement]) => current.replaceAll(source, replacement), value);
@@ -134,13 +142,30 @@ export const estimateTextHeight = (
 export const estimateTextVerticalBounds = (shape: TextShape, lineCount: number, scale = 1): { readonly topOffset: number; readonly bottomOffset: number } => {
   const fontSize = shape.fontSize * scale;
   const safeLineCount = Math.max(lineCount, 1);
-  const halfLineHeight = (fontSize * TEXT_RENDER_LINE_HEIGHT_FACTOR) / 2;
+  const ascent = fontSize * 0.58;
+  const descent = fontSize * 0.26;
   const lastBaselineOffset = (safeLineCount - 1) * fontSize * TEXT_TSPAN_LINE_STEP_FACTOR;
   return {
-    topOffset: halfLineHeight,
-    bottomOffset: -lastBaselineOffset - halfLineHeight
+    topOffset: ascent,
+    bottomOffset: -lastBaselineOffset - descent
   };
 };
 
 export const defaultTextHeight = (shape: TextShape, lineCount: number, scale = 1): number =>
   estimateTextHeight(shape, lineCount, scale, TEXT_RENDER_LINE_HEIGHT_FACTOR);
+
+export const measureTextShape = (
+  shape: TextShape,
+  scale = 1,
+  minimumWidthFactor = TEXT_MIN_EXPORT_WIDTH_FACTOR,
+  lines: readonly string[] = displayTextLinesForShape(shape)
+): TextMetrics => {
+  const verticalBounds = estimateTextVerticalBounds(shape, lines.length, scale);
+  return {
+    lines,
+    width: estimateTextWidth(shape, scale, minimumWidthFactor, lines),
+    height: verticalBounds.topOffset - verticalBounds.bottomOffset,
+    topOffset: verticalBounds.topOffset,
+    bottomOffset: verticalBounds.bottomOffset
+  };
+};

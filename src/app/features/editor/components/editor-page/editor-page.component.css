@@ -1298,7 +1298,8 @@ kbd {
   overflow: visible;
   outline: none;
   caret-color: var(--accent);
-  white-space: pre;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 }
 
 .inline-text-editor::selection {

@@ -13,7 +13,7 @@ import { sceneToTikz } from '../tikz/tikz.codegen';
 import { parseTikz } from '../tikz/tikz.parser';
 import type { ArrowTipKind, CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
 import { remapStructuralShapeIds } from '../utils/table.utils';
-import { displayTextLinesForShape, estimateTextHeight, estimateTextWidth, textLeftForWidth } from '../utils/text.utils';
+import { measureTextShape, textLeftForWidth } from '../utils/text.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 import { normalizeAppTheme } from './app-theme.service';
 import { ARROW_TIP_OPTIONS, DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
@@ -211,15 +211,14 @@ const shapeBounds = (shape: CanvasShape): { readonly left: number; readonly righ
         }
       );
     case 'text': {
-      const lines = displayTextLinesForShape(shape);
-      const width = estimateTextWidth(shape, 1, 1, lines);
-      const height = estimateTextHeight(shape, lines.length);
+      const metrics = measureTextShape(shape, 1, 1);
+      const width = metrics.width;
       const left = textLeftForWidth(shape, shape.x, width);
       const corners = [
-        { x: left, y: shape.y - height / 2 },
-        { x: left + width, y: shape.y - height / 2 },
-        { x: left + width, y: shape.y + height / 2 },
-        { x: left, y: shape.y + height / 2 }
+        { x: left, y: shape.y + metrics.bottomOffset },
+        { x: left + width, y: shape.y + metrics.bottomOffset },
+        { x: left + width, y: shape.y + metrics.topOffset },
+        { x: left, y: shape.y + metrics.topOffset }
       ] as const;
       return boundsFromPoints(shape.rotation ? corners.map((corner) => rotatePointAround(corner, { x: shape.x, y: shape.y }, shape.rotation)) : corners);
     }

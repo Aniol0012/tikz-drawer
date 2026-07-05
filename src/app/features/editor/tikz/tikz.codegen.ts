@@ -492,6 +492,12 @@ const textAnchorToTikz = (align: TextShape['textAlign']): 'west' | 'east' | 'cen
   return 'center';
 };
 
+const textContentToTikz = (text: string): string =>
+  text
+    .split(REGEX.shared.lineBreak)
+    .map((line) => wrapInlineMathCommands(line || ' '))
+    .join(String.raw`\\`);
+
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string => {
   const nodeOptions = [
     `text=${context.registerColor(shape.color)}`,
@@ -502,6 +508,8 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
 
   if (shape.textBox) {
     nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`, `align=${shape.textAlign}`);
+  } else if (REGEX.shared.lineBreak.test(shape.text)) {
+    nodeOptions.push(`align=${shape.textAlign}`);
   }
 
   if (shape.rotation !== 0) {
@@ -510,7 +518,7 @@ const textToTikz = (shape: TextShape, context: TikzGenerationContext): string =>
 
   const fontTokens = [shape.fontWeight === 'bold' ? String.raw`\bfseries` : '', shape.fontStyle === 'italic' ? String.raw`\itshape` : ''].filter(Boolean);
 
-  const normalizedText = wrapInlineMathCommands(shape.text);
+  const normalizedText = textContentToTikz(shape.text);
   const baseText = shape.textDecoration === 'underline' ? String.raw`\underline{${normalizedText}}` : normalizedText;
   const content = fontTokens.length ? `{${fontTokens.join(' ')} ${baseText}}` : `{${baseText}}`;
 

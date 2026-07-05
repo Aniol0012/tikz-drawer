@@ -212,7 +212,36 @@ describe('editor-geometry utils', () => {
       rotation: 0
     });
 
-    expect(bounds).toEqual({ left: -0.96, right: 0.96, bottom: -0.44, top: 0.44 });
+    expect(bounds?.left).toBeCloseTo(-1.12, 6);
+    expect(bounds?.right).toBeCloseTo(1.12, 6);
+    expect(bounds?.bottom).toBeCloseTo(-0.26, 6);
+    expect(bounds?.top).toBeCloseTo(0.58, 6);
+  });
+
+  it('fits text bounds around every explicit line break', () => {
+    const bounds = shapeBounds({
+      id: 'text-1',
+      name: 'Text',
+      kind: 'text',
+      text: 'First\nSecond',
+      x: 0,
+      y: 0,
+      textBox: false,
+      boxWidth: 4,
+      fontSize: 1,
+      color: '#111111',
+      colorOpacity: 1,
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textDecoration: 'none',
+      textAlign: 'center',
+      rotation: 0
+    });
+
+    expect(bounds?.left).toBeCloseTo(-1.68, 6);
+    expect(bounds?.right).toBeCloseTo(1.68, 6);
+    expect(bounds?.bottom).toBeCloseTo(-1.4, 6);
+    expect(bounds?.top).toBeCloseTo(0.58, 6);
   });
 
   it('rotates a rectangle around a pivot while preserving size', () => {

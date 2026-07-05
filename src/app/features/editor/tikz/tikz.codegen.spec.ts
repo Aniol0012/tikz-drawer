@@ -133,6 +133,19 @@ describe('sceneToTikzBundle', () => {
     expect(bundle.code).toContain('-{Square[');
   });
 
+  it('exports text line breaks as TikZ node line breaks', () => {
+    const scene: TikzScene = {
+      name: 'Multiline text scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [{ ...textWithInlineMath, text: 'First\nSecond' }]
+    };
+
+    const bundle = sceneToTikzBundle(scene);
+
+    expect(bundle.code).toContain('align=center');
+    expect(bundle.code).toContain(String.raw`First\\Second`);
+  });
+
   it('adds calc when preserved raw TikZ uses calculated coordinates', () => {
     const scene: TikzScene = {
       name: 'Raw calc scene',

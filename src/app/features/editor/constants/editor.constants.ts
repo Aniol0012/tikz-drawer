@@ -54,7 +54,7 @@ export const MIN_TEXT_BOX_WIDTH = 2.2;
 export const MIN_TEXT_RESIZE_WIDTH = 1.2;
 export const MIN_TEXT_RESIZE_HEIGHT = 0.42;
 
-export const TEXT_WRAP_CHAR_WIDTH_FACTOR = 0.48;
+export const TEXT_WRAP_CHAR_WIDTH_FACTOR = 0.56;
 export const TEXT_WRAP_MIN_CHAR_WIDTH = 0.12;
 export const TEXT_WRAP_MIN_CHARACTERS = 4;
 export const TEXT_RENDER_LINE_HEIGHT_FACTOR = 0.88;

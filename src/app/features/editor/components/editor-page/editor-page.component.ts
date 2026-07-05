@@ -304,7 +304,7 @@ import {
   triangleOutlinePoints as triangleOutlinePointsUtil,
   trianglePoints as trianglePointsUtil
 } from '../../utils/editor-geometry.utils';
-import { displayTextLinesForShape, textLeftForWidth } from '../../utils/text.utils';
+import { displayTextLinesForShape, measureTextShape, textLeftForWidth } from '../../utils/text.utils';
 import { REGEX } from '../../../../shared/regex/regex.utils';
 
 @Component({
@@ -723,21 +723,20 @@ export class EditorPageComponent {
     }
 
     const metrics = EDITOR_INLINE_TEXT_EDITOR_METRICS;
-    const fontSize = Math.max(shape.fontSize * this.preferences().scale, metrics.minFontSize);
-    const lines = this.displayTextLinesForShape({ ...shape, text: editor.value });
+    const scale = this.preferences().scale;
+    const fontSize = Math.max(shape.fontSize * scale, metrics.minFontSize);
+    const textMetrics = measureTextShape({ ...shape, text: editor.value }, scale);
     const paddingX = Math.max(metrics.minPaddingX, fontSize * 0.08);
     const paddingY = Math.max(metrics.minPaddingY, fontSize * 0.08);
     const width = shape.textBox
-      ? Math.max(shape.boxWidth * this.preferences().scale, metrics.minBoxWidth)
-      : Math.max(
-          ...lines.map((line) => Math.max(line.length * fontSize * metrics.characterWidthFactor, fontSize * metrics.minLineWidthFactor, metrics.minLineWidth))
-        );
-    const height = Math.max(lines.length * fontSize * metrics.lineHeightFactor + paddingY * 2, fontSize + paddingY * 2);
+      ? Math.max(textMetrics.width, metrics.minBoxWidth)
+      : Math.max(textMetrics.width, fontSize * metrics.minLineWidthFactor, metrics.minLineWidth);
+    const height = Math.max(textMetrics.height, fontSize * metrics.lineHeightFactor) + paddingY * 2;
     const anchorX = this.toSvgX(shape.x);
     const left = textLeftForWidth(shape, anchorX, width);
     return {
       x: left - paddingX,
-      y: this.toSvgY(shape.y) - height / 2,
+      y: this.toSvgY(shape.y + textMetrics.topOffset / scale) - paddingY,
       width: width + paddingX * 2,
       height,
       fontSize,
@@ -832,7 +831,7 @@ export class EditorPageComponent {
       return [template.title, template.description].join(' ').toLowerCase().includes(query);
     });
   });
-  readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapes()));
+  readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapesForBounds()));
   readonly aiSelectionActive = computed(() => {
     const aiShapeIds = this.aiPatch.pendingAffectedShapeIds();
     const selectedShapeIds = this.store.selectedShapeIds();
@@ -2758,7 +2757,7 @@ export class EditorPageComponent {
   }
 
   updateInlineTextEditor(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+    const value = (event.target as HTMLTextAreaElement).value;
     this.inlineTextEditor.update((editor) => (editor ? { ...editor, value } : null));
   }
 
@@ -2782,7 +2781,9 @@ export class EditorPageComponent {
   }
 
   onInlineTextEditorKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    event.stopPropagation();
+
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       this.commitInlineTextEditor();
       return;
@@ -7494,6 +7495,16 @@ export class EditorPageComponent {
 
   private shapeBounds(shape: CanvasShape): SelectionBounds | null {
     return shapeBoundsUtil(shape);
+  }
+
+  private selectedShapesForBounds(): readonly CanvasShape[] {
+    const selectedShapes = this.selectedShapes();
+    const editor = this.inlineTextEditor();
+    if (!editor) {
+      return selectedShapes;
+    }
+
+    return selectedShapes.map((shape) => (shape.kind === 'text' && shape.id === editor.shapeId ? ({ ...shape, text: editor.value } as CanvasShape) : shape));
   }
 
   private boundsFromPoints(points: readonly Point[]): SelectionBounds | null {
