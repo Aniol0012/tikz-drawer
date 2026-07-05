@@ -15,6 +15,8 @@ const selectionResizeHandles = new Set<SelectionResizeHandle>(['nw', 'n', 'ne', 
 
 const isSelectionResizeHandle = (handle: ResizeHandle): handle is SelectionResizeHandle => selectionResizeHandles.has(handle as SelectionResizeHandle);
 
+const isHorizontalTextReflowHandle = (handle: ResizeHandle): handle is 'e' | 'w' => handle === 'e' || handle === 'w';
+
 interface ResizeBoundsOptions {
   readonly minimumWidth: number;
   readonly minimumHeight: number;
@@ -162,6 +164,17 @@ const resizeTextShape = (shape: TextCanvasShape, handle: ResizeHandle, point: Po
     lockAspectRatio: false,
     selectedShapeKind: options.selectedShapeKind
   });
+
+  if (isHorizontalTextReflowHandle(handle)) {
+    return {
+      ...shape,
+      textBox: true,
+      x: resizedBounds.left,
+      y: shape.y,
+      boxWidth: Math.max(resizedBounds.right - resizedBounds.left, options.minTextBoxWidth)
+    };
+  }
+
   const originalWidth = Math.max(bounds.right - bounds.left, shape.fontSize);
   const originalHeight = Math.max(bounds.top - bounds.bottom, shape.fontSize * options.textMinHeightFactor);
   const nextWidth = Math.max(resizedBounds.right - resizedBounds.left, options.minTextResizeWidth);

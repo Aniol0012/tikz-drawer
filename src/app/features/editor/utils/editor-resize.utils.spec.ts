@@ -245,7 +245,9 @@ describe('editor-resize utils', () => {
     }
 
     expect(resized.boxWidth).toBeGreaterThan(textShape.boxWidth);
-    expect(resized.fontSize).toBeGreaterThanOrEqual(0.2);
+    expect(resized.fontSize).toBe(textShape.fontSize);
+    expect(resized.x).toBe(textShape.x);
+    expect(resized.y).toBe(textShape.y);
   });
 
   it('keeps textbox resize above the canvas minimum width', () => {
@@ -256,6 +258,33 @@ describe('editor-resize utils', () => {
     }
 
     expect(resized.boxWidth).toBe(MIN_TEXT_BOX_WIDTH);
+  });
+
+  it('turns horizontal free text resizing into textbox reflow without scaling the font', () => {
+    const freeText = { ...textShape, textBox: false, textAlign: 'center' as const };
+    const resized = resizeShape(freeText, 'e', { x: 4, y: 1 }, resizeOptions());
+    expect(resized.kind).toBe('text');
+    if (resized.kind !== 'text') {
+      throw new Error('Expected text');
+    }
+
+    expect(resized.textBox).toBe(true);
+    expect(resized.boxWidth).toBeCloseTo(3);
+    expect(resized.fontSize).toBe(freeText.fontSize);
+    expect(resized.x).toBe(freeText.x);
+    expect(resized.y).toBe(freeText.y);
+  });
+
+  it('still scales text when resized from a diagonal handle', () => {
+    const resized = resizeShape(textShape, 'se', { x: 4, y: 0 }, resizeOptions());
+    expect(resized.kind).toBe('text');
+    if (resized.kind !== 'text') {
+      throw new Error('Expected text');
+    }
+
+    expect(resized.textBox).toBe(true);
+    expect(resized.boxWidth).toBeGreaterThan(textShape.boxWidth);
+    expect(resized.fontSize).toBeGreaterThan(textShape.fontSize);
   });
 
   it('resizes line arrow controls through callback', () => {

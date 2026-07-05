@@ -63,6 +63,18 @@ export const renderDisplayText = (value: string): string =>
 
 export const displayTextLines = (value: string): readonly string[] => textLines(value).map((line) => renderDisplayText(line));
 
+const splitLongTextWord = (word: string, maxChars: number): readonly string[] => {
+  if (word.length <= maxChars) {
+    return [word || ' '];
+  }
+
+  const chunks: string[] = [];
+  for (let index = 0; index < word.length; index += maxChars) {
+    chunks.push(word.slice(index, index + maxChars));
+  }
+  return chunks;
+};
+
 export const wrapTextLine = (line: string, maxChars: number): readonly string[] => {
   if (line.length <= maxChars) {
     return [line || ' '];
@@ -76,12 +88,20 @@ export const wrapTextLine = (line: string, maxChars: number): readonly string[] 
   const rows: string[] = [];
   let current = '';
   for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars || !current) {
+    const [firstChunk, ...remainingChunks] = splitLongTextWord(word, maxChars);
+    const candidate = current ? `${current} ${firstChunk}` : firstChunk;
+    if (candidate.length <= maxChars) {
       current = candidate;
     } else {
       rows.push(current);
-      current = word;
+      current = firstChunk;
+    }
+
+    for (const chunk of remainingChunks) {
+      if (current) {
+        rows.push(current);
+      }
+      current = chunk;
     }
   }
 
