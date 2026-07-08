@@ -301,3 +301,18 @@ function withOpacity(hex: string, opacity: number): string {
   const { r, g, b } = hexToRgb(hex);
   return `rgb(${r} ${g} ${b} / ${Math.round(opacity * 100)}%)`;
 }
+
+function randomChannel(): number {
+  return Math.floor(Math.random() * 256);
+}
+
+function clampUnit(value: number): number {
+  return clamp(value, 0, 1);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
+}
