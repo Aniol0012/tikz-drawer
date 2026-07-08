@@ -1205,12 +1205,21 @@ export class EditorPageComponent {
       const canvasSvg = this.canvasSvg().nativeElement;
       const mobileLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_MOBILE_BREAKPOINT_PX}px)`) ?? null;
       const sidebarsOverlayLayoutQuery = this.document.defaultView?.matchMedia?.(`(max-width: ${EDITOR_SIDEBAR_OVERLAY_BREAKPOINT_PX}px)`) ?? null;
+      let hasMeasuredCanvasSize = false;
       const updateCanvasSize = () => {
         const nextViewportWidth = Math.round(viewport.clientWidth);
+        const nextViewportHeight = Math.round(viewport.clientHeight);
         const nextCanvasWidth = Math.max(EDITOR_CANVAS_MIN_WIDTH, nextViewportWidth);
+        const nextCanvasHeight = Math.max(EDITOR_CANVAS_MIN_HEIGHT, nextViewportHeight);
+
+        if (hasMeasuredCanvasSize && nextCanvasHeight !== this.canvasHeight()) {
+          this.viewportCenter.update((center) => viewportCenterAfterVerticalResize(center, this.canvasHeight(), nextCanvasHeight, this.preferences().scale));
+        }
+
+        hasMeasuredCanvasSize = true;
         this.canvasViewportWidth.set(nextViewportWidth);
         this.canvasWidth.set(nextCanvasWidth);
-        this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, Math.round(viewport.clientHeight)));
+        this.canvasHeight.set(nextCanvasHeight);
       };
 
       const resizeObserver = new ResizeObserver(() => {
