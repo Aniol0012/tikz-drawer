@@ -8,36 +8,37 @@
   position: relative;
   display: grid;
   min-width: 0;
-  gap: 8px;
 }
 
-.color-picker__trigger {
+.color-picker__summary {
   display: grid;
-  grid-template-columns: 34px minmax(46px, 1fr) auto;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-areas:
+    'header header'
+    'swatch opacity';
   align-items: center;
-  gap: 8px;
+  gap: 8px 14px;
   width: 100%;
-  min-height: 40px;
-  padding: 5px 9px 5px 5px;
-  border: 1px solid var(--tool-border);
-  border-radius: 8px;
-  background: var(--input-background);
   color: var(--app-foreground);
-  text-align: left;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
 }
 
-.color-picker__trigger:hover {
-  border-color: var(--tool-border-strong);
+.color-picker__header {
+  grid-area: header;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  min-width: 0;
 }
 
-.color-picker__trigger:focus-visible {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+.color-picker__swatch-button {
+  grid-area: swatch;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
 }
 
 .color-picker__swatch,
@@ -57,8 +58,9 @@
 }
 
 .color-picker__swatch {
-  width: 30px;
-  height: 30px;
+  display: block;
+  width: 40px;
+  height: 40px;
   border: 2px solid var(--input-background);
   border-radius: 50%;
   box-shadow:
@@ -66,8 +68,25 @@
     inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
 }
 
-.color-picker__label,
-.color-picker__value {
+.color-picker__swatch-button:hover .color-picker__swatch {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
+}
+
+.color-picker__swatch-button:focus-visible {
+  outline: none;
+}
+
+.color-picker__swatch-button:focus-visible .color-picker__swatch {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
+}
+
+.color-picker__label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -80,16 +99,72 @@
   color: var(--muted-foreground);
 }
 
-.color-picker__value {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--app-foreground);
+.color-picker__opacity-text {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.color-picker__summary-opacity {
+  grid-area: opacity;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  outline: none;
+}
+
+.color-picker__summary-opacity::-webkit-slider-runnable-track {
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-picker-opacity-track);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tool-border-strong) 24%, transparent),
+    inset 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.color-picker__summary-opacity::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid var(--input-background);
+  border-radius: 50%;
+  background: var(--color-picker-preview);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--app-foreground) 44%, transparent),
+    0 1px 4px rgb(0 0 0 / 28%);
+}
+
+.color-picker__summary-opacity::-moz-range-track {
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-picker-opacity-track);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tool-border-strong) 24%, transparent),
+    inset 0 1px 2px rgb(0 0 0 / 12%);
+}
+
+.color-picker__summary-opacity::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--input-background);
+  border-radius: 50%;
+  background: var(--color-picker-preview);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--app-foreground) 44%, transparent),
+    0 1px 4px rgb(0 0 0 / 28%);
 }
 
 .color-picker__panel {
+  position: fixed;
+  z-index: 1000;
   display: grid;
   gap: 10px;
-  width: min(100%, 330px);
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--tool-border) 76%, transparent);
   border-radius: 8px;
@@ -178,13 +253,8 @@
 }
 
 .color-picker__random svg {
-  width: 17px;
-  height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+  width: 18px;
+  height: 18px;
 }
 
 .color-picker__random:hover {
@@ -208,6 +278,10 @@
   border-radius: 999px;
 }
 
+.color-picker__opacity input::-webkit-slider-runnable-track {
+  background: var(--color-picker-opacity-track);
+}
+
 .color-picker__hue::-webkit-slider-thumb,
 .color-picker__opacity input::-webkit-slider-thumb {
   appearance: none;
@@ -220,10 +294,18 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
 }
 
+.color-picker__opacity input::-webkit-slider-thumb {
+  background: var(--color-picker-preview);
+}
+
 .color-picker__hue::-moz-range-track,
 .color-picker__opacity input::-moz-range-track {
   height: 8px;
   border-radius: 999px;
+}
+
+.color-picker__opacity input::-moz-range-track {
+  background: var(--color-picker-opacity-track);
 }
 
 .color-picker__hue::-moz-range-thumb,
@@ -234,6 +316,10 @@
   border-radius: 50%;
   background: var(--app-foreground);
   box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+}
+
+.color-picker__opacity input::-moz-range-thumb {
+  background: var(--color-picker-preview);
 }
 
 .color-picker__palette {
@@ -308,29 +394,12 @@
 }
 
 .color-picker__opacity input {
-  background: linear-gradient(90deg, transparent, currentColor);
-  color: var(--app-foreground);
+  background: var(--color-picker-opacity-track);
 }
 
 @media (max-width: 520px), (pointer: coarse) {
-  .color-picker__trigger {
-    min-height: 44px;
-    grid-template-columns: 36px minmax(0, 1fr);
-  }
-
-  .color-picker__value {
-    grid-column: 2;
-    justify-self: start;
-  }
-
-  .color-picker__panel {
-    width: 100%;
-    padding: 9px;
-  }
-
-  .color-picker__area,
-  .color-picker__preview {
-    min-height: 168px;
+  .color-picker__summary {
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 
   .color-picker__palette {

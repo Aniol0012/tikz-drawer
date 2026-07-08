@@ -1,12 +1,41 @@
 <div class="color-picker" data-tooltip-disabled>
-  <button class="color-picker__trigger" type="button" [attr.aria-expanded]="isOpen()" [attr.aria-label]="label()" (click)="toggleOpen()">
-    <span class="color-picker__swatch" [style.background]="previewBackground()"></span>
-    <span class="color-picker__label">{{ label() }}</span>
-    <span class="color-picker__value">{{ hexInputValue() }}</span>
-  </button>
+  <div #summary class="color-picker__summary">
+    <div class="color-picker__header">
+      <span class="color-picker__label">{{ label() }}</span>
+      <span class="color-picker__opacity-text">{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
+    </div>
+
+    <button
+      class="color-picker__swatch-button"
+      type="button"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-label]="label()"
+      (click)="toggleOpen()">
+      <span class="color-picker__swatch" [style.background]="previewBackground()"></span>
+    </button>
+
+    <input
+      class="color-picker__summary-opacity"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      [value]="clampedOpacity()"
+      [attr.aria-label]="opacityLabel()"
+      [style.--color-picker-preview]="previewBackground()"
+      [style.--color-picker-opacity-track]="opacityTrackBackground()"
+      (input)="updateOpacity($event)" />
+  </div>
 
   @if (isOpen()) {
-    <div class="color-picker__panel" role="dialog" [attr.aria-label]="label()" (pointerup)="endDrag()">
+    <div
+      class="color-picker__panel"
+      role="dialog"
+      [attr.aria-label]="label()"
+      [style.left]="panelLeft()"
+      [style.top]="panelTop()"
+      [style.width]="panelWidth()"
+      (pointerup)="endDrag()">
       <div class="color-picker__visual-row">
         <div
           class="color-picker__area"
@@ -41,11 +70,10 @@
           (input)="updateHue($event)" />
         <button class="color-picker__random" type="button" [attr.aria-label]="randomLabel()" (click)="pickRandomColor()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M16 3h5v5"></path>
-            <path d="M4 20 21 3"></path>
-            <path d="M21 16v5h-5"></path>
-            <path d="m15 15 6 6"></path>
-            <path d="m4 4 5 5"></path>
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M4 17a1 1 0 0 1 0-2h2l3-3l-3-3H4a1.001 1.001 0 0 1 0-2h3l4 4l4-4h2V5l4 3.001L17 11V9h-1l-3 3l3 3h1v-2l4 3l-4 3v-2h-2l-4-4l-4 4z" />
           </svg>
         </button>
       </div>
@@ -78,7 +106,15 @@
 
       <label class="color-picker__opacity">
         <span>{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
-        <input type="range" min="0" max="1" step="0.01" [value]="clampedOpacity()" (input)="updateOpacity($event)" />
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          [value]="clampedOpacity()"
+          [style.--color-picker-preview]="previewBackground()"
+          [style.--color-picker-opacity-track]="opacityTrackBackground()"
+          (input)="updateOpacity($event)" />
       </label>
     </div>
   }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, output, signal, viewChild } from '@angular/core';
 import { REGEX } from '../../../../shared/regex/regex.utils';
 
 interface RgbColor {
@@ -46,11 +46,15 @@ const FALLBACK_COLOR = '#1F1F1F';
   host: {
     '(document:pointerdown)': 'closeFromDocument($event)',
     '(document:pointerup)': 'endDrag()',
-    '(document:keydown.escape)': 'close()'
+    '(document:keydown.escape)': 'close()',
+    '(window:resize)': 'updatePanelPositionIfOpen()',
+    '(window:scroll)': 'updatePanelPositionIfOpen()'
   }
 })
 export class ColorPickerComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  readonly summary = viewChild<ElementRef<HTMLElement>>('summary');
 
   readonly value = input.required<string>();
   readonly opacity = input(1);
@@ -64,6 +68,9 @@ export class ColorPickerComponent {
 
   readonly isOpen = signal(false);
   readonly activeDrag = signal<'area' | null>(null);
+  readonly panelLeft = signal('0px');
+  readonly panelTop = signal('0px');
+  readonly panelWidth = signal('320px');
   readonly commonColors = COMMON_COLORS;
   readonly rgbChannels: readonly RgbChannel[] = ['r', 'g', 'b'];
   readonly Math = Math;
@@ -74,11 +81,22 @@ export class ColorPickerComponent {
   readonly hsv = computed(() => rgbToHsv(this.rgb()));
   readonly hexInputValue = computed(() => this.normalizedColor().toUpperCase());
   readonly previewBackground = computed(() => withOpacity(this.normalizedColor(), this.clampedOpacity()));
+  readonly opacityTrackBackground = computed(() => opacityGradient(this.rgb()));
   readonly hueGradient = 'linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)';
   readonly colorAreaBackground = computed(() => `linear-gradient(0deg, #000, transparent), linear-gradient(90deg, #fff, hsl(${this.hsv().h} 100% 50%))`);
 
   toggleOpen(): void {
-    this.isOpen.update((isOpen) => !isOpen);
+    if (this.isOpen()) {
+      this.close();
+      return;
+    }
+
+    this.open();
+  }
+
+  open(): void {
+    this.updatePanelPosition();
+    this.isOpen.set(true);
   }
 
   close(): void {
@@ -91,6 +109,34 @@ export class ColorPickerComponent {
       return;
     }
     this.close();
+  }
+
+  updatePanelPosition(): void {
+    const summary = this.summary()?.nativeElement;
+    const viewport = this.host.nativeElement.ownerDocument.defaultView;
+    if (!summary || !viewport) {
+      this.panelLeft.set('0px');
+      this.panelTop.set('0px');
+      this.panelWidth.set('320px');
+      return;
+    }
+
+    const rect = summary.getBoundingClientRect();
+    const margin = 12;
+    const gap = 8;
+    const preferredWidth = Math.max(300, Math.min(340, rect.width));
+    const width = Math.min(preferredWidth, viewport.innerWidth - margin * 2);
+    const left = clamp(rect.left, margin, viewport.innerWidth - width - margin);
+    const top = this.calculatePanelTop(rect, viewport.innerHeight, margin, gap);
+    this.panelLeft.set(`${left}px`);
+    this.panelTop.set(`${top}px`);
+    this.panelWidth.set(`${width}px`);
+  }
+
+  updatePanelPositionIfOpen(): void {
+    if (this.isOpen()) {
+      this.updatePanelPosition();
+    }
   }
 
   pickCommonColor(color: string): void {
@@ -188,6 +234,16 @@ export class ColorPickerComponent {
 
   private emitColor(color: string): void {
     this.valueChange.emit(normalizeHexColor(color, this.fallback()));
+  }
+
+  private calculatePanelTop(rect: DOMRect, viewportHeight: number, margin: number, gap: number): number {
+    const estimatedPanelHeight = 382;
+    const below = rect.bottom + gap;
+    const above = rect.top - estimatedPanelHeight - gap;
+    if (below + estimatedPanelHeight <= viewportHeight - margin) {
+      return below;
+    }
+    return Math.max(margin, above);
   }
 }
 
@@ -300,6 +356,10 @@ function hsvToRgb(color: HsvColor): RgbColor {
 function withOpacity(hex: string, opacity: number): string {
   const { r, g, b } = hexToRgb(hex);
   return `rgb(${r} ${g} ${b} / ${Math.round(opacity * 100)}%)`;
+}
+
+function opacityGradient(color: RgbColor): string {
+  return `linear-gradient(90deg, rgb(${color.r} ${color.g} ${color.b} / 0%), rgb(${color.r} ${color.g} ${color.b} / 100%))`;
 }
 
 function randomChannel(): number {
