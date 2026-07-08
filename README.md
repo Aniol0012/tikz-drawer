@@ -48,6 +48,10 @@ Open [http://localhost:4200](http://localhost:4200).
 pnpm build
 ```
 
+## License
+
+TikZ Drawer is available under the [TikZ Drawer Community Non-Commercial License](LICENSE). You may use, study, modify, fork, and contribute to the project for non-commercial purposes, as long as the original project and contributors are credited.
+
 ## Contributors
 
 <a href="https://github.com/aniol0012/tikz-drawer/graphs/contributors">
