@@ -1920,74 +1920,8 @@ kbd {
   align-items: start;
 }
 
-.color-chip-field {
-  display: grid;
-  grid-template-columns: 48px minmax(120px, 1fr);
-  grid-template-areas:
-    'label value'
-    'swatch range';
-  gap: 7px 12px;
-  align-items: start;
-  align-content: center;
+.color-pair-controls > app-color-picker {
   min-width: 0;
-}
-
-.color-inline-field {
-  display: grid;
-  grid-template-columns: 48px minmax(120px, 1fr);
-  grid-template-areas:
-    'swatch value'
-    'swatch range';
-  gap: 7px 12px;
-  align-items: center;
-  min-width: 0;
-}
-
-.color-chip-field small,
-.color-inline-field small {
-  grid-area: label;
-  color: var(--muted-foreground);
-  font-size: 0.76rem;
-  font-weight: 700;
-  justify-self: start;
-  text-align: left;
-}
-
-.color-swatch {
-  width: 36px !important;
-  min-width: 36px !important;
-  height: 36px;
-  min-height: 36px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  overflow: hidden;
-  border: 1px solid var(--tool-border) !important;
-  background: transparent;
-  justify-self: start;
-}
-
-.color-chip-field .color-swatch,
-.color-inline-field .color-swatch {
-  grid-area: swatch;
-}
-
-.color-swatch::-webkit-color-swatch-wrapper {
-  padding: 0;
-  border-radius: 50%;
-}
-
-.color-swatch::-webkit-color-swatch {
-  border: 0;
-  border-radius: 50%;
-}
-
-.color-swatch::-moz-color-swatch {
-  border: 0;
-  border-radius: 50%;
-}
-
-.color-chip-field--metric {
-  justify-items: stretch;
 }
 
 .color-metric-input {
@@ -1999,53 +1933,6 @@ kbd {
   background: var(--input-background);
   color: var(--app-foreground);
   text-align: center;
-}
-
-.color-opacity-input {
-  grid-area: range;
-  width: 100%;
-  align-self: center;
-  appearance: none;
-  height: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--app-foreground) 14%, var(--input-background));
-  outline: none;
-  accent-color: var(--accent);
-}
-
-.color-opacity-input::-webkit-slider-thumb {
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--panel-background);
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
-}
-
-.color-opacity-input::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--panel-background);
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-.color-opacity-input + small {
-  grid-area: value;
-  align-self: start;
-}
-
-@media (max-width: 520px) {
-  .color-chip-field,
-  .color-inline-field {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'label'
-      'swatch'
-      'value'
-      'range';
-  }
 }
 
 .selected-shape-list {
@@ -2271,34 +2158,6 @@ kbd {
   min-height: 40px;
 }
 
-.color-pair-controls--line {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.color-pair-controls--line .color-chip-field {
-  grid-template-columns: 52px minmax(120px, 1fr);
-  gap: 8px 12px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.color-pair-controls--line .color-swatch {
-  width: 40px !important;
-  min-width: 40px !important;
-  height: 40px;
-  min-height: 40px !important;
-}
-
-.color-pair-controls--line .color-opacity-input {
-  margin-top: 0;
-}
-
-.color-pair-controls--line small {
-  font-size: 0.78rem;
-}
-
 .anchor-editor {
   display: grid;
   gap: 10px;
@@ -2322,42 +2181,6 @@ kbd {
   align-items: center;
   padding: 8px 10px;
   text-align: left;
-}
-
-.field input[type='color'] {
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
-  min-height: 38px;
-  padding: 2px;
-  cursor: pointer;
-  justify-self: start;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.field input[type='color']::-webkit-color-swatch-wrapper {
-  padding: 0;
-  border-radius: 999px;
-}
-
-.field input[type='color']::-webkit-color-swatch {
-  border: 0;
-  border-radius: 999px;
-}
-
-.field input[type='color']::-moz-color-swatch {
-  border: 0;
-  border-radius: 999px;
-}
-
-.field--color-picker {
-  grid-template-columns: minmax(0, max-content) 38px;
-  gap: 10px;
-  align-content: center;
-  align-items: center;
-  justify-content: start;
-  min-height: 54px;
 }
 
 .field textarea {
@@ -2992,25 +2815,10 @@ kbd {
   align-items: start;
 }
 
-.arrow-style-grid .color-chip-field {
-  min-width: 0;
+.arrow-style-grid > app-color-picker {
   grid-column: 1 / -1;
-  grid-template-columns: 36px minmax(0, 1fr) max-content;
-  grid-template-areas:
-    'swatch label value'
-    'swatch range range';
-  gap: 4px 10px;
-  align-items: center;
+  min-width: 0;
   max-width: 360px;
-}
-
-.arrow-style-grid .color-chip-field small {
-  align-self: center;
-  line-height: 1.1;
-}
-
-.arrow-style-grid .color-opacity-input {
-  max-width: 260px;
 }
 
 .arrow-style-grid .toggle-field {
@@ -3600,7 +3408,7 @@ button:disabled {
 }
 
 @media (min-width: 761px) and (max-width: 1220px) {
-  .right-sidebar .color-pair-controls:not(.color-pair-controls--line) {
+  .right-sidebar .color-pair-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
@@ -3966,12 +3774,8 @@ button:disabled {
   }
 
   .right-sidebar .color-pair-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
-  }
-
-  .right-sidebar .color-pair-controls--line {
-    grid-template-columns: 1fr;
   }
 
   .sidebar-section > .form-grid > .field,
@@ -4030,8 +3834,7 @@ button:disabled {
   }
 
   .range-field input[type='range'],
-  .editor-range-input-card__range,
-  .color-opacity-input {
+  .editor-range-input-card__range {
     height: 3px;
     min-height: 10px;
     padding: 0;
@@ -4039,32 +3842,28 @@ button:disabled {
   }
 
   .range-field input[type='range']::-webkit-slider-runnable-track,
-  .editor-range-input-card__range::-webkit-slider-runnable-track,
-  .color-opacity-input::-webkit-slider-runnable-track {
+  .editor-range-input-card__range::-webkit-slider-runnable-track {
     height: 3px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--app-foreground) 15%, var(--input-background));
   }
 
   .range-field input[type='range']::-webkit-slider-thumb,
-  .editor-range-input-card__range::-webkit-slider-thumb,
-  .color-opacity-input::-webkit-slider-thumb {
+  .editor-range-input-card__range::-webkit-slider-thumb {
     width: 10px;
     height: 10px;
     margin-top: -3.5px;
   }
 
   .range-field input[type='range']::-moz-range-track,
-  .editor-range-input-card__range::-moz-range-track,
-  .color-opacity-input::-moz-range-track {
+  .editor-range-input-card__range::-moz-range-track {
     height: 3px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--app-foreground) 15%, var(--input-background));
   }
 
   .range-field input[type='range']::-moz-range-thumb,
-  .editor-range-input-card__range::-moz-range-thumb,
-  .color-opacity-input::-moz-range-thumb {
+  .editor-range-input-card__range::-moz-range-thumb {
     width: 10px;
     height: 10px;
   }
@@ -4093,54 +3892,8 @@ button:disabled {
     font-size: 0.82rem;
   }
 
-  .right-sidebar .field input[type='color'] {
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
-    min-height: 30px;
-    padding: 2px;
-    border-radius: 50%;
-  }
-
-  .right-sidebar .field--color-picker {
-    grid-template-columns: minmax(0, max-content) 30px;
-    min-height: 38px;
-    gap: 7px;
-  }
-
   .right-sidebar .field--stroke-width {
     margin-top: 2px;
-  }
-
-  .right-sidebar .color-chip-field,
-  .right-sidebar .color-inline-field,
-  .right-sidebar .color-pair-controls--line .color-chip-field {
-    grid-template-columns: 24px minmax(44px, auto) minmax(0, 1fr);
-    grid-template-areas:
-      'swatch label value'
-      'swatch range range';
-    gap: 3px 6px;
-    align-items: center;
-    align-content: center;
-  }
-
-  .right-sidebar .color-chip-field small,
-  .right-sidebar .color-inline-field small {
-    font-size: 0.66rem;
-    line-height: 1.05;
-  }
-
-  .right-sidebar .color-opacity-input + small {
-    align-self: center;
-    justify-self: end;
-  }
-
-  .right-sidebar .color-swatch,
-  .right-sidebar .color-pair-controls--line .color-swatch {
-    width: 24px !important;
-    min-width: 24px !important;
-    height: 24px;
-    min-height: 24px !important;
   }
 
   .object-row {

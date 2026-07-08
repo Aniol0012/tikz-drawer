@@ -162,6 +162,7 @@ import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-re
 import { EditorMinimapComponent } from '../editor-minimap/editor-minimap.component';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 import { AiIntroFlightComponent } from '../ai-intro-flight/ai-intro-flight.component';
+import { ColorPickerComponent } from '../color-picker/color-picker.component';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
@@ -327,6 +328,7 @@ import { REGEX } from '../../../../shared/regex/regex.utils';
     EditorMinimapComponent,
     AiSparklesIconComponent,
     AiIntroFlightComponent,
+    ColorPickerComponent,
     AppSelectComponent,
     BadgeComponent,
     ToggleFieldComponent,
@@ -1289,6 +1291,14 @@ export class EditorPageComponent {
   multiEditTextValue(selection: MultiEditSelectionInfo, key: string, fallback: string = ''): string {
     const value = this.multiEditValue(selection, key);
     return typeof value === 'string' ? value : fallback;
+  }
+
+  resolvedColorValue(value: string, fallback: string): string {
+    return value === 'none' ? fallback : value;
+  }
+
+  multiEditColorValue(selection: MultiEditSelectionInfo, key: string, fallback: string): string {
+    return this.resolvedColorValue(this.multiEditTextValue(selection, key, fallback), fallback);
   }
 
   multiEditNumberValue(selection: MultiEditSelectionInfo, key: string, fallback: number = 0): number {
@@ -2691,6 +2701,10 @@ export class EditorPageComponent {
 
   updateShapeText(key: ShapeTextKey, event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.setShapeTextValue(key, value);
+  }
+
+  setShapeTextValue(key: ShapeTextKey, value: string): void {
     this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
   }
 
@@ -2753,7 +2767,12 @@ export class EditorPageComponent {
 
   updateShapeOpacity(key: ShapeOpacityKey, event: Event): void {
     const value = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, Number((event.target as HTMLInputElement).value)));
-    this.patchInspectorSelection((shape) => ({ ...shape, [key]: value }) as CanvasShape);
+    this.setShapeOpacityValue(key, value);
+  }
+
+  setShapeOpacityValue(key: ShapeOpacityKey, value: number): void {
+    const opacity = Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, value));
+    this.patchInspectorSelection((shape) => ({ ...shape, [key]: opacity }) as CanvasShape);
   }
 
   updateInlineTextEditor(event: Event): void {

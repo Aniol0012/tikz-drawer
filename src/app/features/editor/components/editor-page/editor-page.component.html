@@ -1025,41 +1025,23 @@
               <div class="property-group">
                 <div class="property-group__title">{{ 'appearance' | translate }}</div>
                 <div class="color-pair-controls">
-                  <label class="color-chip-field">
-                    <small>{{ 'stroke' | translate }}</small>
-                    <input
-                      class="color-swatch"
-                      type="color"
-                      [value]="shape.stroke === 'none' ? '#1f1f1f' : shape.stroke"
-                      (input)="updateShapeText('stroke', $event)" />
-                    <input
-                      class="color-opacity-input"
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      [value]="shape.strokeOpacity"
-                      (input)="updateShapeOpacity('strokeOpacity', $event)" />
-                    <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.strokeOpacity) }}%</small>
-                  </label>
+                  <app-color-picker
+                    [label]="'stroke' | translate"
+                    [opacityLabel]="'opacity' | translate"
+                    [value]="resolvedColorValue(shape.stroke, '#1f1f1f')"
+                    [opacity]="shape.strokeOpacity"
+                    fallback="#1f1f1f"
+                    (valueChange)="setShapeTextValue('stroke', $event)"
+                    (opacityChange)="setShapeOpacityValue('strokeOpacity', $event)"></app-color-picker>
                   @if (shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse') {
-                    <label class="color-chip-field">
-                      <small>{{ 'fill' | translate }}</small>
-                      <input
-                        class="color-swatch"
-                        type="color"
-                        [value]="shape.fill === 'none' ? '#f3f3f3' : shape.fill"
-                        (input)="updateShapeText('fill', $event)" />
-                      <input
-                        class="color-opacity-input"
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        [value]="shape.fillOpacity"
-                        (input)="updateShapeOpacity('fillOpacity', $event)" />
-                      <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.fillOpacity) }}%</small>
-                    </label>
+                    <app-color-picker
+                      [label]="'fill' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      [value]="resolvedColorValue(shape.fill, '#f3f3f3')"
+                      [opacity]="shape.fillOpacity"
+                      fallback="#f3f3f3"
+                      (valueChange)="setShapeTextValue('fill', $event)"
+                      (opacityChange)="setShapeOpacityValue('fillOpacity', $event)"></app-color-picker>
                   }
                 </div>
                 <label class="field field--full field--stroke-width">
@@ -1201,23 +1183,14 @@
                       <div class="field field--full">
                         <span>{{ 'arrowAppearance' | translate }}</span>
                         <div class="arrow-style-grid">
-                          <label class="color-chip-field">
-                            <small>{{ 'arrowColor' | translate }}</small>
-                            <input
-                              class="color-swatch"
-                              type="color"
-                              [value]="shape.arrowColor"
-                              (input)="updateShapeText('arrowColor', $event)" />
-                            <input
-                              class="color-opacity-input"
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.01"
-                              [value]="shape.arrowOpacity"
-                              (input)="updateShapeOpacity('arrowOpacity', $event)" />
-                            <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.arrowOpacity) }}%</small>
-                          </label>
+                          <app-color-picker
+                            [label]="'arrowColor' | translate"
+                            [opacityLabel]="'opacity' | translate"
+                            [value]="shape.arrowColor"
+                            [opacity]="shape.arrowOpacity"
+                            fallback="#1f1f1f"
+                            (valueChange)="setShapeTextValue('arrowColor', $event)"
+                            (opacityChange)="setShapeOpacityValue('arrowOpacity', $event)"></app-color-picker>
                         </div>
                       </div>
                       <div class="form-grid form-grid--section">
@@ -1768,21 +1741,14 @@
                   </div>
                   <div class="property-group field--full">
                     <div class="property-group__title">{{ 'appearance' | translate }}</div>
-                    <label class="field"
-                      ><span>{{ 'color' | translate }}</span>
-                      <div class="color-inline-field">
-                        <input class="color-swatch" type="color" [value]="shape.color" (input)="updateShapeText('color', $event)" /><input
-                          class="color-opacity-input"
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          [value]="shape.colorOpacity"
-                          (input)="updateShapeOpacity('colorOpacity', $event)" /><small
-                          >{{ 'opacity' | translate }} {{ opacityPercent(shape.colorOpacity) }}%</small
-                        >
-                      </div></label
-                    >
+                    <app-color-picker
+                      [label]="'color' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      [value]="shape.color"
+                      [opacity]="shape.colorOpacity"
+                      fallback="#1f1f1f"
+                      (valueChange)="setShapeTextValue('color', $event)"
+                      (opacityChange)="setShapeOpacityValue('colorOpacity', $event)"></app-color-picker>
                   </div>
                 }
                 @case ('image') {
@@ -2106,54 +2072,23 @@
                   <div class="property-group">
                     <div class="property-group__title">{{ 'appearance' | translate }}</div>
                     <div class="color-pair-controls">
-                      <label class="color-chip-field">
-                        <small>{{ 'stroke' | translate }}</small>
-                        <input
-                          class="color-swatch"
-                          type="color"
-                          [value]="
-                            multiEditTextValue(multiEdit, 'stroke', '#1f1f1f') === 'none'
-                              ? '#1f1f1f'
-                              : multiEditTextValue(multiEdit, 'stroke', '#1f1f1f')
-                          "
-                          (input)="updateShapeText('stroke', $event)" />
-                        <input
-                          class="color-opacity-input"
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          [value]="multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)"
-                          (input)="updateShapeOpacity('strokeOpacity', $event)" />
-                        <small
-                          >{{ 'opacity' | translate }}
-                          {{ opacityPercent(multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)) }}%</small
-                        >
-                      </label>
+                      <app-color-picker
+                        [label]="'stroke' | translate"
+                        [opacityLabel]="'opacity' | translate"
+                        [value]="multiEditColorValue(multiEdit, 'stroke', '#1f1f1f')"
+                        [opacity]="multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)"
+                        fallback="#1f1f1f"
+                        (valueChange)="setShapeTextValue('stroke', $event)"
+                        (opacityChange)="setShapeOpacityValue('strokeOpacity', $event)"></app-color-picker>
                       @if (multiEdit.capabilities.fill) {
-                        <label class="color-chip-field">
-                          <small>{{ 'fill' | translate }}</small>
-                          <input
-                            class="color-swatch"
-                            type="color"
-                            [value]="
-                              multiEditTextValue(multiEdit, 'fill', '#f3f3f3') === 'none'
-                                ? '#f3f3f3'
-                                : multiEditTextValue(multiEdit, 'fill', '#f3f3f3')
-                            "
-                            (input)="updateShapeText('fill', $event)" />
-                          <input
-                            class="color-opacity-input"
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            [value]="multiEditNumberValue(multiEdit, 'fillOpacity', 1)"
-                            (input)="updateShapeOpacity('fillOpacity', $event)" />
-                          <small
-                            >{{ 'opacity' | translate }} {{ opacityPercent(multiEditNumberValue(multiEdit, 'fillOpacity', 1)) }}%</small
-                          >
-                        </label>
+                        <app-color-picker
+                          [label]="'fill' | translate"
+                          [opacityLabel]="'opacity' | translate"
+                          [value]="multiEditColorValue(multiEdit, 'fill', '#f3f3f3')"
+                          [opacity]="multiEditNumberValue(multiEdit, 'fillOpacity', 1)"
+                          fallback="#f3f3f3"
+                          (valueChange)="setShapeTextValue('fill', $event)"
+                          (opacityChange)="setShapeOpacityValue('fillOpacity', $event)"></app-color-picker>
                       }
                     </div>
                     <label class="field field--full field--stroke-width">
@@ -2309,23 +2244,14 @@
                           <div class="field field--full">
                             <span>{{ 'arrowAppearance' | translate }}</span>
                             <div class="arrow-style-grid">
-                              <label class="color-chip-field">
-                                <small>{{ 'arrowColor' | translate }}</small>
-                                <input
-                                  class="color-swatch"
-                                  type="color"
-                                  [value]="shape.arrowColor"
-                                  (input)="updateShapeText('arrowColor', $event)" />
-                                <input
-                                  class="color-opacity-input"
-                                  type="range"
-                                  min="0"
-                                  max="1"
-                                  step="0.01"
-                                  [value]="shape.arrowOpacity"
-                                  (input)="updateShapeOpacity('arrowOpacity', $event)" />
-                                <small>{{ 'opacity' | translate }} {{ opacityPercent(shape.arrowOpacity) }}%</small>
-                              </label>
+                              <app-color-picker
+                                [label]="'arrowColor' | translate"
+                                [opacityLabel]="'opacity' | translate"
+                                [value]="shape.arrowColor"
+                                [opacity]="shape.arrowOpacity"
+                                fallback="#1f1f1f"
+                                (valueChange)="setShapeTextValue('arrowColor', $event)"
+                                (opacityChange)="setShapeOpacityValue('arrowOpacity', $event)"></app-color-picker>
                             </div>
                           </div>
                           <div class="form-grid form-grid--section">
@@ -2790,25 +2716,14 @@
                       </div>
                       <div class="property-group field--full">
                         <div class="property-group__title">{{ 'appearance' | translate }}</div>
-                        <label class="field"
-                          ><span>{{ 'color' | translate }}</span>
-                          <div class="color-inline-field">
-                            <input
-                              class="color-swatch"
-                              type="color"
-                              [value]="shape.color"
-                              (input)="updateShapeText('color', $event)" /><input
-                              class="color-opacity-input"
-                              type="range"
-                              min="0"
-                              max="1"
-                              step="0.01"
-                              [value]="shape.colorOpacity"
-                              (input)="updateShapeOpacity('colorOpacity', $event)" /><small
-                              >{{ 'opacity' | translate }} {{ opacityPercent(shape.colorOpacity) }}%</small
-                            >
-                          </div></label
-                        >
+                        <app-color-picker
+                          [label]="'color' | translate"
+                          [opacityLabel]="'opacity' | translate"
+                          [value]="shape.color"
+                          [opacity]="shape.colorOpacity"
+                          fallback="#1f1f1f"
+                          (valueChange)="setShapeTextValue('color', $event)"
+                          (opacityChange)="setShapeOpacityValue('colorOpacity', $event)"></app-color-picker>
                       </div>
                     }
                     @case ('image') {

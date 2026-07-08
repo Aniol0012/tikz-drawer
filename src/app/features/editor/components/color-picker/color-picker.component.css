@@ -1,0 +1,347 @@
+:host {
+  display: block;
+  min-width: 0;
+  color: var(--app-foreground);
+}
+
+.color-picker {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.color-picker__trigger {
+  display: grid;
+  grid-template-columns: 34px minmax(46px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.color-picker__trigger:hover {
+  border-color: var(--tool-border-strong);
+}
+
+.color-picker__trigger:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.color-picker__swatch,
+.color-picker__preview,
+.color-picker__preset {
+  background-image:
+    linear-gradient(45deg, color-mix(in srgb, var(--app-foreground) 12%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--app-foreground) 12%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--app-foreground) 12%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--app-foreground) 12%, transparent) 75%);
+  background-position:
+    0 0,
+    0 6px,
+    6px -6px,
+    -6px 0;
+  background-size: 12px 12px;
+}
+
+.color-picker__swatch {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--input-background);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px var(--tool-border-strong),
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
+}
+
+.color-picker__label,
+.color-picker__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-picker__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.color-picker__value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--app-foreground);
+}
+
+.color-picker__panel {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 330px);
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--tool-border) 76%, transparent);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow:
+    0 10px 26px color-mix(in srgb, black 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
+}
+
+.color-picker__visual-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.color-picker__area {
+  position: relative;
+  min-height: 148px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tool-border-strong) 76%, transparent);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.color-picker__area:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.color-picker__area-marker {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 72%),
+    0 1px 4px rgb(0 0 0 / 28%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.color-picker__preview {
+  min-height: 148px;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tool-border-strong) 76%, transparent),
+    inset 0 0 0 2px color-mix(in srgb, white 16%, transparent);
+}
+
+.color-picker__hue-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-picker__hue,
+.color-picker__opacity input {
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+}
+
+.color-picker__random {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease;
+}
+
+.color-picker__random svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.color-picker__random:hover {
+  border-color: var(--tool-border-strong);
+  background: color-mix(in srgb, var(--accent) 8%, var(--input-background));
+}
+
+.color-picker__random:active {
+  transform: rotate(8deg) scale(0.97);
+}
+
+.color-picker__random:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.color-picker__hue::-webkit-slider-runnable-track,
+.color-picker__opacity input::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+}
+
+.color-picker__hue::-webkit-slider-thumb,
+.color-picker__opacity input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+  border: 2px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--app-foreground);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+}
+
+.color-picker__hue::-moz-range-track,
+.color-picker__opacity input::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+}
+
+.color-picker__hue::-moz-range-thumb,
+.color-picker__opacity input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--panel-background);
+  border-radius: 50%;
+  background: var(--app-foreground);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 20%);
+}
+
+.color-picker__palette {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.color-picker__preset {
+  min-width: 0;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--tool-border-strong) 76%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
+}
+
+.color-picker__preset:hover,
+.color-picker__preset:focus-visible,
+.color-picker__preset.is-selected {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--tool-border-strong));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 42%, transparent);
+}
+
+.color-picker__inputs {
+  display: grid;
+  grid-template-columns: minmax(86px, 1.4fr) repeat(3, minmax(48px, 0.8fr));
+  gap: 7px;
+}
+
+.color-picker__inputs label,
+.color-picker__opacity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.color-picker__inputs span,
+.color-picker__opacity span {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.color-picker__inputs input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--tool-border);
+  border-radius: 7px;
+  background: var(--input-background);
+  color: var(--app-foreground);
+  font: inherit;
+  text-align: center;
+}
+
+.color-picker__hex input {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.color-picker__inputs input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.color-picker__opacity input {
+  background: linear-gradient(90deg, transparent, currentColor);
+  color: var(--app-foreground);
+}
+
+@media (max-width: 520px), (pointer: coarse) {
+  .color-picker__trigger {
+    min-height: 44px;
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .color-picker__value {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .color-picker__panel {
+    width: 100%;
+    padding: 9px;
+  }
+
+  .color-picker__area,
+  .color-picker__preview {
+    min-height: 168px;
+  }
+
+  .color-picker__palette {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .color-picker__preset {
+    min-height: 34px;
+  }
+
+  .color-picker__inputs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

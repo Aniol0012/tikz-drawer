@@ -1,0 +1,85 @@
+<div class="color-picker" data-tooltip-disabled>
+  <button class="color-picker__trigger" type="button" [attr.aria-expanded]="isOpen()" [attr.aria-label]="label()" (click)="toggleOpen()">
+    <span class="color-picker__swatch" [style.background]="previewBackground()"></span>
+    <span class="color-picker__label">{{ label() }}</span>
+    <span class="color-picker__value">{{ hexInputValue() }}</span>
+  </button>
+
+  @if (isOpen()) {
+    <div class="color-picker__panel" role="dialog" [attr.aria-label]="label()" (pointerup)="endDrag()">
+      <div class="color-picker__visual-row">
+        <div
+          class="color-picker__area"
+          role="slider"
+          tabindex="0"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          [attr.aria-valuenow]="Math.round(hsv().s * 100)"
+          [attr.aria-label]="label()"
+          [style.background]="colorAreaBackground()"
+          (keydown)="adjustAreaFromKeyboard($event)"
+          (pointerdown)="beginAreaDrag($event)"
+          (pointermove)="dragArea($event)"
+          (pointerup)="endDrag()"
+          (pointercancel)="endDrag()">
+          <span class="color-picker__area-marker" [style.left.%]="hsv().s * 100" [style.top.%]="(1 - hsv().v) * 100"></span>
+        </div>
+
+        <div class="color-picker__preview" [style.background]="previewBackground()"></div>
+      </div>
+
+      <div class="color-picker__hue-row">
+        <input
+          class="color-picker__hue"
+          type="range"
+          min="0"
+          max="360"
+          step="1"
+          [value]="hsv().h"
+          [style.background]="hueGradient"
+          [attr.aria-label]="label()"
+          (input)="updateHue($event)" />
+        <button class="color-picker__random" type="button" [attr.aria-label]="randomLabel()" (click)="pickRandomColor()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16 3h5v5"></path>
+            <path d="M4 20 21 3"></path>
+            <path d="M21 16v5h-5"></path>
+            <path d="m15 15 6 6"></path>
+            <path d="m4 4 5 5"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="color-picker__palette">
+        @for (color of commonColors; track color) {
+          <button
+            class="color-picker__preset"
+            type="button"
+            [class.is-selected]="normalizedColor() === color"
+            [style.background]="color"
+            [attr.aria-label]="ariaColorLabel(color)"
+            (click)="pickCommonColor(color)"></button>
+        }
+      </div>
+
+      <div class="color-picker__inputs">
+        <label class="color-picker__hex">
+          <span>HEX</span>
+          <input type="text" maxlength="7" [value]="hexInputValue()" spellcheck="false" (input)="updateHex($event)" />
+        </label>
+
+        @for (channel of rgbChannels; track channel) {
+          <label>
+            <span>{{ channel.toUpperCase() }}</span>
+            <input type="number" min="0" max="255" step="1" [value]="rgb()[channel]" (input)="updateRgb(channel, $event)" />
+          </label>
+        }
+      </div>
+
+      <label class="color-picker__opacity">
+        <span>{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
+        <input type="range" min="0" max="1" step="0.01" [value]="clampedOpacity()" (input)="updateOpacity($event)" />
+      </label>
+    </div>
+  }
+</div>
