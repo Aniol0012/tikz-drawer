@@ -648,6 +648,26 @@
             }
           }
 
+          @if (insertionTextPreviewFrames().length) {
+            <g class="text-insertion-preview">
+              @for (frame of insertionTextPreviewFrames(); track $index) {
+                <rect
+                  class="text-insertion-preview__frame"
+                  [attr.x]="frame.x"
+                  [attr.y]="frame.y"
+                  [attr.width]="frame.width"
+                  [attr.height]="frame.height"></rect>
+                @for (handle of frame.handles; track $index) {
+                  <circle
+                    class="text-insertion-preview__handle"
+                    [attr.cx]="handle.x"
+                    [attr.cy]="handle.y"
+                    [attr.r]="selectionHandleOffset() * 0.64"></circle>
+                }
+              }
+            </g>
+          }
+
           @if (inlineTextEditorLayout(); as editorLayout) {
             <foreignObject
               [attr.x]="editorLayout.x"

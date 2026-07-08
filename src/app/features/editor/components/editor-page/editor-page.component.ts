@@ -1048,6 +1048,24 @@ export class EditorPageComponent {
       ...this.buildInsertionPreviewShapes(interactionState.toolId, interactionState.startWorldPoint, interactionState.currentWorldPoint)
     ];
   });
+  readonly insertionTextPreviewFrames = computed<
+    readonly {
+      readonly x: number;
+      readonly y: number;
+      readonly width: number;
+      readonly height: number;
+      readonly handles: readonly Point[];
+    }[]
+  >(() => {
+    if (this.interactionState()?.kind !== 'insert') {
+      return [];
+    }
+
+    return this.insertionPreviewShapes()
+      .filter((shape): shape is TextCanvasShape => shape.kind === 'text')
+      .map((shape) => this.textPreviewFrame(shape))
+      .filter((frame): frame is NonNullable<ReturnType<typeof this.textPreviewFrame>> => frame !== null);
+  });
   readonly exportOptions = computed<TikzExportOptions>(() => ({
     colorMode: this.latexExportConfig().colorMode
   }));
@@ -5121,6 +5139,36 @@ export class EditorPageComponent {
       width: (selectionBounds.right - selectionBounds.left) * this.preferences().scale,
       height: (selectionBounds.top - selectionBounds.bottom) * this.preferences().scale,
       transform: null
+    };
+  }
+
+  private textPreviewFrame(shape: TextCanvasShape): {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+    readonly handles: readonly Point[];
+  } | null {
+    const bounds = this.shapeBounds(shape);
+    if (!bounds) {
+      return null;
+    }
+
+    const x = this.toSvgX(bounds.left);
+    const y = this.toSvgY(bounds.top);
+    const width = (bounds.right - bounds.left) * this.preferences().scale;
+    const height = (bounds.top - bounds.bottom) * this.preferences().scale;
+    return {
+      x,
+      y,
+      width,
+      height,
+      handles: [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height }
+      ]
     };
   }
 

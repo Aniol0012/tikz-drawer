@@ -1245,6 +1245,26 @@ kbd {
   opacity: 0.76;
 }
 
+.text-insertion-preview {
+  pointer-events: none;
+}
+
+.text-insertion-preview__frame {
+  fill: color-mix(in srgb, var(--accent) 8%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-dasharray: 6 4;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 22%, transparent));
+}
+
+.text-insertion-preview__handle {
+  fill: var(--handle-fill);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
 .shape-layer line,
 .shape-layer path,
 .shape-layer rect,
