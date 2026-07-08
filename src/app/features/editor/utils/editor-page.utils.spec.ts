@@ -9,7 +9,8 @@ import {
   shouldAutoCollapseInspector,
   transformCanvasShape,
   translateShapeBy,
-  viewportCenterAfterHorizontalResize
+  viewportCenterAfterHorizontalResize,
+  viewportCenterAfterVerticalResize
 } from './editor-page.utils';
 import { sceneToTikz } from '../tikz/tikz.codegen';
 import type { CanvasShape, EditorPreferences, LineShape } from '../models/tikz.models';
@@ -142,6 +143,20 @@ describe('editor-page utils', () => {
 
     expect(nextCenter).toEqual({ x: -1.7, y: 2 });
     expect(nextScreenX).toBe(previousScreenX);
+  });
+
+  it('keeps world coordinates at the same screen position after a stacked inspector resize', () => {
+    const scale = 100;
+    const previousHeight = 700;
+    const nextHeight = 420;
+    const previousCenter = { x: 3, y: 0 };
+    const nextCenter = viewportCenterAfterVerticalResize(previousCenter, previousHeight, nextHeight, scale);
+    const worldY = 2;
+    const previousScreenY = previousHeight / 2 - (worldY - previousCenter.y) * scale;
+    const nextScreenY = nextHeight / 2 - (worldY - nextCenter.y) * scale;
+
+    expect(nextCenter).toEqual({ x: 3, y: 1.4 });
+    expect(nextScreenY).toBe(previousScreenY);
   });
 
   it('translates line points and anchors consistently', () => {

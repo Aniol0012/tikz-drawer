@@ -36,6 +36,11 @@ export const viewportCenterAfterHorizontalResize = (viewportCenter: Point, previ
   y: viewportCenter.y
 });
 
+export const viewportCenterAfterVerticalResize = (viewportCenter: Point, previousHeight: number, nextHeight: number, scale: number): Point => ({
+  x: viewportCenter.x,
+  y: viewportCenter.y + (previousHeight - nextHeight) / (2 * scale)
+});
+
 export const shouldAutoCollapseInspector = (enabled: boolean, selectionCount: number): boolean => enabled && selectionCount === 0;
 
 const squaredDistanceToSegment = (point: Point, from: Point, to: Point): number => {

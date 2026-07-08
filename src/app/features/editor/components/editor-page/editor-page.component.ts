@@ -178,7 +178,8 @@ import {
   transformCanvasShape,
   type TransformCanvasShapeOptions,
   translateShapeBy,
-  viewportCenterAfterHorizontalResize
+  viewportCenterAfterHorizontalResize,
+  viewportCenterAfterVerticalResize
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
@@ -1185,13 +1186,17 @@ export class EditorPageComponent {
       write: (measurement) => {
         const { rightSidebarCollapsed, viewportWidth, viewportHeight } = measurement();
         const nextCanvasWidth = Math.max(EDITOR_CANVAS_MIN_WIDTH, viewportWidth);
+        const nextCanvasHeight = Math.max(EDITOR_CANVAS_MIN_HEIGHT, viewportHeight);
         if (rightSidebarCollapsed !== previousRightSidebarCollapsed && nextCanvasWidth !== this.canvasWidth()) {
           this.viewportCenter.update((center) => viewportCenterAfterHorizontalResize(center, this.canvasWidth(), nextCanvasWidth, this.preferences().scale));
+        }
+        if (rightSidebarCollapsed !== previousRightSidebarCollapsed && nextCanvasHeight !== this.canvasHeight()) {
+          this.viewportCenter.update((center) => viewportCenterAfterVerticalResize(center, this.canvasHeight(), nextCanvasHeight, this.preferences().scale));
         }
         previousRightSidebarCollapsed = rightSidebarCollapsed;
         this.canvasViewportWidth.set(viewportWidth);
         this.canvasWidth.set(nextCanvasWidth);
-        this.canvasHeight.set(Math.max(EDITOR_CANVAS_MIN_HEIGHT, viewportHeight));
+        this.canvasHeight.set(nextCanvasHeight);
       }
     });
 
