@@ -11,6 +11,7 @@ export const EDITOR_STORAGE_KEYS = {
   aiPromptSeen: 'tikz-drawer.ai-prompt-seen',
   devMode: 'tikz-drawer.dev-mode',
   sidebarSizes: 'tikz-drawer.sidebar-sizes',
+  sidebarCollapsed: 'tikz-drawer.sidebar-collapsed',
   librarySections: 'tikz-drawer.library-sections',
   importSourceKind: 'tikz-drawer.import-source-kind',
   syncState: 'tikz-drawer.sync-state'
