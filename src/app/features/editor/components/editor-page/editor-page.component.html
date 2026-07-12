@@ -303,6 +303,7 @@
               (contextmenu)="openShapeContextMenu($event, shape)">
               @switch (shape.kind) {
                 @case ('line') {
+                  @let linePath = lineSvgPath(shape);
                   <defs>
                     <marker
                       [attr.id]="arrowMarkerId(shape, 'end')"
@@ -347,7 +348,7 @@
                   </defs>
                   <path
                     class="line-hit-target"
-                    [attr.d]="lineSvgPath(shape)"
+                    [attr.d]="linePath"
                     [attr.stroke-width]="lineHitStrokeWidth(shape.strokeWidth)"
                     fill="none"></path>
                   @if (lineArrowHitPath(shape, 'from'); as arrowStartHitPath) {
@@ -357,7 +358,7 @@
                     <path class="line-arrow-hit-target" [attr.d]="arrowEndHitPath"></path>
                   }
                   <path
-                    [attr.d]="lineSvgPath(shape)"
+                    [attr.d]="linePath"
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
@@ -469,6 +470,7 @@
               <g class="shape-layer shape-layer--preview">
                 @switch (previewShape.kind) {
                   @case ('line') {
+                    @let previewLinePath = lineSvgPath(previewShape);
                     <defs>
                       <marker
                         [attr.id]="arrowMarkerId(previewShape, 'end')"
@@ -512,7 +514,7 @@
                       </marker>
                     </defs>
                     <path
-                      [attr.d]="lineSvgPath(previewShape)"
+                      [attr.d]="previewLinePath"
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"

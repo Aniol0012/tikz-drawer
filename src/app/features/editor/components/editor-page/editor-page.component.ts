@@ -370,7 +370,7 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
-  readonly printCanvasDataUrl = computed(() => svgMarkupDataUrl(this.buildCanvasExportDocument(false, []).markup));
+  readonly printCanvasDataUrl = signal('');
   readonly contextMenuPanel = viewChild<ElementRef<HTMLDivElement>>('contextMenuPanel');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
@@ -1142,7 +1142,18 @@ export class EditorPageComponent {
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
   private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
+  private readonly displayTextLinesByShape = new WeakMap<TextShape, readonly string[]>();
   constructor() {
+    const view = this.document.defaultView;
+    const preparePrintCanvas = () => this.preparePrintCanvas();
+    const clearPrintCanvas = () => this.clearPrintCanvas();
+    view?.addEventListener('beforeprint', preparePrintCanvas);
+    view?.addEventListener('afterprint', clearPrintCanvas);
+    this.destroyRef.onDestroy(() => {
+      view?.removeEventListener('beforeprint', preparePrintCanvas);
+      view?.removeEventListener('afterprint', clearPrintCanvas);
+    });
+
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
         clearTimeout(this.themeToggleCooldownHandle);
@@ -8083,7 +8094,22 @@ export class EditorPageComponent {
   }
 
   displayTextLinesForShape(shape: TextShape): readonly string[] {
-    return displayTextLinesForShape(shape);
+    const cached = this.displayTextLinesByShape.get(shape);
+    if (cached) {
+      return cached;
+    }
+
+    const lines = displayTextLinesForShape(shape);
+    this.displayTextLinesByShape.set(shape, lines);
+    return lines;
+  }
+
+  private preparePrintCanvas(): void {
+    this.printCanvasDataUrl.set(svgMarkupDataUrl(this.buildCanvasExportDocument(false, []).markup));
+  }
+
+  private clearPrintCanvas(): void {
+    this.printCanvasDataUrl.set('');
   }
 
   textSymbolGroupLabel(label: string): string {
