@@ -1126,6 +1126,7 @@ export class EditorPageComponent {
   private dragAutoPanClientPoint: Point | null = null;
   private dragWheelPanRafHandle: number | null = null;
   private dragWheelPanDelta = { x: 0, y: 0 };
+  private viewportCenterAnimationRafHandle: number | null = null;
   private keyboardNavigationRafHandle: number | null = null;
   private keyboardNavigationLastTimestamp: number | null = null;
   private keyboardNavigationHistoryActive = false;
@@ -1167,6 +1168,7 @@ export class EditorPageComponent {
       this.cancelCanvasPointerMoveFrame();
       this.cancelDragAutoPan();
       this.cancelDragWheelPan();
+      this.cancelViewportCenterAnimation();
       if (this.keyboardNavigationRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.keyboardNavigationRafHandle);
       }
@@ -2140,7 +2142,57 @@ export class EditorPageComponent {
   }
 
   resetViewport(): void {
-    this.viewportCenter.set(this.viewportContentCenter());
+    this.animateViewportCenterTo(this.viewportContentCenter());
+  }
+
+  private animateViewportCenterTo(targetCenter: Point): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      this.viewportCenter.set(targetCenter);
+      return;
+    }
+
+    const startCenter = this.viewportCenter();
+    const deltaX = targetCenter.x - startCenter.x;
+    const deltaY = targetCenter.y - startCenter.y;
+    if (Math.abs(deltaX) <= EDITOR_VIEWPORT_CENTER_EPSILON && Math.abs(deltaY) <= EDITOR_VIEWPORT_CENTER_EPSILON) {
+      this.viewportCenter.set(targetCenter);
+      return;
+    }
+
+    this.cancelViewportCenterAnimation();
+    const durationMs = 520;
+    let startTimestamp: number | null = null;
+
+    const animate = (timestamp: number) => {
+      startTimestamp ??= timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / durationMs, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+      this.viewportCenter.set({
+        x: startCenter.x + deltaX * easedProgress,
+        y: startCenter.y + deltaY * easedProgress
+      });
+
+      if (progress < 1) {
+        this.viewportCenterAnimationRafHandle = view.requestAnimationFrame(animate);
+        return;
+      }
+
+      this.viewportCenterAnimationRafHandle = null;
+      this.viewportCenter.set(targetCenter);
+    };
+
+    this.viewportCenterAnimationRafHandle = view.requestAnimationFrame(animate);
+  }
+
+  private cancelViewportCenterAnimation(): void {
+    if (this.viewportCenterAnimationRafHandle === null) {
+      return;
+    }
+
+    this.document.defaultView?.cancelAnimationFrame(this.viewportCenterAnimationRafHandle);
+    this.viewportCenterAnimationRafHandle = null;
   }
 
   addShapeAt(point: Point): void {
@@ -6493,6 +6545,7 @@ export class EditorPageComponent {
   }
 
   private panViewportByClientDelta(deltaClientX: number, deltaClientY: number): void {
+    this.cancelViewportCenterAnimation();
     const scale = this.preferences().scale;
     this.viewportCenter.update((viewportCenter) => ({
       x: viewportCenter.x + deltaClientX / scale,
@@ -6698,6 +6751,7 @@ export class EditorPageComponent {
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number, roundToInteger: boolean = true): void {
+    this.cancelViewportCenterAnimation();
     const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * EDITOR_SCALE_DECIMAL_FACTOR) / EDITOR_SCALE_DECIMAL_FACTOR;
     const clampedScale = Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, normalizedScale));
     const currentScale = this.preferences().scale;
