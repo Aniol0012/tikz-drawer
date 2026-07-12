@@ -660,7 +660,11 @@ export class EditorPageComponent {
   readonly multiEditShape = computed<CanvasShape | null>(() => this.multiEditSelection()?.shapes[0] ?? null);
   readonly isViewportCentered = computed(() => {
     const viewportCenter = this.viewportCenter();
-    return Math.abs(viewportCenter.x) <= EDITOR_VIEWPORT_CENTER_EPSILON && Math.abs(viewportCenter.y) <= EDITOR_VIEWPORT_CENTER_EPSILON;
+    const targetCenter = this.viewportContentCenter();
+    return (
+      Math.abs(viewportCenter.x - targetCenter.x) <= EDITOR_VIEWPORT_CENTER_EPSILON &&
+      Math.abs(viewportCenter.y - targetCenter.y) <= EDITOR_VIEWPORT_CENTER_EPSILON
+    );
   });
   readonly selectedMergeIds = computed(() =>
     Array.from(
@@ -2125,7 +2129,7 @@ export class EditorPageComponent {
   }
 
   resetViewport(): void {
-    this.viewportCenter.set({ x: 0, y: 0 });
+    this.viewportCenter.set(this.viewportContentCenter());
   }
 
   addShapeAt(point: Point): void {
@@ -6708,6 +6712,18 @@ export class EditorPageComponent {
     }
 
     this.viewportCenter.set(this.shapeCenter(shape));
+  }
+
+  private viewportContentCenter(): Point {
+    const bounds = this.sceneContentBounds();
+    if (!bounds) {
+      return { x: 0, y: 0 };
+    }
+
+    return {
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2
+    };
   }
 
   centerViewportOnPendingPatch(): void {
