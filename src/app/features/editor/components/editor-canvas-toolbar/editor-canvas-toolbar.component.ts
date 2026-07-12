@@ -39,7 +39,7 @@ export class EditorCanvasToolbarComponent {
   readonly zoomStep = EDITOR_ZOOM_STEP;
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly zoomMenuOpen = signal(false);
-  readonly zoomPresetPercents = [50, 100, 150, 200, 300] as const;
+  readonly zoomPresetPercents = [10, 50, 100, 150, 200, 300] as const;
 
   zoomPercent(): number {
     return Math.round((this.scale / this.defaultScale) * 100);

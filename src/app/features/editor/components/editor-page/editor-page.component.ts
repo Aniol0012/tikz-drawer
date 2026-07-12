@@ -194,11 +194,7 @@ import {
   type ObjectSnapBounds,
   type ObjectSnapGuide
 } from '../../utils/editor-object-snap.utils';
-import {
-  selectionContainsShape as selectionContainsShapeUtil,
-  shapeSetIds as shapeSetIdsUtil,
-  toggledShapeSetSelection
-} from '../../utils/editor-selection.utils';
+import { shapeSetIds as shapeSetIdsUtil, toggledShapeSetSelection } from '../../utils/editor-selection.utils';
 import {
   arrowNavigationDeltaFromKeys,
   arrowNavigationKeyFromKey,
@@ -355,6 +351,7 @@ export class EditorPageComponent {
   private readonly savedTemplatesStorageKey = EDITOR_STORAGE_KEYS.savedTemplates;
   private readonly pinnedToolsStorageKey = EDITOR_STORAGE_KEYS.pinnedTools;
   private readonly sidebarSizesStorageKey = EDITOR_STORAGE_KEYS.sidebarSizes;
+  private readonly sidebarCollapsedStorageKey = EDITOR_STORAGE_KEYS.sidebarCollapsed;
   private readonly librarySectionsStorageKey = EDITOR_STORAGE_KEYS.librarySections;
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
@@ -373,7 +370,7 @@ export class EditorPageComponent {
 
   readonly canvasSvg = viewChild.required<ElementRef<SVGSVGElement>>('canvasSvg');
   readonly canvasViewport = viewChild.required<ElementRef<HTMLDivElement>>('canvasViewport');
-  readonly printCanvasDataUrl = computed(() => svgMarkupDataUrl(this.buildCanvasExportDocument(false, []).markup));
+  readonly printCanvasDataUrl = signal('');
   readonly contextMenuPanel = viewChild<ElementRef<HTMLDivElement>>('contextMenuPanel');
   readonly inlineTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inlineTextInput');
   readonly inspectorTextInput = viewChild<ElementRef<HTMLTextAreaElement>>('inspectorTextInput');
@@ -474,12 +471,12 @@ export class EditorPageComponent {
   readonly mobileLayout = signal(false);
   readonly sidebarsOverlayLayout = signal(false);
   readonly mobileLibraryPanelOpen = signal(false);
-  readonly leftSidebarCollapsed = signal(false);
-  readonly rightSidebarCollapsed = signal(false);
-  private readonly librarySectionIds = new Set<string>(['savedTemplates', 'scenePresets', ...categoryOrder]);
+  private readonly initialSidebarCollapsed = this.restoreSidebarCollapsed();
+  readonly leftSidebarCollapsed = signal(this.initialSidebarCollapsed.left);
+  readonly rightSidebarCollapsed = signal(this.initialSidebarCollapsed.right);
+  private readonly librarySectionIds = new Set<string>(['savedTemplates', ...categoryOrder]);
   private pinchZoomState: PinchZoomState | null = null;
   readonly collapsedSections = signal<Record<string, boolean>>({
-    scenePresets: false,
     essentials: false,
     flow: false,
     geometry: false,
@@ -663,7 +660,11 @@ export class EditorPageComponent {
   readonly multiEditShape = computed<CanvasShape | null>(() => this.multiEditSelection()?.shapes[0] ?? null);
   readonly isViewportCentered = computed(() => {
     const viewportCenter = this.viewportCenter();
-    return Math.abs(viewportCenter.x) <= EDITOR_VIEWPORT_CENTER_EPSILON && Math.abs(viewportCenter.y) <= EDITOR_VIEWPORT_CENTER_EPSILON;
+    const targetCenter = this.viewportContentCenter();
+    return (
+      Math.abs(viewportCenter.x - targetCenter.x) <= EDITOR_VIEWPORT_CENTER_EPSILON &&
+      Math.abs(viewportCenter.y - targetCenter.y) <= EDITOR_VIEWPORT_CENTER_EPSILON
+    );
   });
   readonly selectedMergeIds = computed(() =>
     Array.from(
@@ -835,10 +836,12 @@ export class EditorPageComponent {
     });
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapesForBounds()));
+  readonly selectedShapeIdSet = computed(() => new Set(this.store.selectedShapeIds()));
+  readonly pendingAiShapeIdSet = computed(() => new Set(this.aiPatch.pendingAffectedShapeIds()));
   readonly aiSelectionActive = computed(() => {
-    const aiShapeIds = this.aiPatch.pendingAffectedShapeIds();
+    const aiShapeIds = this.pendingAiShapeIdSet();
     const selectedShapeIds = this.store.selectedShapeIds();
-    return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.includes(shapeId));
+    return selectedShapeIds.length > 0 && selectedShapeIds.every((shapeId) => aiShapeIds.has(shapeId));
   });
   readonly aiSelectionBubbleLayout = computed(() => {
     if (!this.aiSelectionActive() || !this.aiPatch.pendingPatch()) {
@@ -1111,11 +1114,19 @@ export class EditorPageComponent {
   private contextMenuPositionRafHandle: number | null = null;
   private freehandPointerRafHandle: number | null = null;
   private pendingFreehandPoint: { readonly pointerId: number; readonly point: Point } | null = null;
+  private canvasPointerMoveRafHandle: number | null = null;
+  private pendingCanvasPointerMove: {
+    readonly pointerId: number;
+    readonly clientX: number;
+    readonly clientY: number;
+    readonly altKey: boolean;
+  } | null = null;
   private dragAutoPanRafHandle: number | null = null;
   private dragAutoPanLastTimestamp: number | null = null;
   private dragAutoPanClientPoint: Point | null = null;
   private dragWheelPanRafHandle: number | null = null;
   private dragWheelPanDelta = { x: 0, y: 0 };
+  private viewportCenterAnimationRafHandle: number | null = null;
   private keyboardNavigationRafHandle: number | null = null;
   private keyboardNavigationLastTimestamp: number | null = null;
   private keyboardNavigationHistoryActive = false;
@@ -1125,13 +1136,25 @@ export class EditorPageComponent {
   private syncRevision = 0;
   private applyingRemoteSync = false;
   private editorSyncInitialized = false;
+  private rightSidebarAutoCollapsed = false;
   private sidebarResizeMoved = false;
   private sidebarResizeStartedFromToggle = false;
   private suppressNextSidebarToggleClick = false;
   private pendingSyncDocument: { readonly scene: TikzScene; readonly importCode: string } | null = null;
   private readonly pressedArrowNavigationKeys = new Set<string>();
   private readonly lastRemoteRevisionByClient = new Map<string, number>();
+  private readonly displayTextLinesByShape = new WeakMap<TextShape, readonly string[]>();
   constructor() {
+    const view = this.document.defaultView;
+    const preparePrintCanvas = () => this.preparePrintCanvas();
+    const clearPrintCanvas = () => this.clearPrintCanvas();
+    view?.addEventListener('beforeprint', preparePrintCanvas);
+    view?.addEventListener('afterprint', clearPrintCanvas);
+    this.destroyRef.onDestroy(() => {
+      view?.removeEventListener('beforeprint', preparePrintCanvas);
+      view?.removeEventListener('afterprint', clearPrintCanvas);
+    });
+
     this.destroyRef.onDestroy(() => {
       if (this.themeToggleCooldownHandle !== null) {
         clearTimeout(this.themeToggleCooldownHandle);
@@ -1142,8 +1165,10 @@ export class EditorPageComponent {
       if (this.freehandPointerRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.freehandPointerRafHandle);
       }
+      this.cancelCanvasPointerMoveFrame();
       this.cancelDragAutoPan();
       this.cancelDragWheelPan();
+      this.cancelViewportCenterAnimation();
       if (this.keyboardNavigationRafHandle !== null && this.document.defaultView) {
         this.document.defaultView.cancelAnimationFrame(this.keyboardNavigationRafHandle);
       }
@@ -1168,9 +1193,26 @@ export class EditorPageComponent {
       const selectionCount = this.selectionCount();
       if (this.inspectorTab() === 'assistant') {
         this.rightSidebarCollapsed.set(false);
+        this.rightSidebarAutoCollapsed = false;
         return;
       }
-      this.rightSidebarCollapsed.set(shouldAutoCollapseInspector(autoCollapseInspector, selectionCount));
+      if (!autoCollapseInspector) {
+        if (this.rightSidebarAutoCollapsed) {
+          this.rightSidebarCollapsed.set(false);
+          this.rightSidebarAutoCollapsed = false;
+        }
+        return;
+      }
+      const shouldCollapse = shouldAutoCollapseInspector(autoCollapseInspector, selectionCount);
+      if (shouldCollapse) {
+        this.rightSidebarCollapsed.set(true);
+        this.rightSidebarAutoCollapsed = true;
+        return;
+      }
+      if (this.rightSidebarAutoCollapsed) {
+        this.rightSidebarCollapsed.set(false);
+        this.rightSidebarAutoCollapsed = false;
+      }
     });
 
     let previousRightSidebarCollapsed = this.rightSidebarCollapsed();
@@ -1294,6 +1336,12 @@ export class EditorPageComponent {
       this.editorStorage.setJson(this.sidebarSizesStorageKey, {
         left: this.leftSidebarWidth(),
         right: this.rightSidebarWidth()
+      });
+    });
+    effect(() => {
+      this.editorStorage.setJson(this.sidebarCollapsedStorageKey, {
+        left: this.leftSidebarCollapsed(),
+        right: this.rightSidebarCollapsed()
       });
     });
     effect(() => {
@@ -1498,6 +1546,7 @@ export class EditorPageComponent {
       return;
     }
 
+    this.rightSidebarAutoCollapsed = false;
     this.rightSidebarCollapsed.update((collapsed) => !collapsed);
     this.sidebarResizeState.set(null);
   }
@@ -1740,6 +1789,7 @@ export class EditorPageComponent {
   }
 
   openSceneLayers(): void {
+    this.rightSidebarAutoCollapsed = false;
     this.rightSidebarCollapsed.set(false);
     this.inspectorTab.set('scene');
     this.collapsedSections.update((sections) => ({
@@ -1759,6 +1809,7 @@ export class EditorPageComponent {
   }
 
   openAssistant(): void {
+    this.rightSidebarAutoCollapsed = false;
     this.rightSidebarCollapsed.set(false);
     this.inspectorTab.set('assistant');
   }
@@ -2091,7 +2142,57 @@ export class EditorPageComponent {
   }
 
   resetViewport(): void {
-    this.viewportCenter.set({ x: 0, y: 0 });
+    this.animateViewportCenterTo(this.viewportContentCenter());
+  }
+
+  private animateViewportCenterTo(targetCenter: Point): void {
+    const view = this.document.defaultView;
+    if (!view) {
+      this.viewportCenter.set(targetCenter);
+      return;
+    }
+
+    const startCenter = this.viewportCenter();
+    const deltaX = targetCenter.x - startCenter.x;
+    const deltaY = targetCenter.y - startCenter.y;
+    if (Math.abs(deltaX) <= EDITOR_VIEWPORT_CENTER_EPSILON && Math.abs(deltaY) <= EDITOR_VIEWPORT_CENTER_EPSILON) {
+      this.viewportCenter.set(targetCenter);
+      return;
+    }
+
+    this.cancelViewportCenterAnimation();
+    const durationMs = 520;
+    let startTimestamp: number | null = null;
+
+    const animate = (timestamp: number) => {
+      startTimestamp ??= timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / durationMs, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+      this.viewportCenter.set({
+        x: startCenter.x + deltaX * easedProgress,
+        y: startCenter.y + deltaY * easedProgress
+      });
+
+      if (progress < 1) {
+        this.viewportCenterAnimationRafHandle = view.requestAnimationFrame(animate);
+        return;
+      }
+
+      this.viewportCenterAnimationRafHandle = null;
+      this.viewportCenter.set(targetCenter);
+    };
+
+    this.viewportCenterAnimationRafHandle = view.requestAnimationFrame(animate);
+  }
+
+  private cancelViewportCenterAnimation(): void {
+    if (this.viewportCenterAnimationRafHandle === null) {
+      return;
+    }
+
+    this.document.defaultView?.cancelAnimationFrame(this.viewportCenterAnimationRafHandle);
+    this.viewportCenterAnimationRafHandle = null;
   }
 
   addShapeAt(point: Point): void {
@@ -3301,11 +3402,11 @@ export class EditorPageComponent {
   }
 
   selectionContainsShape(shapeId: string): boolean {
-    return selectionContainsShapeUtil(this.selectedShapes(), shapeId);
+    return this.selectedShapeIdSet().has(shapeId);
   }
 
   isAiPendingShape(shapeId: string): boolean {
-    return this.aiPatch.pendingAffectedShapeIds().includes(shapeId);
+    return this.pendingAiShapeIdSet().has(shapeId);
   }
 
   applyPendingAiPatchFromCanvas(): void {
@@ -3946,6 +4047,36 @@ export class EditorPageComponent {
   }
 
   onCanvasPointerMove(event: PointerEvent): void {
+    this.pendingCanvasPointerMove = {
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      altKey: event.altKey
+    };
+    this.scheduleCanvasPointerMoveFrame();
+  }
+
+  private scheduleCanvasPointerMoveFrame(): void {
+    const view = this.document.defaultView;
+    if (!view || this.canvasPointerMoveRafHandle !== null) {
+      return;
+    }
+
+    this.canvasPointerMoveRafHandle = view.requestAnimationFrame(() => this.flushCanvasPointerMove());
+  }
+
+  private flushCanvasPointerMove(): void {
+    const view = this.document.defaultView;
+    if (this.canvasPointerMoveRafHandle !== null && view) {
+      view.cancelAnimationFrame(this.canvasPointerMoveRafHandle);
+    }
+    this.canvasPointerMoveRafHandle = null;
+    const event = this.pendingCanvasPointerMove;
+    this.pendingCanvasPointerMove = null;
+    if (!event) {
+      return;
+    }
+
     if (this.pinchZoomState) {
       return;
     }
@@ -3984,6 +4115,15 @@ export class EditorPageComponent {
         this.handleRotatePointerMove(event, interactionState);
         return;
     }
+  }
+
+  private cancelCanvasPointerMoveFrame(): void {
+    const view = this.document.defaultView;
+    if (this.canvasPointerMoveRafHandle !== null && view) {
+      view.cancelAnimationFrame(this.canvasPointerMoveRafHandle);
+    }
+    this.canvasPointerMoveRafHandle = null;
+    this.pendingCanvasPointerMove = null;
   }
 
   private trackDragAutoPanPointer(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: InteractionState): void {
@@ -4104,7 +4244,10 @@ export class EditorPageComponent {
     this.dragAutoPanClientPoint = null;
   }
 
-  private handlePendingPanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pending-pan' }>): void {
+  private handlePendingPanPointerMove(
+    event: Pick<PointerEvent, 'clientX' | 'clientY'>,
+    interactionState: Extract<InteractionState, { kind: 'pending-pan' }>
+  ): void {
     const deltaClientX = event.clientX - interactionState.startClientPoint.x;
     const deltaClientY = event.clientY - interactionState.startClientPoint.y;
     const distance = Math.hypot(deltaClientX, deltaClientY);
@@ -4267,7 +4410,7 @@ export class EditorPageComponent {
     this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
   }
 
-  private handlePanPointerMove(event: PointerEvent, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
+  private handlePanPointerMove(event: Pick<PointerEvent, 'clientX' | 'clientY'>, interactionState: Extract<InteractionState, { kind: 'pan' }>): void {
     const deltaClientX = event.clientX - interactionState.lastClientPoint.x;
     const deltaClientY = event.clientY - interactionState.lastClientPoint.y;
     const scale = this.preferences().scale;
@@ -4690,6 +4833,7 @@ export class EditorPageComponent {
     if (this.pinchZoomState) {
       return;
     }
+    this.flushCanvasPointerMove();
     const interactionState = this.interactionState();
     if (interactionState?.pointerId !== event.pointerId) {
       return;
@@ -6219,6 +6363,11 @@ export class EditorPageComponent {
 
     if (key === this.sidebarSizesStorageKey) {
       this.applyStoredSidebarSizes(newValue);
+      return;
+    }
+
+    if (key === this.sidebarCollapsedStorageKey) {
+      this.applyStoredSidebarCollapsed(newValue);
     }
   }
 
@@ -6239,6 +6388,13 @@ export class EditorPageComponent {
     const sidebarSizes = this.parseStoredSidebarSizes(value);
     this.leftSidebarWidth.set(sidebarSizes.left);
     this.rightSidebarWidth.set(sidebarSizes.right);
+  }
+
+  private applyStoredSidebarCollapsed(value: string | null): void {
+    const sidebarCollapsed = this.parseStoredSidebarCollapsed(value);
+    this.rightSidebarAutoCollapsed = false;
+    this.leftSidebarCollapsed.set(sidebarCollapsed.left);
+    this.rightSidebarCollapsed.set(sidebarCollapsed.right);
   }
 
   private currentSyncedEditorDocument(): { readonly scene: TikzScene; readonly importCode: string } {
@@ -6389,6 +6545,7 @@ export class EditorPageComponent {
   }
 
   private panViewportByClientDelta(deltaClientX: number, deltaClientY: number): void {
+    this.cancelViewportCenterAnimation();
     const scale = this.preferences().scale;
     this.viewportCenter.update((viewportCenter) => ({
       x: viewportCenter.x + deltaClientX / scale,
@@ -6594,6 +6751,7 @@ export class EditorPageComponent {
   }
 
   private setScaleAtClientPoint(nextScale: number, clientX: number, clientY: number, roundToInteger: boolean = true): void {
+    this.cancelViewportCenterAnimation();
     const normalizedScale = roundToInteger ? Math.round(nextScale) : Math.round(nextScale * EDITOR_SCALE_DECIMAL_FACTOR) / EDITOR_SCALE_DECIMAL_FACTOR;
     const clampedScale = Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, normalizedScale));
     const currentScale = this.preferences().scale;
@@ -6619,6 +6777,18 @@ export class EditorPageComponent {
     }
 
     this.viewportCenter.set(this.shapeCenter(shape));
+  }
+
+  private viewportContentCenter(): Point {
+    const bounds = this.sceneContentBounds();
+    if (!bounds) {
+      return { x: 0, y: 0 };
+    }
+
+    return {
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2
+    };
   }
 
   centerViewportOnPendingPatch(): void {
@@ -7270,6 +7440,27 @@ export class EditorPageComponent {
 
   private restoreSidebarSizes(): { readonly left: number; readonly right: number } {
     return this.parseStoredSidebarSizes(this.editorStorage.getString(this.sidebarSizesStorageKey));
+  }
+
+  private restoreSidebarCollapsed(): { readonly left: boolean; readonly right: boolean } {
+    return this.parseStoredSidebarCollapsed(this.editorStorage.getString(this.sidebarCollapsedStorageKey));
+  }
+
+  private parseStoredSidebarCollapsed(raw: string | null | undefined): { readonly left: boolean; readonly right: boolean } {
+    const fallback = { left: false, right: false };
+    if (!raw) {
+      return fallback;
+    }
+
+    const parsed = this.editorStorage.parseJson<{ readonly left?: unknown; readonly right?: unknown }>(raw);
+    if (!parsed) {
+      return fallback;
+    }
+
+    return {
+      left: typeof parsed.left === 'boolean' ? parsed.left : fallback.left,
+      right: typeof parsed.right === 'boolean' ? parsed.right : fallback.right
+    };
   }
 
   private parseStoredSidebarSizes(raw: string | null | undefined): { readonly left: number; readonly right: number } {
@@ -7957,7 +8148,22 @@ export class EditorPageComponent {
   }
 
   displayTextLinesForShape(shape: TextShape): readonly string[] {
-    return displayTextLinesForShape(shape);
+    const cached = this.displayTextLinesByShape.get(shape);
+    if (cached) {
+      return cached;
+    }
+
+    const lines = displayTextLinesForShape(shape);
+    this.displayTextLinesByShape.set(shape, lines);
+    return lines;
+  }
+
+  private preparePrintCanvas(): void {
+    this.printCanvasDataUrl.set(svgMarkupDataUrl(this.buildCanvasExportDocument(false, []).markup));
+  }
+
+  private clearPrintCanvas(): void {
+    this.printCanvasDataUrl.set('');
   }
 
   textSymbolGroupLabel(label: string): string {

@@ -33,7 +33,7 @@ export interface EditorGeneralConfig {
 export const DEFAULT_EDITOR_GENERAL_CONFIG: EditorGeneralConfig = {
   showHelpTooltips: true,
   whiteCanvasInDarkMode: false,
-  showInspectorOnlyWithSelection: true,
+  showInspectorOnlyWithSelection: false,
   showMinimap: true,
   confirmSceneReplacement: true,
   contextMenuActions: DEFAULT_EDITOR_CONTEXT_MENU_ACTIONS,

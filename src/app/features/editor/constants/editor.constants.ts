@@ -11,6 +11,7 @@ export const EDITOR_STORAGE_KEYS = {
   aiPromptSeen: 'tikz-drawer.ai-prompt-seen',
   devMode: 'tikz-drawer.dev-mode',
   sidebarSizes: 'tikz-drawer.sidebar-sizes',
+  sidebarCollapsed: 'tikz-drawer.sidebar-collapsed',
   librarySections: 'tikz-drawer.library-sections',
   importSourceKind: 'tikz-drawer.import-source-kind',
   syncState: 'tikz-drawer.sync-state'
@@ -117,7 +118,7 @@ export const EDITOR_DRAG_AUTO_PAN_EDGE_PX = 72;
 export const EDITOR_DRAG_AUTO_PAN_MAX_SPEED_PX_PER_SECOND = 720;
 export const EDITOR_DRAG_WHEEL_PAN_MAX_STEP_PX = 34;
 export const EDITOR_DRAG_WHEEL_PAN_EASING = 0.35;
-export const EDITOR_SCALE_MIN = 12;
+export const EDITOR_SCALE_MIN = DEFAULT_EDITOR_SCALE * 0.1;
 export const EDITOR_SCALE_MAX = 120;
 export const EDITOR_SCALE_DECIMAL_FACTOR = 10;
 export const OPACITY_MIN = 0;

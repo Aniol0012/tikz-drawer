@@ -118,7 +118,7 @@ describe('EditorCanvasToolbarComponent', () => {
 
     const items = [...fixture.nativeElement.querySelectorAll('.zoom-preset-menu__item')].map((item) => item.textContent.trim());
     expect(component.zoomMenuOpen()).toBe(true);
-    expect(items).toEqual(['50%', '100%', '150%', '200%', '300%']);
+    expect(items).toEqual(['10%', '50%', '100%', '150%', '200%', '300%']);
   });
 
   it('emits requested scale for preset and range changes', async () => {

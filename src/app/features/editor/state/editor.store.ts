@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import {
   DEFAULT_EDITOR_SCALE,
   DEFAULT_TEXT_BOX_WIDTH,
@@ -382,8 +382,11 @@ const normalizeArrowTipKind = (value: unknown): ArrowTipKind =>
 @Injectable()
 export class EditorStore {
   private readonly editorStorage = inject(EditorLocalStorageService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly undoSnapshots = signal<readonly EditorSnapshot[]>([]);
   private readonly redoSnapshots = signal<readonly EditorSnapshot[]>([]);
+  private pendingStatePersistHandle: ReturnType<typeof setTimeout> | null = null;
+  private pendingStatePersist: PersistedEditorState | null = null;
 
   readonly preferences = signal<EditorPreferences>(defaultPreferences);
   readonly scene = signal<TikzScene>(cloneScene(defaultScene));
@@ -415,6 +418,13 @@ export class EditorStore {
 
   constructor() {
     this.restoreState();
+    const flushPendingState = () => this.flushStatePersist();
+    globalThis.addEventListener?.('pagehide', flushPendingState);
+    globalThis.addEventListener?.('beforeunload', flushPendingState);
+    this.destroyRef.onDestroy(() => {
+      globalThis.removeEventListener?.('pagehide', flushPendingState);
+      globalThis.removeEventListener?.('beforeunload', flushPendingState);
+    });
 
     effect(() => {
       const state: PersistedEditorState = {
@@ -423,8 +433,10 @@ export class EditorStore {
         importCode: this.importCode()
       };
 
-      this.editorStorage.setJson(EDITOR_STORAGE_KEYS.state, state);
+      this.scheduleStatePersist(state);
     });
+
+    this.destroyRef.onDestroy(() => this.flushStatePersist());
   }
 
   recordHistoryCheckpoint(): void {
@@ -830,6 +842,30 @@ export class EditorStore {
       this.preferences.set(defaultPreferences);
       this.importCode.set(sceneToTikz(defaultScene));
     }
+  }
+
+  private scheduleStatePersist(state: PersistedEditorState): void {
+    this.pendingStatePersist = state;
+    if (this.pendingStatePersistHandle !== null) {
+      return;
+    }
+
+    this.pendingStatePersistHandle = setTimeout(() => this.flushStatePersist(), 160);
+  }
+
+  private flushStatePersist(): void {
+    if (this.pendingStatePersistHandle !== null) {
+      clearTimeout(this.pendingStatePersistHandle);
+      this.pendingStatePersistHandle = null;
+    }
+
+    const state = this.pendingStatePersist;
+    if (!state) {
+      return;
+    }
+
+    this.pendingStatePersist = null;
+    this.editorStorage.setJson(EDITOR_STORAGE_KEYS.state, state);
   }
 
   private createSnapshot(): EditorSnapshot {

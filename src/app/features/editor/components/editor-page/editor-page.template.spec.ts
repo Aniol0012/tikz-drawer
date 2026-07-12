@@ -30,8 +30,16 @@ describe('EditorPageComponent template', () => {
     const component = await readComponent();
 
     expect(component).toContain("readonly inspectorTab = signal<InspectorTab>('assistant');");
-    expect(component).toContain('readonly rightSidebarCollapsed = signal(false);');
+    expect(component).toContain('readonly rightSidebarCollapsed = signal(this.initialSidebarCollapsed.right);');
     expect(component).toContain("if (this.inspectorTab() === 'assistant')");
+  });
+
+  it('keeps scene presets hidden from the library sidebar', async () => {
+    const template = await readTemplate();
+    const component = await readComponent();
+
+    expect(template).not.toContain("'scenePresets' | translate");
+    expect(component).toContain("private readonly librarySectionIds = new Set<string>(['savedTemplates', ...categoryOrder]);");
   });
 
   it('keeps direct double-click text insertion wired on shapes', async () => {
