@@ -1,6 +1,19 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output, signal, viewChild, viewChildren } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  CUSTOM_ELEMENTS_SCHEMA,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+  signal,
+  viewChild,
+  viewChildren
+} from '@angular/core';
 import type { ElementRef } from '@angular/core';
+import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
   DEFAULT_LATEX_EXPORT_CONFIG,
@@ -53,6 +66,7 @@ import { WebLlmLocalAiProvider } from '../../ai/web-llm-local-ai.provider';
 import { BrowserLocalAiProvider } from '../../ai/browser-local-ai.provider';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 import { SceneIconComponent } from '../scene-icon/scene-icon.component';
+import { ColorPickerComponent } from '../color-picker/color-picker.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { REGEX } from '../../../../shared/regex/regex.utils';
 import type { AiSettings } from '../../ai/ai-settings.service';
@@ -94,6 +108,10 @@ interface ExportedEditorConfiguration {
   readonly aiSettings?: AiSettings;
 }
 
+interface ShoelaceDropdownElement extends HTMLElement {
+  hide?: () => void;
+}
+
 const PREVIEW_VIEWBOX_WIDTH = 300;
 const PREVIEW_VIEWBOX_HEIGHT = 220;
 
@@ -108,8 +126,10 @@ const PREVIEW_VIEWBOX_HEIGHT = 220;
     EditorTranslatePipe,
     AiSparklesIconComponent,
     SceneIconComponent,
+    ColorPickerComponent,
     BadgeComponent
   ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './app-configuration-dialog.component.html',
   styleUrl: './app-configuration-dialog.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -400,7 +420,8 @@ export class AppConfigurationDialogComponent {
     }
   }
 
-  triggerConfigurationImport(): void {
+  triggerConfigurationImport(dropdown?: ShoelaceDropdownElement): void {
+    dropdown?.hide?.();
     const input = this.configurationImportInput()?.nativeElement;
     if (!input) {
       return;
@@ -410,7 +431,8 @@ export class AppConfigurationDialogComponent {
     input.click();
   }
 
-  exportConfiguration(): void {
+  exportConfiguration(dropdown?: ShoelaceDropdownElement): void {
+    dropdown?.hide?.();
     const payload: ExportedEditorConfiguration = {
       tikzDrawerConfigurationVersion: 1,
       exportedAt: new Date().toISOString(),
@@ -804,7 +826,11 @@ export class AppConfigurationDialogComponent {
   }
 
   updatePreferenceText(key: PreferenceTextKey, event: Event): void {
-    this.patchPreferences({ [key]: (event.target as HTMLInputElement).value } as Partial<EditorPreferences>);
+    this.setPreferenceText(key, (event.target as HTMLInputElement).value);
+  }
+
+  setPreferenceText(key: PreferenceTextKey, value: string): void {
+    this.patchPreferences({ [key]: value } as Partial<EditorPreferences>);
   }
 
   updateDefaultImagePath(event: Event): void {
@@ -828,6 +854,11 @@ export class AppConfigurationDialogComponent {
 
   updatePreferenceNumber(key: PreferenceNumberKey, event: Event, minimumValue: number, maximumValue?: number): void {
     const rawValue = Number((event.target as HTMLInputElement).value);
+    this.setPreferenceNumber(key, rawValue, minimumValue, maximumValue);
+  }
+
+  setPreferenceNumber(key: PreferenceNumberKey, value: number, minimumValue: number, maximumValue?: number): void {
+    const rawValue = Number(value);
     if (!Number.isFinite(rawValue)) {
       return;
     }
@@ -1148,12 +1179,15 @@ export class AppConfigurationDialogComponent {
       current.snapStep === expected.snapStep &&
       current.defaultStroke === expected.defaultStroke &&
       current.defaultFill === expected.defaultFill &&
+      current.defaultStrokeOpacity === expected.defaultStrokeOpacity &&
+      current.defaultFillOpacity === expected.defaultFillOpacity &&
       current.defaultStrokeWidth === expected.defaultStrokeWidth &&
       current.defaultArrowScale === expected.defaultArrowScale &&
       current.defaultArrowType === expected.defaultArrowType &&
       current.defaultLineStrokeStyle === expected.defaultLineStrokeStyle &&
       current.defaultCornerRadius === expected.defaultCornerRadius &&
       current.defaultTextColor === expected.defaultTextColor &&
+      current.defaultTextOpacity === expected.defaultTextOpacity &&
       current.defaultTextFontSize === expected.defaultTextFontSize &&
       current.defaultImagePath === expected.defaultImagePath
     );

@@ -22,6 +22,12 @@
   color: var(--app-foreground);
 }
 
+.color-picker--summary-opacity-hidden .color-picker__summary {
+  grid-template-areas:
+    'header header'
+    'swatch swatch';
+}
+
 .color-picker__header {
   grid-area: header;
   display: grid;

@@ -1036,6 +1036,7 @@
                   <app-color-picker
                     [label]="'stroke' | translate"
                     [opacityLabel]="'opacity' | translate"
+                    opacityControlPlacement="summary"
                     [value]="resolvedColorValue(shape.stroke, '#1f1f1f')"
                     [opacity]="shape.strokeOpacity"
                     fallback="#1f1f1f"
@@ -1045,6 +1046,7 @@
                     <app-color-picker
                       [label]="'fill' | translate"
                       [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="summary"
                       [value]="resolvedColorValue(shape.fill, '#f3f3f3')"
                       [opacity]="shape.fillOpacity"
                       fallback="#f3f3f3"
@@ -1194,6 +1196,7 @@
                           <app-color-picker
                             [label]="'arrowColor' | translate"
                             [opacityLabel]="'opacity' | translate"
+                            opacityControlPlacement="summary"
                             [value]="shape.arrowColor"
                             [opacity]="shape.arrowOpacity"
                             fallback="#1f1f1f"
@@ -1752,6 +1755,7 @@
                     <app-color-picker
                       [label]="'color' | translate"
                       [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="summary"
                       [value]="shape.color"
                       [opacity]="shape.colorOpacity"
                       fallback="#1f1f1f"
@@ -2083,6 +2087,7 @@
                       <app-color-picker
                         [label]="'stroke' | translate"
                         [opacityLabel]="'opacity' | translate"
+                        opacityControlPlacement="summary"
                         [value]="multiEditColorValue(multiEdit, 'stroke', '#1f1f1f')"
                         [opacity]="multiEditNumberValue(multiEdit, 'strokeOpacity', shape.strokeOpacity)"
                         fallback="#1f1f1f"
@@ -2092,6 +2097,7 @@
                         <app-color-picker
                           [label]="'fill' | translate"
                           [opacityLabel]="'opacity' | translate"
+                          opacityControlPlacement="summary"
                           [value]="multiEditColorValue(multiEdit, 'fill', '#f3f3f3')"
                           [opacity]="multiEditNumberValue(multiEdit, 'fillOpacity', 1)"
                           fallback="#f3f3f3"
@@ -2255,6 +2261,7 @@
                               <app-color-picker
                                 [label]="'arrowColor' | translate"
                                 [opacityLabel]="'opacity' | translate"
+                                opacityControlPlacement="summary"
                                 [value]="shape.arrowColor"
                                 [opacity]="shape.arrowOpacity"
                                 fallback="#1f1f1f"
@@ -2727,6 +2734,7 @@
                         <app-color-picker
                           [label]="'color' | translate"
                           [opacityLabel]="'opacity' | translate"
+                          opacityControlPlacement="summary"
                           [value]="shape.color"
                           [opacity]="shape.colorOpacity"
                           fallback="#1f1f1f"

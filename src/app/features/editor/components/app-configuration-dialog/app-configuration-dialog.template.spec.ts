@@ -19,11 +19,10 @@ describe('AppConfigurationDialogComponent template', () => {
     const aboutButton = template.indexOf('class="about-button"');
 
     expect(aboutButton).toBeGreaterThan(tablistEnd);
-    expect(template).toContain('#configurationFileMenu class="configuration-file-menu"');
+    expect(template).toContain('<sl-dropdown #configurationDropdown class="configuration-file-menu"');
     expect(template).toContain('class="configuration-file-menu__trigger"');
-    expect(template).toContain('class="configuration-file-menu__panel" (click)="configurationFileMenu.open = false"');
-    expect(template).toContain('(click)="triggerConfigurationImport()"');
-    expect(template).toContain('(click)="exportConfiguration()"');
+    expect(template).toContain('(click)="triggerConfigurationImport(configurationDropdown)"');
+    expect(template).toContain('(click)="exportConfiguration(configurationDropdown)"');
     expect(template).toContain('https://github.com/Aniol0012/tikz-drawer');
     expect(template).toContain('Aniol0012/tikz-drawer');
     expect(template).toContain('src="logo.png"');
@@ -61,5 +60,20 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('aria-describedby="default-image-path-help default-image-path-error"');
     expect(template).toContain('defaultImagePathInvalid()');
     expect(template).toContain('role="alert"');
+  });
+
+  it('uses the shared color picker for configuration color fields', async () => {
+    const template = await readTemplate();
+
+    expect(template.split('<app-color-picker').length - 1).toBe(3);
+    expect(template).toContain('(valueChange)="setPreferenceText(\'defaultStroke\', $event)"');
+    expect(template).toContain('(valueChange)="setPreferenceText(\'defaultFill\', $event)"');
+    expect(template).toContain('(valueChange)="setPreferenceText(\'defaultTextColor\', $event)"');
+    expect(template).toContain('opacityControlPlacement="panel"');
+    expect(template).toContain('opacityControlPlacement="summary"');
+    expect(template).toContain('(opacityChange)="setPreferenceNumber(\'defaultStrokeOpacity\', $event, 0, 1)"');
+    expect(template).toContain('(opacityChange)="setPreferenceNumber(\'defaultFillOpacity\', $event, 0, 1)"');
+    expect(template).toContain('(opacityChange)="setPreferenceNumber(\'defaultTextOpacity\', $event, 0, 1)"');
+    expect(template).not.toContain('type="color"');
   });
 });

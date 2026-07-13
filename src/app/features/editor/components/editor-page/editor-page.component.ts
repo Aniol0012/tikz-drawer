@@ -6942,7 +6942,7 @@ export class EditorPageComponent {
           ...shape,
           stroke: preferences.defaultStroke,
           arrowColor: preferences.defaultStroke,
-          arrowOpacity: 1,
+          arrowOpacity: preferences.defaultStrokeOpacity,
           arrowOpen: false,
           arrowRound: false,
           arrowType: preferences.defaultArrowType,
@@ -6950,7 +6950,7 @@ export class EditorPageComponent {
           arrowLengthScale: 1,
           arrowWidthScale: 1,
           arrowBendMode: 'none',
-          strokeOpacity: 1,
+          strokeOpacity: preferences.defaultStrokeOpacity,
           strokeWidth: preferences.defaultStrokeWidth,
           strokeStyle: preferences.defaultLineStrokeStyle
         };
@@ -6962,8 +6962,8 @@ export class EditorPageComponent {
           ...shape,
           stroke: preferences.defaultStroke,
           fill: preferences.defaultFill,
-          strokeOpacity: 1,
-          fillOpacity: 1,
+          strokeOpacity: preferences.defaultStrokeOpacity,
+          fillOpacity: preferences.defaultFillOpacity,
           ...(shape.kind === 'rectangle' || shape.kind === 'triangle' ? { cornerRadius: preferences.defaultCornerRadius } : {}),
           ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
           strokeWidth: preferences.defaultStrokeWidth
@@ -6973,14 +6973,14 @@ export class EditorPageComponent {
           ...shape,
           latexSource: shape.latexSource === 'images/example.png' ? imagePathForFile(preferences.defaultImagePath, 'example.png') : shape.latexSource,
           stroke: preferences.defaultStroke,
-          strokeOpacity: 1,
+          strokeOpacity: preferences.defaultStrokeOpacity,
           strokeWidth: preferences.defaultStrokeWidth
         };
       case 'text':
         return {
           ...shape,
           color: preferences.defaultTextColor,
-          colorOpacity: 1,
+          colorOpacity: preferences.defaultTextOpacity,
           fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE)
         };
     }
@@ -7109,7 +7109,7 @@ export class EditorPageComponent {
       name: this.t('freeDraw'),
       kind: 'line',
       stroke: this.preferences().defaultStroke,
-      strokeOpacity: 1,
+      strokeOpacity: this.preferences().defaultStrokeOpacity,
       strokeWidth: this.preferences().defaultStrokeWidth,
       from,
       to,
@@ -7120,7 +7120,7 @@ export class EditorPageComponent {
       arrowEnd: false,
       arrowType: this.preferences().defaultArrowType,
       arrowColor: this.preferences().defaultStroke,
-      arrowOpacity: 1,
+      arrowOpacity: this.preferences().defaultStrokeOpacity,
       arrowOpen: false,
       arrowRound: false,
       arrowScale: this.preferences().defaultArrowScale,
@@ -7941,7 +7941,7 @@ export class EditorPageComponent {
       name: file.name.replaceAll(REGEX.editor.extensionSuffix, '') || 'Image',
       kind: 'image',
       stroke: this.preferences().defaultStroke,
-      strokeOpacity: 1,
+      strokeOpacity: this.preferences().defaultStrokeOpacity,
       strokeWidth: this.preferences().defaultStrokeWidth,
       x: point.x - width / 2,
       y: point.y - height / 2,
@@ -8122,7 +8122,7 @@ export class EditorPageComponent {
       name: this.t('text'),
       kind: 'text',
       stroke: 'none',
-      strokeOpacity: 1,
+      strokeOpacity: this.preferences().defaultStrokeOpacity,
       strokeWidth: 0,
       x: (bounds.left + bounds.right) / 2,
       y: (bounds.bottom + bounds.top) / 2,
@@ -8131,7 +8131,7 @@ export class EditorPageComponent {
       boxWidth: DEFAULT_TEXT_BOX_WIDTH,
       fontSize: DEFAULT_TEXT_FONT_SIZE,
       color: DEFAULT_TEXT_COLOR,
-      colorOpacity: 1,
+      colorOpacity: this.preferences().defaultTextOpacity,
       fontWeight: 'normal',
       fontStyle: 'normal',
       textDecoration: 'none',

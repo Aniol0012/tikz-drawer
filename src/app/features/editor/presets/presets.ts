@@ -755,12 +755,15 @@ export const defaultPreferences: EditorPreferences = {
   snapStep: 0.25,
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',
+  defaultStrokeOpacity: 1,
+  defaultFillOpacity: 1,
   defaultStrokeWidth: 0.28,
   defaultArrowScale: 1.35,
   defaultArrowType: DEFAULT_ARROW_TIP_KIND,
   defaultLineStrokeStyle: 'solid',
   defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
   defaultTextColor: DEFAULT_TEXT_COLOR,
+  defaultTextOpacity: 1,
   defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE,
   defaultImagePath: 'images'
 };

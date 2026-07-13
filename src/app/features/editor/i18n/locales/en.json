@@ -542,6 +542,7 @@
   "addAnchor": "Add anchor",
   "removeAnchor": "Remove anchor",
   "opacity": "Opacity",
+  "randomColor": "Random color",
   "arrowDirection": "Direction",
   "arrowDirectionNone": "No arrow",
   "arrowDirectionForward": "Start to end",

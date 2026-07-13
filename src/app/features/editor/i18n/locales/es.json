@@ -542,6 +542,7 @@
   "addAnchor": "Agregar anclaje",
   "removeAnchor": "Eliminar anclaje",
   "opacity": "Opacidad",
+  "randomColor": "Color aleatorio",
   "arrowDirection": "Dirección",
   "arrowDirectionNone": "Sin flecha",
   "arrowDirectionForward": "Origen a destino",

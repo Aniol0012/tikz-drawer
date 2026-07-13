@@ -59,20 +59,26 @@
             </button>
           }
         </div>
-        <details #configurationFileMenu class="configuration-file-menu">
-          <summary class="configuration-file-menu__trigger">
+        <sl-dropdown #configurationDropdown class="configuration-file-menu" placement="bottom-end" distance="8" hoist>
+          <button
+            slot="trigger"
+            class="configuration-file-menu__trigger"
+            type="button"
+            [attr.aria-label]="'configuration' | translate"
+            [title]="'configuration' | translate">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="configurationMenuIconPath"></path>
             </svg>
             <span>{{ 'configuration' | translate }}</span>
-          </summary>
-          <div class="configuration-file-menu__panel" (click)="configurationFileMenu.open = false">
+          </button>
+          <div class="configuration-file-menu__panel" role="menu" [attr.aria-label]="'configuration' | translate">
             <button
               class="configuration-file-action"
               type="button"
+              role="menuitem"
               [attr.aria-label]="'configurationImport' | translate"
               [title]="'configurationImport' | translate"
-              (click)="triggerConfigurationImport()">
+              (click)="triggerConfigurationImport(configurationDropdown)">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="configurationImportIconPath"></path>
               </svg>
@@ -81,9 +87,10 @@
             <button
               class="configuration-file-action"
               type="button"
+              role="menuitem"
               [attr.aria-label]="'configurationExport' | translate"
               [title]="'configurationExport' | translate"
-              (click)="exportConfiguration()">
+              (click)="exportConfiguration(configurationDropdown)">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path [attr.d]="configurationExportIconPath"></path>
               </svg>
@@ -96,7 +103,7 @@
             type="file"
             accept="application/json,.json"
             (change)="importConfiguration($event)" />
-        </details>
+        </sl-dropdown>
         <button class="about-button" type="button" [attr.aria-label]="'about' | translate" (click)="openAboutDialog()">
           <span aria-hidden="true">i</span>
         </button>
@@ -332,14 +339,26 @@
                     <h3>{{ 'sceneStyleDefaults' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--two">
-                    <label class="field field--color-picker">
-                      <span>{{ 'defaultStroke' | translate }}</span>
-                      <input type="color" [value]="preferences().defaultStroke" (input)="updatePreferenceText('defaultStroke', $event)" />
-                    </label>
-                    <label class="field field--color-picker">
-                      <span>{{ 'defaultFill' | translate }}</span>
-                      <input type="color" [value]="preferences().defaultFill" (input)="updatePreferenceText('defaultFill', $event)" />
-                    </label>
+                    <app-color-picker
+                      class="field"
+                      [label]="'defaultStroke' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="panel"
+                      [randomLabel]="'randomColor' | translate"
+                      [value]="preferences().defaultStroke"
+                      [opacity]="preferences().defaultStrokeOpacity"
+                      (valueChange)="setPreferenceText('defaultStroke', $event)"
+                      (opacityChange)="setPreferenceNumber('defaultStrokeOpacity', $event, 0, 1)"></app-color-picker>
+                    <app-color-picker
+                      class="field"
+                      [label]="'defaultFill' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="panel"
+                      [randomLabel]="'randomColor' | translate"
+                      [value]="preferences().defaultFill"
+                      [opacity]="preferences().defaultFillOpacity"
+                      (valueChange)="setPreferenceText('defaultFill', $event)"
+                      (opacityChange)="setPreferenceNumber('defaultFillOpacity', $event, 0, 1)"></app-color-picker>
                     <app-range-input-card
                       class="field--full"
                       [label]="'defaultLineWidth' | translate"
@@ -410,13 +429,16 @@
                     <h3>{{ 'defaultText' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--single">
-                    <label class="field field--color-picker">
-                      <span>{{ 'defaultTextColor' | translate }}</span>
-                      <input
-                        type="color"
-                        [value]="preferences().defaultTextColor"
-                        (input)="updatePreferenceText('defaultTextColor', $event)" />
-                    </label>
+                    <app-color-picker
+                      class="field field--full"
+                      [label]="'defaultTextColor' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="summary"
+                      [randomLabel]="'randomColor' | translate"
+                      [value]="preferences().defaultTextColor"
+                      [opacity]="preferences().defaultTextOpacity"
+                      (valueChange)="setPreferenceText('defaultTextColor', $event)"
+                      (opacityChange)="setPreferenceNumber('defaultTextOpacity', $event, 0, 1)"></app-color-picker>
                     <app-range-input-card
                       [label]="'defaultTextFontSize' | translate"
                       [value]="preferences().defaultTextFontSize"
@@ -508,6 +530,8 @@
                           d="M42 122 80 56 118 122Z"
                           [attr.fill]="preferences().defaultFill"
                           [attr.stroke]="preferences().defaultStroke"
+                          [attr.fill-opacity]="preferences().defaultFillOpacity"
+                          [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"
                           [attr.stroke-linejoin]="preferences().defaultCornerRadius > 0 ? 'round' : 'miter'"></path>
                         <circle
@@ -516,6 +540,8 @@
                           r="25"
                           [attr.fill]="preferences().defaultFill"
                           [attr.stroke]="preferences().defaultStroke"
+                          [attr.fill-opacity]="preferences().defaultFillOpacity"
+                          [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"></circle>
                         <rect
                           x="220"
@@ -526,11 +552,14 @@
                           [attr.ry]="previewCornerRadius()"
                           [attr.fill]="preferences().defaultFill"
                           [attr.stroke]="preferences().defaultStroke"
+                          [attr.fill-opacity]="preferences().defaultFillOpacity"
+                          [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"></rect>
                         <path
                           d="M44 168 C98 188 140 150 188 166 S248 150 262 118"
                           fill="none"
                           [attr.stroke]="preferences().defaultStroke"
+                          [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"
                           [attr.stroke-dasharray]="previewStrokeDasharray()"
                           stroke-linecap="round"
@@ -539,6 +568,7 @@
                           x="126"
                           y="72"
                           [attr.fill]="preferences().defaultTextColor"
+                          [attr.fill-opacity]="preferences().defaultTextOpacity"
                           [attr.font-size]="previewTextFontSize()"
                           font-weight="700">
                           TikZ
@@ -557,6 +587,8 @@
                             [attr.d]="previewArrowPath()"
                             [attr.fill]="previewArrowFill()"
                             [attr.stroke]="previewArrowStroke()"
+                            [attr.fill-opacity]="preferences().defaultStrokeOpacity"
+                            [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                             [attr.stroke-width]="previewArrowStrokeWidth()"
                             stroke-linecap="round"
                             stroke-linejoin="round"></path>

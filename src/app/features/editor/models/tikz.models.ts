@@ -161,12 +161,15 @@ export interface EditorPreferences {
   readonly snapStep: number;
   readonly defaultStroke: string;
   readonly defaultFill: string;
+  readonly defaultStrokeOpacity: number;
+  readonly defaultFillOpacity: number;
   readonly defaultStrokeWidth: number;
   readonly defaultArrowScale: number;
   readonly defaultArrowType: ArrowTipKind;
   readonly defaultLineStrokeStyle: LineStrokeStyle;
   readonly defaultCornerRadius: number;
   readonly defaultTextColor: string;
+  readonly defaultTextOpacity: number;
   readonly defaultTextFontSize: number;
   readonly defaultImagePath: string;
 }

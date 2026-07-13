@@ -12,7 +12,16 @@ export type CssTextAlign = 'left' | 'center' | 'right';
 export type TextStyleKey = 'fontWeight' | 'fontStyle' | 'textDecoration';
 export type TextStylePropertyKey = TextStyleKey | 'textAlign';
 export type TemplateDialogTextKey = 'title' | 'description';
-export type PreferenceNumberKey = 'scale' | 'snapStep' | 'defaultStrokeWidth' | 'defaultArrowScale' | 'defaultCornerRadius' | 'defaultTextFontSize';
+export type PreferenceNumberKey =
+  | 'scale'
+  | 'snapStep'
+  | 'defaultStrokeOpacity'
+  | 'defaultFillOpacity'
+  | 'defaultStrokeWidth'
+  | 'defaultArrowScale'
+  | 'defaultCornerRadius'
+  | 'defaultTextOpacity'
+  | 'defaultTextFontSize';
 export type PreferenceTextKey = 'defaultStroke' | 'defaultFill' | 'defaultArrowType' | 'defaultLineStrokeStyle' | 'defaultTextColor' | 'defaultImagePath';
 export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes';
 export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';

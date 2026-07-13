@@ -91,8 +91,13 @@
 }
 
 .configuration-file-menu {
-  position: relative;
+  display: inline-flex;
   margin-left: auto;
+  font: inherit;
+  --sl-font-sans: var(--font-sans);
+  --sl-color-primary-600: var(--accent);
+  --sl-color-neutral-0: var(--panel-background);
+  --sl-color-neutral-700: var(--app-foreground);
 }
 
 .configuration-import-input {
@@ -121,11 +126,6 @@
   width: 46px;
   min-width: 46px;
   padding: 0;
-  list-style: none;
-}
-
-.configuration-file-menu__trigger::-webkit-details-marker {
-  display: none;
 }
 
 .configuration-file-menu__trigger span {
@@ -138,22 +138,17 @@
 }
 
 .configuration-file-menu__panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 4;
   min-width: min(260px, calc(100vw - 32px));
   display: grid;
   gap: 6px;
   padding: 6px;
+}
+
+.configuration-file-menu::part(panel) {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--panel-background);
   box-shadow: var(--floating-shadow);
-}
-
-.configuration-file-menu:not([open]) .configuration-file-menu__panel {
-  display: none;
 }
 
 .configuration-file-action {
@@ -490,8 +485,7 @@
   grid-column: auto;
 }
 
-.settings-card--style label.field--full,
-.settings-card--text .field--color-picker {
+.settings-card--style label.field--full {
   grid-column: 1 / -1;
 }
 
@@ -564,37 +558,6 @@
   color: var(--app-foreground);
   background: var(--input-background);
   font: inherit;
-}
-
-.field--color-picker {
-  min-height: 56px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--input-background);
-}
-
-.field--color-picker input {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  padding: 0;
-  overflow: hidden;
-  background: transparent;
-  cursor: pointer;
-}
-
-.field--color-picker input::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.field--color-picker input::-webkit-color-swatch {
-  border: 0;
-  border-radius: 50%;
 }
 
 .mode-switch {
@@ -1286,8 +1249,6 @@
   }
 
   .configuration-file-menu__panel {
-    right: 0;
-    left: auto;
     min-width: min(260px, calc(100vw - 32px));
   }
 

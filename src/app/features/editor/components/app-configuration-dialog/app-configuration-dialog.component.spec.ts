@@ -34,6 +34,8 @@ describe('AppConfigurationDialogComponent', () => {
     ['range-input-card.component.css', resolve(process.cwd(), 'src/app/features/editor/components/range-input-card')],
     ['keyboard-shortcut-capture.component.html', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
     ['keyboard-shortcut-capture.component.css', resolve(process.cwd(), 'src/app/features/editor/components/keyboard-shortcut-capture')],
+    ['color-picker.component.html', resolve(process.cwd(), 'src/app/features/editor/components/color-picker')],
+    ['color-picker.component.css', resolve(process.cwd(), 'src/app/features/editor/components/color-picker')],
     ['ai-sparkles-icon.component.html', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')],
     ['ai-sparkles-icon.component.css', resolve(process.cwd(), 'src/app/features/editor/components/ai-sparkles-icon')],
     ['scene-icon.component.html', resolve(process.cwd(), 'src/app/features/editor/components/scene-icon')],
@@ -108,8 +110,8 @@ describe('AppConfigurationDialogComponent', () => {
 
     expect(template).toContain('#configurationImportInput');
     expect(template).toContain('(change)="importConfiguration($event)"');
-    expect(template).toContain('(click)="triggerConfigurationImport()"');
-    expect(template).toContain('(click)="exportConfiguration()"');
+    expect(template).toContain('(click)="triggerConfigurationImport(configurationDropdown)"');
+    expect(template).toContain('(click)="exportConfiguration(configurationDropdown)"');
     expect(template).toContain('configurationImportError()');
   });
 

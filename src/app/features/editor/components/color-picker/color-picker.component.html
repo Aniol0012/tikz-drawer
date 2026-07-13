@@ -1,8 +1,10 @@
-<div class="color-picker" data-tooltip-disabled>
+<div class="color-picker" [class.color-picker--summary-opacity-hidden]="!showSummaryOpacityControl()" data-tooltip-disabled>
   <div #summary class="color-picker__summary">
     <div class="color-picker__header">
       <span class="color-picker__label">{{ label() }}</span>
-      <span class="color-picker__opacity-text">{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
+      @if (showSummaryOpacityControl() && showSummaryOpacityLabel()) {
+        <span class="color-picker__opacity-text">{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
+      }
     </div>
 
     <button
@@ -14,17 +16,19 @@
       <span class="color-picker__swatch" [style.background]="previewBackground()"></span>
     </button>
 
-    <input
-      class="color-picker__summary-opacity"
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      [value]="clampedOpacity()"
-      [attr.aria-label]="opacityLabel()"
-      [style.--color-picker-preview]="previewBackground()"
-      [style.--color-picker-opacity-track]="opacityTrackBackground()"
-      (input)="updateOpacity($event)" />
+    @if (showSummaryOpacityControl()) {
+      <input
+        class="color-picker__summary-opacity"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        [value]="clampedOpacity()"
+        [attr.aria-label]="opacityLabel()"
+        [style.--color-picker-preview]="previewBackground()"
+        [style.--color-picker-opacity-track]="opacityTrackBackground()"
+        (input)="updateOpacity($event)" />
+    }
   </div>
 
   @if (isOpen()) {
@@ -104,19 +108,21 @@
         }
       </div>
 
-      <label class="color-picker__opacity">
-        <span>{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
-        <input
-          class="color-picker__opacity-range"
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          [value]="clampedOpacity()"
-          [style.--color-picker-preview]="previewBackground()"
-          [style.--color-picker-opacity-track]="opacityTrackBackground()"
-          (input)="updateOpacity($event)" />
-      </label>
+      @if (showPanelOpacityControl()) {
+        <label class="color-picker__opacity">
+          <span>{{ opacityLabel() }} {{ Math.round(clampedOpacity() * 100) }}%</span>
+          <input
+            class="color-picker__opacity-range"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            [value]="clampedOpacity()"
+            [style.--color-picker-preview]="previewBackground()"
+            [style.--color-picker-opacity-track]="opacityTrackBackground()"
+            (input)="updateOpacity($event)" />
+        </label>
+      }
     </div>
   }
 </div>

@@ -14,6 +14,7 @@ interface HsvColor {
 }
 
 type RgbChannel = keyof RgbColor;
+type OpacityControlPlacement = 'summary' | 'panel' | 'both' | 'none';
 
 const COMMON_COLORS = [
   '#111827',
@@ -60,6 +61,9 @@ export class ColorPickerComponent {
   readonly opacity = input(1);
   readonly label = input('Color');
   readonly opacityLabel = input('Opacity');
+  readonly showOpacityControl = input(true);
+  readonly showSummaryOpacityLabel = input(true);
+  readonly opacityControlPlacement = input<OpacityControlPlacement>('both');
   readonly randomLabel = input('Random color');
   readonly fallback = input(FALLBACK_COLOR);
 
@@ -77,6 +81,8 @@ export class ColorPickerComponent {
 
   readonly normalizedColor = computed(() => normalizeHexColor(this.value(), this.fallback()));
   readonly clampedOpacity = computed(() => clampUnit(this.opacity()));
+  readonly showSummaryOpacityControl = computed(() => this.showOpacityControl() && ['summary', 'both'].includes(this.opacityControlPlacement()));
+  readonly showPanelOpacityControl = computed(() => this.showOpacityControl() && ['panel', 'both'].includes(this.opacityControlPlacement()));
   readonly rgb = computed(() => hexToRgb(this.normalizedColor()));
   readonly hsv = computed(() => rgbToHsv(this.rgb()));
   readonly hexInputValue = computed(() => this.normalizedColor().toUpperCase());

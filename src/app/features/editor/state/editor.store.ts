@@ -376,12 +376,20 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
     theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
     scale: normalizedScale,
     defaultArrowType,
+    defaultStrokeOpacity: normalizeOpacity(preferences?.defaultStrokeOpacity),
+    defaultFillOpacity: normalizeOpacity(preferences?.defaultFillOpacity),
+    defaultTextOpacity: normalizeOpacity(preferences?.defaultTextOpacity),
     defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
   };
 };
 
 const normalizeArrowTipKind = (value: unknown): ArrowTipKind =>
   ARROW_TIP_OPTIONS.some((option) => option.id === value) ? (value as ArrowTipKind) : DEFAULT_ARROW_TIP_KIND;
+
+const normalizeOpacity = (value: unknown): number => {
+  const opacity = Number(value);
+  return Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+};
 
 @Injectable()
 export class EditorStore {
