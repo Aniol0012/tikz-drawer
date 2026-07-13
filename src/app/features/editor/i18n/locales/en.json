@@ -196,6 +196,7 @@
   "layers": "Layers",
   "canvasSettings": "Canvas settings",
   "settings": "Settings",
+  "configuration": "Config",
   "configurationImport": "Import config",
   "configurationExport": "Export config",
   "configurationImportError": "The selected configuration file could not be imported.",

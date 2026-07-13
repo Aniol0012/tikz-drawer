@@ -56,7 +56,21 @@
       <section class="sidebar-block sidebar-block--intro">
         <div class="section-header section-header--static">
           <span>{{ 'library' | translate }}</span>
-          <app-badge tone="gray" size="sm">{{ allInsertablePresets().length }}</app-badge>
+          <span class="library-header__actions">
+            <app-badge tone="gray" size="sm">{{ allInsertablePresets().length }}</app-badge>
+            @if (sidebarsOverlayLayout()) {
+              <button
+                class="icon-button library-close-button"
+                type="button"
+                [title]="'close' | translate"
+                [attr.aria-label]="'close' | translate"
+                (click)="closeMobileLibraryPanel()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="iconMap.close"></path>
+                </svg>
+              </button>
+            }
+          </span>
         </div>
         <div class="search-field">
           <button

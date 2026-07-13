@@ -201,6 +201,7 @@ export class AppConfigurationDialogComponent {
   readonly maxZoomPercent = Math.round((EDITOR_SCALE_MAX / DEFAULT_EDITOR_SCALE) * 100);
   readonly shortcutSettingsIconPath = iconPaths.keyboard;
   readonly contextMenuSettingsIconPath = iconPaths.menu;
+  readonly configurationMenuIconPath = iconPaths.menu;
   readonly configurationImportIconPath = iconPaths.import;
   readonly configurationExportIconPath = iconPaths.export;
   readonly devModeIconPath = iconPaths.code;

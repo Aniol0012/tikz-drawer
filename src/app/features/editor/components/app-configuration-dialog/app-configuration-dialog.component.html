@@ -59,36 +59,44 @@
             </button>
           }
         </div>
-        <div class="configuration-file-actions">
+        <details #configurationFileMenu class="configuration-file-menu">
+          <summary class="configuration-file-menu__trigger">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="configurationMenuIconPath"></path>
+            </svg>
+            <span>{{ 'configuration' | translate }}</span>
+          </summary>
+          <div class="configuration-file-menu__panel" (click)="configurationFileMenu.open = false">
+            <button
+              class="configuration-file-action"
+              type="button"
+              [attr.aria-label]="'configurationImport' | translate"
+              [title]="'configurationImport' | translate"
+              (click)="triggerConfigurationImport()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="configurationImportIconPath"></path>
+              </svg>
+              <span>{{ 'configurationImport' | translate }}</span>
+            </button>
+            <button
+              class="configuration-file-action"
+              type="button"
+              [attr.aria-label]="'configurationExport' | translate"
+              [title]="'configurationExport' | translate"
+              (click)="exportConfiguration()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="configurationExportIconPath"></path>
+              </svg>
+              <span>{{ 'configurationExport' | translate }}</span>
+            </button>
+          </div>
           <input
             #configurationImportInput
             class="configuration-import-input"
             type="file"
             accept="application/json,.json"
             (change)="importConfiguration($event)" />
-          <button
-            class="configuration-file-action"
-            type="button"
-            [attr.aria-label]="'configurationImport' | translate"
-            [title]="'configurationImport' | translate"
-            (click)="triggerConfigurationImport()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="configurationImportIconPath"></path>
-            </svg>
-            <span>{{ 'configurationImport' | translate }}</span>
-          </button>
-          <button
-            class="configuration-file-action"
-            type="button"
-            [attr.aria-label]="'configurationExport' | translate"
-            [title]="'configurationExport' | translate"
-            (click)="exportConfiguration()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="configurationExportIconPath"></path>
-            </svg>
-            <span>{{ 'configurationExport' | translate }}</span>
-          </button>
-        </div>
+        </details>
         <button class="about-button" type="button" [attr.aria-label]="'about' | translate" (click)="openAboutDialog()">
           <span aria-hidden="true">i</span>
         </button>

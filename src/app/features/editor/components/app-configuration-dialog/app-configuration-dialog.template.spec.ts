@@ -19,6 +19,11 @@ describe('AppConfigurationDialogComponent template', () => {
     const aboutButton = template.indexOf('class="about-button"');
 
     expect(aboutButton).toBeGreaterThan(tablistEnd);
+    expect(template).toContain('#configurationFileMenu class="configuration-file-menu"');
+    expect(template).toContain('class="configuration-file-menu__trigger"');
+    expect(template).toContain('class="configuration-file-menu__panel" (click)="configurationFileMenu.open = false"');
+    expect(template).toContain('(click)="triggerConfigurationImport()"');
+    expect(template).toContain('(click)="exportConfiguration()"');
     expect(template).toContain('https://github.com/Aniol0012/tikz-drawer');
     expect(template).toContain('Aniol0012/tikz-drawer');
     expect(template).toContain('src="logo.png"');

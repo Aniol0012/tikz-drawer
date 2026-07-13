@@ -484,6 +484,16 @@
   padding: 0;
 }
 
+.library-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.library-close-button {
+  display: none;
+}
+
 .scene-layers-header {
   display: flex;
   align-items: center;
@@ -3325,6 +3335,10 @@ button:disabled {
 
   .left-sidebar.is-overlay-layout.is-overlay-panel-open {
     display: flex;
+  }
+
+  .left-sidebar.is-overlay-layout .library-close-button {
+    display: inline-flex;
   }
 
   .mobile-library-backdrop {

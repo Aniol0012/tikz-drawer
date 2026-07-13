@@ -196,6 +196,7 @@
   "layers": "Capes",
   "canvasSettings": "Paràmetres del llenç",
   "settings": "Configuració",
+  "configuration": "Config.",
   "configurationImport": "Importar config.",
   "configurationExport": "Exportar config.",
   "configurationImportError": "No s'ha pogut importar el fitxer de configuració seleccionat.",

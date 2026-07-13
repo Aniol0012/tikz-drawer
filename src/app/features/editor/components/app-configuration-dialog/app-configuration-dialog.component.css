@@ -90,10 +90,8 @@
   background: var(--panel-background);
 }
 
-.configuration-file-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.configuration-file-menu {
+  position: relative;
   margin-left: auto;
 }
 
@@ -101,6 +99,7 @@
   display: none;
 }
 
+.configuration-file-menu__trigger,
 .configuration-file-action {
   min-height: 46px;
   display: inline-flex;
@@ -118,6 +117,52 @@
   cursor: pointer;
 }
 
+.configuration-file-menu__trigger {
+  width: 46px;
+  min-width: 46px;
+  padding: 0;
+  list-style: none;
+}
+
+.configuration-file-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.configuration-file-menu__trigger span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.configuration-file-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 4;
+  min-width: min(260px, calc(100vw - 32px));
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.configuration-file-menu:not([open]) .configuration-file-menu__panel {
+  display: none;
+}
+
+.configuration-file-action {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.configuration-file-menu__trigger svg,
 .configuration-file-action svg {
   width: 17px;
   height: 17px;
@@ -128,6 +173,8 @@
   stroke-width: 1.9;
 }
 
+.configuration-file-menu__trigger:hover,
+.configuration-file-menu__trigger:focus-visible,
 .configuration-file-action:hover,
 .configuration-file-action:focus-visible {
   outline: none;
@@ -1210,21 +1257,48 @@
   }
 
   .configuration-navigation {
-    gap: 6px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'tabs files about';
+    align-items: stretch;
+    gap: 8px;
     margin: 8px 10px;
   }
 
   .configuration-tabs {
+    grid-area: tabs;
     flex: 1 1 auto;
-    width: auto;
+    width: 100%;
     display: grid;
-    grid-template-columns: repeat(var(--configuration-tab-count, 3), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--configuration-tab-count, 3), minmax(68px, 1fr));
     gap: 6px;
     margin: 0;
     padding: 4px;
   }
 
+  .configuration-file-menu {
+    grid-area: files;
+    margin-left: 0;
+  }
+
+  .configuration-file-menu__trigger {
+    min-height: 46px;
+  }
+
+  .configuration-file-menu__panel {
+    right: 0;
+    left: auto;
+    min-width: min(260px, calc(100vw - 32px));
+  }
+
+  .configuration-file-action {
+    min-width: 0;
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+
   .about-button {
+    grid-area: about;
     width: 46px;
     min-width: 46px;
     height: 46px;
@@ -1243,16 +1317,15 @@
   .configuration-tab {
     min-height: 38px;
     justify-content: center;
-    gap: 6px;
-    padding: 0 8px;
-    font-size: 0.78rem;
+    gap: 4px;
+    padding: 0 6px;
+    font-size: 0.76rem;
   }
 
   .configuration-tab svg,
   .configuration-tab app-ai-sparkles-icon,
   .configuration-tab app-scene-icon {
-    width: 15px;
-    height: 15px;
+    display: none;
   }
 
   .configuration-body {

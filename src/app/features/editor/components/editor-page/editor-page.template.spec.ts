@@ -42,6 +42,13 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain("private readonly librarySectionIds = new Set<string>(['savedTemplates', ...categoryOrder]);");
   });
 
+  it('keeps a mobile overlay close action in the library panel', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('class="icon-button library-close-button"');
+    expect(template).toContain('(click)="closeMobileLibraryPanel()"');
+  });
+
   it('keeps direct double-click text insertion wired on shapes', async () => {
     const template = await readTemplate();
     const component = await readComponent();
