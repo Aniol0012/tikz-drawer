@@ -4844,7 +4844,7 @@ export class EditorPageComponent {
         this.finishMarqueeInteraction(interactionState);
         break;
       case 'insert':
-        this.finishInsertInteraction(interactionState);
+        this.finishInsertInteraction(this.insertInteractionStateAtPointer(event, interactionState));
         break;
       case 'freehand':
         if (this.freehandPointerRafHandle !== null && this.document.defaultView) {
@@ -4889,6 +4889,16 @@ export class EditorPageComponent {
       top: Math.max(interactionState.startWorldPoint.y, interactionState.currentWorldPoint.y)
     });
     this.store.setSelectedShapes(interactionState.additive ? [...this.selectedShapes().map((shape) => shape.id), ...marqueeShapeIds] : marqueeShapeIds);
+  }
+
+  private insertInteractionStateAtPointer(
+    event: Pick<PointerEvent, 'clientX' | 'clientY'>,
+    interactionState: Extract<InteractionState, { kind: 'insert' }>
+  ): Extract<InteractionState, { kind: 'insert' }> {
+    return {
+      ...interactionState,
+      currentWorldPoint: this.snapScenePoint(this.toScenePoint(event.clientX, event.clientY))
+    };
   }
 
   private finishInsertInteraction(interactionState: Extract<InteractionState, { kind: 'insert' }>): void {
@@ -6977,6 +6987,11 @@ export class EditorPageComponent {
     return shape.latexSource.split(REGEX.imagePath.separator).at(-1)?.toLowerCase() === 'example.png';
   }
 
+  private transformPresetShapeForInsertion(shape: CanvasShape, options: TransformCanvasShapeOptions, keepOwnStyle: boolean): CanvasShape {
+    const styledShape = this.applyPresetStyle(shape, keepOwnStyle);
+    return this.transformShape(styledShape, options);
+  }
+
   private buildInsertionPreviewShapes(toolId: string, startPoint: Point, currentPoint: Point): readonly CanvasShape[] {
     const preset = this.allInsertablePresets().find((entry) => entry.id === toolId);
     if (!preset) {
@@ -7005,8 +7020,9 @@ export class EditorPageComponent {
         preset,
         this.remapShapeSetAttachments(
           templateShapes.map((shape) =>
-            this.applyPresetStyle(
-              this.transformShape(shape, {
+            this.transformPresetShapeForInsertion(
+              shape,
+              {
                 deltaX: startPoint.x - centerX,
                 deltaY: startPoint.y - centerY,
                 scaleX: 1,
@@ -7014,7 +7030,7 @@ export class EditorPageComponent {
                 originX: templateBounds.left,
                 originY: templateBounds.bottom,
                 id: idMap.get(shape.id) ?? shape.id
-              }),
+              },
               keepOwnStyle
             )
           ),
@@ -7039,8 +7055,9 @@ export class EditorPageComponent {
       preset,
       this.remapShapeSetAttachments(
         templateShapes.map((shape) =>
-          this.applyPresetStyle(
-            this.transformShape(shape, {
+          this.transformPresetShapeForInsertion(
+            shape,
+            {
               deltaX: targetLeft - templateBounds.left * scaleX,
               deltaY: targetBottom - templateBounds.bottom * scaleY,
               scaleX,
@@ -7048,7 +7065,7 @@ export class EditorPageComponent {
               originX: 0,
               originY: 0,
               id: idMap.get(shape.id) ?? shape.id
-            }),
+            },
             keepOwnStyle
           )
         ),
@@ -7171,8 +7188,9 @@ export class EditorPageComponent {
           preset,
           this.remapShapeSetAttachments(
             templateShapes.map((shape) =>
-              this.applyPresetStyle(
-                this.transformShape(shape, {
+              this.transformPresetShapeForInsertion(
+                shape,
+                {
                   deltaX: point.x - centerX,
                   deltaY: point.y - centerY,
                   scaleX: 1,
@@ -7180,7 +7198,7 @@ export class EditorPageComponent {
                   originX: 0,
                   originY: 0,
                   id: idMap.get(shape.id) ?? shape.id
-                }),
+                },
                 keepOwnStyle
               )
             ),
