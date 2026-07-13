@@ -2772,19 +2772,20 @@ export class EditorPageComponent {
   }
 
   async pasteClipboard(): Promise<void> {
-    const imageFile = await this.readImageFileFromNavigatorClipboard();
-    if (imageFile) {
-      await this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+    if (this.pasteInternalClipboard()) {
       return;
     }
 
-    this.pasteInternalClipboard();
+    const imageFile = await this.readImageFileFromNavigatorClipboard();
+    if (imageFile) {
+      await this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+    }
   }
 
-  private pasteInternalClipboard(): void {
+  private pasteInternalClipboard(): boolean {
     const clipboard = this.clipboardShapes();
     if (!clipboard?.shapes.length) {
-      return;
+      return false;
     }
 
     const offsetStep = EDITOR_PASTE_OFFSET_STEP;
@@ -2810,6 +2811,7 @@ export class EditorPageComponent {
       shapes: clipboard.shapes,
       pasteCount: clipboard.pasteCount + 1
     });
+    return true;
   }
 
   mergeSelected(): void {
@@ -6243,18 +6245,17 @@ export class EditorPageComponent {
       return;
     }
 
+    if (this.pasteInternalClipboard()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     const imageFile = this.getImageFileFromTransfer(event.clipboardData);
     if (imageFile) {
       event.preventDefault();
       event.stopPropagation();
       this.runAsync(this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter())));
-      return;
-    }
-
-    if (this.clipboardShapes()?.shapes.length) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.pasteInternalClipboard();
     }
   }
 
