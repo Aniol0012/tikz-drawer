@@ -183,6 +183,7 @@ import {
 } from '../../utils/editor-page.utils';
 import { resizeSelection, resizeShape as resizeShapeUtil } from '../../utils/editor-resize.utils';
 import { buildCanvasExportDocument as buildCanvasExportDocumentUtil, svgMarkupDataUrl } from '../../utils/editor-export-svg.utils';
+import { reserveNextNumberedCopyName } from '../../utils/editor-shape-name.utils';
 import { parseCollapsedSectionsFromStorage, parsePinnedToolIdsFromStorage, parseSavedTemplatesFromStorage } from '../../utils/editor-storage.utils';
 import { buildProjectJsonExport } from '../../utils/editor-project-json.utils';
 import { imagePathForFile } from '../../utils/editor-image-path.utils';
@@ -2789,6 +2790,7 @@ export class EditorPageComponent {
     const offsetStep = EDITOR_PASTE_OFFSET_STEP;
     const offset = offsetStep * (clipboard.pasteCount + 1);
     const idMap = this.shapeIdMap(clipboard.shapes, () => crypto.randomUUID());
+    const unavailableNames = new Set(this.scene().shapes.map((shape) => shape.name));
     const pastedShapes = remapStructuralShapeIds(
       this.remapShapeSetAttachments(
         clipboard.shapes.map((shape) => {
@@ -2796,7 +2798,7 @@ export class EditorPageComponent {
           return {
             ...translateShapeBy(duplicate, offset, -offset),
             id: idMap.get(shape.id) ?? shape.id,
-            name: `${duplicate.name} copy`
+            name: reserveNextNumberedCopyName(duplicate.name, unavailableNames)
           } as CanvasShape;
         }),
         idMap

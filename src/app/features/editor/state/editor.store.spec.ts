@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { EditorStore } from './editor.store';
-import type { TikzScene } from '../models/tikz.models';
+import type { CanvasShape, TikzScene } from '../models/tikz.models';
 import { DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
 
 const importedScene = (name: string): TikzScene => ({
@@ -34,6 +34,28 @@ const importedScene = (name: string): TikzScene => ({
       arrowBendMode: 'none'
     }
   ]
+});
+
+const blankScene = (): TikzScene => ({
+  name: 'blank',
+  bounds: { width: 960, height: 640 },
+  shapes: []
+});
+
+const rectangleShape = (name: string): CanvasShape => ({
+  id: crypto.randomUUID(),
+  name,
+  kind: 'rectangle',
+  stroke: '#111111',
+  strokeOpacity: 1,
+  strokeWidth: 0.08,
+  x: 0,
+  y: 0,
+  width: 2,
+  height: 1,
+  fill: '#ffffff',
+  fillOpacity: 1,
+  rotation: 0
 });
 
 describe('EditorStore import application', () => {
@@ -82,5 +104,28 @@ describe('EditorStore import application', () => {
     store.patchPreferences({ defaultArrowType: '' as never });
 
     expect(store.preferences().defaultArrowType).toBe(DEFAULT_ARROW_TIP_KIND);
+  });
+
+  it('uses numbered names for inserted preset copies and duplicates', () => {
+    store.applyScene(blankScene());
+
+    const [firstRectangle] = store.addPreset('box');
+    const [secondRectangle] = store.addPreset('box');
+    store.setSelectedShapes([firstRectangle?.id ?? '']);
+    store.duplicateSelected();
+
+    expect(firstRectangle?.name).toBe('Rectangle (1)');
+    expect(secondRectangle?.name).toBe('Rectangle (2)');
+    expect(store.selectedShapes()[0]?.name).toBe('Rectangle (3)');
+  });
+
+  it('normalizes old copy suffixes before numbering duplicates', () => {
+    const legacyShape = rectangleShape('Rectangle copy copy');
+    store.applyScene({ ...blankScene(), shapes: [legacyShape] });
+    store.setSelectedShapes([legacyShape.id]);
+
+    store.duplicateSelected();
+
+    expect(store.selectedShapes()[0]?.name).toBe('Rectangle (1)');
   });
 });

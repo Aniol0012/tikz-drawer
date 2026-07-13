@@ -51,6 +51,8 @@ export const REGEX = {
     slugTrimDashes: /^-+|-+$/g,
     extensionSuffix: /\.[^/.]+$/g,
     filenameInvalidChars: /[\\/:*?"<>|]+/g,
+    numberedCopySuffix: /\s+\(\d+\)$/u,
+    legacyCopySuffix: /(?:\s+copy)+$/iu,
     macPlatform: /Mac|iPhone|iPad|iPod/,
     toolButtonClass: /class="tool-button/g,
     importFooterActions: /<div class="import-code-modal__footer-actions">([\s\S]*?)<\/div>/,

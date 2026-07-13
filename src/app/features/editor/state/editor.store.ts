@@ -14,15 +14,19 @@ import { parseTikz } from '../tikz/tikz.parser';
 import type { ArrowTipKind, CanvasShape, EditorPreferences, ParsedTikzResult, PersistedEditorState, TikzScene } from '../models/tikz.models';
 import { remapStructuralShapeIds } from '../utils/table.utils';
 import { measureTextShape, textLeftForWidth } from '../utils/text.utils';
+import { reserveNextNumberedCopyName } from '../utils/editor-shape-name.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 import { normalizeAppTheme } from './app-theme.service';
 import { ARROW_TIP_OPTIONS, DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
 
-const cloneShape = (shape: CanvasShape): CanvasShape => ({
-  ...structuredClone(shape),
-  id: crypto.randomUUID(),
-  name: `${shape.name} copy`
-});
+const cloneShape = (shape: CanvasShape, unavailableNames: Set<string>): CanvasShape => {
+  const name = reserveNextNumberedCopyName(shape.name, unavailableNames);
+  return {
+    ...structuredClone(shape),
+    id: crypto.randomUUID(),
+    name
+  };
+};
 
 const remapLineAttachments = (shape: CanvasShape, idMap: ReadonlyMap<string, string>): CanvasShape => {
   if (shape.kind !== 'line') {
@@ -514,7 +518,8 @@ export class EditorStore {
       return [];
     }
 
-    const shapes = preset.shapes.map((shape) => applyDefaultShapeStyle(cloneShape(shape), this.preferences()));
+    const unavailableNames = new Set(this.scene().shapes.map((shape) => shape.name));
+    const shapes = preset.shapes.map((shape) => applyDefaultShapeStyle(cloneShape(shape, unavailableNames), this.preferences()));
     this.scene.update((scene) => ({
       ...scene,
       shapes: [...scene.shapes, ...shapes]
@@ -590,21 +595,23 @@ export class EditorStore {
     }
 
     const idMap = new Map(selectedShapes.map((shape) => [shape.id, crypto.randomUUID()]));
+    const unavailableNames = new Set(this.scene().shapes.map((shape) => shape.name));
     const duplicatedShapes = remapStructuralShapeIds(
-      selectedShapes.map((shape) =>
-        remapLineAttachments(
+      selectedShapes.map((shape) => {
+        const name = reserveNextNumberedCopyName(shape.name, unavailableNames);
+        return remapLineAttachments(
           translateShape(
             {
               ...structuredClone(shape),
               id: idMap.get(shape.id) ?? shape.id,
-              name: `${shape.name} copy`
+              name
             } as CanvasShape,
             0.6,
             -0.6
           ),
           idMap
-        )
-      )
+        );
+      })
     );
     this.scene.update((scene) => ({
       ...scene,
