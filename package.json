@@ -43,6 +43,7 @@
     "@angular/build": "^22.0.6",
     "@angular/cli": "^22.0.6",
     "@angular/compiler-cli": "^22.0.6",
+    "@colbymchenry/codegraph": "^1.4.1",
     "@eslint/js": "^9.39.5",
     "angular-eslint": "^22.1.0",
     "eslint": "^9.39.5",

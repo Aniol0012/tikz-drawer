@@ -54,6 +54,9 @@ importers:
       '@angular/compiler-cli':
         specifier: ^22.0.6
         version: 22.0.6(@angular/compiler@22.0.6)(typescript@6.0.3)
+      '@colbymchenry/codegraph':
+        specifier: ^1.4.1
+        version: 1.4.1
       '@eslint/js':
         specifier: ^9.39.5
         version: 9.39.5
@@ -438,6 +441,40 @@ packages:
 
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
+    hasBin: true
+
+  '@colbymchenry/codegraph-darwin-arm64@1.4.1':
+    resolution: {integrity: sha512-USSpExjuxZWN0OeNexZp2V5fCfOI4ZekqE79CJiBdGdPbqGTB+857ImIqzWGyF/rAyyED94Wc0Cd82t+uWD30w==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@colbymchenry/codegraph-darwin-x64@1.4.1':
+    resolution: {integrity: sha512-syLC7QPsNui2hPrK58El0XQrjjdSYhsoKS5i26ieD8DVrb0adzFQrBRP8qId/wfGp078xdC54rdKvqgmbIL1WQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@colbymchenry/codegraph-linux-arm64@1.4.1':
+    resolution: {integrity: sha512-XC6GJ9/fTicW9CE3k2fOcUOcbtDU8mS53t+PUfzq3Py9+JiX3PtJgtBB8bmf6e45NZUF5foaLUwFXfxTTl961g==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@colbymchenry/codegraph-linux-x64@1.4.1':
+    resolution: {integrity: sha512-bjfa+0IyjbxpZz7ghznN4qMPoYVSiZafeZu/rXGdg3VI+kEPOPZrk2vmtWIU9tBPGVJbeU2Kwa/0Z2DkUGOJ9A==}
+    cpu: [x64]
+    os: [linux]
+
+  '@colbymchenry/codegraph-win32-arm64@1.4.1':
+    resolution: {integrity: sha512-mb5bFDhwcP49U0P2IBRhH1O5ZmnlgE8lIXTlg2dqpfLeL+XfxzyeJ+i4I0KU0h1hlNWP/u3d2k+1EGem2swDBw==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@colbymchenry/codegraph-win32-x64@1.4.1':
+    resolution: {integrity: sha512-ipN6WvTKa0cSXIL6DTdACq57WnNYTjVq2wtC5uPT8F22o6Ucbcu3/w3OzKkkfwP4mkXv2cDMbuvExbnYNULyuw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@colbymchenry/codegraph@1.4.1':
+    resolution: {integrity: sha512-xZayboJt6T3QBzBsBsI0eJ3J/tN4vYs6LMuvrxJVdM71yQFjrFKFeV3KsbicAgkj6AHnTXxUNk26g9BYwkNMgg==}
     hasBin: true
 
   '@csstools/color-helpers@6.0.2':
@@ -4361,6 +4398,33 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
+
+  '@colbymchenry/codegraph-darwin-arm64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph-darwin-x64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph-linux-arm64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph-linux-x64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph-win32-arm64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph-win32-x64@1.4.1':
+    optional: true
+
+  '@colbymchenry/codegraph@1.4.1':
+    optionalDependencies:
+      '@colbymchenry/codegraph-darwin-arm64': 1.4.1
+      '@colbymchenry/codegraph-darwin-x64': 1.4.1
+      '@colbymchenry/codegraph-linux-arm64': 1.4.1
+      '@colbymchenry/codegraph-linux-x64': 1.4.1
+      '@colbymchenry/codegraph-win32-arm64': 1.4.1
+      '@colbymchenry/codegraph-win32-x64': 1.4.1
 
   '@csstools/color-helpers@6.0.2': {}
 
