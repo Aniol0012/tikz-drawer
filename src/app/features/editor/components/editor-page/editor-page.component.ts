@@ -6976,9 +6976,9 @@ export class EditorPageComponent {
         return {
           ...shape,
           latexSource: shape.latexSource === 'images/example.png' ? imagePathForFile(preferences.defaultImagePath, 'example.png') : shape.latexSource,
-          stroke: preferences.defaultStroke,
-          strokeOpacity: preferences.defaultStrokeOpacity,
-          strokeWidth: preferences.defaultStrokeWidth
+          stroke: preferences.defaultImageBorder ? preferences.defaultImageBorderColor : 'none',
+          strokeOpacity: preferences.defaultImageOpacity,
+          strokeWidth: preferences.defaultImageBorder ? preferences.defaultImageBorderWidth : 0
         };
       case 'text':
         return {
@@ -8002,8 +8002,9 @@ export class EditorPageComponent {
     }
 
     const currentScale = Math.max(this.preferences().scale, 1);
-    const width = renderedWidth / currentScale;
-    const height = renderedHeight / currentScale;
+    const insertionScale = this.preferences().defaultImageScalePercent / 100;
+    const width = (renderedWidth / currentScale) * insertionScale;
+    const height = (renderedHeight / currentScale) * insertionScale;
     const minimumWorldScale = Math.max(MIN_IMAGE_DIMENSION / width, MIN_IMAGE_DIMENSION / height, 1);
 
     return {

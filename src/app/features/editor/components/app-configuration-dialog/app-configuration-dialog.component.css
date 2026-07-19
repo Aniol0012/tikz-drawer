@@ -501,26 +501,6 @@
   color: color-mix(in srgb, var(--danger) 84%, var(--app-foreground));
 }
 
-.scene-style-groups,
-.settings-subsection {
-  display: grid;
-  gap: 14px;
-}
-
-.settings-subsection + .settings-subsection {
-  border-top: 1px solid var(--border);
-  padding-top: 16px;
-}
-
-.settings-subsection h4 {
-  margin: 0;
-  color: var(--app-foreground);
-  font-size: 0.78rem;
-  font-weight: 850;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-}
-
 .text-format-toggle-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

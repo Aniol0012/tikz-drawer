@@ -383,11 +383,18 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
     defaultStrokeOpacity: normalizeOpacity(preferences?.defaultStrokeOpacity),
     defaultFillOpacity: normalizeOpacity(preferences?.defaultFillOpacity),
     defaultTextOpacity: normalizeOpacity(preferences?.defaultTextOpacity),
+    defaultImageOpacity: normalizeOpacity(preferences?.defaultImageOpacity),
+    defaultImageScalePercent: normalizeNumber(preferences?.defaultImageScalePercent, defaultPreferences.defaultImageScalePercent, 50, 150),
+    defaultImageBorderWidth: normalizeNumber(preferences?.defaultImageBorderWidth, defaultPreferences.defaultImageBorderWidth, 0.02, 4),
     defaultTextWeight: preferences?.defaultTextWeight === 'bold' ? 'bold' : 'normal',
     defaultTextStyle: preferences?.defaultTextStyle === 'italic' ? 'italic' : 'normal',
     defaultTextDecoration: preferences?.defaultTextDecoration === 'underline' ? 'underline' : 'none',
     defaultTextAlign: preferences?.defaultTextAlign === 'left' || preferences?.defaultTextAlign === 'right' ? preferences.defaultTextAlign : 'center',
-    defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
+    defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath),
+    defaultImageBorderColor:
+      typeof preferences?.defaultImageBorderColor === 'string' && preferences.defaultImageBorderColor.trim()
+        ? preferences.defaultImageBorderColor
+        : defaultPreferences.defaultImageBorderColor
   };
 };
 

@@ -1133,6 +1133,26 @@ export class AppConfigurationDialogComponent {
     return Math.min(32, Math.max(6, this.preferences().snapStep * 16));
   }
 
+  previewImageWidth(): number {
+    return 46 * (this.preferences().defaultImageScalePercent / 100);
+  }
+
+  previewImageHeight(): number {
+    return this.previewImageWidth() / 1.5;
+  }
+
+  previewImageX(): number {
+    return 236 - this.previewImageWidth() / 2;
+  }
+
+  previewImageY(): number {
+    return 112 - this.previewImageHeight() / 2;
+  }
+
+  previewImageBorderWidth(): number {
+    return this.preferences().defaultImageBorder ? Math.max(1, this.preferences().defaultImageBorderWidth * 4) : 0;
+  }
+
   previewGridSize(): number {
     return Math.min(36, Math.max(7, 14 * this.previewZoomRatio() * this.preferences().gridStep));
   }
@@ -1283,7 +1303,12 @@ export class AppConfigurationDialogComponent {
       current.defaultTextStyle === expected.defaultTextStyle &&
       current.defaultTextDecoration === expected.defaultTextDecoration &&
       current.defaultTextAlign === expected.defaultTextAlign &&
-      current.defaultImagePath === expected.defaultImagePath
+      current.defaultImagePath === expected.defaultImagePath &&
+      current.defaultImageOpacity === expected.defaultImageOpacity &&
+      current.defaultImageScalePercent === expected.defaultImageScalePercent &&
+      current.defaultImageBorder === expected.defaultImageBorder &&
+      current.defaultImageBorderColor === expected.defaultImageBorderColor &&
+      current.defaultImageBorderWidth === expected.defaultImageBorderWidth
     );
   }
 

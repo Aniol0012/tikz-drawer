@@ -23,7 +23,10 @@ export type PreferenceNumberKey =
   | 'defaultArrowScale'
   | 'defaultCornerRadius'
   | 'defaultTextOpacity'
-  | 'defaultTextFontSize';
+  | 'defaultTextFontSize'
+  | 'defaultImageOpacity'
+  | 'defaultImageScalePercent'
+  | 'defaultImageBorderWidth';
 export type PreferenceTextKey =
   | 'defaultStroke'
   | 'defaultFill'
@@ -34,8 +37,9 @@ export type PreferenceTextKey =
   | 'defaultTextStyle'
   | 'defaultTextDecoration'
   | 'defaultTextAlign'
-  | 'defaultImagePath';
-export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes';
+  | 'defaultImagePath'
+  | 'defaultImageBorderColor';
+export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes' | 'defaultImageBorder';
 export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';
 export type ShapeOpacityKey = 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity';
 export type ImageTextKey = 'src' | 'latexSource';

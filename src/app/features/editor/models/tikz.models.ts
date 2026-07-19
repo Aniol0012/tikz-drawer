@@ -178,6 +178,11 @@ export interface EditorPreferences {
   readonly defaultTextDecoration: TextShape['textDecoration'];
   readonly defaultTextAlign: TextAlign;
   readonly defaultImagePath: string;
+  readonly defaultImageOpacity: number;
+  readonly defaultImageScalePercent: number;
+  readonly defaultImageBorder: boolean;
+  readonly defaultImageBorderColor: string;
+  readonly defaultImageBorderWidth: number;
 }
 
 export interface PersistedEditorState {

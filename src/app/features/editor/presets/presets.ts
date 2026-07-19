@@ -772,7 +772,12 @@ export const defaultPreferences: EditorPreferences = {
   defaultTextStyle: 'normal',
   defaultTextDecoration: 'none',
   defaultTextAlign: 'center',
-  defaultImagePath: 'images'
+  defaultImagePath: 'images',
+  defaultImageOpacity: 1,
+  defaultImageScalePercent: 100,
+  defaultImageBorder: false,
+  defaultImageBorderColor: '#1f1f1f',
+  defaultImageBorderWidth: 0.28
 };
 
 const complexDiagramPresets = (): readonly ObjectPreset[] => {

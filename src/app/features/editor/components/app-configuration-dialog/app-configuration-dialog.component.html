@@ -338,66 +338,58 @@
                   <div class="settings-card__header">
                     <h3>{{ 'sceneShapes' | translate }}</h3>
                   </div>
-                  <div class="scene-style-groups">
-                    <section class="settings-subsection">
-                      <h4>{{ 'sceneBorder' | translate }}</h4>
-                      <div class="form-grid form-grid--single">
-                        <app-color-picker
-                          class="field"
-                          [label]="'color' | translate"
-                          [opacityLabel]="'opacity' | translate"
-                          opacityControlPlacement="panel"
-                          [randomLabel]="'randomColor' | translate"
-                          [value]="preferences().defaultStroke"
-                          [opacity]="preferences().defaultStrokeOpacity"
-                          (valueChange)="setPreferenceText('defaultStroke', $event)"
-                          (opacityChange)="setPreferenceNumber('defaultStrokeOpacity', $event, 0, 1)"></app-color-picker>
-                        <app-range-input-card
-                          data-tooltip-enabled
-                          [attr.data-tooltip]="'defaultLineWidthTooltip' | translate"
-                          [label]="'strokeWidth' | translate"
-                          [value]="preferences().defaultStrokeWidth"
-                          [rangeMin]="0.02"
-                          [rangeMax]="8"
-                          [rangeStep]="0.02"
-                          [numberMin]="0.02"
-                          [numberMax]="8"
-                          [numberStep]="0.02"
-                          (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
-                        <label class="field">
-                          <span>{{ 'lineStyle' | translate }}</span>
-                          <app-select
-                            [value]="preferences().defaultLineStrokeStyle"
-                            [options]="lineStrokeStyleSelectOptions()"
-                            (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
-                        </label>
-                        <app-range-input-card
-                          data-tooltip-enabled
-                          [attr.data-tooltip]="'defaultCornerRadiusTooltip' | translate"
-                          [label]="'cornerRadius' | translate"
-                          [value]="preferences().defaultCornerRadius"
-                          [rangeMin]="0"
-                          [rangeMax]="1.6"
-                          [rangeStep]="0.02"
-                          [numberMin]="0"
-                          [numberMax]="1.6"
-                          [numberStep]="0.02"
-                          (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
-                      </div>
-                    </section>
-                    <section class="settings-subsection">
-                      <h4>{{ 'fill' | translate }}</h4>
-                      <app-color-picker
-                        class="field"
-                        [label]="'color' | translate"
-                        [opacityLabel]="'opacity' | translate"
-                        opacityControlPlacement="panel"
-                        [randomLabel]="'randomColor' | translate"
-                        [value]="preferences().defaultFill"
-                        [opacity]="preferences().defaultFillOpacity"
-                        (valueChange)="setPreferenceText('defaultFill', $event)"
-                        (opacityChange)="setPreferenceNumber('defaultFillOpacity', $event, 0, 1)"></app-color-picker>
-                    </section>
+                  <div class="form-grid form-grid--two">
+                    <app-color-picker
+                      class="field"
+                      [label]="'borderColor' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="panel"
+                      [randomLabel]="'randomColor' | translate"
+                      [value]="preferences().defaultStroke"
+                      [opacity]="preferences().defaultStrokeOpacity"
+                      (valueChange)="setPreferenceText('defaultStroke', $event)"
+                      (opacityChange)="setPreferenceNumber('defaultStrokeOpacity', $event, 0, 1)"></app-color-picker>
+                    <app-color-picker
+                      class="field"
+                      [label]="'fillColor' | translate"
+                      [opacityLabel]="'opacity' | translate"
+                      opacityControlPlacement="panel"
+                      [randomLabel]="'randomColor' | translate"
+                      [value]="preferences().defaultFill"
+                      [opacity]="preferences().defaultFillOpacity"
+                      (valueChange)="setPreferenceText('defaultFill', $event)"
+                      (opacityChange)="setPreferenceNumber('defaultFillOpacity', $event, 0, 1)"></app-color-picker>
+                    <app-range-input-card
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'defaultLineWidthTooltip' | translate"
+                      [label]="'strokeWidth' | translate"
+                      [value]="preferences().defaultStrokeWidth"
+                      [rangeMin]="0.02"
+                      [rangeMax]="8"
+                      [rangeStep]="0.02"
+                      [numberMin]="0.02"
+                      [numberMax]="8"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
+                    <app-range-input-card
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'defaultCornerRadiusTooltip' | translate"
+                      [label]="'cornerRadius' | translate"
+                      [value]="preferences().defaultCornerRadius"
+                      [rangeMin]="0"
+                      [rangeMax]="1.6"
+                      [rangeStep]="0.02"
+                      [numberMin]="0"
+                      [numberMax]="1.6"
+                      [numberStep]="0.02"
+                      (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
+                    <label class="field field--full">
+                      <span>{{ 'lineStyle' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultLineStrokeStyle"
+                        [options]="lineStrokeStyleSelectOptions()"
+                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                    </label>
                   </div>
                 </section>
 
@@ -435,8 +427,8 @@
                   <div class="settings-card__header">
                     <h3>{{ 'defaultImages' | translate }}</h3>
                   </div>
-                  <div class="form-grid form-grid--single">
-                    <label class="field">
+                  <div class="form-grid form-grid--two">
+                    <label class="field field--full">
                       <span data-tooltip-enabled [attr.data-tooltip]="'defaultImagePathTooltip' | translate">{{
                         'defaultImagePath' | translate
                       }}</span>
@@ -447,14 +439,58 @@
                         autocomplete="off"
                         [value]="preferences().defaultImagePath"
                         [attr.aria-invalid]="defaultImagePathInvalid()"
-                        aria-describedby="default-image-path-help default-image-path-error"
+                        aria-describedby="default-image-path-error"
                         (input)="updateDefaultImagePath($event)" />
                     </label>
-                    <p id="default-image-path-help" class="settings-note">{{ 'defaultImagePathHelp' | translate }}</p>
                     @if (defaultImagePathInvalid()) {
-                      <p id="default-image-path-error" class="settings-note settings-note--error" role="alert">
+                      <p id="default-image-path-error" class="settings-note settings-note--error field--full" role="alert">
                         {{ 'defaultImagePathInvalid' | translate }}
                       </p>
+                    }
+                    <app-range-input-card
+                      [label]="'defaultImageScale' | translate"
+                      [value]="preferences().defaultImageScalePercent"
+                      [rangeMin]="50"
+                      [rangeMax]="150"
+                      [rangeStep]="5"
+                      [numberMin]="50"
+                      [numberMax]="150"
+                      [numberStep]="5"
+                      (valueInput)="updatePreferenceNumber('defaultImageScalePercent', $event, 50, 150)"></app-range-input-card>
+                    <app-range-input-card
+                      [label]="'defaultImageOpacity' | translate"
+                      [value]="preferences().defaultImageOpacity"
+                      [rangeMin]="0"
+                      [rangeMax]="1"
+                      [rangeStep]="0.01"
+                      [numberMin]="0"
+                      [numberMax]="1"
+                      [numberStep]="0.01"
+                      (valueInput)="updatePreferenceNumber('defaultImageOpacity', $event, 0, 1)"></app-range-input-card>
+                    <app-toggle-field
+                      class="field--full"
+                      [checked]="preferences().defaultImageBorder"
+                      [label]="'defaultImageBorder' | translate"
+                      (checkedChange)="updatePreferenceBoolean('defaultImageBorder', $event)"></app-toggle-field>
+                    @if (preferences().defaultImageBorder) {
+                      <app-color-picker
+                        class="field"
+                        [label]="'borderColor' | translate"
+                        [showOpacityControl]="false"
+                        opacityControlPlacement="none"
+                        [randomLabel]="'randomColor' | translate"
+                        [value]="preferences().defaultImageBorderColor"
+                        (valueChange)="setPreferenceText('defaultImageBorderColor', $event)"></app-color-picker>
+                      <app-range-input-card
+                        [label]="'strokeWidth' | translate"
+                        [value]="preferences().defaultImageBorderWidth"
+                        [rangeMin]="0.02"
+                        [rangeMax]="4"
+                        [rangeStep]="0.02"
+                        [numberMin]="0.02"
+                        [numberMax]="4"
+                        [numberStep]="0.02"
+                        (valueInput)="updatePreferenceNumber('defaultImageBorderWidth', $event, 0.02, 4)"></app-range-input-card>
                     }
                   </div>
                 </section>
@@ -657,6 +693,15 @@
                           [attr.fill-opacity]="preferences().defaultFillOpacity"
                           [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"></rect>
+                        <rect
+                          [attr.x]="previewImageX()"
+                          [attr.y]="previewImageY()"
+                          [attr.width]="previewImageWidth()"
+                          [attr.height]="previewImageHeight()"
+                          [attr.opacity]="preferences().defaultImageOpacity"
+                          fill="#dbeafe"
+                          [attr.stroke]="preferences().defaultImageBorder ? preferences().defaultImageBorderColor : 'none'"
+                          [attr.stroke-width]="previewImageBorderWidth()"></rect>
                         <path
                           d="M44 168 C98 188 140 150 188 166 S248 150 262 118"
                           fill="none"
