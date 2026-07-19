@@ -369,18 +369,31 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
   const scale = Number(preferences?.scale);
   const normalizedScale = Number.isFinite(scale) ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale)) : DEFAULT_EDITOR_SCALE;
   const defaultArrowType = normalizeArrowTipKind(preferences?.defaultArrowType);
+  const gridStep = normalizeNumber(preferences?.gridStep, defaultPreferences.gridStep, 0.25, 4);
+  const objectSnapTolerance = normalizeNumber(preferences?.objectSnapTolerance, defaultPreferences.objectSnapTolerance, 2, 32);
 
   return {
     ...defaultPreferences,
     ...preferences,
     theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
     scale: normalizedScale,
+    gridStep,
+    objectSnapTolerance,
     defaultArrowType,
     defaultStrokeOpacity: normalizeOpacity(preferences?.defaultStrokeOpacity),
     defaultFillOpacity: normalizeOpacity(preferences?.defaultFillOpacity),
     defaultTextOpacity: normalizeOpacity(preferences?.defaultTextOpacity),
+    defaultTextWeight: preferences?.defaultTextWeight === 'bold' ? 'bold' : 'normal',
+    defaultTextStyle: preferences?.defaultTextStyle === 'italic' ? 'italic' : 'normal',
+    defaultTextDecoration: preferences?.defaultTextDecoration === 'underline' ? 'underline' : 'none',
+    defaultTextAlign: preferences?.defaultTextAlign === 'left' || preferences?.defaultTextAlign === 'right' ? preferences.defaultTextAlign : 'center',
     defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
   };
+};
+
+const normalizeNumber = (value: unknown, fallback: number, minimum: number, maximum: number): number => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
 };
 
 const normalizeArrowTipKind = (value: unknown): ArrowTipKind =>

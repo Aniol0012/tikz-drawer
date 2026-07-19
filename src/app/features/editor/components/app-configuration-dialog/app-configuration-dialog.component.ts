@@ -51,7 +51,7 @@ import {
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
 import { AppThemeService } from '../../state/app-theme.service';
 import { iconPaths } from '../../config/editor-icons';
-import type { ArrowTipKind, EditorPreferences, LineStrokeStyle } from '../../models/tikz.models';
+import type { ArrowTipKind, EditorPreferences, LineStrokeStyle, TextAlign, TextShape, TextStyle, TextWeight } from '../../models/tikz.models';
 import type { PreferenceBooleanKey, PreferenceNumberKey, PreferenceTextKey } from '../editor-page/editor-page.types';
 import { AppSelectComponent, type AppSelectOption } from '../../../../shared/app-select/app-select.component';
 import { ToggleFieldComponent } from '../../../../shared/toggle-field/toggle-field.component';
@@ -202,6 +202,9 @@ export class AppConfigurationDialogComponent {
   readonly contextMenuDropPlacement = signal<'before' | 'after' | null>(null);
   readonly defaultImagePathInvalid = signal(false);
   readonly alignmentSwitchReady = signal(false);
+  readonly previewZoomEditing = signal(false);
+  readonly previewGridSnapEditing = signal(false);
+  readonly previewObjectSnapEditing = signal(false);
 
   readonly tabs: readonly ConfigurationTabDescriptor[] = [
     { id: 'general', labelKey: 'settingsTabGeneral', iconPath: iconPaths.settings },
@@ -365,6 +368,11 @@ export class AppConfigurationDialogComponent {
       iconFilled: arrowType.filled
     }))
   );
+  readonly textAlignSelectOptions = computed<readonly AppSelectOption[]>(() => [
+    { value: 'left', label: this.t('alignLeft') },
+    { value: 'center', label: this.t('alignCenter') },
+    { value: 'right', label: this.t('alignRight') }
+  ]);
   readonly shortcutsAreDefault = computed(() => this.shortcutConfigEqual(this.editableShortcuts(), DEFAULT_KEYBOARD_SHORTCUTS));
   readonly shortcutAssignments = computed<readonly KeyboardShortcutAssignment[]>(() =>
     this.shortcutRows.map((row) => ({
@@ -931,6 +939,30 @@ export class AppConfigurationDialogComponent {
     }
   }
 
+  setDefaultTextWeight(value: string): void {
+    if (value === 'normal' || value === 'bold') {
+      this.patchPreferences({ defaultTextWeight: value satisfies TextWeight });
+    }
+  }
+
+  setDefaultTextStyle(value: string): void {
+    if (value === 'normal' || value === 'italic') {
+      this.patchPreferences({ defaultTextStyle: value satisfies TextStyle });
+    }
+  }
+
+  setDefaultTextDecoration(value: string): void {
+    if (value === 'none' || value === 'underline') {
+      this.patchPreferences({ defaultTextDecoration: value satisfies TextShape['textDecoration'] });
+    }
+  }
+
+  setDefaultTextAlign(value: string): void {
+    if (value === 'left' || value === 'center' || value === 'right') {
+      this.patchPreferences({ defaultTextAlign: value satisfies TextAlign });
+    }
+  }
+
   translatedSelectOptions(options: readonly LabelKeyOption[]): readonly AppSelectOption[] {
     return options.map((option) => ({
       value: option.value,
@@ -1047,22 +1079,78 @@ export class AppConfigurationDialogComponent {
     return Math.max(9, this.preferences().defaultTextFontSize * 24);
   }
 
+  previewTextAnchor(): 'start' | 'middle' | 'end' {
+    switch (this.preferences().defaultTextAlign) {
+      case 'left':
+        return 'start';
+      case 'right':
+        return 'end';
+      case 'center':
+        return 'middle';
+    }
+  }
+
+  previewTextX(): number {
+    switch (this.preferences().defaultTextAlign) {
+      case 'left':
+        return 112;
+      case 'right':
+        return 188;
+      case 'center':
+        return 150;
+    }
+  }
+
+  previewSnapGuideInset(): number {
+    return Math.min(20, Math.max(4, this.preferences().objectSnapTolerance * 0.75));
+  }
+
   previewCornerRadius(): number {
     return Math.min(18, this.preferences().defaultCornerRadius * 8);
   }
 
+  previewTrianglePath(): string {
+    const radius = this.previewCornerRadius();
+    if (radius <= 0) {
+      return 'M42 122 80 56 118 122Z';
+    }
+
+    const horizontalOffset = radius * 0.5;
+    const verticalOffset = radius * 0.87;
+    return [
+      `M${42 + horizontalOffset} ${122 - verticalOffset}`,
+      `L${80 - horizontalOffset} ${56 + verticalOffset}`,
+      `Q80 56 ${80 + horizontalOffset} ${56 + verticalOffset}`,
+      `L${118 - horizontalOffset} ${122 - verticalOffset}`,
+      `Q118 122 ${118 - radius} 122`,
+      `L${42 + radius} 122`,
+      `Q42 122 ${42 + horizontalOffset} ${122 - verticalOffset}`,
+      'Z'
+    ].join(' ');
+  }
+
+  previewSnapSpacing(): number {
+    return Math.min(32, Math.max(6, this.preferences().snapStep * 16));
+  }
+
   previewGridSize(): number {
-    const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
-    return Math.max(6, 14 * zoomRatio);
+    return Math.min(36, Math.max(7, 14 * this.previewZoomRatio() * this.preferences().gridStep));
   }
 
   previewViewBox(): string {
-    const zoomRatio = this.preferences().scale / DEFAULT_EDITOR_SCALE;
+    const zoomRatio = this.previewZoomRatio();
     const width = PREVIEW_VIEWBOX_WIDTH / zoomRatio;
     const height = PREVIEW_VIEWBOX_HEIGHT / zoomRatio;
     const left = PREVIEW_VIEWBOX_WIDTH / 2 - width / 2;
     const top = PREVIEW_VIEWBOX_HEIGHT / 2 - height / 2;
     return `${left} ${top} ${width} ${height}`;
+  }
+
+  private previewZoomRatio(): number {
+    if (!this.previewZoomEditing()) {
+      return 1;
+    }
+    return this.preferences().scale / DEFAULT_EDITOR_SCALE;
   }
 
   applySuggestedCaptionAndLabel(): void {
@@ -1176,7 +1264,9 @@ export class AppConfigurationDialogComponent {
       current.showGrid === expected.showGrid &&
       current.showAxes === expected.showAxes &&
       current.scale === expected.scale &&
+      current.gridStep === expected.gridStep &&
       current.snapStep === expected.snapStep &&
+      current.objectSnapTolerance === expected.objectSnapTolerance &&
       current.defaultStroke === expected.defaultStroke &&
       current.defaultFill === expected.defaultFill &&
       current.defaultStrokeOpacity === expected.defaultStrokeOpacity &&
@@ -1189,6 +1279,10 @@ export class AppConfigurationDialogComponent {
       current.defaultTextColor === expected.defaultTextColor &&
       current.defaultTextOpacity === expected.defaultTextOpacity &&
       current.defaultTextFontSize === expected.defaultTextFontSize &&
+      current.defaultTextWeight === expected.defaultTextWeight &&
+      current.defaultTextStyle === expected.defaultTextStyle &&
+      current.defaultTextDecoration === expected.defaultTextDecoration &&
+      current.defaultTextAlign === expected.defaultTextAlign &&
       current.defaultImagePath === expected.defaultImagePath
     );
   }

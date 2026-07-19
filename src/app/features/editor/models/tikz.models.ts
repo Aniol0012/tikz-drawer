@@ -158,7 +158,9 @@ export interface EditorPreferences {
   readonly showGrid: boolean;
   readonly showAxes: boolean;
   readonly scale: number;
+  readonly gridStep: number;
   readonly snapStep: number;
+  readonly objectSnapTolerance: number;
   readonly defaultStroke: string;
   readonly defaultFill: string;
   readonly defaultStrokeOpacity: number;
@@ -171,6 +173,10 @@ export interface EditorPreferences {
   readonly defaultTextColor: string;
   readonly defaultTextOpacity: number;
   readonly defaultTextFontSize: number;
+  readonly defaultTextWeight: TextWeight;
+  readonly defaultTextStyle: TextStyle;
+  readonly defaultTextDecoration: TextShape['textDecoration'];
+  readonly defaultTextAlign: TextAlign;
   readonly defaultImagePath: string;
 }
 

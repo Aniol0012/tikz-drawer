@@ -14,7 +14,9 @@ export type TextStylePropertyKey = TextStyleKey | 'textAlign';
 export type TemplateDialogTextKey = 'title' | 'description';
 export type PreferenceNumberKey =
   | 'scale'
+  | 'gridStep'
   | 'snapStep'
+  | 'objectSnapTolerance'
   | 'defaultStrokeOpacity'
   | 'defaultFillOpacity'
   | 'defaultStrokeWidth'
@@ -22,7 +24,17 @@ export type PreferenceNumberKey =
   | 'defaultCornerRadius'
   | 'defaultTextOpacity'
   | 'defaultTextFontSize';
-export type PreferenceTextKey = 'defaultStroke' | 'defaultFill' | 'defaultArrowType' | 'defaultLineStrokeStyle' | 'defaultTextColor' | 'defaultImagePath';
+export type PreferenceTextKey =
+  | 'defaultStroke'
+  | 'defaultFill'
+  | 'defaultArrowType'
+  | 'defaultLineStrokeStyle'
+  | 'defaultTextColor'
+  | 'defaultTextWeight'
+  | 'defaultTextStyle'
+  | 'defaultTextDecoration'
+  | 'defaultTextAlign'
+  | 'defaultImagePath';
 export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes';
 export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';
 export type ShapeOpacityKey = 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity';

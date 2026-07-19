@@ -336,42 +336,89 @@
               <div class="configuration-grid configuration-grid--scene">
                 <section class="settings-card settings-card--style">
                   <div class="settings-card__header">
-                    <h3>{{ 'sceneStyleDefaults' | translate }}</h3>
+                    <h3>{{ 'sceneShapes' | translate }}</h3>
+                  </div>
+                  <div class="scene-style-groups">
+                    <section class="settings-subsection">
+                      <h4>{{ 'sceneBorder' | translate }}</h4>
+                      <div class="form-grid form-grid--single">
+                        <app-color-picker
+                          class="field"
+                          [label]="'color' | translate"
+                          [opacityLabel]="'opacity' | translate"
+                          opacityControlPlacement="panel"
+                          [randomLabel]="'randomColor' | translate"
+                          [value]="preferences().defaultStroke"
+                          [opacity]="preferences().defaultStrokeOpacity"
+                          (valueChange)="setPreferenceText('defaultStroke', $event)"
+                          (opacityChange)="setPreferenceNumber('defaultStrokeOpacity', $event, 0, 1)"></app-color-picker>
+                        <app-range-input-card
+                          data-tooltip-enabled
+                          [attr.data-tooltip]="'defaultLineWidthTooltip' | translate"
+                          [label]="'strokeWidth' | translate"
+                          [value]="preferences().defaultStrokeWidth"
+                          [rangeMin]="0.02"
+                          [rangeMax]="8"
+                          [rangeStep]="0.02"
+                          [numberMin]="0.02"
+                          [numberMax]="8"
+                          [numberStep]="0.02"
+                          (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
+                        <label class="field">
+                          <span>{{ 'lineStyle' | translate }}</span>
+                          <app-select
+                            [value]="preferences().defaultLineStrokeStyle"
+                            [options]="lineStrokeStyleSelectOptions()"
+                            (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                        </label>
+                        <app-range-input-card
+                          data-tooltip-enabled
+                          [attr.data-tooltip]="'defaultCornerRadiusTooltip' | translate"
+                          [label]="'cornerRadius' | translate"
+                          [value]="preferences().defaultCornerRadius"
+                          [rangeMin]="0"
+                          [rangeMax]="1.6"
+                          [rangeStep]="0.02"
+                          [numberMin]="0"
+                          [numberMax]="1.6"
+                          [numberStep]="0.02"
+                          (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
+                      </div>
+                    </section>
+                    <section class="settings-subsection">
+                      <h4>{{ 'fill' | translate }}</h4>
+                      <app-color-picker
+                        class="field"
+                        [label]="'color' | translate"
+                        [opacityLabel]="'opacity' | translate"
+                        opacityControlPlacement="panel"
+                        [randomLabel]="'randomColor' | translate"
+                        [value]="preferences().defaultFill"
+                        [opacity]="preferences().defaultFillOpacity"
+                        (valueChange)="setPreferenceText('defaultFill', $event)"
+                        (opacityChange)="setPreferenceNumber('defaultFillOpacity', $event, 0, 1)"></app-color-picker>
+                    </section>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--arrows">
+                  <div class="settings-card__header">
+                    <h3>{{ 'defaultArrows' | translate }}</h3>
                   </div>
                   <div class="form-grid form-grid--two">
-                    <app-color-picker
-                      class="field"
-                      [label]="'defaultStroke' | translate"
-                      [opacityLabel]="'opacity' | translate"
-                      opacityControlPlacement="panel"
-                      [randomLabel]="'randomColor' | translate"
-                      [value]="preferences().defaultStroke"
-                      [opacity]="preferences().defaultStrokeOpacity"
-                      (valueChange)="setPreferenceText('defaultStroke', $event)"
-                      (opacityChange)="setPreferenceNumber('defaultStrokeOpacity', $event, 0, 1)"></app-color-picker>
-                    <app-color-picker
-                      class="field"
-                      [label]="'defaultFill' | translate"
-                      [opacityLabel]="'opacity' | translate"
-                      opacityControlPlacement="panel"
-                      [randomLabel]="'randomColor' | translate"
-                      [value]="preferences().defaultFill"
-                      [opacity]="preferences().defaultFillOpacity"
-                      (valueChange)="setPreferenceText('defaultFill', $event)"
-                      (opacityChange)="setPreferenceNumber('defaultFillOpacity', $event, 0, 1)"></app-color-picker>
+                    <label class="field field--full">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'defaultArrowTypeTooltip' | translate">{{
+                        'defaultArrowType' | translate
+                      }}</span>
+                      <app-select
+                        [value]="preferences().defaultArrowType"
+                        [options]="arrowTipSelectOptions()"
+                        (valueChange)="setDefaultArrowType($event)"></app-select>
+                    </label>
                     <app-range-input-card
                       class="field--full"
-                      [label]="'defaultLineWidth' | translate"
-                      [value]="preferences().defaultStrokeWidth"
-                      [rangeMin]="0.02"
-                      [rangeMax]="8"
-                      [rangeStep]="0.02"
-                      [numberMin]="0.02"
-                      [numberMax]="8"
-                      [numberStep]="0.02"
-                      (valueInput)="updatePreferenceNumber('defaultStrokeWidth', $event, 0.02, 8)"></app-range-input-card>
-                    <app-range-input-card
-                      class="field--full"
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'arrowScaleTooltip' | translate"
                       [label]="'arrowScale' | translate"
                       [value]="preferences().defaultArrowScale"
                       [rangeMin]="0.4"
@@ -381,20 +428,6 @@
                       [numberMax]="4.5"
                       [numberStep]="0.1"
                       (valueInput)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)"></app-range-input-card>
-                    <label class="field field--full">
-                      <span>{{ 'defaultArrowType' | translate }}</span>
-                      <app-select
-                        [value]="preferences().defaultArrowType"
-                        [options]="arrowTipSelectOptions()"
-                        (valueChange)="setDefaultArrowType($event)"></app-select>
-                    </label>
-                    <label class="field field--full">
-                      <span>{{ 'defaultLineStyle' | translate }}</span>
-                      <app-select
-                        [value]="preferences().defaultLineStrokeStyle"
-                        [options]="lineStrokeStyleSelectOptions()"
-                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
-                    </label>
                   </div>
                 </section>
 
@@ -404,7 +437,9 @@
                   </div>
                   <div class="form-grid form-grid--single">
                     <label class="field">
-                      <span>{{ 'defaultImagePath' | translate }}</span>
+                      <span data-tooltip-enabled [attr.data-tooltip]="'defaultImagePathTooltip' | translate">{{
+                        'defaultImagePath' | translate
+                      }}</span>
                       <input
                         type="text"
                         required
@@ -428,9 +463,9 @@
                   <div class="settings-card__header">
                     <h3>{{ 'defaultText' | translate }}</h3>
                   </div>
-                  <div class="form-grid form-grid--single">
+                  <div class="form-grid form-grid--two">
                     <app-color-picker
-                      class="field field--full"
+                      class="field field--full scene-text-color"
                       [label]="'defaultTextColor' | translate"
                       [opacityLabel]="'opacity' | translate"
                       opacityControlPlacement="summary"
@@ -449,25 +484,40 @@
                       [numberMax]="2"
                       [numberStep]="0.02"
                       (valueInput)="updatePreferenceNumber('defaultTextFontSize', $event, 0.2, 2)"></app-range-input-card>
-                    <app-range-input-card
-                      [label]="'defaultCornerRadius' | translate"
-                      [value]="preferences().defaultCornerRadius"
-                      [rangeMin]="0"
-                      [rangeMax]="1.6"
-                      [rangeStep]="0.02"
-                      [numberMin]="0"
-                      [numberMax]="1.6"
-                      [numberStep]="0.02"
-                      (valueInput)="updatePreferenceNumber('defaultCornerRadius', $event, 0, 1.6)"></app-range-input-card>
+                    <div class="text-format-toggle-grid field--full" role="group" [attr.aria-label]="'defaultText' | translate">
+                      <app-toggle-field
+                        [checked]="preferences().defaultTextWeight === 'bold'"
+                        [label]="'textWeightBold' | translate"
+                        (checkedChange)="setDefaultTextWeight($event ? 'bold' : 'normal')"></app-toggle-field>
+                      <app-toggle-field
+                        [checked]="preferences().defaultTextStyle === 'italic'"
+                        [label]="'textStyleItalic' | translate"
+                        (checkedChange)="setDefaultTextStyle($event ? 'italic' : 'normal')"></app-toggle-field>
+                      <app-toggle-field
+                        [checked]="preferences().defaultTextDecoration === 'underline'"
+                        [label]="'textDecorationUnderline' | translate"
+                        (checkedChange)="setDefaultTextDecoration($event ? 'underline' : 'none')"></app-toggle-field>
+                    </div>
+                    <label class="field">
+                      <span data-tooltip-enabled [attr.data-tooltip]="'defaultTextAlignTooltip' | translate">{{
+                        'defaultTextAlign' | translate
+                      }}</span>
+                      <app-select
+                        [value]="preferences().defaultTextAlign"
+                        [options]="textAlignSelectOptions()"
+                        (valueChange)="setDefaultTextAlign($event)"></app-select>
+                    </label>
                   </div>
                 </section>
 
-                <section class="settings-card settings-card--behavior">
+                <section class="settings-card settings-card--canvas">
                   <div class="settings-card__header">
-                    <h3>{{ 'canvasBehavior' | translate }}</h3>
+                    <h3>{{ 'canvasView' | translate }}</h3>
                   </div>
-                  <div class="form-grid form-grid--single">
+                  <div class="form-grid form-grid--two">
                     <app-range-input-card
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'zoomPercentTooltip' | translate"
                       [label]="'zoomPercent' | translate"
                       [value]="zoomPercent()"
                       [rangeMin]="minZoomPercent"
@@ -476,17 +526,20 @@
                       [numberMin]="minZoomPercent"
                       [numberMax]="maxZoomPercent"
                       [numberStep]="5"
+                      (editingChange)="previewZoomEditing.set($event)"
                       (valueInput)="updateZoomPercent($event)"></app-range-input-card>
                     <app-range-input-card
-                      [label]="'snapTolerance' | translate"
-                      [value]="preferences().snapStep"
-                      [rangeMin]="0.05"
-                      [rangeMax]="2"
-                      [rangeStep]="0.05"
-                      [numberMin]="0.05"
-                      [numberMax]="2"
-                      [numberStep]="0.05"
-                      (valueInput)="updatePreferenceNumber('snapStep', $event, 0.05, 2)"></app-range-input-card>
+                      data-tooltip-enabled
+                      [attr.data-tooltip]="'gridStepTooltip' | translate"
+                      [label]="'gridStep' | translate"
+                      [value]="preferences().gridStep"
+                      [rangeMin]="0.25"
+                      [rangeMax]="4"
+                      [rangeStep]="0.25"
+                      [numberMin]="0.25"
+                      [numberMax]="4"
+                      [numberStep]="0.25"
+                      (valueInput)="updatePreferenceNumber('gridStep', $event, 0.25, 4)"></app-range-input-card>
                     <app-toggle-field
                       [checked]="preferences().showGrid"
                       [label]="'showGrid' | translate"
@@ -495,18 +548,63 @@
                       [checked]="preferences().showAxes"
                       [label]="'showAxes' | translate"
                       (checkedChange)="updatePreferenceBoolean('showAxes', $event)"></app-toggle-field>
+                  </div>
+                </section>
+
+                <section class="settings-card settings-card--snapping">
+                  <div class="settings-card__header">
+                    <h3>{{ 'canvasSnapping' | translate }}</h3>
+                  </div>
+                  <div class="form-grid form-grid--two">
                     <app-toggle-field
                       [checked]="preferences().snapToGrid"
                       [label]="'snapToGrid' | translate"
+                      (focusin)="previewGridSnapEditing.set(true)"
+                      (focusout)="previewGridSnapEditing.set(false)"
                       (checkedChange)="updatePreferenceBoolean('snapToGrid', $event)"></app-toggle-field>
+                    @if (preferences().snapToGrid) {
+                      <app-range-input-card
+                        data-tooltip-enabled
+                        [attr.data-tooltip]="'snapStepTooltip' | translate"
+                        [label]="'snapTolerance' | translate"
+                        [value]="preferences().snapStep"
+                        [rangeMin]="0.05"
+                        [rangeMax]="2"
+                        [rangeStep]="0.05"
+                        [numberMin]="0.05"
+                        [numberMax]="2"
+                        [numberStep]="0.05"
+                        (editingChange)="previewGridSnapEditing.set($event)"
+                        (valueInput)="updatePreferenceNumber('snapStep', $event, 0.05, 2)"></app-range-input-card>
+                    }
                     <app-toggle-field
                       [checked]="preferences().snapToObjects"
                       [label]="'snapToObjects' | translate"
+                      (focusin)="previewObjectSnapEditing.set(true)"
+                      (focusout)="previewObjectSnapEditing.set(false)"
                       (checkedChange)="updatePreferenceBoolean('snapToObjects', $event)"></app-toggle-field>
                     @if (preferences().snapToObjects) {
+                      <app-range-input-card
+                        data-tooltip-enabled
+                        [attr.data-tooltip]="'objectSnapToleranceTooltip' | translate"
+                        [label]="'objectSnapTolerance' | translate"
+                        [value]="preferences().objectSnapTolerance"
+                        [rangeMin]="2"
+                        [rangeMax]="32"
+                        [rangeStep]="1"
+                        [numberMin]="2"
+                        [numberMax]="32"
+                        [numberStep]="1"
+                        (editingChange)="previewObjectSnapEditing.set($event)"
+                        (valueInput)="updatePreferenceNumber('objectSnapTolerance', $event, 2, 32)"></app-range-input-card>
                       <app-toggle-field
+                        class="field--full"
+                        data-tooltip-enabled
+                        [attr.data-tooltip]="'showObjectSnapGuidesTooltip' | translate"
                         [checked]="preferences().showObjectSnapGuides"
                         [label]="'showObjectSnapGuides' | translate"
+                        (focusin)="previewObjectSnapEditing.set(true)"
+                        (focusout)="previewObjectSnapEditing.set(false)"
                         (checkedChange)="updatePreferenceBoolean('showObjectSnapGuides', $event)"></app-toggle-field>
                     }
                   </div>
@@ -516,7 +614,11 @@
                   <div class="settings-card__header">
                     <h3>{{ 'preview' | translate }}</h3>
                   </div>
-                  <div class="scene-preview" [style.--scene-preview-grid-size.px]="previewGridSize()" aria-hidden="true">
+                  <div
+                    class="scene-preview"
+                    [style.--scene-preview-grid-size.px]="previewGridSize()"
+                    [attr.aria-label]="'scenePreviewAriaLabel' | translate"
+                    role="img">
                     @if (preferences().showGrid) {
                       <span class="scene-preview__grid"></span>
                     }
@@ -527,7 +629,7 @@
                     <svg [attr.viewBox]="previewViewBox()">
                       <g>
                         <path
-                          d="M42 122 80 56 118 122Z"
+                          [attr.d]="previewTrianglePath()"
                           [attr.fill]="preferences().defaultFill"
                           [attr.stroke]="preferences().defaultStroke"
                           [attr.fill-opacity]="preferences().defaultFillOpacity"
@@ -565,14 +667,42 @@
                           stroke-linecap="round"
                           marker-end="url(#configuration-preview-arrow)"></path>
                         <text
-                          x="126"
+                          [attr.x]="previewTextX()"
                           y="72"
                           [attr.fill]="preferences().defaultTextColor"
                           [attr.fill-opacity]="preferences().defaultTextOpacity"
                           [attr.font-size]="previewTextFontSize()"
-                          font-weight="700">
+                          [attr.font-weight]="preferences().defaultTextWeight"
+                          [attr.font-style]="preferences().defaultTextStyle"
+                          [attr.text-decoration]="preferences().defaultTextDecoration"
+                          [attr.text-anchor]="previewTextAnchor()">
                           TikZ
                         </text>
+                        @if (preferences().snapToGrid && previewGridSnapEditing()) {
+                          <g class="scene-preview__snap-step">
+                            <line [attr.x1]="80 - previewSnapSpacing()" y1="122" [attr.x2]="80 + previewSnapSpacing()" y2="122"></line>
+                            <line x1="80" [attr.y1]="122 - previewSnapSpacing()" x2="80" [attr.y2]="122 + previewSnapSpacing()"></line>
+                            <circle class="scene-preview__snap-point" [attr.cx]="80 - previewSnapSpacing()" cy="122" r="2.5"></circle>
+                            <circle class="scene-preview__snap-point" cx="80" cy="122" r="3.5"></circle>
+                            <circle class="scene-preview__snap-point" [attr.cx]="80 + previewSnapSpacing()" cy="122" r="2.5"></circle>
+                            <circle class="scene-preview__snap-point" cx="80" [attr.cy]="122 - previewSnapSpacing()" r="2.5"></circle>
+                            <circle class="scene-preview__snap-point" cx="80" [attr.cy]="122 + previewSnapSpacing()" r="2.5"></circle>
+                          </g>
+                        }
+                        @if (preferences().snapToObjects && preferences().showObjectSnapGuides && previewObjectSnapEditing()) {
+                          <g class="scene-preview__snap-guides">
+                            <line
+                              [attr.x1]="168 - previewSnapGuideInset()"
+                              y1="36"
+                              [attr.x2]="168 - previewSnapGuideInset()"
+                              y2="172"></line>
+                            <line
+                              x1="118"
+                              [attr.y1]="126 + previewSnapGuideInset()"
+                              x2="260"
+                              [attr.y2]="126 + previewSnapGuideInset()"></line>
+                          </g>
+                        }
                       </g>
                       <defs>
                         <marker
@@ -596,7 +726,6 @@
                       </defs>
                     </svg>
                   </div>
-                  <p class="settings-note">{{ 'sceneSettingsPreviewDescription' | translate }}</p>
                 </section>
               </div>
             </section>

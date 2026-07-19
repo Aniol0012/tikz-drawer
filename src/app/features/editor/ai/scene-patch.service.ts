@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   DEFAULT_TEXT_BOX_WIDTH,
-  DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_FONT_SIZE,
   EDITOR_AI_INSERT_MAX_RENDERED_LONG_EDGE_PX,
   EDITOR_AI_INSERT_MIN_RENDERED_LONG_EDGE_PX,
@@ -221,6 +220,7 @@ export class ScenePatchService {
     const name = this.textValue(shape.name, 'AI element');
     const stroke = this.textValue(shape.stroke, preferences.defaultStroke);
     const strokeWidth = this.numberValue(shape.strokeWidth, preferences.defaultStrokeWidth);
+    const strokeOpacity = this.opacityValue(shape.strokeOpacity, preferences.defaultStrokeOpacity);
 
     switch (shape.kind) {
       case 'rectangle':
@@ -230,14 +230,14 @@ export class ScenePatchService {
             name,
             kind: 'rectangle',
             stroke,
-            strokeOpacity: 1,
+            strokeOpacity,
             strokeWidth,
             x: this.numberValue(shape.x, -2),
             y: this.numberValue(shape.y, -1),
             width: this.positiveNumber(shape.width, 4),
             height: this.positiveNumber(shape.height, 2),
             fill: this.textValue(shape.fill, preferences.defaultFill),
-            fillOpacity: 1,
+            fillOpacity: this.opacityValue(shape.fillOpacity, preferences.defaultFillOpacity),
             cornerRadius: preferences.defaultCornerRadius,
             rotation: 0
           },
@@ -250,14 +250,14 @@ export class ScenePatchService {
             name,
             kind: 'triangle',
             stroke,
-            strokeOpacity: 1,
+            strokeOpacity,
             strokeWidth,
             x: this.numberValue(shape.x, -2),
             y: this.numberValue(shape.y, -1),
             width: this.positiveNumber(shape.width, 4),
             height: this.positiveNumber(shape.height, 2.5),
             fill: this.textValue(shape.fill, preferences.defaultFill),
-            fillOpacity: 1,
+            fillOpacity: this.opacityValue(shape.fillOpacity, preferences.defaultFillOpacity),
             cornerRadius: preferences.defaultCornerRadius,
             apexOffset: 0.5,
             rotation: 0
@@ -271,13 +271,13 @@ export class ScenePatchService {
             name,
             kind: 'circle',
             stroke,
-            strokeOpacity: 1,
+            strokeOpacity,
             strokeWidth,
             cx: this.numberValue(shape.cx, 0),
             cy: this.numberValue(shape.cy, 0),
             r: this.positiveNumber(shape.r, 1),
             fill: this.textValue(shape.fill, preferences.defaultFill),
-            fillOpacity: 1,
+            fillOpacity: this.opacityValue(shape.fillOpacity, preferences.defaultFillOpacity),
             rotation: 0
           },
           preferences
@@ -289,14 +289,14 @@ export class ScenePatchService {
             name,
             kind: 'ellipse',
             stroke,
-            strokeOpacity: 1,
+            strokeOpacity,
             strokeWidth,
             cx: this.numberValue(shape.cx, 0),
             cy: this.numberValue(shape.cy, 0),
             rx: this.positiveNumber(shape.rx, 2),
             ry: this.positiveNumber(shape.ry, 1),
             fill: this.textValue(shape.fill, preferences.defaultFill),
-            fillOpacity: 1,
+            fillOpacity: this.opacityValue(shape.fillOpacity, preferences.defaultFillOpacity),
             rotation: 0
           },
           preferences
@@ -309,7 +309,7 @@ export class ScenePatchService {
             name,
             kind: 'line',
             stroke,
-            strokeOpacity: 1,
+            strokeOpacity,
             strokeWidth,
             from: { x: this.numberValue(lineShape['fromX'] ?? lineShape.from?.x, -2), y: this.numberValue(lineShape['fromY'] ?? lineShape.from?.y, 0) },
             to: { x: this.numberValue(lineShape['toX'] ?? lineShape.to?.x, 2), y: this.numberValue(lineShape['toY'] ?? lineShape.to?.y, 0) },
@@ -320,7 +320,7 @@ export class ScenePatchService {
             arrowEnd: shape.arrowEnd ?? true,
             arrowType: lineShape.arrowType ?? preferences.defaultArrowType,
             arrowColor: stroke,
-            arrowOpacity: 1,
+            arrowOpacity: strokeOpacity,
             arrowOpen: !!lineShape.arrowOpen,
             arrowRound: !!lineShape.arrowRound,
             arrowScale: this.positiveNumber(lineShape.arrowScale, preferences.defaultArrowScale),
@@ -348,12 +348,12 @@ export class ScenePatchService {
             textBox: false,
             boxWidth: DEFAULT_TEXT_BOX_WIDTH,
             fontSize: this.positiveNumber(shape.fontSize, DEFAULT_TEXT_FONT_SIZE),
-            color: this.textValue(shape.color, DEFAULT_TEXT_COLOR),
-            colorOpacity: 1,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            textDecoration: 'none',
-            textAlign: 'center',
+            color: this.textValue(shape.color, preferences.defaultTextColor),
+            colorOpacity: this.opacityValue(shape.colorOpacity, preferences.defaultTextOpacity),
+            fontWeight: shape.fontWeight === 'bold' ? 'bold' : preferences.defaultTextWeight,
+            fontStyle: shape.fontStyle === 'italic' ? 'italic' : preferences.defaultTextStyle,
+            textDecoration: shape.textDecoration === 'underline' ? 'underline' : preferences.defaultTextDecoration,
+            textAlign: shape.textAlign === 'left' || shape.textAlign === 'right' ? shape.textAlign : preferences.defaultTextAlign,
             rotation: 0
           },
           preferences
@@ -437,6 +437,10 @@ export class ScenePatchService {
 
   private positiveNumber(value: unknown, fallback: number): number {
     return Math.max(this.numberValue(value, fallback), 0.1);
+  }
+
+  private opacityValue(value: unknown, fallback: number): number {
+    return Math.min(1, Math.max(0, this.numberValue(value, fallback)));
   }
 
   private textValue(value: unknown, fallback: string): string {

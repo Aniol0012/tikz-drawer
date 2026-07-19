@@ -45,7 +45,6 @@ import {
   EDITOR_MOBILE_BREAKPOINT_PX,
   EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
   EDITOR_NOTIFICATION_DURATION_MS,
-  EDITOR_OBJECT_SNAP_TOLERANCE_PX,
   EDITOR_PASTE_OFFSET_STEP,
   EDITOR_PNG_EXPORT_SCALE,
   EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
@@ -693,14 +692,14 @@ export class EditorPageComponent {
   });
   readonly gridColumns = computed(() => {
     const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
+    const gridStep = Math.max(this.preferences().gridStep, 0.05);
     const start = Math.floor(visibleWorldBounds.left / gridStep) - 1;
     const end = Math.ceil(visibleWorldBounds.right / gridStep) + 1;
     return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
   });
   readonly gridRows = computed(() => {
     const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
+    const gridStep = Math.max(this.preferences().gridStep, 0.05);
     const start = Math.floor(visibleWorldBounds.bottom / gridStep) - 1;
     const end = Math.ceil(visibleWorldBounds.top / gridStep) + 1;
     return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
@@ -4301,7 +4300,7 @@ export class EditorPageComponent {
     const targetBounds = this.objectSnapBoundsForShapes(
       this.scene().shapes.filter((shape) => !movedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, movedShapeIds))
     );
-    const snapResult = objectSnapResult(sourceBounds, targetBounds, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    const snapResult = objectSnapResult(sourceBounds, targetBounds, this.preferences().objectSnapTolerance / Math.max(this.preferences().scale, 1));
     this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
 
     if (snapResult.offset.x === 0 && snapResult.offset.y === 0) {
@@ -4547,7 +4546,12 @@ export class EditorPageComponent {
     const targetBounds = this.objectSnapBoundsForShapes(
       this.scene().shapes.filter((shape) => !resizedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, resizedShapeIds))
     );
-    const snapResult = objectResizeSnapResult(sourceBounds, targetBounds, roles, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    const snapResult = objectResizeSnapResult(
+      sourceBounds,
+      targetBounds,
+      roles,
+      this.preferences().objectSnapTolerance / Math.max(this.preferences().scale, 1)
+    );
     this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
 
     return {
@@ -6981,7 +6985,11 @@ export class EditorPageComponent {
           ...shape,
           color: preferences.defaultTextColor,
           colorOpacity: preferences.defaultTextOpacity,
-          fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE)
+          fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE),
+          fontWeight: preferences.defaultTextWeight,
+          fontStyle: preferences.defaultTextStyle,
+          textDecoration: preferences.defaultTextDecoration,
+          textAlign: preferences.defaultTextAlign
         };
     }
   }
