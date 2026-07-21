@@ -65,7 +65,7 @@ describe('AppConfigurationDialogComponent template', () => {
   it('uses the shared color picker for configuration color fields', async () => {
     const template = await readTemplate();
 
-    expect(template.split('<app-color-picker').length - 1).toBe(3);
+    expect(template.split('<app-color-picker').length - 1).toBe(4);
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultStroke\', $event)"');
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultFill\', $event)"');
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultTextColor\', $event)"');

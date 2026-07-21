@@ -436,7 +436,7 @@
                   </div>
                   <div class="form-grid form-grid--two">
                     <label class="field field--full">
-                      <span data-tooltip-enabled [attr.data-tooltip]="'defaultImagePathTooltip' | translate">{{
+                      <span id="default-image-path-help" data-tooltip-enabled [attr.data-tooltip]="'defaultImagePathTooltip' | translate">{{
                         'defaultImagePath' | translate
                       }}</span>
                       <input
@@ -446,7 +446,7 @@
                         autocomplete="off"
                         [value]="preferences().defaultImagePath"
                         [attr.aria-invalid]="defaultImagePathInvalid()"
-                        aria-describedby="default-image-path-error"
+                        aria-describedby="default-image-path-help default-image-path-error"
                         (input)="updateDefaultImagePath($event)" />
                     </label>
                     @if (defaultImagePathInvalid()) {
