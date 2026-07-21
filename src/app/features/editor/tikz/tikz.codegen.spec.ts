@@ -397,6 +397,32 @@ describe('sceneToTikzBundle', () => {
     expect(text.text).toBe('Text');
   });
 
+  it('normalizes oversized scenes and text boxes below TeX dimension limits', () => {
+    const oversizedText: TextShape = {
+      ...textWithInlineMath,
+      x: -161.696,
+      y: 305.911,
+      text: 'Text',
+      textBox: true,
+      boxWidth: 266.946,
+      fontSize: 109.393
+    };
+    const scene: TikzScene = {
+      name: 'Oversized imported scene',
+      bounds: { width: 960, height: 640 },
+      shapes: [oversizedText]
+    };
+
+    const code = sceneToTikzBundle(scene).code;
+    const pictureScale = /\\begin\{tikzpicture\}\[x=([\d.]+)cm/.exec(code);
+    const textScale = /scale=([\d.]+)/.exec(code);
+    const textWidth = /text width=([\d.]+)cm/.exec(code);
+
+    expect(Number(pictureScale?.[1])).toBeGreaterThan(0);
+    expect(Number(pictureScale?.[1])).toBeLessThan(1);
+    expect(Number(textScale?.[1]) * Number(textWidth?.[1])).toBeLessThan(100);
+    expect(code).not.toContain('text width=266.946cm');
+  });
   it('exports image opacity when strokeOpacity is below 1', () => {
     const scene: TikzScene = {
       name: 'Image scene',

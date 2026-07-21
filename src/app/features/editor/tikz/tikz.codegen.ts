@@ -80,6 +80,7 @@ const formatNumber = (value: number): string => {
 const formatPoint = (point: { readonly x: number; readonly y: number }): string => `(${formatNumber(point.x)}, ${formatNumber(point.y)})`;
 
 const ptPerCm = 28.45274;
+const MAX_TIKZ_COORDINATE_CM = 100;
 
 const renderedStrokeWidth = (strokeWidth: number): number => Math.max(strokeWidth * DEFAULT_EDITOR_SCALE * SHAPE_STROKE_SCALE_FACTOR, MIN_RENDER_STROKE_WIDTH);
 
@@ -135,6 +136,7 @@ interface ShapeStyleConfig {
 interface TikzGenerationContext {
   readonly colorMap: Map<string, string>;
   readonly colorMode: LatexColorMode;
+  readonly coordinateScale: number;
   readonly registerColor: (color: string) => string;
 }
 
@@ -146,7 +148,7 @@ const normalizeHexColor = (color: string): string | null => {
   return match ? match[1].toUpperCase() : null;
 };
 
-const createTikzGenerationContext = (options: TikzExportOptions = {}): TikzGenerationContext => {
+const createTikzGenerationContext = (options: TikzExportOptions = {}, coordinateScale = 1): TikzGenerationContext => {
   const colorMap = new Map<string, string>();
   let colorIndex = 1;
   const colorMode = options.colorMode ?? 'direct-rgb';
@@ -154,6 +156,7 @@ const createTikzGenerationContext = (options: TikzExportOptions = {}): TikzGener
   return {
     colorMap,
     colorMode,
+    coordinateScale,
     registerColor: (color: string): string => {
       const normalizedHex = normalizeHexColor(color);
       if (!normalizedHex) {
@@ -433,7 +436,7 @@ const rectangleToTikz = (shape: RectangleShape, context: TikzGenerationContext):
   });
 
   if (cornerRadius > 0) {
-    entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
+    entries.push(`rounded corners=${formatNumber(cornerRadius * context.coordinateScale)}cm`);
   }
   if (rotationOption) {
     entries.push(rotationOption);
@@ -450,7 +453,7 @@ const triangleToTikz = (shape: TriangleShape, context: TikzGenerationContext): s
     y: shape.y + shape.height / 2
   });
   if (cornerRadius > 0) {
-    entries.push(`rounded corners=${formatNumber(cornerRadius)}cm`);
+    entries.push(`rounded corners=${formatNumber(cornerRadius * context.coordinateScale)}cm`);
   }
   if (rotationOption) {
     entries.push(rotationOption);
@@ -499,15 +502,16 @@ const textContentToTikz = (text: string): string =>
     .join(String.raw`\\`);
 
 const textToTikz = (shape: TextShape, context: TikzGenerationContext): string => {
+  const textScale = Math.max(shape.fontSize / DEFAULT_TEXT_FONT_SIZE, 0.6);
   const nodeOptions = [
     `text=${context.registerColor(shape.color)}`,
     `text opacity=${formatNumber(shape.colorOpacity)}`,
-    `scale=${formatNumber(Math.max(shape.fontSize / DEFAULT_TEXT_FONT_SIZE, 0.6))}`,
+    `scale=${formatNumber(textScale * context.coordinateScale)}`,
     `anchor=${textAnchorToTikz(shape.textAlign)}`
   ];
 
   if (shape.textBox) {
-    nodeOptions.push(`text width=${formatNumber(shape.boxWidth)}cm`, `align=${shape.textAlign}`);
+    nodeOptions.push(`text width=${formatNumber(shape.boxWidth / textScale)}cm`, `align=${shape.textAlign}`);
   } else if (REGEX.shared.lineBreak.test(shape.text)) {
     nodeOptions.push(`align=${shape.textAlign}`);
   }
@@ -536,7 +540,7 @@ const imagePlaceholderToTikz = (shape: ImageShape, context: TikzGenerationContex
     `line width=${formatNumber(Math.max(shape.strokeWidth, 0.08))}pt`,
     'fill={rgb,255:red,238;green,244;blue,255}'
   ];
-  const labelOptions = ['text={rgb,255:red,50;green,81;blue,168}', 'text opacity=1', 'scale=0.9', 'anchor=center'];
+  const labelOptions = ['text={rgb,255:red,50;green,81;blue,168}', 'text opacity=1', `scale=${formatNumber(0.9 * context.coordinateScale)}`, 'anchor=center'];
 
   return [
     String.raw`\draw[${drawOptions.join(', ')}] (${formatNumber(shape.x)}, ${formatNumber(shape.y)}) rectangle (${formatNumber(shape.x + shape.width)}, ${formatNumber(shape.y + shape.height)});`,
@@ -559,7 +563,7 @@ const imageToTikz = (shape: ImageShape, context: TikzGenerationContext): string 
     nodeOptions.push(`opacity=${formatNumber(shape.strokeOpacity)}`);
   }
   const lines = [
-    String.raw`\node[${nodeOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\includegraphics[width=${formatNumber(shape.width)}cm,height=${formatNumber(shape.height)}cm]{${shape.latexSource}}};`
+    String.raw`\node[${nodeOptions.join(', ')}] at (${formatNumber(centerX)}, ${formatNumber(centerY)}) {\includegraphics[width=${formatNumber(shape.width * context.coordinateScale)}cm,height=${formatNumber(shape.height * context.coordinateScale)}cm]{${shape.latexSource}}};`
   ];
 
   if (shape.strokeWidth > 0 && shape.stroke !== 'none') {
@@ -598,10 +602,34 @@ export const shapeToTikz = (shape: CanvasShape, context: TikzGenerationContext):
   }
 };
 
+const shapeCoordinateMagnitude = (shape: CanvasShape): number => {
+  switch (shape.kind) {
+    case 'line':
+      return Math.max(...[shape.from, ...shape.anchors, shape.to].flatMap((point) => [Math.abs(point.x), Math.abs(point.y)]));
+    case 'rectangle':
+    case 'triangle':
+      return Math.max(Math.abs(shape.x), Math.abs(shape.y), Math.abs(shape.x + shape.width), Math.abs(shape.y + shape.height));
+    case 'circle':
+      return Math.max(Math.abs(shape.cx) + shape.r, Math.abs(shape.cy) + shape.r);
+    case 'ellipse':
+      return Math.max(Math.abs(shape.cx) + shape.rx, Math.abs(shape.cy) + shape.ry);
+    case 'text':
+      return Math.max(Math.abs(shape.x), Math.abs(shape.y), shape.boxWidth, shape.fontSize);
+    case 'image':
+      return Math.max(Math.abs(shape.x), Math.abs(shape.y), Math.abs(shape.x + shape.width), Math.abs(shape.y + shape.height));
+  }
+};
+
+const sceneCoordinateScale = (scene: TikzScene): number => {
+  const magnitude = Math.max(1, ...scene.shapes.map((shape) => shapeCoordinateMagnitude(shape)));
+  return Math.min(1, MAX_TIKZ_COORDINATE_CM / magnitude);
+};
 export const sceneToTikzBundle = (scene: TikzScene, options: TikzExportOptions = {}): TikzExportBundle => {
-  const context = createTikzGenerationContext(options);
+  const coordinateScale = sceneCoordinateScale(scene);
+  const context = createTikzGenerationContext(options, coordinateScale);
   const lines = [...scene.shapes.map((shape) => shapeToTikz(shape, context)), ...exportableRawTikzLines(scene)];
-  const code = [String.raw`\begin{tikzpicture}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join('\n');
+  const pictureOptions = coordinateScale < 1 ? `[x=${formatNumber(coordinateScale)}cm,y=${formatNumber(coordinateScale)}cm]` : '';
+  const code = [String.raw`\begin{tikzpicture}${pictureOptions}`, ...lines.map((line) => `  ${line}`), String.raw`\end{tikzpicture}`].join('\n');
   const tikzLibraries = new Set([
     ...(scene.shapes.some((shape) => shape.kind === 'line' && (shape.arrowStart || shape.arrowEnd)) ? ['arrows.meta'] : []),
     ...(scene.shapes.some((shape) => shape.kind === 'line' && shape.arrowBendMode !== 'none' && supportsArrowBending(shape)) ? ['bending'] : []),
