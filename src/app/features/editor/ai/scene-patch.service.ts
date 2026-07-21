@@ -424,6 +424,7 @@ export class ScenePatchService {
           strokeOpacity: shape.strokeOpacity ?? 1,
           fillOpacity: shape.fillOpacity ?? 1,
           strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
+          strokeStyle: shape.strokeStyle ?? preferences.defaultShapeLineStrokeStyle,
           rotation: shape.rotation ?? 0
         } as CanvasShape;
       case 'image':

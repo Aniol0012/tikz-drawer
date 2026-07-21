@@ -26,6 +26,7 @@ export interface CanvasShapeBase {
   readonly stroke: string;
   readonly strokeOpacity: number;
   readonly strokeWidth: number;
+  readonly strokeStyle?: LineStrokeStyle;
   readonly locked?: boolean;
   readonly mergeId?: string;
   readonly table?: TableShapeMetadata;
@@ -47,7 +48,6 @@ export interface LineShape extends CanvasShapeBase {
   readonly toAttachment?: LineEndpointAttachment;
   readonly anchors: readonly Point[];
   readonly lineMode: 'straight' | 'curved';
-  readonly strokeStyle?: LineStrokeStyle;
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
   readonly arrowType: ArrowTipKind;
@@ -169,6 +169,7 @@ export interface EditorPreferences {
   readonly defaultArrowScale: number;
   readonly defaultArrowType: ArrowTipKind;
   readonly defaultLineStrokeStyle: LineStrokeStyle;
+  readonly defaultShapeLineStrokeStyle: LineStrokeStyle;
   readonly defaultCornerRadius: number;
   readonly defaultTextColor: string;
   readonly defaultTextOpacity: number;

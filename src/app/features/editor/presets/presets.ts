@@ -764,6 +764,7 @@ export const defaultPreferences: EditorPreferences = {
   defaultArrowScale: 1.35,
   defaultArrowType: DEFAULT_ARROW_TIP_KIND,
   defaultLineStrokeStyle: 'solid',
+  defaultShapeLineStrokeStyle: 'solid',
   defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
   defaultTextColor: DEFAULT_TEXT_COLOR,
   defaultTextOpacity: 1,

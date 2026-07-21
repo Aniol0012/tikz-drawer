@@ -197,6 +197,17 @@ describe('AppConfigurationDialogComponent', () => {
     expect(options.every((option) => option.iconPath)).toBe(true);
   });
 
+  it('keeps shape and arrow line-style defaults independent', () => {
+    component.setDefaultShapeLineStrokeStyle('dashed');
+
+    expect(store.preferences().defaultShapeLineStrokeStyle).toBe('dashed');
+    expect(store.preferences().defaultLineStrokeStyle).toBe('solid');
+
+    component.setDefaultLineStrokeStyle('dotted');
+
+    expect(store.preferences().defaultShapeLineStrokeStyle).toBe('dashed');
+    expect(store.preferences().defaultLineStrokeStyle).toBe('dotted');
+  });
   it('updates general configuration and editable keyboard shortcuts', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
     component.updateGeneralBoolean('whiteCanvasInDarkMode', true);

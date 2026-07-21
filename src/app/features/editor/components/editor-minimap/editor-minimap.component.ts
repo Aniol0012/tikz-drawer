@@ -44,6 +44,7 @@ interface MinimapShapeBase {
   readonly kind: CanvasShape['kind'];
   readonly stroke: string;
   readonly strokeWidth: number;
+  readonly dashArray?: string;
 }
 
 interface MinimapLineShape extends MinimapShapeBase {
@@ -319,6 +320,7 @@ export class EditorMinimapComponent {
           kind: 'rectangle',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           fill: shape.fill,
           x: toMapX(shape.x),
           y: toMapY(shape.y + shape.height),
@@ -331,6 +333,7 @@ export class EditorMinimapComponent {
           kind: 'triangle',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           fill: shape.fill,
           path: buildTrianglePath(
             shape,
@@ -346,6 +349,7 @@ export class EditorMinimapComponent {
           kind: 'circle',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),
@@ -356,6 +360,7 @@ export class EditorMinimapComponent {
           kind: 'ellipse',
           stroke: shape.stroke,
           strokeWidth: minimapStrokeWidth(shape.strokeWidth),
+          dashArray: this.strokeDashArray(shape.strokeStyle ?? 'solid', minimapStrokeWidth(shape.strokeWidth)) ?? undefined,
           fill: shape.fill,
           cx: toMapX(shape.cx),
           cy: toMapY(shape.cy),

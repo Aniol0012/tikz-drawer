@@ -32,6 +32,7 @@ export type PreferenceTextKey =
   | 'defaultFill'
   | 'defaultArrowType'
   | 'defaultLineStrokeStyle'
+  | 'defaultShapeLineStrokeStyle'
   | 'defaultTextColor'
   | 'defaultTextWeight'
   | 'defaultTextStyle'

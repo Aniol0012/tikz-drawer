@@ -71,6 +71,7 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        strokeStyle: shape.strokeStyle ?? 'solid',
         ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         rotation: shape.rotation ?? 0
       } as CanvasShape;
@@ -339,6 +340,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         fill: shape.fill,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        strokeStyle: shape.strokeStyle ?? preferences.defaultShapeLineStrokeStyle,
         ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
         rotation: shape.rotation ?? 0

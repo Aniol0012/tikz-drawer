@@ -3218,13 +3218,17 @@ export class EditorPageComponent {
     );
   }
 
-  setLineStrokeStyle(value: string): void {
+  setShapeStrokeStyle(value: string): void {
     const allowedStyles: readonly LineStrokeStyle[] = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'];
     if (!allowedStyles.includes(value as LineStrokeStyle)) {
       return;
     }
 
-    this.patchInspectorSelection((shape) => (shape.kind === 'line' ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as LineShape) : shape));
+    this.patchInspectorSelection((shape) =>
+      shape.kind === 'line' || shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse'
+        ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as CanvasShape)
+        : shape
+    );
   }
 
   setTextBoxEnabled(value: boolean): void {
@@ -5166,7 +5170,7 @@ export class EditorPageComponent {
     return renderedStrokeWidthForScale(strokeWidth, this.preferences().scale);
   }
 
-  lineStrokeDashArray(shape: LineShape): string | null {
+  lineStrokeDashArray(shape: CanvasShape): string | null {
     const strokeWidth = this.scaledStrokeWidth(shape.strokeWidth);
     return this.strokeDashArray(shape.strokeStyle ?? 'solid', strokeWidth);
   }
@@ -6970,7 +6974,8 @@ export class EditorPageComponent {
           fillOpacity: preferences.defaultFillOpacity,
           ...(shape.kind === 'rectangle' || shape.kind === 'triangle' ? { cornerRadius: preferences.defaultCornerRadius } : {}),
           ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
-          strokeWidth: preferences.defaultStrokeWidth
+          strokeWidth: preferences.defaultStrokeWidth,
+          strokeStyle: preferences.defaultShapeLineStrokeStyle
         };
       case 'image':
         return {

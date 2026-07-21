@@ -933,6 +933,11 @@ export class AppConfigurationDialogComponent {
     }
   }
 
+  setDefaultShapeLineStrokeStyle(style: string): void {
+    if (this.lineStrokeStyleOptions.some((option) => option.id === style)) {
+      this.patchPreferences({ defaultShapeLineStrokeStyle: style as LineStrokeStyle });
+    }
+  }
   setDefaultArrowType(arrowType: string): void {
     if (this.arrowTipOptions.some((option) => option.id === arrowType)) {
       this.patchPreferences({ defaultArrowType: arrowType as ArrowTipKind });
@@ -977,8 +982,8 @@ export class AppConfigurationDialogComponent {
     }));
   }
 
-  previewStrokeDasharray(): string | null {
-    switch (this.preferences().defaultLineStrokeStyle) {
+  previewStrokeDasharray(style: LineStrokeStyle = this.preferences().defaultLineStrokeStyle): string | null {
+    switch (style) {
       case 'dashed':
         return '8 5';
       case 'dotted':
@@ -1295,6 +1300,7 @@ export class AppConfigurationDialogComponent {
       current.defaultArrowScale === expected.defaultArrowScale &&
       current.defaultArrowType === expected.defaultArrowType &&
       current.defaultLineStrokeStyle === expected.defaultLineStrokeStyle &&
+      current.defaultShapeLineStrokeStyle === expected.defaultShapeLineStrokeStyle &&
       current.defaultCornerRadius === expected.defaultCornerRadius &&
       current.defaultTextColor === expected.defaultTextColor &&
       current.defaultTextOpacity === expected.defaultTextOpacity &&

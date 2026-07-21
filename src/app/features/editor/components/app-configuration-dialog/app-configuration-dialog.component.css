@@ -501,10 +501,25 @@
   color: color-mix(in srgb, var(--danger) 84%, var(--app-foreground));
 }
 
+.scene-text-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.48fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.scene-text-settings__controls,
 .text-format-toggle-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+}
+
+.scene-text-settings__controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.text-format-toggle-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .settings-card--canvas app-toggle-field,
@@ -514,7 +529,7 @@
 
 .scene-text-color {
   width: 100%;
-  max-width: 460px;
+  max-width: none;
 }
 
 .settings-action-row {
@@ -1233,6 +1248,9 @@
 }
 
 @media (max-width: 640px) {
+  .scene-text-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .modal-backdrop {
     align-items: stretch;
     padding: 8px;

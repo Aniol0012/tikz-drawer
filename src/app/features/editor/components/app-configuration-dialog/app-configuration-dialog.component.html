@@ -386,9 +386,9 @@
                     <label class="field field--full">
                       <span>{{ 'lineStyle' | translate }}</span>
                       <app-select
-                        [value]="preferences().defaultLineStrokeStyle"
+                        [value]="preferences().defaultShapeLineStrokeStyle"
                         [options]="lineStrokeStyleSelectOptions()"
-                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                        (valueChange)="setDefaultShapeLineStrokeStyle($event)"></app-select>
                     </label>
                   </div>
                 </section>
@@ -420,6 +420,13 @@
                       [numberMax]="4.5"
                       [numberStep]="0.1"
                       (valueInput)="updatePreferenceNumber('defaultArrowScale', $event, 0.4, 4.5)"></app-range-input-card>
+                    <label class="field field--full">
+                      <span>{{ 'lineStyle' | translate }}</span>
+                      <app-select
+                        [value]="preferences().defaultLineStrokeStyle"
+                        [options]="lineStrokeStyleSelectOptions()"
+                        (valueChange)="setDefaultLineStrokeStyle($event)"></app-select>
+                    </label>
                   </div>
                 </section>
 
@@ -499,28 +506,39 @@
                   <div class="settings-card__header">
                     <h3>{{ 'defaultText' | translate }}</h3>
                   </div>
-                  <div class="form-grid form-grid--two">
-                    <app-color-picker
-                      class="field field--full scene-text-color"
-                      [label]="'defaultTextColor' | translate"
-                      [opacityLabel]="'opacity' | translate"
-                      opacityControlPlacement="summary"
-                      [randomLabel]="'randomColor' | translate"
-                      [value]="preferences().defaultTextColor"
-                      [opacity]="preferences().defaultTextOpacity"
-                      (valueChange)="setPreferenceText('defaultTextColor', $event)"
-                      (opacityChange)="setPreferenceNumber('defaultTextOpacity', $event, 0, 1)"></app-color-picker>
-                    <app-range-input-card
-                      [label]="'defaultTextFontSize' | translate"
-                      [value]="preferences().defaultTextFontSize"
-                      [rangeMin]="0.2"
-                      [rangeMax]="2"
-                      [rangeStep]="0.02"
-                      [numberMin]="0.2"
-                      [numberMax]="2"
-                      [numberStep]="0.02"
-                      (valueInput)="updatePreferenceNumber('defaultTextFontSize', $event, 0.2, 2)"></app-range-input-card>
-                    <div class="text-format-toggle-grid field--full" role="group" [attr.aria-label]="'defaultText' | translate">
+                  <div class="scene-text-settings">
+                    <div class="scene-text-settings__controls">
+                      <app-color-picker
+                        class="field scene-text-color"
+                        [label]="'defaultTextColor' | translate"
+                        [opacityLabel]="'opacity' | translate"
+                        opacityControlPlacement="summary"
+                        [randomLabel]="'randomColor' | translate"
+                        [value]="preferences().defaultTextColor"
+                        [opacity]="preferences().defaultTextOpacity"
+                        (valueChange)="setPreferenceText('defaultTextColor', $event)"
+                        (opacityChange)="setPreferenceNumber('defaultTextOpacity', $event, 0, 1)"></app-color-picker>
+                      <app-range-input-card
+                        [label]="'defaultTextFontSize' | translate"
+                        [value]="preferences().defaultTextFontSize"
+                        [rangeMin]="0.2"
+                        [rangeMax]="2"
+                        [rangeStep]="0.02"
+                        [numberMin]="0.2"
+                        [numberMax]="2"
+                        [numberStep]="0.02"
+                        (valueInput)="updatePreferenceNumber('defaultTextFontSize', $event, 0.2, 2)"></app-range-input-card>
+                      <label class="field">
+                        <span data-tooltip-enabled [attr.data-tooltip]="'defaultTextAlignTooltip' | translate">{{
+                          'defaultTextAlign' | translate
+                        }}</span>
+                        <app-select
+                          [value]="preferences().defaultTextAlign"
+                          [options]="textAlignSelectOptions()"
+                          (valueChange)="setDefaultTextAlign($event)"></app-select>
+                      </label>
+                    </div>
+                    <div class="text-format-toggle-grid" role="group" [attr.aria-label]="'defaultText' | translate">
                       <app-toggle-field
                         [checked]="preferences().defaultTextWeight === 'bold'"
                         [label]="'textWeightBold' | translate"
@@ -534,15 +552,6 @@
                         [label]="'textDecorationUnderline' | translate"
                         (checkedChange)="setDefaultTextDecoration($event ? 'underline' : 'none')"></app-toggle-field>
                     </div>
-                    <label class="field">
-                      <span data-tooltip-enabled [attr.data-tooltip]="'defaultTextAlignTooltip' | translate">{{
-                        'defaultTextAlign' | translate
-                      }}</span>
-                      <app-select
-                        [value]="preferences().defaultTextAlign"
-                        [options]="textAlignSelectOptions()"
-                        (valueChange)="setDefaultTextAlign($event)"></app-select>
-                    </label>
                   </div>
                 </section>
 
@@ -671,6 +680,7 @@
                           [attr.fill-opacity]="preferences().defaultFillOpacity"
                           [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
                           [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-dasharray]="previewStrokeDasharray(preferences().defaultShapeLineStrokeStyle)"
                           [attr.stroke-linejoin]="preferences().defaultCornerRadius > 0 ? 'round' : 'miter'"></path>
                         <circle
                           cx="168"
@@ -680,7 +690,8 @@
                           [attr.stroke]="preferences().defaultStroke"
                           [attr.fill-opacity]="preferences().defaultFillOpacity"
                           [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
-                          [attr.stroke-width]="previewStrokeWidth()"></circle>
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-dasharray]="previewStrokeDasharray(preferences().defaultShapeLineStrokeStyle)"></circle>
                         <rect
                           x="220"
                           y="48"
@@ -692,16 +703,9 @@
                           [attr.stroke]="preferences().defaultStroke"
                           [attr.fill-opacity]="preferences().defaultFillOpacity"
                           [attr.stroke-opacity]="preferences().defaultStrokeOpacity"
-                          [attr.stroke-width]="previewStrokeWidth()"></rect>
-                        <rect
-                          [attr.x]="previewImageX()"
-                          [attr.y]="previewImageY()"
-                          [attr.width]="previewImageWidth()"
-                          [attr.height]="previewImageHeight()"
-                          [attr.opacity]="preferences().defaultImageOpacity"
-                          fill="#dbeafe"
-                          [attr.stroke]="preferences().defaultImageBorder ? preferences().defaultImageBorderColor : 'none'"
-                          [attr.stroke-width]="previewImageBorderWidth()"></rect>
+                          [attr.stroke-width]="previewStrokeWidth()"
+                          [attr.stroke-dasharray]="previewStrokeDasharray(preferences().defaultShapeLineStrokeStyle)"></rect>
+
                         <path
                           d="M44 168 C98 188 140 150 188 166 S248 150 262 118"
                           fill="none"

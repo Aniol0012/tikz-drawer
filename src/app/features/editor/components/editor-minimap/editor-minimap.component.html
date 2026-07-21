@@ -53,7 +53,8 @@
               [attr.rx]="shape.rx"
               [attr.fill]="shape.fill"
               [attr.stroke]="shape.stroke"
-              [attr.stroke-width]="shape.strokeWidth"></rect>
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></rect>
           }
           @case ('triangle') {
             <path
@@ -61,7 +62,8 @@
               [attr.d]="shape.path"
               [attr.fill]="shape.fill"
               [attr.stroke]="shape.stroke"
-              [attr.stroke-width]="shape.strokeWidth"></path>
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></path>
           }
           @case ('circle') {
             <circle
@@ -71,7 +73,8 @@
               [attr.r]="shape.r"
               [attr.fill]="shape.fill"
               [attr.stroke]="shape.stroke"
-              [attr.stroke-width]="shape.strokeWidth"></circle>
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></circle>
           }
           @case ('ellipse') {
             <ellipse
@@ -82,7 +85,8 @@
               [attr.ry]="shape.ry"
               [attr.fill]="shape.fill"
               [attr.stroke]="shape.stroke"
-              [attr.stroke-width]="shape.strokeWidth"></ellipse>
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></ellipse>
           }
           @case ('text') {
             <text
@@ -122,7 +126,8 @@
               [attr.height]="shape.height"
               [attr.fill]="'none'"
               [attr.stroke]="shape.stroke"
-              [attr.stroke-width]="shape.strokeWidth"></rect>
+              [attr.stroke-width]="shape.strokeWidth"
+              [attr.stroke-dasharray]="shape.dashArray ?? null"></rect>
           }
         }
       }
