@@ -26,6 +26,7 @@ export interface CanvasShapeBase {
   readonly stroke: string;
   readonly strokeOpacity: number;
   readonly strokeWidth: number;
+  readonly strokeStyle?: LineStrokeStyle;
   readonly locked?: boolean;
   readonly mergeId?: string;
   readonly table?: TableShapeMetadata;
@@ -47,7 +48,6 @@ export interface LineShape extends CanvasShapeBase {
   readonly toAttachment?: LineEndpointAttachment;
   readonly anchors: readonly Point[];
   readonly lineMode: 'straight' | 'curved';
-  readonly strokeStyle?: LineStrokeStyle;
   readonly arrowStart: boolean;
   readonly arrowEnd: boolean;
   readonly arrowType: ArrowTipKind;
@@ -158,7 +158,9 @@ export interface EditorPreferences {
   readonly showGrid: boolean;
   readonly showAxes: boolean;
   readonly scale: number;
+  readonly gridStep: number;
   readonly snapStep: number;
+  readonly objectSnapTolerance: number;
   readonly defaultStroke: string;
   readonly defaultFill: string;
   readonly defaultStrokeOpacity: number;
@@ -167,11 +169,21 @@ export interface EditorPreferences {
   readonly defaultArrowScale: number;
   readonly defaultArrowType: ArrowTipKind;
   readonly defaultLineStrokeStyle: LineStrokeStyle;
+  readonly defaultShapeLineStrokeStyle: LineStrokeStyle;
   readonly defaultCornerRadius: number;
   readonly defaultTextColor: string;
   readonly defaultTextOpacity: number;
   readonly defaultTextFontSize: number;
+  readonly defaultTextWeight: TextWeight;
+  readonly defaultTextStyle: TextStyle;
+  readonly defaultTextDecoration: TextShape['textDecoration'];
+  readonly defaultTextAlign: TextAlign;
   readonly defaultImagePath: string;
+  readonly defaultImageOpacity: number;
+  readonly defaultImageScalePercent: number;
+  readonly defaultImageBorder: boolean;
+  readonly defaultImageBorderColor: string;
+  readonly defaultImageBorderWidth: number;
 }
 
 export interface PersistedEditorState {

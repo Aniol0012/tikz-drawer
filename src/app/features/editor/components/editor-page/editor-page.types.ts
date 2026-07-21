@@ -14,16 +14,33 @@ export type TextStylePropertyKey = TextStyleKey | 'textAlign';
 export type TemplateDialogTextKey = 'title' | 'description';
 export type PreferenceNumberKey =
   | 'scale'
+  | 'gridStep'
   | 'snapStep'
+  | 'objectSnapTolerance'
   | 'defaultStrokeOpacity'
   | 'defaultFillOpacity'
   | 'defaultStrokeWidth'
   | 'defaultArrowScale'
   | 'defaultCornerRadius'
   | 'defaultTextOpacity'
-  | 'defaultTextFontSize';
-export type PreferenceTextKey = 'defaultStroke' | 'defaultFill' | 'defaultArrowType' | 'defaultLineStrokeStyle' | 'defaultTextColor' | 'defaultImagePath';
-export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes';
+  | 'defaultTextFontSize'
+  | 'defaultImageOpacity'
+  | 'defaultImageScalePercent'
+  | 'defaultImageBorderWidth';
+export type PreferenceTextKey =
+  | 'defaultStroke'
+  | 'defaultFill'
+  | 'defaultArrowType'
+  | 'defaultLineStrokeStyle'
+  | 'defaultShapeLineStrokeStyle'
+  | 'defaultTextColor'
+  | 'defaultTextWeight'
+  | 'defaultTextStyle'
+  | 'defaultTextDecoration'
+  | 'defaultTextAlign'
+  | 'defaultImagePath'
+  | 'defaultImageBorderColor';
+export type PreferenceBooleanKey = 'snapToGrid' | 'snapToObjects' | 'showObjectSnapGuides' | 'showGrid' | 'showAxes' | 'defaultImageBorder';
 export type ShapeTextKey = 'name' | 'stroke' | 'fill' | 'text' | 'color' | 'arrowColor';
 export type ShapeOpacityKey = 'strokeOpacity' | 'fillOpacity' | 'colorOpacity' | 'arrowOpacity';
 export type ImageTextKey = 'src' | 'latexSource';

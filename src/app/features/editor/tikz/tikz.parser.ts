@@ -702,9 +702,10 @@ const styleStrokeWidth = (styles: Record<string, string>): number => {
   return parseDimension(raw, 0.08);
 };
 
-const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number } => ({
+const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number; strokeStyle: LineShape['strokeStyle'] } => ({
   stroke: normalizeTikzColor(styles['draw'], '#0f172a'),
-  strokeWidth: styleStrokeWidth(styles)
+  strokeWidth: styleStrokeWidth(styles),
+  strokeStyle: parseLineStrokeStyle(styles)
 });
 
 const parseLineStrokeStyle = (styles: Record<string, string>): LineShape['strokeStyle'] => {

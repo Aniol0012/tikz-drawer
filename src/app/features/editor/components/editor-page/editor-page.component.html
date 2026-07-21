@@ -391,6 +391,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     [attr.fill]="shape.fill"
                     [attr.fill-opacity]="shape.fillOpacity"
                     [attr.rx]="rectangleCornerRadiusSvg(shape)"></rect>
@@ -402,6 +403,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     [attr.fill]="shape.fill"
                     [attr.fill-opacity]="shape.fillOpacity"></path>
                 }
@@ -414,6 +416,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     [attr.fill]="shape.fill"
                     [attr.fill-opacity]="shape.fillOpacity"></circle>
                 }
@@ -427,6 +430,7 @@
                     [attr.stroke]="shape.stroke"
                     [attr.stroke-opacity]="shape.strokeOpacity"
                     [attr.stroke-width]="scaledStrokeWidth(shape.strokeWidth)"
+                    [attr.stroke-dasharray]="lineStrokeDashArray(shape)"
                     [attr.fill]="shape.fill"
                     [attr.fill-opacity]="shape.fillOpacity"></ellipse>
                 }
@@ -547,6 +551,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"
                       [attr.rx]="rectangleCornerRadiusSvg(previewShape)"></rect>
@@ -558,6 +563,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"></path>
                   }
@@ -570,6 +576,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"></circle>
                   }
@@ -583,6 +590,7 @@
                       [attr.stroke]="previewShape.stroke"
                       [attr.stroke-opacity]="previewShape.strokeOpacity"
                       [attr.stroke-width]="scaledStrokeWidth(previewShape.strokeWidth)"
+                      [attr.stroke-dasharray]="lineStrokeDashArray(previewShape)"
                       [attr.fill]="previewShape.fill"
                       [attr.fill-opacity]="previewShape.fillOpacity"></ellipse>
                   }
@@ -1054,6 +1062,15 @@
                       (opacityChange)="setShapeOpacityValue('fillOpacity', $event)"></app-color-picker>
                   }
                 </div>
+                @if (shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse') {
+                  <label class="field field--full">
+                    <span>{{ 'lineStrokeStyle' | translate }}</span>
+                    <app-select
+                      [value]="shape.strokeStyle ?? 'solid'"
+                      [options]="lineStrokeStyleSelectOptions()"
+                      (valueChange)="setShapeStrokeStyle($event)"></app-select>
+                  </label>
+                }
                 <label class="field field--full field--stroke-width">
                   <span>{{ 'strokeWidth' | translate }}</span>
                   <div class="range-field">
@@ -1166,7 +1183,7 @@
                         ><app-select
                           [value]="shape.strokeStyle ?? 'solid'"
                           [options]="lineStrokeStyleSelectOptions()"
-                          (valueChange)="setLineStrokeStyle($event)"></app-select
+                          (valueChange)="setShapeStrokeStyle($event)"></app-select
                       ></label>
                     </div>
                     @if (shape.arrowStart || shape.arrowEnd) {
@@ -2105,6 +2122,15 @@
                           (opacityChange)="setShapeOpacityValue('fillOpacity', $event)"></app-color-picker>
                       }
                     </div>
+                    @if (shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse') {
+                      <label class="field field--full">
+                        <span>{{ 'lineStrokeStyle' | translate }}</span>
+                        <app-select
+                          [value]="shape.strokeStyle ?? 'solid'"
+                          [options]="lineStrokeStyleSelectOptions()"
+                          (valueChange)="setShapeStrokeStyle($event)"></app-select>
+                      </label>
+                    }
                     <label class="field field--full field--stroke-width">
                       <span>{{ 'strokeWidth' | translate }}</span>
                       <div class="range-field">
@@ -2232,7 +2258,7 @@
                             ><app-select
                               [value]="shape.strokeStyle ?? 'solid'"
                               [options]="lineStrokeStyleSelectOptions()"
-                              (valueChange)="setLineStrokeStyle($event)"></app-select
+                              (valueChange)="setShapeStrokeStyle($event)"></app-select
                           ></label>
                         </div>
                         @if (shape.arrowStart || shape.arrowEnd) {

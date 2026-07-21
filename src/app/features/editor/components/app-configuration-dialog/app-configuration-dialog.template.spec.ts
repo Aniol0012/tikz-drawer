@@ -65,7 +65,7 @@ describe('AppConfigurationDialogComponent template', () => {
   it('uses the shared color picker for configuration color fields', async () => {
     const template = await readTemplate();
 
-    expect(template.split('<app-color-picker').length - 1).toBe(3);
+    expect(template.split('<app-color-picker').length - 1).toBe(4);
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultStroke\', $event)"');
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultFill\', $event)"');
     expect(template).toContain('(valueChange)="setPreferenceText(\'defaultTextColor\', $event)"');
@@ -75,5 +75,36 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('(opacityChange)="setPreferenceNumber(\'defaultFillOpacity\', $event, 0, 1)"');
     expect(template).toContain('(opacityChange)="setPreferenceNumber(\'defaultTextOpacity\', $event, 0, 1)"');
     expect(template).not.toContain('type="color"');
+  });
+
+  it('organizes scene settings by intent and explains advanced controls', async () => {
+    const template = await readTemplate();
+
+    expect(template).not.toContain('scene-panel-intro');
+    expect(template).toContain('settings-card--style');
+    expect(template).toContain('settings-card--arrows');
+    expect(template).toContain('settings-card--text');
+    expect(template).toContain('settings-card--canvas');
+    expect(template).toContain('settings-card--snapping');
+    expect(template).toContain('settings-card--images');
+    expect(template).toContain("'gridStepTooltip' | translate");
+    expect(template).toContain("'snapStepTooltip' | translate");
+    expect(template).toContain("'objectSnapToleranceTooltip' | translate");
+    expect(template).toContain("'defaultTextAlignTooltip' | translate");
+    expect(template).not.toContain('scene-preview__metrics');
+    expect(template).not.toContain('live-indicator');
+  });
+
+  it('renders a live preview for style, typography and snapping aids', async () => {
+    const template = await readTemplate();
+
+    expect(template).toContain('[attr.font-weight]="preferences().defaultTextWeight"');
+    expect(template).toContain('[attr.font-style]="preferences().defaultTextStyle"');
+    expect(template).toContain('[attr.text-decoration]="preferences().defaultTextDecoration"');
+    expect(template).toContain('[attr.text-anchor]="previewTextAnchor()"');
+    expect(template).toContain('scene-preview__snap-point');
+    expect(template).toContain('scene-preview__snap-guides');
+    expect(template).toContain('previewGridSnapEditing()');
+    expect(template).toContain('previewObjectSnapEditing()');
   });
 });

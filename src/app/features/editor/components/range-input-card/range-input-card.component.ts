@@ -22,9 +22,14 @@ export class RangeInputCardComponent {
   readonly numberStep = input<number | string | null>(null);
   readonly disabled = input(false);
   readonly valueInput = output<Event>();
+  readonly editingChange = output<boolean>();
 
   onInput(event: Event): void {
     this.valueInput.emit(event);
+  }
+
+  setEditing(editing: boolean): void {
+    this.editingChange.emit(editing);
   }
 
   resolvedNumberMin(): NumericInputAttribute {

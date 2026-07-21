@@ -9,6 +9,8 @@
     [attr.aria-label]="label()"
     [value]="value()"
     [disabled]="disabled()"
+    (focus)="setEditing(true)"
+    (blur)="setEditing(false)"
     (input)="onInput($event)" />
   <input
     class="editor-range-input-card__number"
@@ -19,5 +21,7 @@
     [attr.aria-label]="label()"
     [value]="value()"
     [disabled]="disabled()"
+    (focus)="setEditing(true)"
+    (blur)="setEditing(false)"
     (input)="onInput($event)" />
 </div>

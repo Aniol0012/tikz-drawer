@@ -85,13 +85,40 @@ describe('AppConfigurationDialogComponent', () => {
   it('centralizes scene preference updates through the dialog', () => {
     component.updatePreferenceBoolean('showGrid', false);
     component.updatePreferenceNumber('snapStep', { target: { value: '4' } } as unknown as Event, 0.05, 2);
+    component.updatePreferenceNumber('gridStep', { target: { value: '9' } } as unknown as Event, 0.25, 4);
+    component.updatePreferenceNumber('objectSnapTolerance', { target: { value: '99' } } as unknown as Event, 2, 32);
     component.updatePreferenceText('defaultStroke', { target: { value: '#ff0000' } } as unknown as Event);
 
     expect(store.preferences()).toMatchObject({
       showGrid: false,
       snapStep: 2,
+      gridStep: 4,
+      objectSnapTolerance: 32,
       defaultStroke: '#ff0000'
     });
+  });
+
+  it('configures complete text defaults and mirrors alignment in the preview', () => {
+    component.setDefaultTextWeight('bold');
+    component.setDefaultTextStyle('italic');
+    component.setDefaultTextDecoration('underline');
+    component.setDefaultTextAlign('right');
+
+    expect(store.preferences()).toMatchObject({
+      defaultTextWeight: 'bold',
+      defaultTextStyle: 'italic',
+      defaultTextDecoration: 'underline',
+      defaultTextAlign: 'right'
+    });
+    expect(component.previewTextAnchor()).toBe('end');
+    expect(component.previewTextX()).toBe(188);
+  });
+
+  it('uses grid spacing and zoom together in the live preview', () => {
+    store.patchPreferences({ scale: DEFAULT_EDITOR_SCALE, gridStep: 2, objectSnapTolerance: 24 });
+
+    expect(component.previewGridSize()).toBe(28);
+    expect(component.previewSnapGuideInset()).toBe(18);
   });
 
   it('keeps object snap guide settings nested under object snapping in the scene template', async () => {
@@ -139,10 +166,20 @@ describe('AppConfigurationDialogComponent', () => {
     expect(component.minZoomPercent).toBe(Math.round((EDITOR_SCALE_MIN / DEFAULT_EDITOR_SCALE) * 100));
   });
 
-  it('keeps the scene preview readable by zooming the viewBox instead of capping the scale', () => {
+  it('shows the full configured zoom only while the zoom control is being edited', () => {
     store.patchPreferences({ scale: DEFAULT_EDITOR_SCALE * 2 });
 
-    expect(component.previewViewBox()).toBe('75 55 150 110');
+    expect(component.previewViewBox()).toBe('0 0 300 220');
+
+    component.previewZoomEditing.set(true);
+    const editingViewBox = component.previewViewBox().split(' ').map(Number);
+
+    expect(editingViewBox[2]).toBeCloseTo(150);
+    expect(editingViewBox[3]).toBeCloseTo(110);
+
+    component.previewZoomEditing.set(false);
+
+    expect(component.previewViewBox()).toBe('0 0 300 220');
   });
 
   it('reuses the shared arrow tip descriptors for the configuration dropdown', () => {
@@ -160,6 +197,17 @@ describe('AppConfigurationDialogComponent', () => {
     expect(options.every((option) => option.iconPath)).toBe(true);
   });
 
+  it('keeps shape and arrow line-style defaults independent', () => {
+    component.setDefaultShapeLineStrokeStyle('dashed');
+
+    expect(store.preferences().defaultShapeLineStrokeStyle).toBe('dashed');
+    expect(store.preferences().defaultLineStrokeStyle).toBe('solid');
+
+    component.setDefaultLineStrokeStyle('dotted');
+
+    expect(store.preferences().defaultShapeLineStrokeStyle).toBe('dashed');
+    expect(store.preferences().defaultLineStrokeStyle).toBe('dotted');
+  });
   it('updates general configuration and editable keyboard shortcuts', () => {
     component.updateGeneralBoolean('showHelpTooltips', false);
     component.updateGeneralBoolean('whiteCanvasInDarkMode', true);

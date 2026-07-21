@@ -30,7 +30,8 @@ import {
   DEFAULT_SHAPE_STROKE_WIDTH,
   DEFAULT_TEXT_BOX_WIDTH,
   DEFAULT_TEXT_COLOR,
-  DEFAULT_TEXT_FONT_SIZE
+  DEFAULT_TEXT_FONT_SIZE,
+  EDITOR_OBJECT_SNAP_TOLERANCE_PX
 } from '../constants/editor.constants';
 import { REGULAR_POLYGON_PRESET_ID } from '../models/regular-polygon.models';
 import { DEFAULT_TABLE_GEOMETRY } from '../models/table.models';
@@ -752,7 +753,9 @@ export const defaultPreferences: EditorPreferences = {
   showGrid: true,
   showAxes: true,
   scale: 24,
+  gridStep: 1,
   snapStep: 0.25,
+  objectSnapTolerance: EDITOR_OBJECT_SNAP_TOLERANCE_PX,
   defaultStroke: '#1f1f1f',
   defaultFill: '#f1f1f1',
   defaultStrokeOpacity: 1,
@@ -761,11 +764,21 @@ export const defaultPreferences: EditorPreferences = {
   defaultArrowScale: 1.35,
   defaultArrowType: DEFAULT_ARROW_TIP_KIND,
   defaultLineStrokeStyle: 'solid',
+  defaultShapeLineStrokeStyle: 'solid',
   defaultCornerRadius: DEFAULT_RECTANGLE_CORNER_RADIUS,
   defaultTextColor: DEFAULT_TEXT_COLOR,
   defaultTextOpacity: 1,
   defaultTextFontSize: DEFAULT_TEXT_FONT_SIZE,
-  defaultImagePath: 'images'
+  defaultTextWeight: 'normal',
+  defaultTextStyle: 'normal',
+  defaultTextDecoration: 'none',
+  defaultTextAlign: 'center',
+  defaultImagePath: 'images',
+  defaultImageOpacity: 1,
+  defaultImageScalePercent: 100,
+  defaultImageBorder: false,
+  defaultImageBorderColor: '#1f1f1f',
+  defaultImageBorderWidth: 0.28
 };
 
 const complexDiagramPresets = (): readonly ObjectPreset[] => {

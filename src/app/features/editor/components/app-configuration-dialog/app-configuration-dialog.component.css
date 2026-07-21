@@ -357,8 +357,10 @@
 .configuration-grid--scene {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(340px, 0.92fr);
   grid-template-areas:
-    'style text preview'
-    'behavior behavior preview';
+    'style arrows preview'
+    'text text preview'
+    'canvas snapping preview'
+    'images images preview';
   align-items: start;
 }
 
@@ -397,12 +399,24 @@
   grid-area: style;
 }
 
+.settings-card--arrows {
+  grid-area: arrows;
+}
+
 .settings-card--text {
   grid-area: text;
 }
 
-.settings-card--behavior {
-  grid-area: behavior;
+.settings-card--canvas {
+  grid-area: canvas;
+}
+
+.settings-card--snapping {
+  grid-area: snapping;
+}
+
+.settings-card--images {
+  grid-area: images;
 }
 
 .settings-card__header {
@@ -416,6 +430,12 @@
   color: var(--app-foreground);
   font-size: 0.98rem;
   font-weight: 800;
+}
+
+.settings-card__header > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
 }
 
 .form-grid {
@@ -481,21 +501,35 @@
   color: color-mix(in srgb, var(--danger) 84%, var(--app-foreground));
 }
 
-.settings-card--style .field--full {
-  grid-column: auto;
+.scene-text-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.48fr);
+  gap: 14px;
+  align-items: start;
 }
 
-.settings-card--style label.field--full {
-  grid-column: 1 / -1;
+.scene-text-settings__controls,
+.text-format-toggle-grid {
+  display: grid;
+  gap: 10px;
 }
 
-.settings-card--text .form-grid--single,
-.settings-card--behavior .form-grid--single {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.scene-text-settings__controls {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.settings-card--behavior app-toggle-field {
+.text-format-toggle-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settings-card--canvas app-toggle-field,
+.settings-card--snapping app-toggle-field {
   min-width: 0;
+}
+
+.scene-text-color {
+  width: 100%;
+  max-width: none;
 }
 
 .settings-action-row {
@@ -694,6 +728,27 @@
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+.scene-preview__snap-point {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, white 88%, var(--accent));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.scene-preview__snap-step line {
+  stroke: color-mix(in srgb, var(--accent) 76%, #8b5cf6);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.scene-preview__snap-guides line {
+  stroke: color-mix(in srgb, var(--accent) 72%, #8b5cf6);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
 }
 
 .code-stack {
@@ -1167,8 +1222,11 @@
   .configuration-grid--scene {
     grid-template-areas:
       'style'
+      'arrows'
       'text'
-      'behavior'
+      'canvas'
+      'snapping'
+      'images'
       'preview';
   }
 
@@ -1180,9 +1238,7 @@
     position: static;
   }
 
-  .settings-card--style .field--full,
-  .settings-card--text .form-grid--single,
-  .settings-card--behavior .form-grid--single {
+  .settings-card--style .field--full {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1192,6 +1248,9 @@
 }
 
 @media (max-width: 640px) {
+  .scene-text-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .modal-backdrop {
     align-items: stretch;
     padding: 8px;

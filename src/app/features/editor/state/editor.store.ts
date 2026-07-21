@@ -71,6 +71,7 @@ const normalizeShape = (shape: CanvasShape): CanvasShape => {
         ...shape,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        strokeStyle: shape.strokeStyle ?? 'solid',
         ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         rotation: shape.rotation ?? 0
       } as CanvasShape;
@@ -339,6 +340,7 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
         fill: shape.fill,
         strokeOpacity: shape.strokeOpacity ?? 1,
         fillOpacity: shape.fillOpacity ?? 1,
+        strokeStyle: shape.strokeStyle ?? preferences.defaultShapeLineStrokeStyle,
         ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5, cornerRadius: shape.cornerRadius ?? 0 } : {}),
         strokeWidth: shape.strokeWidth || preferences.defaultStrokeWidth,
         rotation: shape.rotation ?? 0
@@ -369,18 +371,38 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
   const scale = Number(preferences?.scale);
   const normalizedScale = Number.isFinite(scale) ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale)) : DEFAULT_EDITOR_SCALE;
   const defaultArrowType = normalizeArrowTipKind(preferences?.defaultArrowType);
+  const gridStep = normalizeNumber(preferences?.gridStep, defaultPreferences.gridStep, 0.25, 4);
+  const objectSnapTolerance = normalizeNumber(preferences?.objectSnapTolerance, defaultPreferences.objectSnapTolerance, 2, 32);
 
   return {
     ...defaultPreferences,
     ...preferences,
     theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
     scale: normalizedScale,
+    gridStep,
+    objectSnapTolerance,
     defaultArrowType,
     defaultStrokeOpacity: normalizeOpacity(preferences?.defaultStrokeOpacity),
     defaultFillOpacity: normalizeOpacity(preferences?.defaultFillOpacity),
     defaultTextOpacity: normalizeOpacity(preferences?.defaultTextOpacity),
-    defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath)
+    defaultImageOpacity: normalizeOpacity(preferences?.defaultImageOpacity),
+    defaultImageScalePercent: normalizeNumber(preferences?.defaultImageScalePercent, defaultPreferences.defaultImageScalePercent, 50, 150),
+    defaultImageBorderWidth: normalizeNumber(preferences?.defaultImageBorderWidth, defaultPreferences.defaultImageBorderWidth, 0.02, 4),
+    defaultTextWeight: preferences?.defaultTextWeight === 'bold' ? 'bold' : 'normal',
+    defaultTextStyle: preferences?.defaultTextStyle === 'italic' ? 'italic' : 'normal',
+    defaultTextDecoration: preferences?.defaultTextDecoration === 'underline' ? 'underline' : 'none',
+    defaultTextAlign: preferences?.defaultTextAlign === 'left' || preferences?.defaultTextAlign === 'right' ? preferences.defaultTextAlign : 'center',
+    defaultImagePath: normalizeImageDirectoryPath(preferences?.defaultImagePath ?? defaultPreferences.defaultImagePath),
+    defaultImageBorderColor:
+      typeof preferences?.defaultImageBorderColor === 'string' && preferences.defaultImageBorderColor.trim()
+        ? preferences.defaultImageBorderColor
+        : defaultPreferences.defaultImageBorderColor
   };
+};
+
+const normalizeNumber = (value: unknown, fallback: number, minimum: number, maximum: number): number => {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
 };
 
 const normalizeArrowTipKind = (value: unknown): ArrowTipKind =>

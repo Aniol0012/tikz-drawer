@@ -45,7 +45,6 @@ import {
   EDITOR_MOBILE_BREAKPOINT_PX,
   EDITOR_MOBILE_SIDEBAR_DEFAULT_HEIGHT,
   EDITOR_NOTIFICATION_DURATION_MS,
-  EDITOR_OBJECT_SNAP_TOLERANCE_PX,
   EDITOR_PASTE_OFFSET_STEP,
   EDITOR_PNG_EXPORT_SCALE,
   EDITOR_POINTER_TAP_MAX_DISTANCE_PX,
@@ -693,14 +692,14 @@ export class EditorPageComponent {
   });
   readonly gridColumns = computed(() => {
     const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
+    const gridStep = Math.max(this.preferences().gridStep, 0.05);
     const start = Math.floor(visibleWorldBounds.left / gridStep) - 1;
     const end = Math.ceil(visibleWorldBounds.right / gridStep) + 1;
     return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
   });
   readonly gridRows = computed(() => {
     const visibleWorldBounds = this.visibleWorldBounds();
-    const gridStep = 1;
+    const gridStep = Math.max(this.preferences().gridStep, 0.05);
     const start = Math.floor(visibleWorldBounds.bottom / gridStep) - 1;
     const end = Math.ceil(visibleWorldBounds.top / gridStep) + 1;
     return Array.from({ length: end - start + 1 }, (_, index) => (start + index) * gridStep);
@@ -3219,13 +3218,17 @@ export class EditorPageComponent {
     );
   }
 
-  setLineStrokeStyle(value: string): void {
+  setShapeStrokeStyle(value: string): void {
     const allowedStyles: readonly LineStrokeStyle[] = ['solid', 'dashed', 'dotted', 'dash-dotted', 'loosely-dashed'];
     if (!allowedStyles.includes(value as LineStrokeStyle)) {
       return;
     }
 
-    this.patchInspectorSelection((shape) => (shape.kind === 'line' ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as LineShape) : shape));
+    this.patchInspectorSelection((shape) =>
+      shape.kind === 'line' || shape.kind === 'rectangle' || shape.kind === 'triangle' || shape.kind === 'circle' || shape.kind === 'ellipse'
+        ? ({ ...shape, strokeStyle: value as LineStrokeStyle } as CanvasShape)
+        : shape
+    );
   }
 
   setTextBoxEnabled(value: boolean): void {
@@ -4301,7 +4304,7 @@ export class EditorPageComponent {
     const targetBounds = this.objectSnapBoundsForShapes(
       this.scene().shapes.filter((shape) => !movedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, movedShapeIds))
     );
-    const snapResult = objectSnapResult(sourceBounds, targetBounds, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    const snapResult = objectSnapResult(sourceBounds, targetBounds, this.preferences().objectSnapTolerance / Math.max(this.preferences().scale, 1));
     this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
 
     if (snapResult.offset.x === 0 && snapResult.offset.y === 0) {
@@ -4547,7 +4550,12 @@ export class EditorPageComponent {
     const targetBounds = this.objectSnapBoundsForShapes(
       this.scene().shapes.filter((shape) => !resizedShapeIds.has(shape.id) && !this.isLineAttachedToMovedShape(shape, resizedShapeIds))
     );
-    const snapResult = objectResizeSnapResult(sourceBounds, targetBounds, roles, EDITOR_OBJECT_SNAP_TOLERANCE_PX / Math.max(this.preferences().scale, 1));
+    const snapResult = objectResizeSnapResult(
+      sourceBounds,
+      targetBounds,
+      roles,
+      this.preferences().objectSnapTolerance / Math.max(this.preferences().scale, 1)
+    );
     this.objectSnapGuides.set(this.preferences().showObjectSnapGuides ? snapResult.guides : []);
 
     return {
@@ -5162,7 +5170,7 @@ export class EditorPageComponent {
     return renderedStrokeWidthForScale(strokeWidth, this.preferences().scale);
   }
 
-  lineStrokeDashArray(shape: LineShape): string | null {
+  lineStrokeDashArray(shape: CanvasShape): string | null {
     const strokeWidth = this.scaledStrokeWidth(shape.strokeWidth);
     return this.strokeDashArray(shape.strokeStyle ?? 'solid', strokeWidth);
   }
@@ -6966,22 +6974,27 @@ export class EditorPageComponent {
           fillOpacity: preferences.defaultFillOpacity,
           ...(shape.kind === 'rectangle' || shape.kind === 'triangle' ? { cornerRadius: preferences.defaultCornerRadius } : {}),
           ...(shape.kind === 'triangle' ? { apexOffset: shape.apexOffset ?? 0.5 } : {}),
-          strokeWidth: preferences.defaultStrokeWidth
+          strokeWidth: preferences.defaultStrokeWidth,
+          strokeStyle: preferences.defaultShapeLineStrokeStyle
         };
       case 'image':
         return {
           ...shape,
           latexSource: shape.latexSource === 'images/example.png' ? imagePathForFile(preferences.defaultImagePath, 'example.png') : shape.latexSource,
-          stroke: preferences.defaultStroke,
-          strokeOpacity: preferences.defaultStrokeOpacity,
-          strokeWidth: preferences.defaultStrokeWidth
+          stroke: preferences.defaultImageBorder ? preferences.defaultImageBorderColor : 'none',
+          strokeOpacity: preferences.defaultImageOpacity,
+          strokeWidth: preferences.defaultImageBorder ? preferences.defaultImageBorderWidth : 0
         };
       case 'text':
         return {
           ...shape,
           color: preferences.defaultTextColor,
           colorOpacity: preferences.defaultTextOpacity,
-          fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE)
+          fontSize: Math.max(Math.sqrt(shape.fontSize / DEFAULT_TEXT_FONT_SIZE) * preferences.defaultTextFontSize, MIN_TEXT_FONT_SIZE),
+          fontWeight: preferences.defaultTextWeight,
+          fontStyle: preferences.defaultTextStyle,
+          textDecoration: preferences.defaultTextDecoration,
+          textAlign: preferences.defaultTextAlign
         };
     }
   }
@@ -7994,8 +8007,9 @@ export class EditorPageComponent {
     }
 
     const currentScale = Math.max(this.preferences().scale, 1);
-    const width = renderedWidth / currentScale;
-    const height = renderedHeight / currentScale;
+    const insertionScale = this.preferences().defaultImageScalePercent / 100;
+    const width = (renderedWidth / currentScale) * insertionScale;
+    const height = (renderedHeight / currentScale) * insertionScale;
     const minimumWorldScale = Math.max(MIN_IMAGE_DIMENSION / width, MIN_IMAGE_DIMENSION / height, 1);
 
     return {

@@ -31,6 +31,7 @@ const preferences: EditorPreferences = {
   defaultArrowScale: 1.35,
   defaultArrowType: 'latex',
   defaultLineStrokeStyle: 'solid',
+  defaultShapeLineStrokeStyle: 'solid',
   defaultCornerRadius: 0.14,
   defaultTextColor: '#161616',
   defaultTextFontSize: 0.42,
