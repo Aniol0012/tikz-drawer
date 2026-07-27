@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, ElementRef, inject, input } from '@
 
 export const DIAGRAM_ARTWORK_KINDS = [
   'canvas',
+  'import',
+  'ai',
+  'edit',
   'gallery',
   'flowchart',
   'graph',
@@ -10,6 +13,13 @@ export const DIAGRAM_ARTWORK_KINDS = [
   'network',
   'annotation',
   'source',
+  'latex',
+  'overleaf',
+  'compile',
+  'iterate',
+  'share',
+  'json',
+  'image-export',
   'lost'
 ] as const;
 

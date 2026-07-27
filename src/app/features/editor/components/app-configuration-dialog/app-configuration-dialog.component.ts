@@ -13,6 +13,7 @@ import {
   viewChildren
 } from '@angular/core';
 import type { ElementRef } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import {
   CODE_HIGHLIGHT_THEME_OPTIONS,
@@ -127,7 +128,8 @@ const PREVIEW_VIEWBOX_HEIGHT = 220;
     AiSparklesIconComponent,
     SceneIconComponent,
     ColorPickerComponent,
-    BadgeComponent
+    BadgeComponent,
+    RouterLink
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './app-configuration-dialog.component.html',
@@ -155,7 +157,6 @@ export class AppConfigurationDialogComponent {
   @Input({ required: true }) set open(value: boolean) {
     this.isOpen.set(value);
     if (value) {
-      this.aboutDialogOpen.set(false);
       const tab = this.availableInitialTab(this.initialTabValue);
       this.activeTab.set(tab);
       this.prepareAlignmentSwitch(tab);
@@ -189,7 +190,6 @@ export class AppConfigurationDialogComponent {
   readonly showDevAiConfiguration = this.devModeService.enabled;
   readonly language = this.languageService.language;
   readonly resetConfirmationOpen = signal(false);
-  readonly aboutDialogOpen = signal(false);
   readonly shortcutsDialogOpen = signal(false);
   readonly contextMenuSettingsDialogOpen = signal(false);
   readonly shortcutResetConfirmationOpen = signal(false);
@@ -223,7 +223,6 @@ export class AppConfigurationDialogComponent {
   readonly configurationImportIconPath = iconPaths.import;
   readonly configurationExportIconPath = iconPaths.export;
   readonly devModeIconPath = iconPaths.code;
-  readonly githubIconPath = iconPaths.github;
   readonly aiProviderTypeOptions = computed<readonly AppSelectOption[]>(() => {
     const localUnavailable = this.localProviderUnavailable();
     const webLlmUnavailable = this.webLlmUnavailable();
@@ -480,10 +479,6 @@ export class AppConfigurationDialogComponent {
     event.stopPropagation();
     if (event.key === 'Escape') {
       event.preventDefault();
-      if (this.aboutDialogOpen()) {
-        this.aboutDialogOpen.set(false);
-        return;
-      }
       if (this.shortcutsDialogOpen()) {
         if (this.shortcutResetConfirmationOpen()) {
           this.shortcutResetConfirmationOpen.set(false);
@@ -682,15 +677,6 @@ export class AppConfigurationDialogComponent {
 
   contextMenuActionsAreDefault(): boolean {
     return EDITOR_CONTEXT_MENU_ACTIONS.every((action) => this.editableContextMenuActions()[action]);
-  }
-
-  openAboutDialog(): void {
-    this.aboutDialogOpen.set(true);
-    this.resetConfirmationOpen.set(false);
-  }
-
-  closeAboutDialog(): void {
-    this.aboutDialogOpen.set(false);
   }
 
   closeShortcutSettings(): void {

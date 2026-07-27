@@ -71,34 +71,6 @@
   color: var(--app-foreground);
 }
 
-.theme-toggle {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--tool-border);
-  border-radius: 6px;
-  color: var(--app-foreground);
-  background: var(--tool-surface);
-  cursor: pointer;
-}
-
-.theme-toggle:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.theme-toggle svg {
-  width: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.6;
-}
-
-.theme-toggle:focus-visible,
 .site-nav a:focus-visible,
 .editor-link:focus-visible,
 .brand:focus-visible {

@@ -17,8 +17,9 @@ export const EDITOR_SEO = {
 
 export const SITE_PAGE_SEO = {
   guide: {
-    title: 'How to draw TikZ diagrams online | TikZ Drawer',
-    description: 'Learn how to draw TikZ diagrams visually, align shapes and graphs, and export clean LaTeX TikZ code with the free TikZ Drawer editor.',
+    title: 'How to create and export TikZ diagrams | TikZ Drawer',
+    description:
+      'Learn how to import, draw or generate a TikZ diagram with AI, refine it visually, export it to Overleaf and save or share the editable project.',
     canonicalPath: '/guide/',
     robots: 'index, follow, max-image-preview:large, max-snippet:-1'
   },

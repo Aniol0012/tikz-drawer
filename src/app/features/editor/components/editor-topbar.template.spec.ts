@@ -7,6 +7,10 @@ describe('EditorTopbarComponent template', () => {
     readFile(resolve(process.cwd(), 'src/app/features/editor/components/editor-topbar/editor-topbar.component.html'), 'utf8');
   const readStyles = (): Promise<string> =>
     readFile(resolve(process.cwd(), 'src/app/features/editor/components/editor-topbar/editor-topbar.component.css'), 'utf8');
+  const readThemeToggleTemplate = (): Promise<string> =>
+    readFile(resolve(process.cwd(), 'src/app/shared/theme-toggle-button/theme-toggle-button.component.html'), 'utf8');
+  const readThemeToggleStyles = (): Promise<string> =>
+    readFile(resolve(process.cwd(), 'src/app/shared/theme-toggle-button/theme-toggle-button.component.css'), 'utf8');
 
   it('keeps import code as a fixed primary action next to export', async () => {
     const template = await readTemplate();
@@ -37,9 +41,11 @@ describe('EditorTopbarComponent template', () => {
   });
 
   it('keeps theme toggle icons layered for sun moon transitions', async () => {
-    const template = await readTemplate();
-    const styles = await readStyles();
+    const topbarTemplate = await readTemplate();
+    const template = await readThemeToggleTemplate();
+    const styles = await readThemeToggleStyles();
 
+    expect(topbarTemplate.split('<app-theme-toggle-button').length - 1).toBe(2);
     expect(template).toContain('theme-toggle-icon__sun');
     expect(template).toContain('theme-toggle-icon__sun-core');
     expect(template).toContain('theme-toggle-icon__sun-rays');

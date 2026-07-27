@@ -5,18 +5,17 @@
   @if (page.layout === 'visual') {
     <header class="hero">
       <div class="hero__copy">
-        <p class="eyebrow">{{ page.eyebrow }}</p>
+        <p class="kicker">{{ page.eyebrow }}</p>
         <h1>{{ page.title }}</h1>
         <p class="lede">{{ page.lede }}</p>
         <div class="actions">
-          <a class="button button--primary" routerLink="/">{{ page.primaryAction }}</a>
-          <a class="button" [routerLink]="page.secondaryRoute">{{ page.secondaryAction }}</a>
+          <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
+          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
         </div>
       </div>
 
       <div class="hero__visual">
         <app-diagram-artwork [kind]="page.heroVisual" [label]="page.title" [interactive]="true" />
-        <span class="hero__hint" aria-hidden="true">Move the pointer</span>
       </div>
     </header>
 
@@ -46,33 +45,42 @@
 
       <aside class="closing-note">
         <span>Ready to draw?</span>
-        <a routerLink="/">Open the visual editor</a>
+        <app-action-link label="Open the visual editor" route="/" [iconPath]="editorIconPath" tone="primary" />
       </aside>
     </article>
   } @else {
     <header class="about-hero">
-      <p class="eyebrow">{{ page.eyebrow }}</p>
+      <div class="about-hero__identity">
+        <img src="logo.png" alt="" aria-hidden="true" />
+        <p class="kicker">{{ page.eyebrow }}</p>
+      </div>
       <h1>{{ page.title }}</h1>
       <p class="lede">{{ page.lede }}</p>
       <div class="actions">
-        <a class="button button--primary" routerLink="/">{{ page.primaryAction }}</a>
-        <a class="button" [routerLink]="page.secondaryRoute">{{ page.secondaryAction }}</a>
+        <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
+        <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
       </div>
     </header>
 
     <article class="about-content">
-      @for (section of page.sections; track section.id; let sectionNumber = $index) {
+      @for (section of page.sections; track section.id) {
         <section [id]="section.id" class="about-section">
-          <span class="about-section__number" aria-hidden="true">{{ sectionNumber + 1 }}</span>
           <h2>{{ section.title }}</h2>
           <div class="about-section__copy">
             @for (paragraph of section.paragraphs; track paragraph) {
               <p>{{ paragraph }}</p>
             }
             @if (section.link; as link) {
-              <a class="text-link" [href]="link.href" target="_blank" rel="noopener noreferrer">
+              <a
+                class="text-link"
+                [class.text-link--github]="link.href.includes('github.com')"
+                [href]="link.href"
+                target="_blank"
+                rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="link.href.includes('github.com') ? githubIconPath : externalIconPath"></path>
+                </svg>
                 {{ link.label }}
-                <span aria-hidden="true">↗</span>
               </a>
             }
           </div>

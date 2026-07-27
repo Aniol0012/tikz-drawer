@@ -65,52 +65,97 @@ const SITE_PAGES = {
   guide: {
     key: 'guide',
     layout: 'visual',
-    eyebrow: 'Visual TikZ guide',
-    title: 'How to draw TikZ diagrams online',
-    lede: 'Sketch the structure, align it on the canvas, then export editable TikZ for LaTeX.',
-    primaryAction: 'Open a blank canvas',
+    eyebrow: 'TikZ Drawer guide',
+    title: 'Create a TikZ diagram from start to finish',
+    lede: 'Start from code, a blank canvas or an AI prompt. Refine the figure, export it to LaTeX and come back whenever it needs another pass.',
+    primaryAction: 'Start a diagram',
     secondaryAction: 'See examples',
     secondaryRoute: '/examples',
     heroVisual: 'canvas',
     sections: [
       {
-        id: 'workflow',
-        title: 'Four moves from idea to TikZ',
-        intro: 'Get the structure right first. The details become much easier.',
+        id: 'start',
+        title: 'Choose how to start',
+        intro: 'Use whichever input is closest to what you already have.',
         cards: [
           {
-            label: '01',
-            title: 'Place the structure',
-            body: 'Start with the main shapes and a clear reading order.',
+            label: 'Option 1',
+            title: 'Import existing code',
+            body: 'Paste TikZ or open a LaTeX file to continue from an existing figure.',
+            visual: 'import'
+          },
+          {
+            label: 'Option 2',
+            title: 'Draw on the canvas',
+            body: 'Place shapes, text and connectors directly with the editor tools.',
+            visual: 'canvas'
+          },
+          {
+            label: 'Option 3',
+            title: 'Describe it to the AI',
+            body: 'Ask for a first draft, review the proposal and apply only the changes you want.',
+            visual: 'ai'
+          }
+        ]
+      },
+      {
+        id: 'refine',
+        title: 'Turn the draft into a clear figure',
+        intro: 'The canvas stays visual while the TikZ source updates with your edits.',
+        cards: [
+          {
+            label: 'Step 1',
+            title: 'Select and transform',
+            body: 'Move, resize, rotate, duplicate and group the parts of the diagram.',
+            visual: 'edit'
+          },
+          {
+            label: 'Step 2',
+            title: 'Align and connect',
+            body: 'Use snapping, distribution and connectors to make the structure easy to follow.',
             visual: 'flowchart'
           },
           {
-            label: '02',
-            title: 'Connect the story',
-            body: 'Add arrows only where a relationship needs direction.',
-            visual: 'graph'
+            label: 'Step 3',
+            title: 'Style and label',
+            body: 'Adjust stroke, fill, arrows and text without rewriting coordinates by hand.',
+            visual: 'annotation'
           },
           {
-            label: '03',
-            title: 'Align the geometry',
-            body: 'Snap and distribute elements until the spacing feels calm.',
-            visual: 'geometry'
-          },
-          {
-            label: '04',
-            title: 'Export the source',
-            body: 'Copy clean TikZ that stays editable in your LaTeX project.',
+            label: 'Step 4',
+            title: 'Check the source',
+            body: 'Preview the generated TikZ before moving it into the document.',
             visual: 'source'
           }
         ]
       },
       {
-        id: 'output',
-        title: 'What comes out',
-        intro: 'Vector source, not a flattened screenshot.',
+        id: 'latex',
+        title: 'Export it to LaTeX',
+        intro: 'Copy the generated TikZ, paste it into Overleaf or another LaTeX project, then compile.',
+        cards: [
+          {
+            label: 'Step 1',
+            title: 'Export TikZ',
+            body: 'Choose a snippet, figure environment or standalone document.',
+            visual: 'latex'
+          },
+          {
+            label: 'Step 2',
+            title: 'Paste it into Overleaf',
+            body: 'Add the required packages and place the exported code in your document.',
+            visual: 'overleaf'
+          },
+          {
+            label: 'Step 3',
+            title: 'Compile and review',
+            body: 'Check the result beside the surrounding text, captions and references.',
+            visual: 'compile'
+          }
+        ],
         code: {
-          title: 'Editable TikZ',
-          caption: 'Ready for your document',
+          title: 'A minimal export',
+          caption: 'Paste this into your LaTeX project',
           value: String.raw`\begin{tikzpicture}[node distance=1.8cm]
   \node[draw, rounded corners] (start) {Start};
   \node[draw, right of=start] (result) {Result};
@@ -119,24 +164,43 @@ const SITE_PAGES = {
         }
       },
       {
-        id: 'habits',
-        title: 'Small habits, cleaner figures',
-        compactCards: true,
+        id: 'iterate',
+        title: 'Edit, compile and export again',
+        intro: 'Keep TikZ Drawer open while you test the figure in the real document.',
         cards: [
           {
-            title: 'Label late',
-            body: 'Settle the geometry before polishing the words.',
-            visual: 'annotation'
+            label: 'Step 1',
+            title: 'Return to the canvas',
+            body: 'Make the spacing, labels or structure changes revealed by the compiled page.',
+            visual: 'iterate'
           },
           {
-            title: 'Reduce crossings',
-            body: 'A quieter network is easier to read and edit.',
-            visual: 'network'
+            label: 'Step 2',
+            title: 'Export the new version',
+            body: 'Replace the old TikZ in your document and compile again.',
+            visual: 'latex'
+          }
+        ]
+      },
+      {
+        id: 'share',
+        title: 'Save or share the work',
+        intro: 'Use source code for LaTeX, a project file for editing, or a link for collaboration.',
+        cards: [
+          {
+            title: 'Share a link',
+            body: 'Create a URL that opens the diagram so another person can inspect or continue it.',
+            visual: 'share'
           },
           {
-            title: 'Group by role',
-            body: 'Use shape and position to show hierarchy.',
-            visual: 'architecture'
+            title: 'Save a project JSON',
+            body: 'Keep a restorable editor file with the scene and its settings.',
+            visual: 'json'
+          },
+          {
+            title: 'Export PNG or SVG',
+            body: 'Use an image when a platform cannot consume TikZ directly.',
+            visual: 'image-export'
           }
         ]
       }

@@ -56,17 +56,13 @@ a {
   max-width: 690px;
 }
 
-.eyebrow {
+.kicker {
   width: fit-content;
-  margin: 0 0 15px;
-  padding: 5px 9px;
-  border: 1px solid var(--accent-soft-border);
-  border-radius: 5px;
+  margin: 0 0 16px;
   color: var(--accent-strong);
-  background: var(--accent-soft);
-  font-size: 0.76rem;
-  font-weight: 750;
-  line-height: 1;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 h1,
@@ -92,8 +88,9 @@ h2 {
 .lede {
   max-width: 620px;
   margin: 20px 0 0;
-  color: var(--muted-foreground);
+  color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
   font-size: clamp(1.06rem, 2vw, 1.24rem);
+  line-height: 1.6;
 }
 
 .actions {
@@ -103,45 +100,7 @@ h2 {
   margin-top: 28px;
 }
 
-.button {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 15px;
-  border: 1px solid var(--tool-border-strong);
-  border-radius: 6px;
-  background: var(--tool-surface);
-  font-size: 0.86rem;
-  font-weight: 750;
-  text-decoration: none;
-  transition:
-    border-color 150ms ease,
-    color 150ms ease,
-    background 150ms ease,
-    transform 150ms ease;
-}
-
-.button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateY(-1px);
-}
-
-.button--primary {
-  border-color: var(--accent);
-  color: var(--accent-contrast);
-  background: var(--accent);
-}
-
-.button--primary:hover {
-  border-color: var(--accent-strong);
-  color: var(--accent-contrast);
-  background: var(--accent-strong);
-}
-
-.button:focus-visible,
-.closing-note a:focus-visible,
+.text-link:focus-visible,
 .site-footer a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -152,17 +111,8 @@ h2 {
 }
 
 .hero__visual app-diagram-artwork {
-  border: 1px solid var(--tool-border-strong);
   border-radius: 12px;
-  box-shadow: var(--floating-shadow);
-}
-
-.hero__hint {
-  display: block;
-  margin-top: 8px;
-  color: var(--muted-foreground);
-  font: 0.68rem/1.2 var(--font-mono);
-  text-align: right;
+  overflow: hidden;
 }
 
 .content {
@@ -189,8 +139,9 @@ h2 {
 
 .section-heading p {
   margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.98rem;
+  color: color-mix(in srgb, var(--app-foreground) 76%, var(--muted-foreground));
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 .visual-grid {
@@ -199,6 +150,7 @@ h2 {
   gap: 14px;
 }
 
+.visual-grid:has(app-site-visual-card:nth-child(2):last-child),
 .visual-grid:has(app-site-visual-card:nth-child(4)) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -209,6 +161,7 @@ h2 {
 
 app-site-code-preview {
   max-width: 760px;
+  margin-top: 24px;
 }
 
 .closing-note {
@@ -223,13 +176,8 @@ app-site-code-preview {
   background: var(--accent-soft);
 }
 
-.closing-note span,
-.closing-note a {
+.closing-note span {
   font-weight: 750;
-}
-
-.closing-note a {
-  color: var(--accent-strong);
 }
 
 .site-footer {
@@ -244,8 +192,29 @@ app-site-code-preview {
 
 .about-hero {
   max-width: 900px;
-  padding-block: clamp(24px, 5vw, 62px) clamp(58px, 8vw, 96px);
+  padding-block: clamp(22px, 4vw, 48px) clamp(52px, 7vw, 78px);
   border-bottom: 1px solid var(--border);
+}
+
+.about-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.about-hero__identity img {
+  width: 46px;
+  height: 46px;
+  display: block;
+  padding: 4px;
+  border-radius: 9px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.about-hero__identity .kicker {
+  margin: 0;
 }
 
 .about-hero h1 {
@@ -256,37 +225,28 @@ app-site-code-preview {
   max-width: 760px;
 }
 
-.about-content {
-  counter-reset: about-section;
-}
-
 .about-section {
   display: grid;
-  grid-template-columns: 42px minmax(220px, 0.72fr) minmax(0, 1.25fr);
-  gap: clamp(22px, 5vw, 68px);
-  padding-block: clamp(42px, 6vw, 66px);
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.25fr);
+  gap: clamp(32px, 7vw, 92px);
+  padding-block: clamp(38px, 5vw, 58px);
   border-bottom: 1px solid var(--border);
-}
-
-.about-section__number {
-  padding-top: 5px;
-  color: var(--accent-strong);
-  font: 750 0.76rem/1 var(--font-mono);
 }
 
 .about-section h2 {
   max-width: 330px;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
 }
 
 .about-section__copy {
-  max-width: 670px;
+  max-width: 64ch;
 }
 
 .about-section__copy p {
   margin: 0;
-  color: var(--muted-foreground);
-  font-size: 1rem;
-  line-height: 1.65;
+  color: color-mix(in srgb, var(--app-foreground) 88%, var(--muted-foreground));
+  font-size: clamp(1rem, 1.3vw, 1.08rem);
+  line-height: 1.72;
 }
 
 .about-section__copy p + p {
@@ -297,12 +257,27 @@ app-site-code-preview {
   width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   margin-top: 20px;
   color: var(--accent-strong);
   font-size: 0.9rem;
   font-weight: 750;
   text-decoration: none;
+}
+
+.text-link svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.text-link--github svg {
+  fill: currentColor;
+  stroke: none;
 }
 
 .text-link:hover {
@@ -316,8 +291,8 @@ app-site-code-preview {
   }
 
   .about-section {
-    grid-template-columns: 32px minmax(190px, 0.7fr) minmax(0, 1fr);
-    gap: 26px;
+    grid-template-columns: minmax(190px, 0.7fr) minmax(0, 1fr);
+    gap: 40px;
   }
 
   .hero__visual {
@@ -325,6 +300,7 @@ app-site-code-preview {
   }
 
   .visual-grid,
+  .visual-grid:has(app-site-visual-card:nth-child(2):last-child),
   .visual-grid:has(app-site-visual-card:nth-child(4)) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -351,19 +327,16 @@ app-site-code-preview {
   }
 
   .about-section {
-    grid-template-columns: 28px minmax(0, 1fr);
-    gap: 10px 14px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
 
   .about-section h2 {
     max-width: none;
   }
 
-  .about-section__copy {
-    grid-column: 2;
-  }
-
   .visual-grid,
+  .visual-grid:has(app-site-visual-card:nth-child(2):last-child),
   .visual-grid:has(app-site-visual-card:nth-child(4)) {
     grid-template-columns: 1fr;
   }
@@ -372,11 +345,5 @@ app-site-code-preview {
   .site-footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .button {
-    transition: none;
   }
 }

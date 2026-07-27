@@ -663,71 +663,6 @@
   transform: translateY(-2.5px);
 }
 
-.theme-toggle-icon {
-  overflow: visible;
-}
-
-.theme-toggle-icon__sun,
-.theme-toggle-icon__moon,
-.theme-toggle-icon__sun-core,
-.theme-toggle-icon__sun-rays {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.theme-toggle-icon__sun,
-.theme-toggle-icon__moon {
-  transition:
-    opacity 220ms ease,
-    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.theme-toggle-icon__sun-core,
-.theme-toggle-icon__sun-rays {
-  transition:
-    opacity 220ms ease,
-    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.theme-toggle-icon__sun-core {
-  fill: currentColor;
-  stroke: none;
-}
-
-.theme-toggle-icon__sun {
-  opacity: 0;
-  transform: scale(0.38) rotate(-120deg);
-}
-
-.theme-toggle-icon__sun-rays {
-  opacity: 0;
-  transform: scale(0.55) rotate(-35deg);
-}
-
-.theme-toggle-icon__moon {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-.theme-toggle-button.is-dark-theme .theme-toggle-icon__sun-rays {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-.theme-toggle-button.is-dark-theme .theme-toggle-icon__moon {
-  opacity: 0;
-  transform: scale(0.62) rotate(105deg);
-}
-
-.theme-toggle-button:active .theme-toggle-icon {
-  animation: theme-toggle-pop 360ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
 .menu-button:active,
 .tool-button:active,
 .icon-button:active,
@@ -788,29 +723,8 @@ button:disabled {
     transition-duration: 0ms !important;
   }
 
-  .theme-toggle-button:active .theme-toggle-icon {
-    animation: none !important;
-  }
-
-  .transfer-icon__arrow,
-  .theme-toggle-icon__sun,
-  .theme-toggle-icon__moon {
+  .transfer-icon__arrow {
     transition: none !important;
-  }
-
-  .theme-toggle-icon__sun-core,
-  .theme-toggle-icon__sun-rays {
-    transition: none !important;
-  }
-}
-
-@keyframes theme-toggle-pop {
-  0%,
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-  45% {
-    transform: scale(0.88) rotate(18deg);
   }
 }
 

@@ -13,7 +13,7 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('<app-scene-icon></app-scene-icon>');
   });
 
-  it('keeps the about action outside the tablist and links to the project repository', async () => {
+  it('keeps the about action outside the tablist and links directly to the About page', async () => {
     const template = await readTemplate();
     const tablistEnd = template.indexOf('</div>', template.indexOf('role="tablist"'));
     const aboutButton = template.indexOf('class="about-button"');
@@ -23,9 +23,10 @@ describe('AppConfigurationDialogComponent template', () => {
     expect(template).toContain('class="configuration-file-menu__trigger"');
     expect(template).toContain('(click)="triggerConfigurationImport(configurationDropdown)"');
     expect(template).toContain('(click)="exportConfiguration(configurationDropdown)"');
-    expect(template).toContain('https://github.com/Aniol0012/tikz-drawer');
-    expect(template).toContain('Aniol0012/tikz-drawer');
-    expect(template).toContain('src="logo.png"');
+    expect(template).toContain('class="about-button" routerLink="/about"');
+    expect(template).toContain('(click)="closeDialog.emit()"');
+    expect(template).not.toContain('aboutDialogOpen');
+    expect(template).not.toContain('class="about-dialog"');
   });
 
   it('keeps behavior below the two-column general settings row', async () => {

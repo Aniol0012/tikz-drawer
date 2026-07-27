@@ -21,6 +21,7 @@ import type { ThemeMode } from '../../models/tikz.models';
 import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../shared/copy-button/copy-button.component';
 import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
+import { ThemeToggleButtonComponent } from '../../../../shared/theme-toggle-button/theme-toggle-button.component';
 import type { TopbarTool } from './editor-topbar.types';
 
 const DEFAULT_WINDOW_WIDTH = 1280;
@@ -35,7 +36,7 @@ interface ShoelaceDropdownElement extends HTMLElement {
 
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent, AppSelectComponent, BadgeComponent, NgOptimizedImage],
+  imports: [CopyButtonComponent, AppSelectComponent, BadgeComponent, NgOptimizedImage, ThemeToggleButtonComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',

@@ -7,8 +7,8 @@
       <p class="explanation">This link seems to have lost its coordinates. The canvas is better at finding points than we are.</p>
       <code>{{ requestedPath }}</code>
       <div class="actions">
-        <a class="button button--primary" routerLink="/">Open the editor</a>
-        <a class="button" routerLink="/guide">Read the guide</a>
+        <app-action-link label="Open the editor" route="/" [iconPath]="editorIconPath" tone="primary" />
+        <app-action-link label="Read the guide" route="/guide" [iconPath]="guideIconPath" />
       </div>
     </div>
 

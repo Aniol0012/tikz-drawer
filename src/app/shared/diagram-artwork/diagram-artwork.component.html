@@ -7,16 +7,62 @@
   @switch (kind()) {
     @case ('canvas') {
       <g class="layer layer--back">
-        <path class="plane plane--muted" d="m53 126 91-52 121 69-91 52z" />
-        <path class="plane plane--accent" d="m72 106 76-43 93 53-76 44z" />
+        <rect class="app-window" x="35" y="27" width="250" height="166" rx="8" />
+        <path class="window-bar" d="M35 55h250M75 55v138" />
+        <circle class="window-dot" cx="51" cy="41" r="3" />
+        <circle class="window-dot" cx="62" cy="41" r="3" />
+        <path class="tool-mark" d="M48 78h14M48 94h14M48 110h14M48 126h14" />
       </g>
       <g class="layer layer--front">
-        <rect class="node" x="93" y="80" width="58" height="34" rx="5" />
-        <rect class="node node--accent" x="181" y="130" width="58" height="34" rx="5" />
-        <path class="connector" d="m151 97 31 18 18 10" />
-        <path class="arrow" d="m194 119 8 7-10 1" />
-        <circle class="handle" cx="93" cy="80" r="4" />
-        <circle class="handle" cx="151" cy="114" r="4" />
+        <rect class="node node--accent" x="105" y="76" width="62" height="34" rx="6" />
+        <rect class="node" x="199" y="76" width="52" height="34" rx="6" />
+        <path class="node" d="m136 132 33 19-33 19-33-19z" />
+        <path class="connector" d="M167 93h32m26 17v31h-56" />
+        <path class="arrow" d="m192 87 7 6-7 6m-16 36-7 6 7 6" />
+      </g>
+    }
+    @case ('import') {
+      <g class="layer layer--back">
+        <path class="file-sheet" d="M55 43h76l28 28v106H55zM131 43v28h28" />
+        <path class="code-strokes" d="M76 94h54M76 112h62M76 130h42" />
+      </g>
+      <g class="layer layer--front">
+        <path class="accent-line connector--strong" d="M166 110h55" />
+        <path class="accent-line" d="m213 101 10 9-10 9" />
+        <rect class="node node--accent" x="225" y="83" width="48" height="54" rx="6" />
+        <path class="connector" d="M237 101h24m-24 17h17" />
+      </g>
+    }
+    @case ('ai') {
+      <g class="layer layer--back">
+        <path
+          class="chat-bubble"
+          d="M46 54h118a10 10 0 0 1 10 10v49a10 10 0 0 1-10 10H91l-24 20v-20H46a10 10 0 0 1-10-10V64a10 10 0 0 1 10-10Z" />
+        <path class="code-strokes" d="M61 78h87M61 96h63" />
+      </g>
+      <g class="layer layer--front">
+        <path class="accent-line" d="m197 54 5 13 13 5-13 5-5 13-5-13-13-5 13-5z" />
+        <rect class="node node--accent" x="205" y="116" width="62" height="34" rx="6" />
+        <rect class="node" x="116" y="158" width="62" height="30" rx="6" />
+        <path class="connector" d="m205 133-27 25" />
+        <path class="arrow" d="m183 149-5 9 10-2" />
+      </g>
+    }
+    @case ('edit') {
+      <g class="layer layer--back">
+        <rect class="selected-object" x="78" y="65" width="126" height="88" rx="7" />
+        <circle class="handle" cx="78" cy="65" r="5" />
+        <circle class="handle" cx="204" cy="65" r="5" />
+        <circle class="handle" cx="78" cy="153" r="5" />
+        <circle class="handle" cx="204" cy="153" r="5" />
+        <path class="connector" d="M141 52V37" />
+        <path class="accent-line" d="M133 39a11 11 0 1 1 15 9m0 0-1-9m1 9-9-1" />
+      </g>
+      <g class="layer layer--front">
+        <rect class="floating-tools" x="218" y="78" width="58" height="74" rx="8" />
+        <circle class="node--accent" cx="237" cy="98" r="7" />
+        <circle class="node" cx="257" cy="98" r="7" />
+        <path class="tool-mark" d="M230 122h34M230 137h24" />
       </g>
     }
     @case ('gallery') {
@@ -52,24 +98,29 @@
       </g>
     }
     @case ('architecture') {
-      <g class="layer layer--back">
-        <path class="plane plane--muted" d="m44 157 75-43 61 35-75 43z" />
-        <path class="plane plane--muted" d="m141 100 75-43 61 35-75 43z" />
-      </g>
       <g class="layer layer--front">
-        <path class="cube cube--accent" d="m57 132 43-25 37 21-43 25zm0 0v31l37 22v-32m43-45v31l-43 25" />
-        <path class="cube" d="m166 77 43-25 43 25-43 25zm0 0v39l43 25v-39m43-25v39l-43 25" />
-        <path class="connector" d="m130 128 38-22" />
+        <rect class="node node--accent" x="35" y="87" width="72" height="46" rx="7" />
+        <rect class="node" x="124" y="87" width="72" height="46" rx="7" />
+        <path
+          class="database-shape"
+          d="M213 84c0-7 16-13 36-13s36 6 36 13v52c0 7-16 13-36 13s-36-6-36-13zM213 84c0 7 16 13 36 13s36-6 36-13m-72 26c0 7 16 13 36 13s36-6 36-13" />
+        <path class="connector" d="M107 110h17m72 0h17" />
+        <path class="arrow" d="m117 104 7 6-7 6m89-12 7 6-7 6" />
+        <text class="artwork-label" x="71" y="115" text-anchor="middle">Client</text>
+        <text class="artwork-label" x="160" y="115" text-anchor="middle">API</text>
+        <text class="artwork-label" x="249" y="115" text-anchor="middle">Data</text>
       </g>
     }
     @case ('geometry') {
       <g class="layer layer--front">
-        <circle class="geometry-circle" cx="160" cy="113" r="70" />
-        <path class="connector connector--strong" d="m101 150 62-105 57 108zM101 150l119 3" />
-        <path class="accent-line" d="M160 113h60M160 113l-59 37" />
-        <circle class="handle" cx="160" cy="113" r="5" />
-        <circle class="handle" cx="101" cy="150" r="5" />
-        <circle class="handle" cx="220" cy="153" r="5" />
+        <path class="connector connector--strong" d="m70 167 91-124 89 124z" />
+        <path class="accent-line" d="M70 167h180M87 145a28 28 0 0 1 22 22" />
+        <path class="dimension-line" d="M91 177h138m-138-5v10m138-10v10" />
+        <text class="artwork-label artwork-label--accent" x="92" y="158">α</text>
+        <text class="artwork-label" x="70" y="191" text-anchor="middle">A</text>
+        <text class="artwork-label" x="161" y="37" text-anchor="middle">B</text>
+        <text class="artwork-label" x="250" y="191" text-anchor="middle">C</text>
+        <text class="artwork-label" x="160" y="190" text-anchor="middle">4.2 cm</text>
       </g>
     }
     @case ('network') {
@@ -110,6 +161,91 @@
       <g class="layer layer--front code-lines">
         <path d="M66 86h92m-92 20h157m-157 20h128m-128 20h171m-171 20h74" />
         <path class="accent-line" d="M174 86h63m-21 60h21" />
+      </g>
+    }
+    @case ('latex') {
+      <g class="layer layer--back">
+        <rect class="code-window" x="34" y="39" width="132" height="142" rx="8" />
+        <path class="window-bar" d="M34 67h132" />
+        <path class="code-strokes" d="M55 91h76m-76 20h91m-91 20h67m-67 20h83" />
+      </g>
+      <g class="layer layer--front">
+        <path class="accent-line" d="M176 110h34m-8-8 8 8-8 8" />
+        <path class="file-sheet" d="M216 48h68v133h-68z" />
+        <text class="latex-mark" x="250" y="105" text-anchor="middle">TeX</text>
+        <path class="connector" d="M232 132h36m-36 16h28" />
+      </g>
+    }
+    @case ('overleaf') {
+      <g class="layer layer--back">
+        <rect class="app-window" x="29" y="31" width="262" height="158" rx="8" />
+        <path class="window-bar" d="M29 57h262M152 57v132" />
+        <path class="code-strokes" d="M48 82h77m-77 18h91m-91 18h66m-66 18h83m-83 18h56" />
+      </g>
+      <g class="layer layer--front">
+        <rect class="paper-preview" x="176" y="73" width="88" height="100" rx="3" />
+        <text class="artwork-label artwork-label--strong" x="220" y="93" text-anchor="middle">Paper</text>
+        <rect class="node node--accent" x="193" y="111" width="54" height="25" rx="4" />
+        <path class="connector" d="M201 149h38" />
+      </g>
+    }
+    @case ('compile') {
+      <g class="layer layer--back">
+        <path class="file-sheet" d="M55 38h106v145H55z" />
+        <path class="connector" d="M76 67h64M76 84h52M76 143h64M76 158h49" />
+        <rect class="node node--accent" x="77" y="101" width="61" height="27" rx="4" />
+      </g>
+      <g class="layer layer--front">
+        <circle class="status-circle" cx="230" cy="110" r="43" />
+        <path class="status-check" d="m208 111 15 15 29-33" />
+        <text class="artwork-label artwork-label--strong" x="230" y="174" text-anchor="middle">Compiled</text>
+      </g>
+    }
+    @case ('iterate') {
+      <g class="layer layer--back">
+        <rect class="node node--accent" x="38" y="81" width="90" height="58" rx="7" />
+        <path class="tool-mark" d="M58 101h50M58 118h33" />
+        <path class="file-sheet" d="M203 72h73v78h-73z" />
+        <path class="connector" d="M218 94h43m-43 18h35m-35 18h40" />
+      </g>
+      <g class="layer layer--front">
+        <path class="accent-line" d="M129 73c23-28 57-29 79-9m-7-9 7 9-10 3M200 153c-23 26-56 27-78 8m7 9-7-9 10-3" />
+      </g>
+    }
+    @case ('share') {
+      <g class="layer layer--back">
+        <circle class="person-node" cx="63" cy="72" r="20" />
+        <circle class="person-node" cx="63" cy="157" r="20" />
+        <circle class="person-node" cx="257" cy="114" r="20" />
+        <path class="connector connector--dashed" d="M83 76l70 25M83 153l70-27m54-8 30-4" />
+      </g>
+      <g class="layer layer--front">
+        <path
+          class="link-shape"
+          d="M140 126a17 17 0 0 1 0-24l14-14a17 17 0 0 1 24 24l-6 6m8-12a17 17 0 0 1 0 24l-14 14a17 17 0 0 1-24-24l6-6" />
+      </g>
+    }
+    @case ('json') {
+      <g class="layer layer--back">
+        <path class="file-sheet" d="M91 27h104l34 34v132H91zM195 27v34h34" />
+      </g>
+      <g class="layer layer--front">
+        <text class="json-mark" x="160" y="130" text-anchor="middle">{{ '{ }' }}</text>
+        <path class="code-strokes" d="M118 151h84M118 169h58" />
+      </g>
+    }
+    @case ('image-export') {
+      <g class="layer layer--back">
+        <rect class="image-frame" x="35" y="42" width="171" height="130" rx="7" />
+        <path class="image-shape" d="m52 153 42-44 31 29 33-47 32 62z" />
+        <circle class="image-sun" cx="166" cy="76" r="12" />
+      </g>
+      <g class="layer layer--front">
+        <rect class="format-chip node--accent" x="224" y="72" width="62" height="31" rx="6" />
+        <rect class="format-chip node" x="224" y="119" width="62" height="31" rx="6" />
+        <text class="artwork-label artwork-label--strong" x="255" y="93" text-anchor="middle">PNG</text>
+        <text class="artwork-label artwork-label--strong" x="255" y="140" text-anchor="middle">SVG</text>
+        <path class="accent-line" d="M205 110h19m-8-8 8 8-8 8" />
       </g>
     }
     @case ('lost') {

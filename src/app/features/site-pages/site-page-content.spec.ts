@@ -2,7 +2,7 @@ import { isSitePageKey, resolveSitePage, SITE_PAGE_KEYS } from './site-page-cont
 
 describe('site page content', () => {
   it.each([
-    ['guide', 'How to draw TikZ diagrams online'],
+    ['guide', 'Create a TikZ diagram from start to finish'],
     ['examples', 'TikZ drawing examples for LaTeX'],
     ['about', 'About TikZ Drawer']
   ])('resolves %s from the page registry', (key, title) => {

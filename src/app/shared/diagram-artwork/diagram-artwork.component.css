@@ -18,7 +18,7 @@ svg {
 
 .artwork-surface {
   fill: var(--panel-background);
-  stroke: var(--tool-border);
+  stroke: none;
 }
 
 .artwork-grid path {
@@ -62,6 +62,39 @@ svg {
   stroke-width: 2;
 }
 
+.app-window,
+.file-sheet,
+.chat-bubble,
+.selected-object,
+.floating-tools,
+.paper-preview,
+.person-node,
+.format-chip {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.selected-object {
+  fill: var(--accent-soft);
+  fill-opacity: 0.42;
+  stroke: var(--accent);
+  stroke-dasharray: 7 5;
+}
+
+.database-shape,
+.status-circle {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.status-circle {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+
 .node--accent {
   fill: var(--accent-soft);
   stroke: var(--accent);
@@ -79,12 +112,34 @@ circle.node--accent {
 .image-shape,
 .window-bar,
 .code-lines path,
-.lost-mark {
+.lost-mark,
+.tool-mark,
+.code-strokes,
+.dimension-line,
+.status-check,
+.link-shape {
   fill: none;
   stroke: var(--muted-foreground);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
+}
+
+.code-strokes,
+.tool-mark {
+  stroke: var(--muted-foreground);
+  stroke-width: 4;
+}
+
+.dimension-line {
+  stroke: var(--tool-border-strong);
+  stroke-width: 1.5;
+}
+
+.status-check,
+.link-shape {
+  stroke: var(--accent);
+  stroke-width: 4;
 }
 
 .connector--strong {
@@ -133,6 +188,37 @@ circle.node--accent {
   fill: var(--input-background);
   stroke: var(--tool-border-strong);
   stroke-width: 2;
+}
+
+.artwork-label {
+  fill: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.artwork-label--strong {
+  fill: var(--app-foreground);
+  font-weight: 750;
+}
+
+.artwork-label--accent {
+  fill: var(--accent);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.latex-mark,
+.json-mark {
+  fill: var(--app-foreground);
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.json-mark {
+  fill: var(--accent);
+  font-size: 44px;
 }
 
 .image-shape {
