@@ -1006,5 +1006,9 @@
   "scenePreset.system-map.title": "System map",
   "scenePreset.system-map.description": "Client, API and database starter scene.",
   "scenePreset.metrics-board.title": "Metrics board",
-  "scenePreset.metrics-board.description": "Dashboard-like scene mixing charts and callouts."
+  "scenePreset.metrics-board.description": "Dashboard-like scene mixing charts and callouts.",
+  "aboutResources": "TikZ Drawer resources",
+  "seoGuide": "TikZ drawing guide",
+  "seoExamples": "TikZ examples",
+  "seoAboutProject": "About the project"
 }

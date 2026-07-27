@@ -182,7 +182,8 @@
   flex: 0 0 auto;
 }
 
-.brand-lockup strong {
+.brand-lockup h1 {
+  margin: 0;
   font: 800 0.84rem/1 var(--font-sans);
   letter-spacing: 0.14em;
 }

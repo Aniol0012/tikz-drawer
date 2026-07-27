@@ -918,6 +918,24 @@
   fill: currentColor;
 }
 
+.about-dialog__resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  grid-column: 2;
+}
+
+.about-dialog__resources a {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.about-dialog__resources a:hover {
+  text-decoration-thickness: 2px;
+}
+
 .shortcuts-dialog__header,
 .shortcuts-dialog__footer {
   display: flex;

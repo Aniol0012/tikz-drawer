@@ -1006,5 +1006,9 @@
   "scenePreset.system-map.title": "Mapa del sistema",
   "scenePreset.system-map.description": "Escena inicial con cliente, API y base de datos.",
   "scenePreset.metrics-board.title": "Panel de métricas",
-  "scenePreset.metrics-board.description": "Escena tipo dashboard con gráficos y anotaciones."
+  "scenePreset.metrics-board.description": "Escena tipo dashboard con gráficos y anotaciones.",
+  "aboutResources": "Recursos de TikZ Drawer",
+  "seoGuide": "Guía de dibujo TikZ",
+  "seoExamples": "Ejemplos de TikZ",
+  "seoAboutProject": "Sobre el proyecto"
 }

@@ -37,25 +37,46 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "TikZ Drawer",
-        "alternateName": "TikzDrawer",
-        "url": "https://tikzdrawer.com/",
-        "description": "A free online visual editor for creating LaTeX TikZ diagrams and exporting clean TikZ code.",
-        "applicationCategory": "DesignApplication",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires JavaScript and an HTML5-compatible browser.",
-        "isAccessibleForFree": true,
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "featureList": [
-          "Visual TikZ diagram editor",
-          "Shape, graph and label drawing tools",
-          "TikZ code generation and export",
-          "Browser-based editing with no installation"
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://tikzdrawer.com/#website",
+            "name": "TikZ Drawer",
+            "alternateName": "TikzDrawer",
+            "url": "https://tikzdrawer.com/",
+            "description": "A free online visual editor for drawing LaTeX TikZ diagrams.",
+            "inLanguage": ["en", "ca", "es"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://tikzdrawer.com/#application",
+            "name": "TikZ Drawer",
+            "alternateName": "TikzDrawer",
+            "url": "https://tikzdrawer.com/",
+            "image": "https://tikzdrawer.com/logo-github.png",
+            "description": "A free online visual editor for creating LaTeX TikZ diagrams and exporting clean TikZ code.",
+            "applicationCategory": "DesignApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript and an HTML5-compatible browser.",
+            "isAccessibleForFree": true,
+            "creator": {
+              "@type": "Person",
+              "name": "Aniol0012",
+              "url": "https://github.com/Aniol0012"
+            },
+            "sameAs": "https://github.com/Aniol0012/tikz-drawer",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "featureList": [
+              "Visual TikZ diagram editor",
+              "Shape, graph and label drawing tools",
+              "TikZ code generation and export",
+              "Browser-based editing with no installation"
+            ]
+          }
         ]
       }
     </script>
