@@ -89,6 +89,7 @@ yarn-error.log
 
 .notes.md
 baseline.json
+.seo-cache/
 
 # Ignore .history for the xyz.local-history VSCode extension
 .history
