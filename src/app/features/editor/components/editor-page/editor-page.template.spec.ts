@@ -59,7 +59,8 @@ describe('EditorPageComponent template', () => {
     expect(template).toContain('aria-haspopup="menu"');
     expect(template).toContain('[attr.aria-expanded]="contextTransformMenuOpen()"');
     expect(template).toContain('data-context-transform-item');
-    expect(template).not.toContain('(mouseenter)="openContextTransformMenu()"');
+    expect(template).toContain('(mouseenter)="openContextTransformMenu()"');
+    expect(template).toContain('(mouseenter)="closeContextTransformMenu()"');
     expect(template).toContain('[style.top.px]="contextSubmenuTop()"');
     expect(template).toContain('[class.context-menu--keyboard-navigation]="contextMenuKeyboardNavigation()"');
     expect(template).toContain('<app-editor-transform-actions');
@@ -71,6 +72,8 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain('triggerBounds.top - panelBounds.top');
     expect(component).toContain('keepContextTransformMenuInViewport()');
     expect(component).toContain('submenuBounds.bottom > view.innerHeight - padding');
+    expect(component).toContain('handleWindowWheel(event: WheelEvent)');
+    expect(component).toContain('EDITOR_CONTEXT_MENU_SCROLL_DISMISS_THRESHOLD_PX');
     expect(component).toContain('this.focusContextMenuItem(\'[role="menuitem"]:not(:disabled)\')');
   });
 

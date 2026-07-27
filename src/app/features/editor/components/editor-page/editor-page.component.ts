@@ -17,6 +17,7 @@ import {
   EDITOR_COARSE_LINE_ATTACHMENT_SNAP_RADIUS_PX,
   EDITOR_COLLAPSED_SIDEBAR_SIZE,
   EDITOR_CONTEXT_MENU_SUPPRESSION_MS,
+  EDITOR_CONTEXT_MENU_SCROLL_DISMISS_THRESHOLD_PX,
   EDITOR_CONTEXT_MENU_VIEWPORT_PADDING,
   EDITOR_CORNER_RADIUS_HANDLE_INSET_FACTOR,
   EDITOR_DRAG_AUTO_PAN_EDGE_PX,
@@ -352,6 +353,7 @@ type ContextMenuSection = {
     '(window:blur)': 'handleWindowBlur()',
     '(window:pointermove)': 'handleWindowPointerMove($event)',
     '(window:pointerup)': 'handleWindowPointerUp()',
+    '(window:wheel)': 'handleWindowWheel($event)',
     '(focusout)': 'handleFocusOut($event)'
   }
 })
@@ -364,6 +366,7 @@ export class EditorPageComponent {
   private readonly editorStateStorageKey = EDITOR_STORAGE_KEYS.state;
   private readonly editorSyncStorageKey = EDITOR_STORAGE_KEYS.syncState;
   private readonly syncClientId = crypto.randomUUID();
+  private contextMenuAccumulatedScroll = 0;
   readonly defaultScale = DEFAULT_EDITOR_SCALE;
   readonly store = inject(EditorStore);
   readonly configuration = inject(EditorConfigurationService);
@@ -3501,6 +3504,7 @@ export class EditorPageComponent {
 
     event.preventDefault();
     event.stopPropagation();
+    this.contextMenuAccumulatedScroll = 0;
     this.contextMenu.set({
       clientX: event.clientX,
       clientY: event.clientY,
@@ -3526,6 +3530,7 @@ export class EditorPageComponent {
       this.selectShapeSet(shape);
     }
     this.setInspectorTab('properties');
+    this.contextMenuAccumulatedScroll = 0;
     this.contextMenu.set({
       clientX: event.clientX,
       clientY: event.clientY,
@@ -3535,6 +3540,7 @@ export class EditorPageComponent {
   }
 
   closeContextMenu(): void {
+    this.contextMenuAccumulatedScroll = 0;
     this.contextMenu.set(null);
     this.contextMenuPosition.set(null);
     this.contextTransformMenuOpen.set(false);
@@ -3740,7 +3746,23 @@ export class EditorPageComponent {
           : event.key === 'ArrowDown'
             ? (currentIndex + 1) % items.length
             : (currentIndex - 1 + items.length) % items.length;
+    if (target.hasAttribute('data-context-transform-trigger')) {
+      this.closeContextTransformMenu();
+    }
     items[nextIndex]?.focus({ preventScroll: true });
+  }
+
+  handleWindowWheel(event: WheelEvent): void {
+    if (!this.contextMenu()) {
+      this.contextMenuAccumulatedScroll = 0;
+      return;
+    }
+
+    const delta = this.normalizeWheelDelta(event);
+    this.contextMenuAccumulatedScroll += Math.hypot(delta.x, delta.y);
+    if (this.contextMenuAccumulatedScroll >= EDITOR_CONTEXT_MENU_SCROLL_DISMISS_THRESHOLD_PX) {
+      this.closeContextMenu();
+    }
   }
 
   contextMenuActionEnabled(action: ContextAction): boolean {

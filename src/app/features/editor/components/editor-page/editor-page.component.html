@@ -3048,6 +3048,7 @@
                 data-context-transform-trigger
                 aria-haspopup="menu"
                 [attr.aria-expanded]="contextTransformMenuOpen()"
+                (mouseenter)="openContextTransformMenu()"
                 (click)="runContextAction(action)">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="contextMenuIconPaths[action]"></path>
@@ -3058,7 +3059,12 @@
                 </svg>
               </button>
             } @else {
-              <button type="button" role="menuitem" [disabled]="contextMenuActionDisabled(action)" (click)="runContextAction(action)">
+              <button
+                type="button"
+                role="menuitem"
+                [disabled]="contextMenuActionDisabled(action)"
+                (mouseenter)="closeContextTransformMenu()"
+                (click)="runContextAction(action)">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path [attr.d]="contextMenuIconPaths[action]"></path>
                 </svg>
