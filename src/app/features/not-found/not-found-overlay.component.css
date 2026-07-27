@@ -1,0 +1,127 @@
+.not-found-dialog {
+  width: min(480px, calc(100% - 28px));
+  max-width: none;
+  max-height: calc(100dvh - 28px);
+  overflow: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  color: var(--app-foreground);
+  background: transparent;
+}
+
+.not-found-dialog::backdrop {
+  background: rgba(20, 20, 20, 0.52);
+}
+
+.dialog-panel {
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: var(--floating-shadow);
+}
+
+.dialog-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 16px;
+  border-bottom: 1px solid var(--tool-border);
+}
+
+.dialog-header strong {
+  font-size: 0.86rem;
+}
+
+.dialog-header button {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-left: 1px solid var(--tool-border);
+  color: var(--app-foreground);
+  background: transparent;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dialog-header button:hover {
+  color: var(--accent);
+  background: var(--toolbar-background-hover);
+}
+
+.dialog-body {
+  padding: 24px;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.7rem, 7vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+p {
+  margin: 14px 0 0;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 20px;
+  padding: 10px 11px;
+  border: 1px solid var(--tool-border);
+  color: var(--app-foreground);
+  background: var(--input-background);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--tool-border);
+  background: var(--toolbar-background);
+}
+
+.button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 13px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 6px;
+  color: var(--app-foreground);
+  background: var(--tool-surface);
+  font: 750 0.8rem/1 var(--font-sans);
+  text-decoration: none;
+}
+
+.button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.button--primary {
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.button--primary:hover {
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+}
+
+@media (max-width: 440px) {
+  .dialog-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

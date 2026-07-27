@@ -1,0 +1,16 @@
+<main class="not-found" data-tooltip-disabled>
+  <a class="brand" routerLink="/">TikZ Drawer</a>
+
+  <section class="message" aria-labelledby="not-found-title">
+    <p class="section-label">Page not found</p>
+    <h1 id="not-found-title">We couldn’t find this page.</h1>
+    <p class="description">The address may be incorrect, or the page may have moved.</p>
+    <code class="requested-path">{{ requestedPath }}</code>
+
+    <nav class="actions" aria-label="Other destinations">
+      <a class="button button--primary" routerLink="/">Open the editor</a>
+      <a class="button" routerLink="/guide">Read the guide</a>
+      <a class="button" routerLink="/examples">See examples</a>
+    </nav>
+  </section>
+</main>

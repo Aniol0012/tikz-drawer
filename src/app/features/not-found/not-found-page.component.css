@@ -1,0 +1,107 @@
+:host {
+  min-height: 100dvh;
+  display: block;
+  color: var(--app-foreground);
+  background: var(--app-background);
+}
+
+.not-found {
+  width: min(820px, calc(100% - 32px));
+  min-height: 100dvh;
+  display: grid;
+  align-content: center;
+  gap: clamp(56px, 10vw, 112px);
+  margin-inline: auto;
+  padding-block: 40px;
+}
+
+.brand {
+  width: fit-content;
+  color: var(--app-foreground);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.message {
+  max-width: 680px;
+  padding-top: 28px;
+  border-top: 1px solid var(--tool-border-strong);
+}
+
+.section-label {
+  margin: 0 0 14px;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 8vw, 5.2rem);
+  font-weight: 760;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.description {
+  margin: 24px 0 0;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.requested-path {
+  width: fit-content;
+  max-width: 100%;
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 18px;
+  padding: 9px 11px;
+  border: 1px solid var(--tool-border);
+  color: var(--app-foreground);
+  background: var(--input-background);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 15px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 6px;
+  color: var(--app-foreground);
+  background: var(--tool-surface);
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.button--primary {
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.button--primary:hover {
+  border-color: var(--accent-strong);
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+}

@@ -1,0 +1,26 @@
+<dialog
+  #dialog
+  class="not-found-dialog"
+  data-tooltip-disabled
+  aria-labelledby="not-found-dialog-title"
+  aria-describedby="not-found-dialog-description"
+  (click)="onBackdropClick($event)"
+  (close)="dismissed.emit()">
+  <section class="dialog-panel">
+    <header class="dialog-header">
+      <strong>Page not found</strong>
+      <button type="button" aria-label="Close" (click)="close()">×</button>
+    </header>
+
+    <div class="dialog-body">
+      <h2 id="not-found-dialog-title">We couldn’t open that page.</h2>
+      <p id="not-found-dialog-description">Your current page is still open. The address may be incorrect, or the page may have moved.</p>
+      <code>{{ requestedPath() }}</code>
+    </div>
+
+    <footer class="dialog-actions">
+      <button class="button" type="button" (click)="close()">Close</button>
+      <a class="button button--primary" routerLink="/" (click)="dismissed.emit()">Open the editor</a>
+    </footer>
+  </section>
+</dialog>
