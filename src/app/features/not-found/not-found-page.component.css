@@ -6,10 +6,8 @@
 }
 
 .not-found-page {
-  width: min(1080px, calc(100% - 40px));
+  width: min(1180px, calc(100% - 40px));
   min-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto 1fr;
   margin-inline: auto;
   padding-block: 24px;
 }
@@ -24,31 +22,19 @@
 
 .message {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.82fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.08fr);
   align-items: center;
-  gap: clamp(38px, 8vw, 96px);
-  padding-block: 48px 76px;
+  gap: clamp(42px, 8vw, 104px);
+  padding-block: clamp(64px, 10vh, 112px) 76px;
 }
 
 .message__copy {
   max-width: 610px;
 }
 
-.status {
-  width: fit-content;
-  margin: 0 0 14px;
-  padding: 5px 9px;
-  border: 1px solid var(--accent-soft-border);
-  border-radius: 5px;
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-  font-size: 0.76rem;
-  font-weight: 750;
-}
-
 h1 {
   margin: 0;
-  font-size: clamp(2.45rem, 6vw, 4.6rem);
+  font-size: clamp(2.55rem, 5.4vw, 4.8rem);
   line-height: 1.02;
   letter-spacing: -0.05em;
   text-wrap: balance;
@@ -130,8 +116,7 @@ app-diagram-artwork {
 @media (max-width: 760px) {
   .message {
     grid-template-columns: 1fr;
-    align-content: center;
-    padding-block: 48px;
+    padding-block: 54px;
   }
 
   app-diagram-artwork {
@@ -141,7 +126,7 @@ app-diagram-artwork {
 
 @media (max-width: 500px) {
   .not-found-page {
-    width: min(100% - 28px, 1080px);
+    width: min(100% - 28px, 1180px);
   }
 
   h1 {

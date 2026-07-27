@@ -1,14 +1,7 @@
-import { inject } from '@angular/core';
-import type { CanActivateFn, Routes } from '@angular/router';
-import { NotFoundOverlayService } from './features/not-found/not-found-overlay.service';
+import type { Routes } from '@angular/router';
 import { EDITOR_SEO, NOT_FOUND_SEO, SITE_PAGE_SEO } from './features/site-pages/site-page-seo';
 
 const loadEditorPage = async () => (await import('./features/editor/components/editor-page/editor-page.component')).EditorPageComponent;
-
-export const preserveActivePageForUnknownRoute: CanActivateFn = (_route, state) => {
-  const overlay = inject(NotFoundOverlayService);
-  return !overlay.openOverActivePage(state.url);
-};
 
 export const routes: Routes = [
   {
@@ -44,7 +37,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    canActivate: [preserveActivePageForUnknownRoute],
     loadComponent: async () => (await import('./features/not-found/not-found-page.component')).NotFoundPageComponent,
     data: {
       seo: NOT_FOUND_SEO

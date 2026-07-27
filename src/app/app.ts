@@ -4,8 +4,6 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import { NotFoundOverlayComponent } from './features/not-found/not-found-overlay.component';
-import { NotFoundOverlayService } from './features/not-found/not-found-overlay.service';
 import type { SeoRouteData } from './features/site-pages/site-page-seo';
 import { CustomTooltipComponent } from './shared/custom-tooltip/custom-tooltip.component';
 
@@ -13,7 +11,7 @@ const SITE_ORIGIN = 'https://tikzdrawer.com';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CustomTooltipComponent, NotFoundOverlayComponent],
+  imports: [RouterOutlet, CustomTooltipComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -25,9 +23,6 @@ export class App {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly notFoundOverlay = inject(NotFoundOverlayService);
-
-  readonly missingPath = this.notFoundOverlay.requestedPath;
 
   constructor() {
     this.router.events
@@ -37,12 +32,7 @@ export class App {
       )
       .subscribe(() => {
         this.updateRouteMetadata();
-        this.markActivePage();
       });
-  }
-
-  closeNotFoundOverlay(): void {
-    this.notFoundOverlay.close();
   }
 
   private updateRouteMetadata(): void {
@@ -56,12 +46,6 @@ export class App {
     this.meta.updateTag({ name: 'description', content: seo.description });
     this.meta.updateTag({ name: 'robots', content: seo.robots });
     this.updateCanonical(seo.canonicalPath);
-  }
-
-  private markActivePage(): void {
-    if (this.leafRoute().snapshot.routeConfig?.path !== '**') {
-      this.notFoundOverlay.markPageActive();
-    }
   }
 
   private leafRoute(): ActivatedRoute {

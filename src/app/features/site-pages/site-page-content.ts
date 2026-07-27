@@ -26,7 +26,19 @@ export interface SitePageSection {
   readonly code?: SitePageCodeSample;
 }
 
-export interface SitePageContent {
+export interface SitePageTextLink {
+  readonly label: string;
+  readonly href: string;
+}
+
+export interface SitePageTextSection {
+  readonly id: string;
+  readonly title: string;
+  readonly paragraphs: readonly string[];
+  readonly link?: SitePageTextLink;
+}
+
+interface SitePageBase {
   readonly key: SitePageKey;
   readonly eyebrow: string;
   readonly title: string;
@@ -34,13 +46,25 @@ export interface SitePageContent {
   readonly primaryAction: string;
   readonly secondaryAction: string;
   readonly secondaryRoute: `/${Exclude<SitePageKey, 'about'>}`;
+}
+
+export interface VisualSitePageContent extends SitePageBase {
+  readonly layout: 'visual';
   readonly heroVisual: DiagramArtworkKind;
   readonly sections: readonly SitePageSection[];
 }
 
+export interface EditorialSitePageContent extends SitePageBase {
+  readonly layout: 'editorial';
+  readonly sections: readonly SitePageTextSection[];
+}
+
+export type SitePageContent = VisualSitePageContent | EditorialSitePageContent;
+
 const SITE_PAGES = {
   guide: {
     key: 'guide',
+    layout: 'visual',
     eyebrow: 'Visual TikZ guide',
     title: 'How to draw TikZ diagrams online',
     lede: 'Sketch the structure, align it on the canvas, then export editable TikZ for LaTeX.',
@@ -120,6 +144,7 @@ const SITE_PAGES = {
   },
   examples: {
     key: 'examples',
+    layout: 'visual',
     eyebrow: 'Diagram ideas',
     title: 'TikZ drawing examples for LaTeX',
     lede: 'Pick a structure, open the canvas and make it yours.',
@@ -169,34 +194,52 @@ const SITE_PAGES = {
   },
   about: {
     key: 'about',
+    layout: 'editorial',
     eyebrow: 'Open-source project',
     title: 'About TikZ Drawer',
-    lede: 'A visual canvas for people who want editable TikZ without placing every coordinate by hand.',
+    lede: 'A practical way to draw diagrams visually and keep editable TikZ as the final result.',
     primaryAction: 'Open the editor',
     secondaryAction: 'Browse examples',
     secondaryRoute: '/examples',
-    heroVisual: 'source',
     sections: [
       {
-        id: 'principles',
-        title: 'Visual when drawing, textual when sharing',
-        cards: [
-          {
-            title: 'Draw in the browser',
-            body: 'No local drawing application or setup required.',
-            visual: 'canvas'
-          },
-          {
-            title: 'Keep standard TikZ',
-            body: 'The output remains portable, readable source code.',
-            visual: 'source'
-          },
-          {
-            title: 'Built in the open',
-            body: 'Source, releases and issues live on GitHub.',
-            visual: 'graph'
-          }
+        id: 'purpose',
+        title: 'What TikZ Drawer is for',
+        paragraphs: [
+          'TikZ Drawer is a browser-based visual editor for creating technical diagrams, flowcharts, graphs and annotated figures for LaTeX documents.',
+          'You arrange the drawing on a canvas and export standard TikZ source. The result stays readable, versionable and independent from the editor.'
         ]
+      },
+      {
+        id: 'intention',
+        title: 'Why I built it',
+        paragraphs: [
+          'TikZ is powerful, but moving coordinates by hand can make visual iteration unnecessarily slow. I wanted the drawing process to feel direct without giving up the precision and portability of code.',
+          'The intention is simple: make the common work fast, keep the generated output honest, and leave you free to refine it in LaTeX.'
+        ]
+      },
+      {
+        id: 'author',
+        title: 'Who I am',
+        paragraphs: [
+          'I’m Aniol, the developer behind TikZ Drawer. I build the project around the problems I find while working with diagrams and the feedback people share through the repository.',
+          'The editor is free to use and developed in the open.'
+        ],
+        link: {
+          label: 'See my GitHub profile',
+          href: 'https://github.com/Aniol0012'
+        }
+      },
+      {
+        id: 'source',
+        title: 'Source, issues and ideas',
+        paragraphs: [
+          'The complete source code, release history and issue tracker are public. You can inspect how the editor works, report a problem or suggest the next improvement.'
+        ],
+        link: {
+          label: 'Open the TikZ Drawer repository',
+          href: 'https://github.com/Aniol0012/tikz-drawer'
+        }
       }
     ]
   }

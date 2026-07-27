@@ -11,13 +11,13 @@ describe('application routes', () => {
     }
   });
 
-  it('loads a lightweight page for direct unknown URLs and keeps the overlay guard', () => {
+  it('uses one lightweight fullscreen page for every unknown URL', () => {
     const editorRoute = routes.find((route) => route.path === '');
     const wildcardRoute = routes.find((route) => route.path === '**');
 
     expect(wildcardRoute?.redirectTo).toBeUndefined();
     expect(wildcardRoute?.loadComponent).not.toBe(editorRoute?.loadComponent);
-    expect(wildcardRoute?.canActivate).toHaveLength(1);
+    expect(wildcardRoute?.canActivate).toBeUndefined();
     expect(wildcardRoute?.data?.['seo']?.robots).toBe('noindex, follow');
   });
 });

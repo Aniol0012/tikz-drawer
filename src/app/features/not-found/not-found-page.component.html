@@ -3,7 +3,6 @@
 
   <section class="message" aria-labelledby="not-found-title">
     <div class="message__copy">
-      <p class="status">Page not found</p>
       <h1 id="not-found-title">We can’t find this page</h1>
       <p class="explanation">This link seems to have lost its coordinates. The canvas is better at finding points than we are.</p>
       <code>{{ requestedPath }}</code>
@@ -13,6 +12,6 @@
       </div>
     </div>
 
-    <app-diagram-artwork kind="lost" label="A disconnected diagram node looking for its coordinates" [interactive]="true" />
+    <app-diagram-artwork kind="lost" label="Error 404 selected on a diagram canvas" [interactive]="true" />
   </section>
 </main>

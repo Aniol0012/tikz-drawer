@@ -113,14 +113,15 @@
       </g>
     }
     @case ('lost') {
-      <g class="layer layer--back">
-        <path class="plane plane--muted" d="m42 151 85-49 80 46-85 49z" />
-      </g>
       <g class="layer layer--front">
-        <rect class="node" x="66" y="118" width="76" height="44" rx="6" />
-        <path class="connector connector--dashed" d="m142 139 51-30" />
-        <rect class="node node--accent floating-node" x="202" y="56" width="70" height="42" rx="6" />
-        <path class="lost-mark" d="M231 67c10 0 15 5 15 12 0 9-11 10-11 18m0 9v2" />
+        <rect class="selection-frame" x="46" y="56" width="228" height="112" rx="8" />
+        <text class="error-code" x="160" y="140" text-anchor="middle">404</text>
+        <circle class="handle" cx="46" cy="56" r="5" />
+        <circle class="handle" cx="274" cy="56" r="5" />
+        <circle class="handle" cx="46" cy="168" r="5" />
+        <circle class="handle" cx="274" cy="168" r="5" />
+        <path class="connector connector--dashed" d="M274 83h22v-25" />
+        <path class="accent-line" d="m289 65 7-7 7 7" />
       </g>
     }
   }

@@ -165,22 +165,25 @@ circle.node--accent {
   stroke-width: 5;
 }
 
-.floating-node {
-  animation: float-node 2.8s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
+.selection-frame {
+  fill: var(--accent-soft);
+  fill-opacity: 0.32;
+  stroke: var(--accent);
+  stroke-dasharray: 7 6;
+  stroke-width: 2;
 }
 
-@keyframes float-node {
-  50% {
-    transform: translateY(-7px) rotate(1.5deg);
-  }
+.error-code {
+  fill: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 80px;
+  font-weight: 850;
+  letter-spacing: -7px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   svg,
-  .layer,
-  .floating-node {
+  .layer {
     animation: none;
     transition: none;
   }

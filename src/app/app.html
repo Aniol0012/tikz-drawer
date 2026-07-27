@@ -1,5 +1,2 @@
 <router-outlet />
 <app-custom-tooltip />
-@if (missingPath(); as requestedPath) {
-  <app-not-found-overlay [requestedPath]="requestedPath" (dismissed)="closeNotFoundOverlay()" />
-}

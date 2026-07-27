@@ -207,40 +207,8 @@ h2 {
   grid-template-columns: 1fr;
 }
 
-.code-preview {
+app-site-code-preview {
   max-width: 760px;
-  margin: 0;
-  overflow: hidden;
-  border: 1px solid var(--tool-border-strong);
-  border-radius: 9px;
-  background: var(--input-background);
-  box-shadow: var(--floating-shadow);
-}
-
-.code-preview figcaption {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--tool-border);
-  background: var(--toolbar-background);
-}
-
-.code-preview figcaption strong {
-  font-size: 0.8rem;
-}
-
-.code-preview figcaption span {
-  color: var(--muted-foreground);
-  font-size: 0.72rem;
-}
-
-.code-preview pre {
-  overflow-x: auto;
-  margin: 0;
-  padding: clamp(16px, 3vw, 24px);
-  font: 0.78rem/1.72 var(--font-mono);
 }
 
 .closing-note {
@@ -274,10 +242,82 @@ h2 {
   font-size: 0.82rem;
 }
 
+.about-hero {
+  max-width: 900px;
+  padding-block: clamp(24px, 5vw, 62px) clamp(58px, 8vw, 96px);
+  border-bottom: 1px solid var(--border);
+}
+
+.about-hero h1 {
+  max-width: none;
+}
+
+.about-hero .lede {
+  max-width: 760px;
+}
+
+.about-content {
+  counter-reset: about-section;
+}
+
+.about-section {
+  display: grid;
+  grid-template-columns: 42px minmax(220px, 0.72fr) minmax(0, 1.25fr);
+  gap: clamp(22px, 5vw, 68px);
+  padding-block: clamp(42px, 6vw, 66px);
+  border-bottom: 1px solid var(--border);
+}
+
+.about-section__number {
+  padding-top: 5px;
+  color: var(--accent-strong);
+  font: 750 0.76rem/1 var(--font-mono);
+}
+
+.about-section h2 {
+  max-width: 330px;
+}
+
+.about-section__copy {
+  max-width: 670px;
+}
+
+.about-section__copy p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.about-section__copy p + p {
+  margin-top: 16px;
+}
+
+.text-link {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 20px;
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 900px) {
   .hero {
     grid-template-columns: 1fr;
     gap: 36px;
+  }
+
+  .about-section {
+    grid-template-columns: 32px minmax(190px, 0.7fr) minmax(0, 1fr);
+    gap: 26px;
   }
 
   .hero__visual {
@@ -308,6 +348,19 @@ h2 {
   .section-heading {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .about-section {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px 14px;
+  }
+
+  .about-section h2 {
+    max-width: none;
+  }
+
+  .about-section__copy {
+    grid-column: 2;
   }
 
   .visual-grid,
