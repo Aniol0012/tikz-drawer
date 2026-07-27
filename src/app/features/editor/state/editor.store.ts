@@ -18,6 +18,7 @@ import { reserveNextNumberedCopyName } from '../utils/editor-shape-name.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 import { normalizeAppTheme } from './app-theme.service';
 import { ARROW_TIP_OPTIONS, DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
+import { GlobalThemeService } from '../../../shared/theme/global-theme.service';
 
 const cloneShape = (shape: CanvasShape, unavailableNames: Set<string>): CanvasShape => {
   const name = reserveNextNumberedCopyName(shape.name, unavailableNames);
@@ -417,6 +418,7 @@ const normalizeOpacity = (value: unknown): number => {
 export class EditorStore {
   private readonly editorStorage = inject(EditorLocalStorageService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly globalTheme = inject(GlobalThemeService);
   private readonly undoSnapshots = signal<readonly EditorSnapshot[]>([]);
   private readonly redoSnapshots = signal<readonly EditorSnapshot[]>([]);
   private pendingStatePersistHandle: ReturnType<typeof setTimeout> | null = null;
@@ -452,6 +454,7 @@ export class EditorStore {
 
   constructor() {
     this.restoreState();
+    effect(() => this.globalTheme.set(this.preferences().theme));
     const flushPendingState = () => this.flushStatePersist();
     globalThis.addEventListener?.('pagehide', flushPendingState);
     globalThis.addEventListener?.('beforeunload', flushPendingState);

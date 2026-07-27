@@ -8,39 +8,34 @@
 .custom-tooltip {
   position: fixed;
   max-width: min(280px, calc(100vw - 24px));
-  --tooltip-bg: rgba(38, 38, 41, 0.97);
-  --tooltip-border: rgba(255, 255, 255, 0.14);
-  padding: 6px 9px 7px;
-  border: 1px solid var(--tooltip-border);
-  border-radius: 8px;
-  background: var(--tooltip-bg);
-  box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.2),
-    0 2px 7px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.94);
+  padding: 6px 9px;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 6px;
+  color: var(--app-foreground);
+  background: var(--tool-surface);
+  box-shadow: var(--floating-shadow);
   font-size: 0.72rem;
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 650;
+  line-height: 1.25;
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
-  backdrop-filter: blur(8px) saturate(1.08);
   transform: translate(-50%, calc(-100% - 2px));
   transform-origin: 50% calc(100% + 8px);
-  animation: tooltip-enter-top 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: tooltip-enter-top 140ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .custom-tooltip::after {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -5px;
-  width: 12px;
-  height: 6px;
-  background: var(--tooltip-bg);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform: translateX(-50%);
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid var(--tool-border-strong);
+  border-bottom: 1px solid var(--tool-border-strong);
+  background: var(--tool-surface);
+  transform: translateX(-50%) rotate(45deg);
 }
 
 .custom-tooltip--bottom {
@@ -50,13 +45,15 @@
 }
 
 .custom-tooltip--bottom::after {
-  top: -5px;
+  top: -4px;
   bottom: auto;
-  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  border: 0;
+  border-top: 1px solid var(--tool-border-strong);
+  border-left: 1px solid var(--tool-border-strong);
 }
 
 .custom-tooltip--leaving {
-  animation: tooltip-leave-top 120ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  animation: tooltip-leave-top 100ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 
 .custom-tooltip--bottom.custom-tooltip--leaving {
@@ -66,7 +63,7 @@
 @keyframes tooltip-enter-top {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-100% + 4px)) scale(0.96);
+    transform: translate(-50%, calc(-100% + 2px)) scale(0.98);
   }
 
   to {
@@ -78,7 +75,7 @@
 @keyframes tooltip-enter-bottom {
   from {
     opacity: 0;
-    transform: translate(-50%, -4px) scale(0.96);
+    transform: translate(-50%, -2px) scale(0.98);
   }
 
   to {
@@ -95,7 +92,7 @@
 
   to {
     opacity: 0;
-    transform: translate(-50%, calc(-100% + 2px)) scale(0.98);
+    transform: translate(-50%, 0) scale(0.98);
   }
 }
 
@@ -107,7 +104,7 @@
 
   to {
     opacity: 0;
-    transform: translate(-50%, -2px) scale(0.98);
+    transform: translate(-50%, 0) scale(0.98);
   }
 }
 

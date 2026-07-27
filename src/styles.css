@@ -33,6 +33,10 @@
   font-family: var(--font-sans);
 }
 
+@view-transition {
+  navigation: auto;
+}
+
 [data-theme='light'] {
   color-scheme: light;
   --app-background: #f4f4f4;
@@ -104,6 +108,35 @@
 html,
 body {
   min-height: 100%;
+}
+
+::view-transition-old(root) {
+  animation: page-out 130ms ease both;
+}
+
+::view-transition-new(root) {
+  animation: page-in 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms;
+  }
 }
 
 body {

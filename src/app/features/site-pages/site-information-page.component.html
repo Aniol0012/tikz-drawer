@@ -1,65 +1,69 @@
-<header class="site-header">
-  <div class="site-header__inner">
-    <a class="brand" routerLink="/">TIKZ DRAWER</a>
-    <nav class="site-nav" aria-label="Main navigation">
-      <a routerLink="/guide" [attr.aria-current]="page.key === 'guide' ? 'page' : null">Guide</a>
-      <a routerLink="/examples" [attr.aria-current]="page.key === 'examples' ? 'page' : null">Examples</a>
-      <a routerLink="/about" [attr.aria-current]="page.key === 'about' ? 'page' : null">About</a>
-      <a routerLink="/">Open editor</a>
-    </nav>
-  </div>
-</header>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<app-site-navigation [activePage]="page.key" />
 
-<main>
+<main id="main-content" class="site-page">
   <header class="hero">
-    <p class="eyebrow">{{ page.eyebrow }}</p>
-    <h1>{{ page.title }}</h1>
-    <p class="lede">{{ page.lede }}</p>
-    <div class="actions">
-      <a class="button button--primary" routerLink="/">{{ page.primaryAction }}</a>
-      @if (page.key !== 'guide') {
-        <a class="button" routerLink="/guide">Read the drawing guide</a>
-      } @else {
-        <a class="button" routerLink="/examples">Browse TikZ examples</a>
-      }
+    <div class="hero__copy">
+      <p class="eyebrow">{{ page.eyebrow }}</p>
+      <h1>{{ page.title }}</h1>
+      <p class="lede">{{ page.lede }}</p>
+      <div class="actions">
+        <a class="button button--primary" routerLink="/">{{ page.primaryAction }}</a>
+        <a class="button" [routerLink]="page.secondaryRoute">
+          {{ page.secondaryAction }}
+        </a>
+      </div>
+    </div>
+
+    <div class="hero__visual">
+      <app-diagram-artwork [kind]="page.heroVisual" [label]="page.title" [interactive]="true" />
+      <span class="hero__hint" aria-hidden="true">Move the pointer</span>
     </div>
   </header>
 
   <article class="content">
-    @for (section of page.sections; track section.title) {
-      <section>
-        <h2>{{ section.title }}</h2>
-        @for (paragraph of section.paragraphs; track paragraph) {
-          <p>{{ paragraph }}</p>
-        }
+    @for (section of page.sections; track section.id) {
+      <section [id]="section.id">
+        <header class="section-heading">
+          <h2>{{ section.title }}</h2>
+          @if (section.intro) {
+            <p>{{ section.intro }}</p>
+          }
+        </header>
+
         @if (section.cards?.length) {
-          <div class="grid">
+          <div class="visual-grid" [class.visual-grid--compact]="section.compactCards">
             @for (card of section.cards; track card.title) {
-              <article class="card">
-                <h3>{{ card.title }}</h3>
-                <p>{{ card.body }}</p>
-              </article>
+              <app-site-visual-card [card]="card" [compact]="section.compactCards ?? false" />
             }
           </div>
+        }
+
+        @if (section.code; as code) {
+          <figure class="code-preview">
+            <figcaption>
+              <strong>{{ code.title }}</strong>
+              <span>{{ code.caption }}</span>
+            </figcaption>
+            <pre><code>{{ code.value }}</code></pre>
+          </figure>
         }
       </section>
     }
 
-    @if (page.key === 'about') {
-      <aside class="note">
-        View the source, releases and issue tracker in the
-        <a href="https://github.com/Aniol0012/tikz-drawer" target="_blank" rel="noopener noreferrer">public GitHub repository</a>.
-      </aside>
-    } @else {
-      <aside class="note">
-        Ready to create a diagram?
-        <a routerLink="/">Open the free visual TikZ editor</a>.
-      </aside>
-    }
+    <aside class="closing-note">
+      @if (page.key === 'about') {
+        <span>Want to see how it is built?</span>
+        <a href="https://github.com/Aniol0012/tikz-drawer" target="_blank" rel="noopener noreferrer">Open the GitHub repository</a>
+      } @else {
+        <span>Ready to draw?</span>
+        <a routerLink="/">Open the visual editor</a>
+      }
+    </aside>
   </article>
 </main>
 
 <footer class="site-footer">
-  TikZ Drawer is an open-source visual TikZ editor created by
-  <a href="https://github.com/Aniol0012" target="_blank" rel="noopener noreferrer">Aniol0012</a>.
+  <span>TikZ Drawer</span>
+  <a href="https://github.com/Aniol0012" target="_blank" rel="noopener noreferrer">Created by Aniol0012</a>
 </footer>

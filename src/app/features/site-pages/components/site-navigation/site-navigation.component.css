@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  view-transition-name: site-navigation;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-background);
+}
+
+.site-header__inner {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-inline: auto;
+}
+
+.brand,
+.site-nav a,
+.editor-link {
+  text-decoration: none;
+}
+
+.brand {
+  color: var(--app-foreground);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.header-actions,
+.site-nav {
+  display: flex;
+  align-items: center;
+}
+
+.header-actions {
+  gap: 8px;
+}
+
+.site-nav {
+  gap: 3px;
+}
+
+.site-nav a,
+.editor-link {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 10px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.site-nav a:hover,
+.editor-link:hover {
+  color: var(--app-foreground);
+  background: var(--toolbar-background-hover);
+}
+
+.site-nav a[aria-current='page'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.editor-link {
+  color: var(--app-foreground);
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--tool-border);
+  border-radius: 6px;
+  color: var(--app-foreground);
+  background: var(--tool-surface);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.theme-toggle svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.theme-toggle:focus-visible,
+.site-nav a:focus-visible,
+.editor-link:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .site-header__inner {
+    width: min(100% - 24px, 1180px);
+    min-height: 56px;
+  }
+
+  .site-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    border-top: 1px solid var(--border);
+  }
+
+  .site-header__inner,
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .site-nav {
+    justify-content: center;
+  }
+
+  .editor-link {
+    display: none;
+  }
+}

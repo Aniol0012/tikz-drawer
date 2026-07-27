@@ -11,11 +11,12 @@ describe('application routes', () => {
     }
   });
 
-  it('renders an explicit not-found page for unknown URLs', () => {
+  it('loads a lightweight page for direct unknown URLs and keeps the overlay guard', () => {
+    const editorRoute = routes.find((route) => route.path === '');
     const wildcardRoute = routes.find((route) => route.path === '**');
 
     expect(wildcardRoute?.redirectTo).toBeUndefined();
-    expect(wildcardRoute?.loadComponent).toBeTypeOf('function');
+    expect(wildcardRoute?.loadComponent).not.toBe(editorRoute?.loadComponent);
     expect(wildcardRoute?.canActivate).toHaveLength(1);
     expect(wildcardRoute?.data?.['seo']?.robots).toBe('noindex, follow');
   });

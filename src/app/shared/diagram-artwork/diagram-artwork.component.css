@@ -1,0 +1,187 @@
+:host {
+  --artwork-rotate-x: 0deg;
+  --artwork-rotate-y: 0deg;
+  min-width: 0;
+  display: block;
+  perspective: 800px;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  transform: rotateX(var(--artwork-rotate-x)) rotateY(var(--artwork-rotate-y));
+  transform-style: preserve-3d;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.artwork-surface {
+  fill: var(--panel-background);
+  stroke: var(--tool-border);
+}
+
+.artwork-grid path {
+  fill: none;
+  stroke: var(--grid-line);
+  stroke-width: 1;
+}
+
+.layer {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:host(.diagram-artwork--interactive:hover) .layer--front {
+  transform: translateY(-4px);
+}
+
+:host(.diagram-artwork--interactive:hover) .layer--back {
+  transform: translateY(2px);
+}
+
+.plane {
+  stroke: var(--tool-border-strong);
+  stroke-linejoin: round;
+}
+
+.plane--muted {
+  fill: var(--toolbar-background);
+}
+
+.plane--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent-soft-border);
+}
+
+.node,
+.tile {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.node--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+circle.node--accent {
+  fill: var(--accent-soft);
+}
+
+.connector,
+.accent-line,
+.geometry-circle,
+.cube,
+.image-shape,
+.window-bar,
+.code-lines path,
+.lost-mark {
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.connector--strong {
+  stroke: var(--app-foreground);
+}
+
+.connector--soft {
+  opacity: 0.45;
+}
+
+.connector--dashed {
+  stroke-dasharray: 7 7;
+}
+
+.accent-line,
+.lost-mark {
+  stroke: var(--accent);
+}
+
+.arrow {
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.handle {
+  fill: var(--handle-fill);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.cube {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+}
+
+.cube--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+
+.image-frame,
+.code-window {
+  fill: var(--input-background);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.image-shape {
+  fill: var(--toolbar-background-hover);
+  stroke: var(--tool-border);
+}
+
+.image-sun {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.label-chip {
+  fill: var(--tool-surface);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.window-bar {
+  stroke: var(--tool-border);
+}
+
+.window-dot {
+  fill: var(--muted-foreground);
+}
+
+.code-lines path {
+  stroke: var(--muted-foreground);
+  stroke-width: 5;
+}
+
+.floating-node {
+  animation: float-node 2.8s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes float-node {
+  50% {
+    transform: translateY(-7px) rotate(1.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  svg,
+  .layer,
+  .floating-node {
+    animation: none;
+    transition: none;
+  }
+}

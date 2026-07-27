@@ -1,0 +1,10 @@
+<article class="visual-card" [class.visual-card--compact]="compact()">
+  <app-diagram-artwork [kind]="card().visual" [label]="card().title" />
+  <div class="visual-card__copy">
+    @if (card().label) {
+      <span class="visual-card__label">{{ card().label }}</span>
+    }
+    <h3>{{ card().title }}</h3>
+    <p>{{ card().body }}</p>
+  </div>
+</article>

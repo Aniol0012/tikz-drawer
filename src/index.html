@@ -2,6 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      (() => {
+        try {
+          const state = JSON.parse(localStorage.getItem('tikz-drawer.state') || 'null');
+          const storedTheme = state?.preferences?.theme;
+          const theme =
+            storedTheme === 'light' || storedTheme === 'dark'
+              ? storedTheme
+              : matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.dataset.theme = theme;
+        } catch {
+          document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+      })();
+    </script>
     <title>TikZ Drawer — Free Online Visual TikZ Editor</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

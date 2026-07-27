@@ -1,53 +1,119 @@
+import type { DiagramArtworkKind } from '../../shared/diagram-artwork/diagram-artwork.component';
+
+export const SITE_PAGE_KEYS = ['guide', 'examples', 'about'] as const;
+
+export type SitePageKey = (typeof SITE_PAGE_KEYS)[number];
+
 export interface SitePageCard {
+  readonly label?: string;
   readonly title: string;
   readonly body: string;
+  readonly visual: DiagramArtworkKind;
+}
+
+export interface SitePageCodeSample {
+  readonly title: string;
+  readonly caption: string;
+  readonly value: string;
 }
 
 export interface SitePageSection {
+  readonly id: string;
   readonly title: string;
-  readonly paragraphs: readonly string[];
+  readonly intro?: string;
   readonly cards?: readonly SitePageCard[];
+  readonly compactCards?: boolean;
+  readonly code?: SitePageCodeSample;
 }
 
 export interface SitePageContent {
-  readonly key: string;
+  readonly key: SitePageKey;
   readonly eyebrow: string;
   readonly title: string;
   readonly lede: string;
   readonly primaryAction: string;
+  readonly secondaryAction: string;
+  readonly secondaryRoute: `/${Exclude<SitePageKey, 'about'>}`;
+  readonly heroVisual: DiagramArtworkKind;
   readonly sections: readonly SitePageSection[];
 }
 
 const SITE_PAGES = {
   guide: {
     key: 'guide',
-    eyebrow: 'TikZ drawing guide',
+    eyebrow: 'Visual TikZ guide',
     title: 'How to draw TikZ diagrams online',
-    lede: 'Build diagrams on a visual canvas, refine their geometry and style, then export editable TikZ code for your paper, report, slides or notes.',
-    primaryAction: 'Start drawing in TikZ Drawer',
+    lede: 'Sketch the structure, align it on the canvas, then export editable TikZ for LaTeX.',
+    primaryAction: 'Open a blank canvas',
+    secondaryAction: 'See examples',
+    secondaryRoute: '/examples',
+    heroVisual: 'canvas',
     sections: [
       {
-        title: 'What is TikZ?',
-        paragraphs: [
-          'TikZ is a LaTeX package for creating vector graphics directly inside a document. Its text-based drawings stay versionable, reproducible and consistent with the typography of the surrounding LaTeX project.',
-          'TikZ Drawer provides a visual layer for common drawing work while keeping standard TikZ code as the portable output. You can sketch a LaTeX diagram online without installing a desktop drawing application.'
-        ]
-      },
-      {
-        title: 'Draw a LaTeX diagram in four steps',
-        paragraphs: [],
+        id: 'workflow',
+        title: 'Four moves from idea to TikZ',
+        intro: 'Get the structure right first. The details become much easier.',
         cards: [
-          { title: '1. Open the canvas', body: 'Launch the editor, choose a scene preset or begin with a blank canvas.' },
-          { title: '2. Add elements', body: 'Place shapes, text, connectors, images and common graph structures.' },
-          { title: '3. Arrange and style', body: 'Move, resize, align and style objects with the inspector and snapping tools.' },
-          { title: '4. Export TikZ', body: 'Review the generated code and copy it into your LaTeX document.' }
+          {
+            label: '01',
+            title: 'Place the structure',
+            body: 'Start with the main shapes and a clear reading order.',
+            visual: 'flowchart'
+          },
+          {
+            label: '02',
+            title: 'Connect the story',
+            body: 'Add arrows only where a relationship needs direction.',
+            visual: 'graph'
+          },
+          {
+            label: '03',
+            title: 'Align the geometry',
+            body: 'Snap and distribute elements until the spacing feels calm.',
+            visual: 'geometry'
+          },
+          {
+            label: '04',
+            title: 'Export the source',
+            body: 'Copy clean TikZ that stays editable in your LaTeX project.',
+            visual: 'source'
+          }
         ]
       },
       {
-        title: 'From visual drawing to editable code',
-        paragraphs: [
-          'Unlike a screenshot, an exported TikZ figure can be adjusted later, reviewed in a code diff and compiled at any resolution. The generated output remains ordinary TikZ, so you are not locked into TikZ Drawer.',
-          'Use alignment and snapping for repeated spacing, keep labels concise, and inspect the generated code before publishing with your final LaTeX template.'
+        id: 'output',
+        title: 'What comes out',
+        intro: 'Vector source, not a flattened screenshot.',
+        code: {
+          title: 'Editable TikZ',
+          caption: 'Ready for your document',
+          value: String.raw`\begin{tikzpicture}[node distance=1.8cm]
+  \node[draw, rounded corners] (start) {Start};
+  \node[draw, right of=start] (result) {Result};
+  \draw[->] (start) -- (result);
+\end{tikzpicture}`
+        }
+      },
+      {
+        id: 'habits',
+        title: 'Small habits, cleaner figures',
+        compactCards: true,
+        cards: [
+          {
+            title: 'Label late',
+            body: 'Settle the geometry before polishing the words.',
+            visual: 'annotation'
+          },
+          {
+            title: 'Reduce crossings',
+            body: 'A quieter network is easier to read and edit.',
+            visual: 'network'
+          },
+          {
+            title: 'Group by role',
+            body: 'Use shape and position to show hierarchy.',
+            visual: 'architecture'
+          }
         ]
       }
     ]
@@ -56,26 +122,47 @@ const SITE_PAGES = {
     key: 'examples',
     eyebrow: 'Diagram ideas',
     title: 'TikZ drawing examples for LaTeX',
-    lede: 'Explore practical starting points for technical figures, academic diagrams and explanatory graphics, then adapt them in the visual editor.',
+    lede: 'Pick a structure, open the canvas and make it yours.',
     primaryAction: 'Create a TikZ drawing',
+    secondaryAction: 'Read the guide',
+    secondaryRoute: '/guide',
+    heroVisual: 'gallery',
     sections: [
       {
-        title: 'Common TikZ diagram types',
-        paragraphs: [],
+        id: 'structures',
+        title: 'Pick a structure',
+        intro: 'Six useful starting points for papers, notes and slides.',
         cards: [
-          { title: 'Flowchart', body: 'Arrange process boxes, decisions and inputs in a clear reading order, connected with directional arrows.' },
-          { title: 'Directed graph', body: 'Start from a path, cycle, star, tree or layered graph and adjust the layout visually.' },
-          { title: 'System architecture', body: 'Represent clients, services, APIs and databases with consistent shapes and clear data flow.' },
-          { title: 'Geometry diagram', body: 'Combine lines, circles, triangles and concise mathematical labels.' },
-          { title: 'Neural network', body: 'Create layered nodes, connections, input labels and output annotations.' },
-          { title: 'Annotated figure', body: 'Import an image and add arrows, shapes and text callouts for a paper or slide.' }
-        ]
-      },
-      {
-        title: 'Choose the right structure',
-        paragraphs: [
-          'For a process, optimise for reading order. For a network, make relationships and direction clear. For a system map, group related components. For a mathematical figure, prioritise accurate geometry and concise notation.',
-          'TikZ Drawer includes structured scene presets, common graph layouts, layers, snapping and export configuration. Begin visually and retain the flexibility of hand-edited TikZ code.'
+          {
+            title: 'Flowchart',
+            body: 'Processes, decisions and directional steps.',
+            visual: 'flowchart'
+          },
+          {
+            title: 'Directed graph',
+            body: 'Paths, cycles, trees and connected ideas.',
+            visual: 'graph'
+          },
+          {
+            title: 'System architecture',
+            body: 'Clients, services, APIs and data flow.',
+            visual: 'architecture'
+          },
+          {
+            title: 'Geometry',
+            body: 'Lines, angles, circles and concise labels.',
+            visual: 'geometry'
+          },
+          {
+            title: 'Neural network',
+            body: 'Layered nodes with inputs and outputs.',
+            visual: 'network'
+          },
+          {
+            title: 'Annotated figure',
+            body: 'Callouts, arrows and notes over an image.',
+            visual: 'annotation'
+          }
         ]
       }
     ]
@@ -84,29 +171,43 @@ const SITE_PAGES = {
     key: 'about',
     eyebrow: 'Open-source project',
     title: 'About TikZ Drawer',
-    lede: 'TikZ Drawer is a free browser-based visual editor for people who want to create diagrams visually and keep LaTeX TikZ as the editable output.',
+    lede: 'A visual canvas for people who want editable TikZ without placing every coordinate by hand.',
     primaryAction: 'Open the editor',
+    secondaryAction: 'Browse examples',
+    secondaryRoute: '/examples',
+    heroVisual: 'source',
     sections: [
       {
-        title: 'Why the project exists',
-        paragraphs: [
-          'TikZ produces excellent vector graphics for LaTeX, but positioning and iterating on a diagram entirely through code can be time-consuming. TikZ Drawer bridges the visual and textual workflows.',
-          'The editor supports common shapes, text, connectors, graph presets, layers, alignment, snapping, import and export workflows. It runs online without requiring a local installation.'
-        ]
-      },
-      {
-        title: 'Creator and source',
-        paragraphs: [
-          'TikZ Drawer is created and maintained by Aniol0012. The source code, issue tracker and release history are available in the public GitHub repository.',
-          'Generated drawings are standard text-based TikZ, so they can be version-controlled, refined manually and shared independently of the web application.'
+        id: 'principles',
+        title: 'Visual when drawing, textual when sharing',
+        cards: [
+          {
+            title: 'Draw in the browser',
+            body: 'No local drawing application or setup required.',
+            visual: 'canvas'
+          },
+          {
+            title: 'Keep standard TikZ',
+            body: 'The output remains portable, readable source code.',
+            visual: 'source'
+          },
+          {
+            title: 'Built in the open',
+            body: 'Source, releases and issues live on GitHub.',
+            visual: 'graph'
+          }
         ]
       }
     ]
   }
-} satisfies Readonly<Record<string, SitePageContent>>;
+} as const satisfies Readonly<Record<SitePageKey, SitePageContent>>;
 
-const SITE_PAGE_BY_KEY: ReadonlyMap<string, SitePageContent> = new Map(Object.entries(SITE_PAGES));
+const SITE_PAGE_BY_KEY: ReadonlyMap<SitePageKey, SitePageContent> = new Map(SITE_PAGE_KEYS.map((key) => [key, SITE_PAGES[key]]));
+
+const SITE_PAGE_KEY_SET: ReadonlySet<string> = new Set(SITE_PAGE_KEYS);
 const DEFAULT_SITE_PAGE = SITE_PAGES.guide;
 
+export const isSitePageKey = (value: unknown): value is SitePageKey => typeof value === 'string' && SITE_PAGE_KEY_SET.has(value);
+
 export const resolveSitePage = (value: unknown): SitePageContent =>
-  typeof value === 'string' ? (SITE_PAGE_BY_KEY.get(value) ?? DEFAULT_SITE_PAGE) : DEFAULT_SITE_PAGE;
+  isSitePageKey(value) ? (SITE_PAGE_BY_KEY.get(value) ?? DEFAULT_SITE_PAGE) : DEFAULT_SITE_PAGE;

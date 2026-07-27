@@ -8,19 +8,31 @@
   (close)="dismissed.emit()">
   <section class="dialog-panel">
     <header class="dialog-header">
-      <strong>Page not found</strong>
-      <button type="button" aria-label="Close" (click)="close()">×</button>
+      <div class="dialog-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+      </div>
+      <button type="button" aria-label="Close message" (click)="close()">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="m4 4 8 8m0-8-8 8" />
+        </svg>
+      </button>
     </header>
 
     <div class="dialog-body">
-      <h2 id="not-found-dialog-title">We couldn’t open that page.</h2>
-      <p id="not-found-dialog-description">Your current page is still open. The address may be incorrect, or the page may have moved.</p>
-      <code>{{ requestedPath() }}</code>
+      <h2 id="not-found-dialog-title">We can’t find this page</h2>
+      <p id="not-found-dialog-description">
+        This link seems to have lost its coordinates. Close this message to keep working where you were.
+      </p>
+      <div class="requested-path">
+        <span>You tried to open</span>
+        <code>{{ requestedPath() }}</code>
+      </div>
     </div>
 
     <footer class="dialog-actions">
-      <button class="button" type="button" (click)="close()">Close</button>
-      <a class="button button--primary" routerLink="/" (click)="dismissed.emit()">Open the editor</a>
+      <button class="button" type="button" autofocus (click)="close()">Continue here</button>
+      <a class="button button--primary" routerLink="/" (click)="dismissed.emit()">Open editor</a>
     </footer>
   </section>
 </dialog>

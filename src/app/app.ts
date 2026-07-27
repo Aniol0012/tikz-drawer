@@ -4,9 +4,9 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
-import type { SeoRouteData } from './app.routes';
 import { NotFoundOverlayComponent } from './features/not-found/not-found-overlay.component';
 import { NotFoundOverlayService } from './features/not-found/not-found-overlay.service';
+import type { SeoRouteData } from './features/site-pages/site-page-seo';
 import { CustomTooltipComponent } from './shared/custom-tooltip/custom-tooltip.component';
 
 const SITE_ORIGIN = 'https://tikzdrawer.com';

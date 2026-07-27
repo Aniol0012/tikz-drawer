@@ -1,14 +1,14 @@
 import { NotFoundOverlayService } from './not-found-overlay.service';
 
 describe('NotFoundOverlayService', () => {
-  it('uses the full-page fallback before any valid route has rendered', () => {
+  it('uses the fullscreen page for a direct unknown URL', () => {
     const service = new NotFoundOverlayService();
 
     expect(service.openOverActivePage('/missing.pdf')).toBe(false);
     expect(service.requestedPath()).toBeNull();
   });
 
-  it('opens over the current page after a valid route has rendered', () => {
+  it('preserves the current page and opens the dialog after a valid route has rendered', () => {
     const service = new NotFoundOverlayService();
     service.markPageActive();
 

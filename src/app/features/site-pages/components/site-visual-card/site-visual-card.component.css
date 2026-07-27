@@ -1,0 +1,65 @@
+:host {
+  min-width: 0;
+  display: block;
+}
+
+.visual-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--tool-border);
+  border-radius: 9px;
+  background: var(--panel-background);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.visual-card:hover {
+  border-color: var(--tool-border-strong);
+  transform: translateY(-2px);
+}
+
+app-diagram-artwork {
+  border-bottom: 1px solid var(--tool-border);
+}
+
+.visual-card__copy {
+  padding: 17px 18px 19px;
+}
+
+.visual-card__label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent-strong);
+  font: 750 0.72rem/1 var(--font-mono);
+}
+
+h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+p {
+  margin: 7px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.visual-card--compact {
+  display: grid;
+  grid-template-columns: 126px minmax(0, 1fr);
+  align-items: center;
+}
+
+.visual-card--compact app-diagram-artwork {
+  border-right: 1px solid var(--tool-border);
+  border-bottom: 0;
+}
+
+@media (max-width: 520px) {
+  .visual-card--compact {
+    grid-template-columns: 105px minmax(0, 1fr);
+  }
+}

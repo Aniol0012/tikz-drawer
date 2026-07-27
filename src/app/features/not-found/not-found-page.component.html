@@ -1,16 +1,18 @@
-<main class="not-found" data-tooltip-disabled>
+<main class="not-found-page" data-tooltip-disabled>
   <a class="brand" routerLink="/">TikZ Drawer</a>
 
   <section class="message" aria-labelledby="not-found-title">
-    <p class="section-label">Page not found</p>
-    <h1 id="not-found-title">We couldn’t find this page.</h1>
-    <p class="description">The address may be incorrect, or the page may have moved.</p>
-    <code class="requested-path">{{ requestedPath }}</code>
+    <div class="message__copy">
+      <p class="status">Page not found</p>
+      <h1 id="not-found-title">We can’t find this page</h1>
+      <p class="explanation">This link seems to have lost its coordinates. The canvas is better at finding points than we are.</p>
+      <code>{{ requestedPath }}</code>
+      <div class="actions">
+        <a class="button button--primary" routerLink="/">Open the editor</a>
+        <a class="button" routerLink="/guide">Read the guide</a>
+      </div>
+    </div>
 
-    <nav class="actions" aria-label="Other destinations">
-      <a class="button button--primary" routerLink="/">Open the editor</a>
-      <a class="button" routerLink="/guide">Read the guide</a>
-      <a class="button" routerLink="/examples">See examples</a>
-    </nav>
+    <app-diagram-artwork kind="lost" label="A disconnected diagram node looking for its coordinates" [interactive]="true" />
   </section>
 </main>

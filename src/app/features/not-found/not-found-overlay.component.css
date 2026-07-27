@@ -1,48 +1,82 @@
 .not-found-dialog {
-  width: min(480px, calc(100% - 28px));
+  width: min(440px, calc(100% - 28px));
   max-width: none;
   max-height: calc(100dvh - 28px);
   overflow: auto;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--app-foreground);
   background: transparent;
 }
 
 .not-found-dialog::backdrop {
-  background: rgba(20, 20, 20, 0.52);
+  background: rgba(10, 10, 12, 0.34);
+  backdrop-filter: blur(1.5px);
 }
 
 .dialog-panel {
   border: 1px solid var(--tool-border-strong);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--panel-background);
   box-shadow: var(--floating-shadow);
 }
 
 .dialog-header {
-  min-height: 48px;
+  min-height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 16px;
+  padding-left: 18px;
   border-bottom: 1px solid var(--tool-border);
 }
 
-.dialog-header strong {
-  font-size: 0.86rem;
+.dialog-mark {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dialog-mark span {
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.dialog-mark span + span {
+  position: relative;
+  margin-left: 20px;
+}
+
+.dialog-mark span + span::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 14px;
+  border-top: 2px solid var(--tool-border-strong);
+  transform: translate(-5px, -50%);
 }
 
 .dialog-header button {
-  width: 48px;
-  height: 48px;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-left: 1px solid var(--tool-border);
   color: var(--app-foreground);
   background: transparent;
-  font-size: 1.35rem;
-  line-height: 1;
+  cursor: pointer;
+}
+
+.dialog-header svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.6;
 }
 
 .dialog-header button:hover {
@@ -51,30 +85,40 @@
 }
 
 .dialog-body {
-  padding: 24px;
+  padding: 26px 26px 24px;
 }
 
 h2 {
   margin: 0;
-  font-size: clamp(1.7rem, 7vw, 2.35rem);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  font-size: clamp(1.55rem, 7vw, 2rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
 p {
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   color: var(--muted-foreground);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
-code {
+.requested-path {
+  margin-top: 22px;
+  padding-top: 15px;
+  border-top: 1px solid var(--tool-border);
+}
+
+.requested-path span {
   display: block;
+  margin-bottom: 7px;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.requested-path code {
+  display: inline;
   overflow-wrap: anywhere;
-  margin-top: 20px;
-  padding: 10px 11px;
-  border: 1px solid var(--tool-border);
   color: var(--app-foreground);
-  background: var(--input-background);
   font-family: var(--font-mono);
   font-size: 0.78rem;
 }
@@ -83,7 +127,7 @@ code {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 14px 16px;
+  padding: 13px 14px;
   border-top: 1px solid var(--tool-border);
   background: var(--toolbar-background);
 }
@@ -100,11 +144,18 @@ code {
   background: var(--tool-surface);
   font: 750 0.8rem/1 var(--font-sans);
   text-decoration: none;
+  cursor: pointer;
 }
 
 .button:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.dialog-header button:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
 }
 
 .button--primary {
@@ -120,6 +171,10 @@ code {
 }
 
 @media (max-width: 440px) {
+  .dialog-body {
+    padding-inline: 20px;
+  }
+
   .dialog-actions {
     align-items: stretch;
     flex-direction: column;

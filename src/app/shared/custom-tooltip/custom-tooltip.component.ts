@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import type { ElementRef } from '@angular/core';
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { resolveAppTheme } from '../theme/app-theme.utils';
 
 interface TooltipState {
   readonly text: string;
@@ -8,8 +9,10 @@ interface TooltipState {
   readonly top: number;
   readonly placement: 'top' | 'bottom';
   readonly phase: 'entering' | 'leaving';
+  readonly theme: ReturnType<typeof resolveAppTheme>;
 }
 
+const IMPLICIT_TOOLTIP_SELECTOR = '[title], button[aria-label], a[aria-label], [role="button"][aria-label], [role="tab"][aria-label]';
 const TOOLTIP_MARGIN_PX = 12;
 const TOOLTIP_OFFSET_PX = 8;
 const TOOLTIP_MAX_WIDTH_PX = 280;
@@ -250,7 +253,7 @@ export class CustomTooltipComponent {
       return null;
     }
 
-    const candidate = target.closest<HTMLElement>('[data-tooltip], [title], [aria-label]');
+    const candidate = target.closest<HTMLElement>(IMPLICIT_TOOLTIP_SELECTOR);
     if (!candidate || candidate.closest('app-custom-tooltip')) {
       return null;
     }
@@ -344,8 +347,14 @@ export class CustomTooltipComponent {
       left,
       top,
       placement,
-      phase: 'entering'
+      phase: 'entering',
+      theme: this.tooltipTheme(target)
     };
+  }
+
+  private tooltipTheme(target: HTMLElement): ReturnType<typeof resolveAppTheme> {
+    const localTheme = target.closest<HTMLElement>('[data-theme]')?.dataset['theme'];
+    return localTheme === 'light' || localTheme === 'dark' ? localTheme : resolveAppTheme(this.document);
   }
 
   private scheduleMeasuredPosition(target: HTMLElement, text: string, phase: TooltipState['phase'] = 'entering'): void {
