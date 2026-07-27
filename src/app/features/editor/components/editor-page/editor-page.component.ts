@@ -1233,9 +1233,12 @@ export class EditorPageComponent {
       queueMicrotask(() => this.focusContextMenuItem('[role="menuitem"]:not(:disabled)'));
     });
 
+    let previousInspectorSelectionCount = this.selectionCount();
     effect(() => {
       const autoCollapseInspector = this.configuration.generalConfig().showInspectorOnlyWithSelection;
       const selectionCount = this.selectionCount();
+      const selectionCountBeforeUpdate = previousInspectorSelectionCount;
+      previousInspectorSelectionCount = selectionCount;
       if (this.inspectorTab() === 'assistant') {
         this.rightSidebarCollapsed.set(false);
         this.rightSidebarAutoCollapsed = false;
@@ -1248,7 +1251,7 @@ export class EditorPageComponent {
         }
         return;
       }
-      const shouldCollapse = shouldAutoCollapseInspector(autoCollapseInspector, selectionCount);
+      const shouldCollapse = shouldAutoCollapseInspector(autoCollapseInspector, selectionCountBeforeUpdate, selectionCount);
       if (shouldCollapse) {
         this.rightSidebarCollapsed.set(true);
         this.rightSidebarAutoCollapsed = true;

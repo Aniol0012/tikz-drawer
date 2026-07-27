@@ -126,10 +126,11 @@ describe('editor-page utils', () => {
     expect(simplifyPolyline(points.slice(0, 2), 0.1)).toEqual(points.slice(0, 2));
     expect(simplifyPolyline(points, 0)).toEqual(points);
   });
-  it('auto-collapses the inspector only when enabled and the selection is empty', () => {
-    expect(shouldAutoCollapseInspector(true, 0)).toBe(true);
-    expect(shouldAutoCollapseInspector(true, 1)).toBe(false);
-    expect(shouldAutoCollapseInspector(false, 0)).toBe(false);
+  it('auto-collapses the inspector only when a non-empty selection becomes empty', () => {
+    expect(shouldAutoCollapseInspector(true, 0, 0)).toBe(false);
+    expect(shouldAutoCollapseInspector(true, 1, 0)).toBe(true);
+    expect(shouldAutoCollapseInspector(true, 1, 1)).toBe(false);
+    expect(shouldAutoCollapseInspector(false, 1, 0)).toBe(false);
   });
 
   it('keeps world coordinates at the same screen position after an inspector resize', () => {
