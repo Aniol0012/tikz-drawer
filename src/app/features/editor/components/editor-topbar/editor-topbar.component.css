@@ -267,6 +267,14 @@
   flex: 0 0 auto;
 }
 
+.icon-button--info .info-icon {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
+  stroke: none;
+  shape-rendering: geometricPrecision;
+}
+
 .language-select {
   border: 1px solid var(--tool-border);
   background: var(--tool-surface);

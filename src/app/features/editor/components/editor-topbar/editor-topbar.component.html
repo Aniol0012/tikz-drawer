@@ -198,6 +198,14 @@
         </div>
       </sl-dropdown>
 
+      @if (showAboutShortcut()) {
+        <a class="icon-button icon-button--info" routerLink="/about" aria-label="About TikZ Drawer" title="About TikZ Drawer">
+          <svg class="info-icon" viewBox="0 0 32 32" aria-hidden="true">
+            <path [attr.d]="icon('info')"></path>
+          </svg>
+        </a>
+      }
+
       <a
         class="icon-button icon-button--github"
         href="https://github.com/Aniol0012/tikz-drawer/"

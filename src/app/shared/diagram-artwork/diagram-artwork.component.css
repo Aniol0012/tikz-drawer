@@ -41,6 +41,118 @@ svg {
   transform: translateY(2px);
 }
 
+:host(.diagram-artwork--interactive:hover) .layer--mid {
+  transform: translateY(-1px) scale(1.015);
+}
+
+.spatial-scene {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.spatial-shadow {
+  fill: color-mix(in srgb, var(--app-foreground) 10%, transparent);
+}
+
+.spatial-orbit,
+.spatial-axis,
+.spatial-edge {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spatial-orbit {
+  stroke: color-mix(in srgb, var(--accent) 48%, var(--tool-border));
+  stroke-width: 1.5;
+  stroke-dasharray: 5 7;
+  animation: spatial-orbit-flow 12s linear infinite;
+}
+
+.spatial-orbit--vertical {
+  stroke: color-mix(in srgb, var(--app-foreground) 30%, var(--tool-border));
+  stroke-dasharray: 3 8;
+  animation-direction: reverse;
+}
+
+.spatial-axis {
+  stroke: color-mix(in srgb, var(--muted-foreground) 32%, transparent);
+  stroke-width: 1.25;
+}
+
+.spatial-face {
+  stroke: color-mix(in srgb, var(--tool-border-strong) 82%, transparent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.spatial-face--muted {
+  fill: color-mix(in srgb, var(--tool-surface) 86%, transparent);
+}
+
+.spatial-face--soft {
+  fill: color-mix(in srgb, var(--accent-soft) 64%, transparent);
+}
+
+.spatial-face--accent {
+  fill: color-mix(in srgb, var(--accent) 23%, transparent);
+}
+
+.spatial-face--bright {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
+}
+
+.spatial-edge {
+  stroke: color-mix(in srgb, var(--app-foreground) 68%, var(--tool-border-strong));
+  stroke-width: 2;
+}
+
+.spatial-edge--inner {
+  stroke: color-mix(in srgb, var(--accent) 72%, var(--tool-border-strong));
+  stroke-width: 1.6;
+}
+
+.spatial-node {
+  fill: var(--panel-background);
+  stroke: var(--app-foreground);
+  stroke-width: 2;
+}
+
+.spatial-node--accent,
+.spatial-orbit-node {
+  fill: var(--accent);
+  stroke: var(--panel-background);
+  stroke-width: 2.5;
+}
+
+.spatial-node--core {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.spatial-orbit-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spatial-node-pulse 2.8s ease-in-out infinite;
+}
+
+.spatial-orbit-node--right {
+  animation-delay: -1.4s;
+}
+
+@keyframes spatial-orbit-flow {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+@keyframes spatial-node-pulse {
+  50% {
+    transform: scale(1.22);
+  }
+}
+
 .plane {
   stroke: var(--tool-border-strong);
   stroke-linejoin: round;
@@ -269,7 +381,9 @@ circle.node--accent {
 
 @media (prefers-reduced-motion: reduce) {
   svg,
-  .layer {
+  .layer,
+  .spatial-orbit,
+  .spatial-orbit-node {
     animation: none;
     transition: none;
   }

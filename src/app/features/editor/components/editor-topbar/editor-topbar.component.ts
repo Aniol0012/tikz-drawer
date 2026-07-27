@@ -14,6 +14,7 @@ import {
   signal,
   viewChild
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
 import { getLanguageOptions, isLanguageCode, languageByCode, type LanguageCode } from '../../i18n/editor-page.i18n';
@@ -28,6 +29,7 @@ const DEFAULT_WINDOW_WIDTH = 1280;
 const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
 const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
+const ABOUT_SHORTCUT_MIN_WINDOW_WIDTH = 1500;
 const LANGUAGE_SEARCH_THRESHOLD = 7;
 
 interface ShoelaceDropdownElement extends HTMLElement {
@@ -36,7 +38,7 @@ interface ShoelaceDropdownElement extends HTMLElement {
 
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent, AppSelectComponent, BadgeComponent, NgOptimizedImage, ThemeToggleButtonComponent],
+  imports: [CopyButtonComponent, AppSelectComponent, BadgeComponent, NgOptimizedImage, RouterLink, ThemeToggleButtonComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
@@ -84,6 +86,7 @@ export class EditorTopbarComponent {
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH);
+  readonly showAboutShortcut = computed(() => !this.mobileLayout() && this.windowWidth() >= ABOUT_SHORTCUT_MIN_WINDOW_WIDTH);
 
   constructor() {
     effect(() => {

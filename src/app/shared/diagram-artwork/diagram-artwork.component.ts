@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, input } from '@angular/core';
 
 export const DIAGRAM_ARTWORK_KINDS = [
+  'spatial',
   'canvas',
   'import',
   'ai',

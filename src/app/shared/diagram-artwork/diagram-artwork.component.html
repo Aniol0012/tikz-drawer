@@ -5,6 +5,43 @@
   </g>
 
   @switch (kind()) {
+    @case ('spatial') {
+      <g class="spatial-scene">
+        <g class="layer layer--back">
+          <ellipse class="spatial-shadow" cx="160" cy="190" rx="82" ry="15" />
+          <ellipse class="spatial-orbit spatial-orbit--horizontal" cx="160" cy="113" rx="132" ry="50" transform="rotate(-8 160 113)" />
+          <ellipse class="spatial-orbit spatial-orbit--vertical" cx="160" cy="113" rx="45" ry="104" transform="rotate(28 160 113)" />
+          <path class="spatial-axis" d="M49 177 160 113l111 64M160 113V22" />
+        </g>
+
+        <g class="layer layer--mid spatial-solid">
+          <path class="spatial-face spatial-face--muted" d="m160 30-61 42 58 43z" />
+          <path class="spatial-face spatial-face--soft" d="m160 30 61 42-64 43z" />
+          <path class="spatial-face spatial-face--accent" d="m99 72-39 55 97-12z" />
+          <path class="spatial-face spatial-face--bright" d="m221 72 39 55-103-12z" />
+          <path class="spatial-face spatial-face--soft" d="m60 127 39 57 58-69z" />
+          <path class="spatial-face spatial-face--accent" d="m260 127-39 57-64-69z" />
+          <path class="spatial-face spatial-face--bright" d="m99 184 61 24-3-93z" />
+          <path class="spatial-face spatial-face--muted" d="m221 184-61 24-3-93z" />
+          <path class="spatial-edge" d="m160 30-61 42-39 55 39 57 61 24 61-24 39-57-39-55-61-42Z" />
+          <path class="spatial-edge spatial-edge--inner" d="m99 72 58 43 64-43M60 127l97-12 103 12M99 184l58-69 64 69M160 30l-3 85 3 93" />
+        </g>
+
+        <g class="layer layer--front">
+          <circle class="spatial-node spatial-node--accent" cx="160" cy="30" r="5" />
+          <circle class="spatial-node" cx="99" cy="72" r="4" />
+          <circle class="spatial-node" cx="221" cy="72" r="4" />
+          <circle class="spatial-node" cx="60" cy="127" r="5" />
+          <circle class="spatial-node spatial-node--core" cx="157" cy="115" r="7" />
+          <circle class="spatial-node" cx="260" cy="127" r="5" />
+          <circle class="spatial-node" cx="99" cy="184" r="4" />
+          <circle class="spatial-node" cx="221" cy="184" r="4" />
+          <circle class="spatial-node spatial-node--accent" cx="160" cy="208" r="5" />
+          <circle class="spatial-orbit-node spatial-orbit-node--left" cx="34" cy="133" r="6" />
+          <circle class="spatial-orbit-node spatial-orbit-node--right" cx="279" cy="77" r="5" />
+        </g>
+      </g>
+    }
     @case ('canvas') {
       <g class="layer layer--back">
         <rect class="app-window" x="35" y="27" width="250" height="166" rx="8" />

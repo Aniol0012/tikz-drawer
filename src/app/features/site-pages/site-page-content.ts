@@ -71,7 +71,7 @@ const SITE_PAGES = {
     primaryAction: 'Start a diagram',
     secondaryAction: 'See examples',
     secondaryRoute: '/examples',
-    heroVisual: 'canvas',
+    heroVisual: 'spatial',
     sections: [
       {
         id: 'start',
