@@ -1,0 +1,37 @@
+<button
+  #trigger
+  class="transform-disclosure"
+  type="button"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="expanded()"
+  (click)="toggle()"
+  (keydown)="onTriggerKeydown($event)">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path [attr.d]="iconMap()['transform']"></path>
+  </svg>
+  <span>{{ 'moveOrTransform' | translate }}</span>
+  <svg class="transform-disclosure__chevron" viewBox="0 0 24 24" aria-hidden="true">
+    <path [attr.d]="iconMap()['chevronDown']"></path>
+  </svg>
+</button>
+
+@if (expanded()) {
+  <div
+    class="transform-actions"
+    role="menu"
+    data-tooltip-disabled
+    [attr.aria-label]="'moveOrTransform' | translate"
+    (keydown)="onMenuKeydown($event)">
+    @for (item of actions; track item.action) {
+      @if (item.group === 'rotate' && $first === false && actions[$index - 1]?.group === 'move') {
+        <span class="transform-actions__divider" aria-hidden="true"></span>
+      }
+      <button #menuItem type="button" role="menuitem" [disabled]="actionDisabled(item.action)" (click)="choose(item.action)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="iconMap()[item.iconKey]"></path>
+        </svg>
+        <span>{{ item.labelKey | translate }}</span>
+      </button>
+    }
+  </div>
+}

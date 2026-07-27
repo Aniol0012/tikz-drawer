@@ -1,0 +1,98 @@
+:host {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.transform-disclosure,
+.transform-actions button {
+  border: 1px solid var(--tool-border);
+  background: var(--tool-surface);
+  color: var(--app-foreground);
+  font: inherit;
+  font-weight: 650;
+}
+
+.transform-disclosure {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border-radius: 9px;
+  text-align: left;
+}
+
+.transform-disclosure svg,
+.transform-actions button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.transform-disclosure__chevron {
+  width: 14px !important;
+  height: 14px !important;
+  transition: transform 140ms ease;
+}
+
+.transform-disclosure[aria-expanded='true'] .transform-disclosure__chevron {
+  transform: rotate(180deg);
+}
+
+.transform-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid var(--tool-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tool-surface) 88%, var(--panel-background));
+}
+
+.transform-actions button {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.78rem;
+}
+
+.transform-actions__divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 1px 0;
+  background: var(--tool-border);
+}
+
+.transform-disclosure:hover,
+.transform-actions button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--tool-border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--tool-surface));
+}
+
+.transform-disclosure:focus-visible,
+.transform-actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.transform-actions button:disabled {
+  opacity: 0.42;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transform-disclosure__chevron {
+    transition: none;
+  }
+}

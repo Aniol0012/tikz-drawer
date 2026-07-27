@@ -10,7 +10,20 @@ import {
 } from '../utils/editor-storage.utils';
 import { EditorLocalStorageService } from './editor-local-storage.service';
 
-export const EDITOR_CONTEXT_MENU_ACTIONS = ['copy', 'cut', 'paste', 'duplicate', 'delete', 'front', 'back', 'group', 'ungroup', 'png', 'saveTemplate'] as const;
+export const EDITOR_CONTEXT_MENU_ACTIONS = [
+  'copy',
+  'cut',
+  'paste',
+  'duplicate',
+  'front',
+  'back',
+  'group',
+  'ungroup',
+  'transform',
+  'png',
+  'saveTemplate',
+  'delete'
+] as const;
 
 export type EditorContextMenuAction = (typeof EDITOR_CONTEXT_MENU_ACTIONS)[number];
 export type EditorContextMenuActionsConfig = Readonly<Record<EditorContextMenuAction, boolean>>;

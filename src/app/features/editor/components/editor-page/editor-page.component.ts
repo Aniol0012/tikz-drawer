@@ -159,6 +159,7 @@ import { FigureSearchOverlayComponent } from '../figure-search-overlay/figure-se
 import { AiPanelComponent } from '../ai-panel/ai-panel.component';
 import { ImportReplaceDialogComponent } from '../import-replace-dialog/import-replace-dialog.component';
 import { EditorMinimapComponent } from '../editor-minimap/editor-minimap.component';
+import { EditorTransformActionsComponent, type ContextTransformAction } from '../editor-transform-actions/editor-transform-actions.component';
 import { AiSparklesIconComponent } from '../ai-sparkles-icon/ai-sparkles-icon.component';
 import { AiIntroFlightComponent } from '../ai-intro-flight/ai-intro-flight.component';
 import { ColorPickerComponent } from '../color-picker/color-picker.component';
@@ -305,6 +306,12 @@ import {
 import { displayTextLinesForShape, measureTextShape, textLeftForWidth } from '../../utils/text.utils';
 import { REGEX } from '../../../../shared/regex/regex.utils';
 
+type ContextMenuSection = {
+  readonly id: 'edit' | 'arrange' | 'export' | 'danger';
+  readonly labelKey: string;
+  readonly actions: readonly ContextAction[];
+};
+
 @Component({
   selector: 'app-editor-page',
   imports: [
@@ -323,6 +330,7 @@ import { REGEX } from '../../../../shared/regex/regex.utils';
     AiPanelComponent,
     ImportReplaceDialogComponent,
     EditorMinimapComponent,
+    EditorTransformActionsComponent,
     AiSparklesIconComponent,
     AiIntroFlightComponent,
     ColorPickerComponent,
@@ -411,6 +419,10 @@ export class EditorPageComponent {
   readonly objectSnapGuides = signal<readonly ObjectSnapGuide[]>([]);
   readonly contextMenu = signal<ContextMenuState | null>(null);
   readonly contextMenuPosition = signal<{ readonly left: number; readonly top: number } | null>(null);
+  readonly contextTransformMenuOpen = signal(false);
+  readonly contextSubmenuOpensLeft = signal(false);
+  readonly contextSubmenuTop = signal(0);
+  readonly contextMenuKeyboardNavigation = signal(false);
   readonly fileMenuOpen = signal(false);
   readonly exportModalOpen = signal(false);
   readonly importModalOpen = signal(false);
@@ -504,6 +516,7 @@ export class EditorPageComponent {
     back: iconPaths.back,
     group: iconPaths.layers,
     ungroup: iconPaths.ungroup,
+    transform: iconPaths.transform,
     png: iconPaths.download,
     saveTemplate: iconPaths.library
   };
@@ -517,9 +530,40 @@ export class EditorPageComponent {
     back: 'sendToBack',
     group: 'groupFigures',
     ungroup: 'ungroupFigures',
+    transform: 'moveOrTransform',
     png: 'downloadPng',
     saveTemplate: 'saveAsTemplate'
   };
+  readonly contextTransformActions: ReadonlyArray<{
+    readonly action: ContextTransformAction;
+    readonly labelKey: string;
+    readonly iconPath: string;
+    readonly group: 'move' | 'rotate';
+  }> = [
+    { action: 'centerCanvas', labelKey: 'centerOnCanvas', iconPath: iconPaths.centerCanvas, group: 'move' },
+    { action: 'centerHorizontal', labelKey: 'centerHorizontally', iconPath: iconPaths.centerHorizontal, group: 'move' },
+    { action: 'centerVertical', labelKey: 'centerVertically', iconPath: iconPaths.centerVertical, group: 'move' },
+    { action: 'rotateLeft', labelKey: 'rotateLeft90', iconPath: iconPaths.rotateLeft, group: 'rotate' },
+    { action: 'rotateRight', labelKey: 'rotateRight90', iconPath: iconPaths.rotateRight, group: 'rotate' },
+    { action: 'resetRotation', labelKey: 'resetRotation', iconPath: iconPaths.resetRotation, group: 'rotate' }
+  ];
+  private readonly contextMenuSectionDefinitions: readonly ContextMenuSection[] = [
+    { id: 'edit', labelKey: 'contextMenuSectionEdit', actions: ['copy', 'cut', 'paste', 'duplicate'] },
+    { id: 'arrange', labelKey: 'contextMenuSectionArrange', actions: ['front', 'back', 'group', 'ungroup', 'transform'] },
+    { id: 'export', labelKey: 'contextMenuSectionExport', actions: ['png', 'saveTemplate'] },
+    { id: 'danger', labelKey: 'contextMenuSectionDanger', actions: ['delete'] }
+  ];
+  readonly contextMenuSections = computed<readonly ContextMenuSection[]>(() => {
+    const configuredOrder = this.configuration.generalConfig().contextMenuOrder;
+    return this.contextMenuSectionDefinitions
+      .map((section) => ({
+        ...section,
+        actions: configuredOrder.filter(
+          (action) => section.actions.includes(action) && this.contextMenuActionEnabled(action) && this.contextMenuActionAvailable(action)
+        )
+      }))
+      .filter((section) => section.actions.length > 0);
+  });
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
@@ -1186,6 +1230,7 @@ export class EditorPageComponent {
       }
       this.contextMenuPosition.set({ left: menu.clientX, top: menu.clientY });
       this.scheduleContextMenuReposition();
+      queueMicrotask(() => this.focusContextMenuItem('[role="menuitem"]:not(:disabled)'));
     });
 
     effect(() => {
@@ -3495,6 +3540,8 @@ export class EditorPageComponent {
   closeContextMenu(): void {
     this.contextMenu.set(null);
     this.contextMenuPosition.set(null);
+    this.contextTransformMenuOpen.set(false);
+    this.contextMenuKeyboardNavigation.set(false);
     if (this.contextMenuPositionRafHandle !== null && this.document.defaultView) {
       this.document.defaultView.cancelAnimationFrame(this.contextMenuPositionRafHandle);
       this.contextMenuPositionRafHandle = null;
@@ -3541,6 +3588,11 @@ export class EditorPageComponent {
   }
 
   runContextAction(action: ContextAction): void {
+    if (action === 'transform') {
+      this.openContextTransformMenu();
+      return;
+    }
+
     switch (action) {
       case 'copy':
         this.copySelected();
@@ -3579,6 +3631,113 @@ export class EditorPageComponent {
     this.closeContextMenu();
   }
 
+  openContextTransformMenu(focusFirstItem = false): void {
+    this.contextTransformMenuOpen.set(true);
+    const view = this.document.defaultView;
+    const panel = this.contextMenuPanel()?.nativeElement;
+    const panelBounds = panel?.getBoundingClientRect();
+    const triggerBounds = panel?.querySelector<HTMLElement>('[data-context-transform-trigger]')?.getBoundingClientRect();
+    this.contextSubmenuOpensLeft.set(!!view && !!panelBounds && panelBounds.right + panelBounds.width + 16 > view.innerWidth);
+    this.contextSubmenuTop.set(panelBounds && triggerBounds ? triggerBounds.top - panelBounds.top : 0);
+    if (focusFirstItem) {
+      queueMicrotask(() => this.focusContextMenuItem('[data-context-transform-item]'));
+    }
+  }
+
+  closeContextTransformMenu(restoreFocus = false): void {
+    this.contextTransformMenuOpen.set(false);
+    if (restoreFocus) {
+      queueMicrotask(() => this.focusContextMenuItem('[data-context-transform-trigger]'));
+    }
+  }
+
+  runContextTransformAction(action: ContextTransformAction): void {
+    switch (action) {
+      case 'centerCanvas':
+        this.centerSelectedInViewport('both');
+        return;
+      case 'centerHorizontal':
+        this.centerSelectedInViewport('horizontal');
+        return;
+      case 'centerVertical':
+        this.centerSelectedInViewport('vertical');
+        return;
+      case 'rotateLeft':
+        this.rotateCurrentSelectionBy(-90);
+        break;
+      case 'rotateRight':
+        this.rotateCurrentSelectionBy(90);
+        break;
+      case 'resetRotation':
+        this.resetSelectedRotation();
+        break;
+    }
+    this.closeContextMenu();
+  }
+
+  contextTransformActionDisabled(action: ContextTransformAction): boolean {
+    if (action === 'rotateLeft' || action === 'rotateRight') {
+      return !this.selectionCanRotate(this.selectedShapes());
+    }
+    if (action === 'resetRotation') {
+      return !this.selectedShapes().some((shape) => Math.abs(this.shapeRotation(shape)) > 0.0001);
+    }
+    return this.selectionCount() === 0;
+  }
+
+  onContextMenuKeydown(event: KeyboardEvent): void {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    if (event.key === 'ArrowRight' && target.hasAttribute('data-context-transform-trigger')) {
+      event.preventDefault();
+      this.contextMenuKeyboardNavigation.set(true);
+      this.openContextTransformMenu(true);
+      return;
+    }
+    if ((event.key === 'ArrowLeft' || event.key === 'Escape') && target.hasAttribute('data-context-transform-item')) {
+      event.preventDefault();
+      this.closeContextTransformMenu(true);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeContextMenu();
+      this.canvasViewport().nativeElement.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key === 'Tab') {
+      this.contextMenuKeyboardNavigation.set(true);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      return;
+    }
+    this.contextMenuKeyboardNavigation.set(true);
+
+    const menu = target.closest<HTMLElement>('[role="menu"]');
+    if (!menu) {
+      return;
+    }
+    const items = [...menu.querySelectorAll<HTMLButtonElement>(':scope > [role="menuitem"]:not(:disabled), :scope > * > [role="menuitem"]:not(:disabled)')];
+    const currentIndex = items.indexOf(target);
+    if (currentIndex < 0 || items.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? items.length - 1
+          : event.key === 'ArrowDown'
+            ? (currentIndex + 1) % items.length
+            : (currentIndex - 1 + items.length) % items.length;
+    items[nextIndex]?.focus({ preventScroll: true });
+  }
+
   contextMenuActionEnabled(action: ContextAction): boolean {
     return this.configuration.generalConfig().contextMenuActions[action];
   }
@@ -3590,6 +3749,9 @@ export class EditorPageComponent {
     if (action === 'ungroup') {
       return this.canUngroupSelection();
     }
+    if (action === 'transform') {
+      return this.selectionCount() > 0;
+    }
     return true;
   }
 
@@ -3598,6 +3760,40 @@ export class EditorPageComponent {
       return !this.clipboardShapes()?.shapes.length;
     }
     return action !== 'png' && this.selectionCount() === 0;
+  }
+
+  private focusContextMenuItem(selector: string): void {
+    this.contextMenuPanel()?.nativeElement.querySelector<HTMLButtonElement>(selector)?.focus({ preventScroll: true });
+  }
+
+  private centerSelectedInViewport(axis: 'horizontal' | 'vertical' | 'both'): void {
+    const bounds = this.selectionBounds();
+    const selectedShapes = this.selectedShapes();
+    if (!bounds || selectedShapes.length === 0) {
+      return;
+    }
+    const viewportCenter = this.viewportCenter();
+    const selectionCenter = {
+      x: (bounds.left + bounds.right) / 2,
+      y: (bounds.bottom + bounds.top) / 2
+    };
+    const deltaX = axis === 'vertical' ? 0 : viewportCenter.x - selectionCenter.x;
+    const deltaY = axis === 'horizontal' ? 0 : viewportCenter.y - selectionCenter.y;
+    this.runSceneMutation(() => {
+      const translatedShapes = selectedShapes.map((shape) => translateShapeBy(shape, deltaX, deltaY));
+      const attachmentShapeById = this.lineAttachmentShapeMap(translatedShapes);
+      const nextShapes = translatedShapes.map((shape) => this.withMovedLineAttachmentsSynced(shape, attachmentShapeById));
+      this.store.replaceShapes(this.withAttachedLinesMoved(nextShapes));
+    });
+  }
+
+  private resetSelectedRotation(): void {
+    const selectedShapes = this.selectedShapes();
+    const resetShapes = selectedShapes.map((shape) => {
+      const rotation = this.shapeRotation(shape);
+      return Math.abs(rotation) > 0.0001 ? this.rotateShapeAround(shape, this.shapeCenter(shape), -rotation) : shape;
+    });
+    this.runSceneMutation(() => this.store.replaceShapes(this.withAttachedLinesMoved(resetShapes)));
   }
 
   onCanvasViewportPointerDown(event: PointerEvent): void {

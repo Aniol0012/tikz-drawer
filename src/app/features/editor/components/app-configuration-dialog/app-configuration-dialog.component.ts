@@ -313,6 +313,7 @@ export class AppConfigurationDialogComponent {
     { action: 'back', labelKey: 'sendToBack', iconPath: iconPaths.back },
     { action: 'group', labelKey: 'groupFigures', iconPath: iconPaths.layers },
     { action: 'ungroup', labelKey: 'ungroupFigures', iconPath: iconPaths.ungroup },
+    { action: 'transform', labelKey: 'moveOrTransform', iconPath: iconPaths.transform },
     { action: 'png', labelKey: 'downloadPng', iconPath: iconPaths.download },
     { action: 'saveTemplate', labelKey: 'saveAsTemplate', iconPath: iconPaths.library }
   ];

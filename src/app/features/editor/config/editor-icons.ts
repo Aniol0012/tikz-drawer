@@ -163,6 +163,13 @@ export const iconPaths = {
   layers: 'M12 5 4.5 8.75 12 12.5l7.5-3.75L12 5Zm-5.75 7.3L12 15l5.75-2.7M6.25 15.5 12 18.25l5.75-2.75',
   ungroup:
     'M4.75 4.75h4.8v4.8h-4.8v-4.8Zm9.7 0h4.8v4.8h-4.8v-4.8Zm-9.7 9.7h4.8v4.8h-4.8v-4.8Zm9.7 0h4.8v4.8h-4.8v-4.8ZM11 7.15h2M7.15 11v2M16.85 11v2M11 16.85h2',
+  transform: 'M5 8V5h3M16 5h3v3M19 16v3h-3M8 19H5v-3M8 12h8M12 8v8',
+  centerCanvas: 'M5 5h4M5 5v4M19 5h-4M19 5v4M5 19h4M5 19v-4M19 19h-4M19 19v-4M9 9h6v6H9V9Z',
+  centerHorizontal: 'M12 4v16M4 9l3 3-3 3M7 12h3M20 9l-3 3 3 3M17 12h-3',
+  centerVertical: 'M4 12h16M9 4l3 3 3-3M12 7v3M9 20l3-3 3 3M12 17v-3',
+  rotateLeft: 'M8 6H4v4M4.5 9.5A8 8 0 1 1 5 16',
+  rotateRight: 'M16 6h4v4m-.5-.5A8 8 0 1 0 19 16',
+  resetRotation: 'M5 7v5h5M5.5 11.5A7 7 0 1 1 7 17',
   rotation: 'M12 2V5L16 1L12 -3V0A12 12 0 1 0 24 12H21A9 9 0 1 1 12 3Z'
 } satisfies Record<string, string>;
 

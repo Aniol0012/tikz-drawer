@@ -1970,6 +1970,24 @@ kbd {
   gap: 8px;
 }
 
+.right-sidebar .selection-actions {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  order: -2;
+  padding-bottom: 8px;
+  background: linear-gradient(180deg, var(--panel-background) 78%, transparent);
+}
+
+.right-sidebar .selection-transform-actions {
+  position: sticky;
+  top: 46px;
+  z-index: 2;
+  order: -1;
+  padding-bottom: 8px;
+  background: linear-gradient(180deg, var(--panel-background) 78%, transparent);
+}
+
 .selected-shape-list--inline {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
@@ -2563,12 +2581,12 @@ kbd {
   position: fixed;
   z-index: 60;
   display: grid;
-  gap: 4px;
-  min-width: 196px;
+  gap: 0;
+  min-width: 224px;
   max-width: calc(100dvw - 16px);
   max-height: calc(100dvh - 16px);
-  overflow: auto;
-  padding: 6px;
+  overflow: visible;
+  padding: 7px;
   border: 1px solid color-mix(in srgb, var(--tool-border-strong) 88%, transparent);
   border-radius: 12px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--panel-background) 96%, white 4%), var(--panel-background));
@@ -2578,13 +2596,24 @@ kbd {
   backdrop-filter: blur(18px);
 }
 
+.context-menu__section {
+  display: grid;
+  gap: 2px;
+}
+
+.context-menu__section--divided {
+  margin-top: 6px;
+  padding-top: 7px;
+  border-top: 1px solid color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+}
+
 .context-menu button {
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr);
+  grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  padding: 0 10px;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 11px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -2609,6 +2638,40 @@ kbd {
   min-width: 0;
 }
 
+.context-menu__chevron {
+  width: 12px !important;
+  height: 12px !important;
+  opacity: 0.58;
+}
+
+.context-menu__section--danger button {
+  color: var(--danger);
+}
+
+.context-menu__section--danger button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 11%, transparent);
+  color: var(--danger);
+}
+
+.context-menu__submenu {
+  position: absolute;
+  left: calc(100% + 8px);
+  z-index: 1;
+  width: max-content;
+  min-width: 236px;
+}
+
+.context-menu__submenu--left {
+  right: calc(100% + 8px);
+  left: auto;
+}
+
+.context-menu__divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+}
+
 .context-menu button:disabled {
   opacity: 0.42;
 }
@@ -2616,6 +2679,16 @@ kbd {
 .context-menu button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 10%, var(--tool-surface));
   color: var(--app-foreground);
+}
+
+.context-menu button:focus {
+  outline: none;
+}
+
+.context-menu--keyboard-navigation button:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 78%, white);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
 }
 
 .modal-backdrop {

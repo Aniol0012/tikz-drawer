@@ -49,6 +49,29 @@ describe('EditorPageComponent template', () => {
     expect(template).toContain('(click)="closeMobileLibraryPanel()"');
   });
 
+  it('groups context actions, keeps delete destructive, and exposes an accessible transform submenu', async () => {
+    const template = await readTemplate();
+    const component = await readComponent();
+
+    expect(template).toContain('class="context-menu__section"');
+    expect(template).toContain('[class.context-menu__section--danger]');
+    expect(template).toContain('data-tooltip-disabled');
+    expect(template).toContain('aria-haspopup="menu"');
+    expect(template).toContain('[attr.aria-expanded]="contextTransformMenuOpen()"');
+    expect(template).toContain('data-context-transform-item');
+    expect(template).not.toContain('(mouseenter)="openContextTransformMenu()"');
+    expect(template).toContain('[style.top.px]="contextSubmenuTop()"');
+    expect(template).toContain('[class.context-menu--keyboard-navigation]="contextMenuKeyboardNavigation()"');
+    expect(template).toContain('<app-editor-transform-actions');
+    expect(template).toContain('class="selection-transform-actions"');
+    expect(component).toContain("id: 'danger'");
+    expect(component).toContain('runContextTransformAction(action: ContextTransformAction)');
+    expect(component).toContain('onContextMenuKeydown(event: KeyboardEvent)');
+    expect(component).toContain('openContextTransformMenu(focusFirstItem = false)');
+    expect(component).toContain('triggerBounds.top - panelBounds.top');
+    expect(component).toContain('this.focusContextMenuItem(\'[role="menuitem"]:not(:disabled)\')');
+  });
+
   it('keeps direct double-click text insertion wired on shapes', async () => {
     const template = await readTemplate();
     const component = await readComponent();

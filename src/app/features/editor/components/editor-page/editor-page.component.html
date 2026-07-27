@@ -1016,6 +1016,11 @@
                   ><span>{{ 'delete' | translate }}</span>
                 </button>
               </div>
+              <app-editor-transform-actions
+                [iconMap]="iconMap"
+                [canRotate]="!contextTransformActionDisabled('rotateLeft')"
+                [canResetRotation]="!contextTransformActionDisabled('resetRotation')"
+                (actionSelected)="runContextTransformAction($event)"></app-editor-transform-actions>
             </div>
             <div class="property-group">
               <div class="property-group__title">{{ 'general' | translate }}</div>
@@ -1918,7 +1923,7 @@
                   </button>
                 }
               </div>
-              <div class="inline-actions">
+              <div class="inline-actions selection-actions">
                 <button
                   class="primary-button"
                   type="button"
@@ -1992,6 +1997,12 @@
                   ><span>{{ 'delete' | translate }}</span>
                 </button>
               </div>
+              <app-editor-transform-actions
+                class="selection-transform-actions"
+                [iconMap]="iconMap"
+                [canRotate]="!contextTransformActionDisabled('rotateLeft')"
+                [canResetRotation]="!contextTransformActionDisabled('resetRotation')"
+                (actionSelected)="runContextTransformAction($event)"></app-editor-transform-actions>
               <div class="empty-panel">
                 {{ 'tableRecognizedHint' | translate }}
               </div>
@@ -2009,7 +2020,7 @@
                     </button>
                   }
                 </div>
-                <div class="property-group property-group--actions">
+                <div class="property-group property-group--actions selection-actions">
                   <div class="inline-actions">
                     <button
                       class="secondary-button"
@@ -2097,6 +2108,12 @@
                     </button>
                   </div>
                 </div>
+                <app-editor-transform-actions
+                  class="selection-transform-actions"
+                  [iconMap]="iconMap"
+                  [canRotate]="!contextTransformActionDisabled('rotateLeft')"
+                  [canResetRotation]="!contextTransformActionDisabled('resetRotation')"
+                  (actionSelected)="runContextTransformAction($event)"></app-editor-transform-actions>
                 @if (multiEdit.capabilities.stroke) {
                   <div class="property-group">
                     <div class="property-group__title">{{ 'appearance' | translate }}</div>
@@ -2842,7 +2859,7 @@
               <div class="selection-title">
                 <strong>{{ selectionCount() }} {{ ('objects' | translate).toLowerCase() }}</strong>
               </div>
-              <div class="inline-actions">
+              <div class="inline-actions selection-actions">
                 <button
                   class="secondary-button"
                   type="button"
@@ -2928,6 +2945,12 @@
                   ><span>{{ 'delete' | translate }}</span>
                 </button>
               </div>
+              <app-editor-transform-actions
+                class="selection-transform-actions"
+                [iconMap]="iconMap"
+                [canRotate]="!contextTransformActionDisabled('rotateLeft')"
+                [canResetRotation]="!contextTransformActionDisabled('resetRotation')"
+                (actionSelected)="runContextTransformAction($event)"></app-editor-transform-actions>
               <div class="selected-shape-list">
                 @for (shape of selectedShapes(); track shape.id) {
                   <button class="selected-shape-card" type="button" (click)="selectShape(shape.id)">
@@ -3000,20 +3023,77 @@
     <div
       #contextMenuPanel
       class="context-menu"
+      [class.context-menu--keyboard-navigation]="contextMenuKeyboardNavigation()"
       [style.left.px]="contextMenuPosition()?.left ?? menu.clientX"
       [style.top.px]="contextMenuPosition()?.top ?? menu.clientY"
       role="menu"
+      data-tooltip-disabled
+      [attr.aria-label]="'contextMenu' | translate"
       (click)="$event.stopPropagation()"
-      (keydown)="$event.stopPropagation()">
-      @for (action of configuration.generalConfig().contextMenuOrder; track action) {
-        @if (contextMenuActionEnabled(action) && contextMenuActionAvailable(action)) {
-          <button type="button" [disabled]="contextMenuActionDisabled(action)" (click)="runContextAction(action)">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="contextMenuIconPaths[action]"></path>
-            </svg>
-            <span>{{ contextMenuLabelKeys[action] | translate }}</span>
-          </button>
-        }
+      (pointerdown)="contextMenuKeyboardNavigation.set(false)"
+      (keydown)="onContextMenuKeydown($event); $event.stopPropagation()">
+      @for (section of contextMenuSections(); track section.id; let first = $first) {
+        <div
+          class="context-menu__section"
+          [class.context-menu__section--danger]="section.id === 'danger'"
+          [class.context-menu__section--divided]="!first"
+          role="group"
+          data-tooltip-disabled
+          [attr.aria-label]="section.labelKey | translate">
+          @for (action of section.actions; track action) {
+            @if (action === 'transform') {
+              <button
+                type="button"
+                role="menuitem"
+                data-context-transform-trigger
+                aria-haspopup="menu"
+                [attr.aria-expanded]="contextTransformMenuOpen()"
+                (click)="runContextAction(action)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="contextMenuIconPaths[action]"></path>
+                </svg>
+                <span>{{ contextMenuLabelKeys[action] | translate }}</span>
+                <svg class="context-menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9 6 6 6-6 6"></path>
+                </svg>
+              </button>
+            } @else {
+              <button type="button" role="menuitem" [disabled]="contextMenuActionDisabled(action)" (click)="runContextAction(action)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="contextMenuIconPaths[action]"></path>
+                </svg>
+                <span>{{ contextMenuLabelKeys[action] | translate }}</span>
+              </button>
+            }
+          }
+        </div>
+      }
+      @if (contextTransformMenuOpen()) {
+        <div
+          class="context-menu context-menu__submenu"
+          [class.context-menu__submenu--left]="contextSubmenuOpensLeft()"
+          [style.top.px]="contextSubmenuTop()"
+          role="menu"
+          data-tooltip-disabled
+          [attr.aria-label]="'moveOrTransform' | translate"
+          (mouseleave)="closeContextTransformMenu()">
+          @for (item of contextTransformActions; track item.action) {
+            @if (item.group === 'rotate' && $first === false && contextTransformActions[$index - 1]?.group === 'move') {
+              <span class="context-menu__divider" aria-hidden="true"></span>
+            }
+            <button
+              type="button"
+              role="menuitem"
+              data-context-transform-item
+              [disabled]="contextTransformActionDisabled(item.action)"
+              (click)="runContextTransformAction(item.action)">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path [attr.d]="item.iconPath"></path>
+              </svg>
+              <span>{{ item.labelKey | translate }}</span>
+            </button>
+          }
+        </div>
       }
     </div>
   }
