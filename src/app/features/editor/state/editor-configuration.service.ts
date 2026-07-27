@@ -109,15 +109,12 @@ export class EditorConfigurationService {
     );
   }
 
-  setContextMenuConfiguration(
-    actions: Partial<EditorContextMenuActionsConfig> | null | undefined,
-    order: readonly EditorContextMenuAction[] | null | undefined
-  ): void {
+  setContextMenuConfiguration(actions: Partial<EditorContextMenuActionsConfig> | null | undefined): void {
     this.generalConfig.update((config) =>
       this.normalizeGeneralConfig({
         ...config,
         contextMenuActions: this.normalizeContextMenuActions(actions),
-        contextMenuOrder: this.normalizeContextMenuOrder(order)
+        contextMenuOrder: EDITOR_CONTEXT_MENU_ACTIONS
       })
     );
   }
@@ -192,7 +189,7 @@ export class EditorConfigurationService {
       confirmSceneReplacement:
         typeof config?.confirmSceneReplacement === 'boolean' ? config.confirmSceneReplacement : DEFAULT_EDITOR_GENERAL_CONFIG.confirmSceneReplacement,
       contextMenuActions: this.normalizeContextMenuActions(config?.contextMenuActions),
-      contextMenuOrder: this.normalizeContextMenuOrder(config?.contextMenuOrder),
+      contextMenuOrder: EDITOR_CONTEXT_MENU_ACTIONS,
       keyboardShortcuts: normalizedKeyboardShortcuts(config?.keyboardShortcuts)
     };
   }
@@ -201,10 +198,5 @@ export class EditorConfigurationService {
     return Object.fromEntries(
       EDITOR_CONTEXT_MENU_ACTIONS.map((action) => [action, typeof actions?.[action] === 'boolean' ? actions[action] : true])
     ) as unknown as EditorContextMenuActionsConfig;
-  }
-
-  private normalizeContextMenuOrder(order: readonly EditorContextMenuAction[] | null | undefined): readonly EditorContextMenuAction[] {
-    const normalizedOrder = (order ?? []).filter((action, index, actions) => EDITOR_CONTEXT_MENU_ACTIONS.includes(action) && actions.indexOf(action) === index);
-    return [...normalizedOrder, ...EDITOR_CONTEXT_MENU_ACTIONS.filter((action) => !normalizedOrder.includes(action))];
   }
 }

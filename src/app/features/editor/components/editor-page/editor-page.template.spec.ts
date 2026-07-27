@@ -69,6 +69,8 @@ describe('EditorPageComponent template', () => {
     expect(component).toContain('onContextMenuKeydown(event: KeyboardEvent)');
     expect(component).toContain('openContextTransformMenu(focusFirstItem = false)');
     expect(component).toContain('triggerBounds.top - panelBounds.top');
+    expect(component).toContain('keepContextTransformMenuInViewport()');
+    expect(component).toContain('submenuBounds.bottom > view.innerHeight - padding');
     expect(component).toContain('this.focusContextMenuItem(\'[role="menuitem"]:not(:disabled)\')');
   });
 

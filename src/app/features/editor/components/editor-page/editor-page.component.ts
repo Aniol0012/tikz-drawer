@@ -554,13 +554,10 @@ export class EditorPageComponent {
     { id: 'danger', labelKey: 'contextMenuSectionDanger', actions: ['delete'] }
   ];
   readonly contextMenuSections = computed<readonly ContextMenuSection[]>(() => {
-    const configuredOrder = this.configuration.generalConfig().contextMenuOrder;
     return this.contextMenuSectionDefinitions
       .map((section) => ({
         ...section,
-        actions: configuredOrder.filter(
-          (action) => section.actions.includes(action) && this.contextMenuActionEnabled(action) && this.contextMenuActionAvailable(action)
-        )
+        actions: section.actions.filter((action) => this.contextMenuActionEnabled(action) && this.contextMenuActionAvailable(action))
       }))
       .filter((section) => section.actions.length > 0);
   });
@@ -3639,8 +3636,16 @@ export class EditorPageComponent {
     const triggerBounds = panel?.querySelector<HTMLElement>('[data-context-transform-trigger]')?.getBoundingClientRect();
     this.contextSubmenuOpensLeft.set(!!view && !!panelBounds && panelBounds.right + panelBounds.width + 16 > view.innerWidth);
     this.contextSubmenuTop.set(panelBounds && triggerBounds ? triggerBounds.top - panelBounds.top : 0);
-    if (focusFirstItem) {
-      queueMicrotask(() => this.focusContextMenuItem('[data-context-transform-item]'));
+    const finishOpening = (): void => {
+      this.keepContextTransformMenuInViewport();
+      if (focusFirstItem) {
+        this.focusContextMenuItem('[data-context-transform-item]');
+      }
+    };
+    if (view) {
+      view.requestAnimationFrame(finishOpening);
+    } else {
+      queueMicrotask(finishOpening);
     }
   }
 
@@ -3764,6 +3769,35 @@ export class EditorPageComponent {
 
   private focusContextMenuItem(selector: string): void {
     this.contextMenuPanel()?.nativeElement.querySelector<HTMLButtonElement>(selector)?.focus({ preventScroll: true });
+  }
+
+  private keepContextTransformMenuInViewport(): void {
+    const view = this.document.defaultView;
+    const panel = this.contextMenuPanel()?.nativeElement;
+    const submenu = panel?.querySelector<HTMLElement>('.context-menu__submenu');
+    const position = this.contextMenuPosition();
+    if (!view || !panel || !submenu || !position) {
+      return;
+    }
+
+    const padding = EDITOR_CONTEXT_MENU_VIEWPORT_PADDING;
+    const panelBounds = panel.getBoundingClientRect();
+    const submenuBounds = submenu.getBoundingClientRect();
+    const opensLeft = panelBounds.right + submenuBounds.width + padding > view.innerWidth;
+    this.contextSubmenuOpensLeft.set(opensLeft);
+
+    const verticalDelta =
+      submenuBounds.top < padding
+        ? padding - submenuBounds.top
+        : submenuBounds.bottom > view.innerHeight - padding
+          ? view.innerHeight - padding - submenuBounds.bottom
+          : 0;
+    if (verticalDelta !== 0) {
+      this.contextMenuPosition.set({
+        ...position,
+        top: Math.max(padding, position.top + verticalDelta)
+      });
+    }
   }
 
   private centerSelectedInViewport(axis: 'horizontal' | 'vertical' | 'both'): void {

@@ -3218,7 +3218,6 @@ kbd {
 .sidebar-tabs button,
 .canvas-chip,
 .export-option-card,
-.context-menu button,
 .text-symbol-button {
   transition:
     transform 160ms var(--ease-out),
