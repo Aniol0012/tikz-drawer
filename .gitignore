@@ -106,3 +106,9 @@ baseline.json
 # Generated LaTeX validation artifacts
 .artifacts/
 screenshots/
+
+# Local Codex agents, skills and hooks
+/.agents/
+/.codex/
+/.github/hooks/
+/.github/skills/
