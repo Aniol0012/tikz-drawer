@@ -1,7 +1,13 @@
 @if (isOpen()) {
-  <div class="modal-backdrop" (click)="closeDialog.emit()">
+  <div
+    class="modal-backdrop"
+    data-popup-motion="modal"
+    animate.enter="popup-motion-enter"
+    animate.leave="popup-motion-leave"
+    (click)="closeDialog.emit()">
     <section
       class="configuration-modal"
+      data-popup-panel
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="'configuration-title'"
@@ -946,7 +952,13 @@
       </div>
 
       @if (resetConfirmationOpen()) {
-        <div class="reset-confirmation" role="alertdialog" [attr.aria-label]="'resetDefaultsConfirmTitle' | translate">
+        <div
+          class="reset-confirmation"
+          data-popup-motion="inline"
+          animate.enter="popup-motion-enter"
+          animate.leave="popup-motion-leave"
+          role="alertdialog"
+          [attr.aria-label]="'resetDefaultsConfirmTitle' | translate">
           <div>
             <strong>{{ 'resetDefaultsConfirmTitle' | translate }}</strong>
             <span>{{ 'resetDefaultsConfirmDescription' | translate }}</span>
@@ -963,9 +975,15 @@
       }
 
       @if (shortcutsDialogOpen()) {
-        <div class="nested-dialog-backdrop" (click)="closeShortcutSettings()">
+        <div
+          class="nested-dialog-backdrop"
+          data-popup-motion="modal"
+          animate.enter="popup-motion-enter"
+          animate.leave="popup-motion-leave"
+          (click)="closeShortcutSettings()">
           <section
             class="shortcuts-dialog"
+            data-popup-panel
             role="dialog"
             aria-modal="true"
             [attr.aria-label]="'keyboardShortcuts' | translate"
@@ -1014,7 +1032,13 @@
             </div>
 
             @if (shortcutResetConfirmationOpen()) {
-              <div class="shortcut-reset-confirmation" role="alertdialog" [attr.aria-label]="'resetShortcutsConfirmTitle' | translate">
+              <div
+                class="shortcut-reset-confirmation"
+                data-popup-motion="inline"
+                animate.enter="popup-motion-enter"
+                animate.leave="popup-motion-leave"
+                role="alertdialog"
+                [attr.aria-label]="'resetShortcutsConfirmTitle' | translate">
                 <div>
                   <strong>{{ 'resetShortcutsConfirmTitle' | translate }}</strong>
                   <span>{{ 'resetShortcutsConfirmDescription' | translate }}</span>
@@ -1043,9 +1067,15 @@
       }
 
       @if (contextMenuSettingsDialogOpen()) {
-        <div class="nested-dialog-backdrop" (click)="closeContextMenuSettings()">
+        <div
+          class="nested-dialog-backdrop"
+          data-popup-motion="modal"
+          animate.enter="popup-motion-enter"
+          animate.leave="popup-motion-leave"
+          (click)="closeContextMenuSettings()">
           <section
             class="shortcuts-dialog context-menu-settings-dialog"
+            data-popup-panel
             role="dialog"
             aria-modal="true"
             [attr.aria-label]="'contextMenuSettings' | translate"

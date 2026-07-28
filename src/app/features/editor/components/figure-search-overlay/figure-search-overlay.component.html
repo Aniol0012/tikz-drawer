@@ -1,5 +1,10 @@
-<div class="figure-search-backdrop" tabindex="-1" (click)="closeSearch.emit()" (keydown)="onBackdropKeydown($event)">
-  <section class="figure-search-panel" (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
+<div
+  class="figure-search-backdrop"
+  data-popup-motion="modal"
+  tabindex="-1"
+  (click)="closeSearch.emit()"
+  (keydown)="onBackdropKeydown($event)">
+  <section class="figure-search-panel" data-popup-panel (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
     <div class="figure-search-field">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path [attr.d]="iconPath('search')"></path>

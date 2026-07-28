@@ -34,6 +34,9 @@
   @if (isOpen()) {
     <div
       class="color-picker__panel"
+      data-popup-motion="anchored"
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       role="dialog"
       [attr.aria-label]="label()"
       [style.left]="panelLeft()"

@@ -24,7 +24,6 @@
   border-radius: 18px;
   background: var(--panel-background);
   box-shadow: var(--floating-shadow);
-  animation: import-modal-enter 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .import-code-modal__header,
@@ -764,18 +763,6 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-@keyframes import-modal-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.985);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @media (max-width: 760px) {
   .import-code-modal-backdrop {
     padding: 12px;
@@ -848,10 +835,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .import-code-modal {
-    animation: none;
-  }
-
   .import-code-modal__close,
   .primary-button,
   .import-source-option,

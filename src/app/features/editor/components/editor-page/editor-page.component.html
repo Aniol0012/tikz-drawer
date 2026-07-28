@@ -3105,9 +3105,10 @@
   }
 
   @if (templateDialogOpen()) {
-    <div class="modal-backdrop">
+    <div class="modal-backdrop" data-popup-motion="modal" animate.enter="popup-motion-enter" animate.leave="popup-motion-leave">
       <section
         class="export-settings-modal export-settings-modal--template"
+        data-popup-panel
         (click)="$event.stopPropagation()"
         (keydown)="$event.stopPropagation()">
         <header class="export-modal__header">
@@ -3169,9 +3170,10 @@
   }
 
   @if (templateDeleteTarget(); as templateToDelete) {
-    <div class="modal-backdrop">
+    <div class="modal-backdrop" data-popup-motion="modal" animate.enter="popup-motion-enter" animate.leave="popup-motion-leave">
       <section
         class="export-settings-modal export-settings-modal--template"
+        data-popup-panel
         (click)="$event.stopPropagation()"
         (keydown)="$event.stopPropagation()">
         <header class="export-modal__header">
@@ -3200,8 +3202,8 @@
   }
 
   @if (sceneReplaceDialog(); as sceneDialog) {
-    <div class="modal-backdrop">
-      <section class="export-settings-modal export-settings-modal--template" (click)="$event.stopPropagation()">
+    <div class="modal-backdrop" data-popup-motion="modal" animate.enter="popup-motion-enter" animate.leave="popup-motion-leave">
+      <section class="export-settings-modal export-settings-modal--template" data-popup-panel (click)="$event.stopPropagation()">
         <header class="export-modal__header">
           <div>
             <p>{{ 'newScene' | translate }}</p>
@@ -3241,6 +3243,9 @@
 
   @if (importModalOpen()) {
     <app-import-code-modal
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [title]="'importCode' | translate"
       [actionLabel]="'import' | translate"
       [closeLabel]="'close' | translate"
@@ -3257,6 +3262,9 @@
 
   @if (exportModalOpen()) {
     <app-export-modal
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [theme]="preferences().theme"
       [codeTheme]="codeHighlightTheme()"
       [iconMap]="iconMap"
@@ -3287,6 +3295,9 @@
 
   @if (figureSearchOpen()) {
     <app-figure-search-overlay
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [presets]="allInsertablePresets()"
       [iconMap]="iconMap"
       [titleForPreset]="figureSearchPresetTitle"
@@ -3302,6 +3313,9 @@
 
   @if (tableDialogState(); as tableDialog) {
     <app-table-dialog
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [title]="tableDialog.mode === 'edit' ? ('tableDialogEditTitle' | translate) : ('tableDialogCreateTitle' | translate)"
       [description]="
         tableDialog.mode === 'edit' ? ('tableDialogEditDescription' | translate) : ('tableDialogCreateDescription' | translate)
@@ -3319,6 +3333,9 @@
 
   @if (regularPolygonDialogState(); as polygonDialog) {
     <app-regular-polygon-dialog
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [title]="'regularPolygonDialogTitle' | translate"
       [description]="'regularPolygonDialogDescription' | translate"
       [confirmLabel]="'continue' | translate"
@@ -3335,6 +3352,9 @@
 
   @if (graphDialogState(); as graphDialog) {
     <app-graph-dialog
+      data-popup-motion-host
+      animate.enter="popup-motion-enter"
+      animate.leave="popup-motion-leave"
       [title]="'graphDialogTitle' | translate"
       [description]="'graphDialogDescription' | translate"
       [confirmLabel]="'continue' | translate"

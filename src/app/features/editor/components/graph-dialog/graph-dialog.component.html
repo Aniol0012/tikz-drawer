@@ -1,5 +1,10 @@
-<div class="graph-dialog-backdrop" tabindex="-1" (click)="cancelDialog.emit()" (keydown)="onBackdropKeydown($event)">
-  <section class="graph-dialog" (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
+<div
+  class="graph-dialog-backdrop"
+  data-popup-motion="modal"
+  tabindex="-1"
+  (click)="cancelDialog.emit()"
+  (keydown)="onBackdropKeydown($event)">
+  <section class="graph-dialog" data-popup-panel (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
     <header class="graph-dialog__header">
       <div class="graph-dialog__copy">
         <p>{{ displayName() }}</p>

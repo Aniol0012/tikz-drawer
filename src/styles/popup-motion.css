@@ -1,0 +1,139 @@
+:root {
+  --popup-motion-enter-duration: 320ms;
+  --popup-motion-exit-duration: 200ms;
+  --popup-motion-panel-exit-duration: 180ms;
+  --popup-motion-enter-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --popup-motion-exit-easing: cubic-bezier(0.4, 0, 1, 1);
+  --popup-motion-enter-offset: 12px;
+  --popup-motion-exit-offset: 6px;
+  --popup-motion-enter-scale: 0.975;
+  --popup-motion-exit-scale: 0.985;
+}
+
+[data-popup-motion-host].popup-motion-enter,
+[data-popup-motion-host].popup-motion-leave,
+[data-popup-motion='modal'].popup-motion-enter,
+[data-popup-motion='modal'].popup-motion-leave {
+  animation: popup-motion-lifecycle var(--popup-motion-enter-duration) linear;
+}
+
+[data-popup-motion-host].popup-motion-leave,
+[data-popup-motion='modal'].popup-motion-leave {
+  animation-duration: var(--popup-motion-exit-duration);
+}
+
+:is(.popup-motion-enter [data-popup-panel], [data-popup-motion='modal'].popup-motion-enter [data-popup-panel]) {
+  animation: popup-motion-panel-enter var(--popup-motion-enter-duration) var(--popup-motion-enter-easing);
+  will-change: opacity, transform;
+}
+
+:is(.popup-motion-leave [data-popup-panel], [data-popup-motion='modal'].popup-motion-leave [data-popup-panel]) {
+  animation: popup-motion-panel-leave var(--popup-motion-panel-exit-duration) var(--popup-motion-exit-easing) forwards;
+  will-change: opacity, transform;
+}
+
+[data-popup-motion='anchored'] {
+  transform-origin: var(--popup-motion-origin, top left);
+}
+
+[data-popup-motion='anchored'].popup-motion-enter {
+  animation: popup-motion-anchored-enter 180ms var(--popup-motion-enter-easing);
+  will-change: opacity, transform;
+}
+
+[data-popup-motion='anchored'].popup-motion-leave {
+  animation: popup-motion-anchored-leave 130ms var(--popup-motion-exit-easing) forwards;
+  will-change: opacity, transform;
+}
+
+[data-popup-motion='inline'].popup-motion-enter {
+  animation: popup-motion-inline-enter 180ms var(--popup-motion-enter-easing);
+  will-change: opacity, transform;
+}
+
+[data-popup-motion='inline'].popup-motion-leave {
+  animation: popup-motion-inline-leave 130ms var(--popup-motion-exit-easing) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes popup-motion-lifecycle {
+  from {
+    --popup-motion-lifecycle-state: 0;
+  }
+
+  to {
+    --popup-motion-lifecycle-state: 1;
+  }
+}
+
+@keyframes popup-motion-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--popup-motion-enter-offset)) scale(var(--popup-motion-enter-scale));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popup-motion-panel-leave {
+  to {
+    opacity: 0;
+    transform: translateY(var(--popup-motion-exit-offset)) scale(var(--popup-motion-exit-scale));
+  }
+}
+
+@keyframes popup-motion-anchored-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popup-motion-anchored-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.99);
+  }
+}
+
+@keyframes popup-motion-inline-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popup-motion-inline-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-popup-motion-host].popup-motion-enter,
+  [data-popup-motion-host].popup-motion-leave,
+  [data-popup-motion='modal'].popup-motion-enter,
+  [data-popup-motion='modal'].popup-motion-leave,
+  [data-popup-motion='anchored'].popup-motion-enter,
+  [data-popup-motion='anchored'].popup-motion-leave,
+  [data-popup-motion='inline'].popup-motion-enter,
+  [data-popup-motion='inline'].popup-motion-leave,
+  :is(.popup-motion-enter [data-popup-panel], [data-popup-motion='modal'].popup-motion-enter [data-popup-panel]),
+  :is(.popup-motion-leave [data-popup-panel], [data-popup-motion='modal'].popup-motion-leave [data-popup-panel]) {
+    animation: none !important;
+  }
+}

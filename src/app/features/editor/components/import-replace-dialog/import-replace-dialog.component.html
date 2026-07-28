@@ -1,6 +1,6 @@
 @if (request()) {
-  <div class="modal-backdrop">
-    <section class="import-replace-dialog" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+  <div class="modal-backdrop" data-popup-motion="modal" animate.enter="popup-motion-enter" animate.leave="popup-motion-leave">
+    <section class="import-replace-dialog" data-popup-panel (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
       <header class="import-replace-dialog__header">
         <div>
           <p>{{ 'importReplaceDialogEyebrow' | translate }}</p>

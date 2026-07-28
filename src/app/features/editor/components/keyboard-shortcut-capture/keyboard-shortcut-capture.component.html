@@ -6,6 +6,9 @@
   <div
     #captureOverlay
     class="shortcut-capture-overlay"
+    data-popup-motion="modal"
+    animate.enter="popup-motion-enter"
+    animate.leave="popup-motion-leave"
     role="dialog"
     aria-modal="true"
     [attr.aria-label]="label"
@@ -13,7 +16,7 @@
     (pointerdown)="onOverlayPointerDown($event)"
     (click)="onOverlayClick($event)"
     (keydown)="onCaptureKeydown($event)">
-    <section class="shortcut-capture-panel" (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+    <section class="shortcut-capture-panel" data-popup-panel (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
       <header class="shortcut-capture-header">
         <span class="shortcut-capture-status" aria-hidden="true"></span>
         <div>

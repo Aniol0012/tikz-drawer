@@ -1,6 +1,7 @@
-<div class="modal-backdrop">
+<div class="modal-backdrop" data-popup-motion="modal">
   <section
     class="export-modal tikz-code-theme"
+    data-popup-panel
     [attr.style]="codeThemeStyle()"
     (click)="closeDownloadsMenu(); $event.stopPropagation()"
     (keydown)="$event.stopPropagation()">

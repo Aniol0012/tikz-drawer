@@ -102,8 +102,8 @@
   }
 
   @if (pendingChangesDialogOpen()) {
-    <div class="ai-pending-backdrop">
-      <dialog class="ai-pending-dialog" open aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
+    <div class="ai-pending-backdrop" data-popup-motion="modal" animate.enter="popup-motion-enter" animate.leave="popup-motion-leave">
+      <dialog class="ai-pending-dialog" data-popup-panel open aria-modal="true" [attr.aria-label]="'ai.pendingChangesTitle' | translate">
         <header>
           <span>
             <svg viewBox="0 0 24 24" aria-hidden="true">

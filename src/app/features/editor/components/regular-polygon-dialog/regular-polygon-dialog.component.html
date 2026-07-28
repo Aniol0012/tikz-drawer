@@ -1,5 +1,10 @@
-<div class="regular-polygon-dialog-backdrop" tabindex="-1" (click)="cancelDialog.emit()" (keydown)="onBackdropKeydown($event)">
-  <section class="regular-polygon-dialog" (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
+<div
+  class="regular-polygon-dialog-backdrop"
+  data-popup-motion="modal"
+  tabindex="-1"
+  (click)="cancelDialog.emit()"
+  (keydown)="onBackdropKeydown($event)">
+  <section class="regular-polygon-dialog" data-popup-panel (click)="$event.stopPropagation()" (keydown)="onDialogKeydown($event)">
     <header class="regular-polygon-dialog__header">
       <div class="regular-polygon-dialog__copy">
         <p>{{ quickPickerLabel() }}</p>
