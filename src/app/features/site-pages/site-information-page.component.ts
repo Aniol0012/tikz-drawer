@@ -30,5 +30,7 @@ export class SiteInformationPageComponent {
   readonly examplesIconPath = iconPaths.library;
   readonly githubIconPath = iconPaths.github;
   readonly externalIconPath = iconPaths.open;
+  readonly latexIconPath = iconPaths.latex;
+  readonly linkIconPath = iconPaths.link;
   readonly secondaryActionIconPath = this.page.secondaryRoute === '/guide' ? this.guideIconPath : this.examplesIconPath;
 }

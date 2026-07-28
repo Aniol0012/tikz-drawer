@@ -5,7 +5,6 @@
   @if (page.layout === 'visual') {
     <header class="hero">
       <div class="hero__copy">
-        <p class="kicker">{{ page.eyebrow }}</p>
         <h1>{{ page.title }}</h1>
         <p class="lede">{{ page.lede }}</p>
         <div class="actions">
@@ -50,16 +49,15 @@
     </article>
   } @else {
     <header class="about-hero">
-      <div class="about-hero__identity">
-        <img src="logo.png" alt="" aria-hidden="true" />
-        <p class="kicker">{{ page.eyebrow }}</p>
+      <div class="about-hero__copy">
+        <h1>{{ page.title }}</h1>
+        <p class="lede">{{ page.lede }}</p>
+        <div class="actions">
+          <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
+          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
+        </div>
       </div>
-      <h1>{{ page.title }}</h1>
-      <p class="lede">{{ page.lede }}</p>
-      <div class="actions">
-        <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
-        <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
-      </div>
+      <img class="about-hero__logo" src="logo.png" alt="TikZ Drawer" />
     </header>
 
     <article class="about-content">
@@ -69,6 +67,28 @@
           <div class="about-section__copy">
             @for (paragraph of section.paragraphs; track paragraph) {
               <p>{{ paragraph }}</p>
+            }
+            @if (section.resources?.length) {
+              <nav class="resource-links" aria-label="Related resources">
+                @for (resource of section.resources; track resource.href) {
+                  <a [href]="resource.href" target="_blank" rel="noopener noreferrer">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        [attr.d]="
+                          resource.kind === 'latex' ? latexIconPath : resource.kind === 'tikz' ? linkIconPath : externalIconPath
+                        "></path>
+                    </svg>
+                    @if (resource.kind === 'latex') {
+                      <span class="latex-wordmark" aria-label="LaTeX">
+                        L<span class="latex-wordmark__a">A</span>T<span class="latex-wordmark__e">E</span>X
+                      </span>
+                      <span>Project</span>
+                    } @else {
+                      <span>{{ resource.label }}</span>
+                    }
+                  </a>
+                }
+              </nav>
             }
             @if (section.link; as link) {
               <a

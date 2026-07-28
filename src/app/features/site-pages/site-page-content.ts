@@ -31,11 +31,16 @@ export interface SitePageTextLink {
   readonly href: string;
 }
 
+export interface SitePageResourceLink extends SitePageTextLink {
+  readonly kind: 'latex' | 'tikz' | 'overleaf';
+}
+
 export interface SitePageTextSection {
   readonly id: string;
   readonly title: string;
   readonly paragraphs: readonly string[];
   readonly link?: SitePageTextLink;
+  readonly resources?: readonly SitePageResourceLink[];
 }
 
 interface SitePageBase {
@@ -268,10 +273,28 @@ const SITE_PAGES = {
     sections: [
       {
         id: 'purpose',
-        title: 'What TikZ Drawer is for',
+        title: 'What is TikZ Drawer?',
         paragraphs: [
           'TikZ Drawer is a browser-based visual editor for creating technical diagrams, flowcharts, graphs and annotated figures for LaTeX documents.',
-          'You arrange the drawing on a canvas and export standard TikZ source. The result stays readable, versionable and independent from the editor.'
+          'TikZ is a drawing library built on PGF that lets you describe precise vector graphics directly in LaTeX source code. It is widely used for diagrams that need to remain part of the document rather than becoming a separate image.',
+          'With TikZ Drawer, you arrange the drawing on a canvas and export standard TikZ source. The result stays readable, versionable and independent from the editor.'
+        ],
+        resources: [
+          {
+            kind: 'tikz',
+            label: 'TikZ and PGF on CTAN',
+            href: 'https://ctan.org/pkg/pgf'
+          },
+          {
+            kind: 'latex',
+            label: 'The LaTeX Project',
+            href: 'https://www.latex-project.org/'
+          },
+          {
+            kind: 'overleaf',
+            label: 'Open Overleaf',
+            href: 'https://www.overleaf.com/'
+          }
         ]
       },
       {

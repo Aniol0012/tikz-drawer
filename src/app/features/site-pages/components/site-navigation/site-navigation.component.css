@@ -26,8 +26,8 @@
 
 .brand {
   color: var(--app-foreground);
-  font-size: 1rem;
-  font-weight: 850;
+  font: 800 0.84rem/1 var(--font-sans);
+  letter-spacing: 0.14em;
 }
 
 .brand__compact {
@@ -102,7 +102,6 @@
 
   .brand {
     flex: 0 0 auto;
-    font-size: 0.88rem;
     white-space: nowrap;
   }
 
@@ -126,10 +125,6 @@
   .site-header__inner {
     width: min(100% - 32px, 1180px);
     gap: 5px;
-  }
-
-  .brand {
-    font-size: 0.8rem;
   }
 
   .site-nav a {
