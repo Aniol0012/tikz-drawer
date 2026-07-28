@@ -1,0 +1,80 @@
+:host {
+  display: inline-flex;
+}
+
+.action-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 13px;
+  border: 1px solid var(--tool-border);
+  border-radius: 8px;
+  color: var(--app-foreground);
+  background: var(--tool-surface);
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+
+.action-link:hover {
+  border-color: var(--tool-border-strong);
+  background: var(--toolbar-background-hover);
+}
+
+.action-link--primary {
+  border-color: color-mix(in srgb, var(--accent) 70%, black 16%);
+  color: var(--accent-contrast);
+  background: var(--accent);
+}
+
+.action-link--primary:hover {
+  border-color: color-mix(in srgb, var(--accent) 78%, black 18%);
+  color: var(--accent-contrast);
+  background: color-mix(in srgb, var(--accent) 88%, black 8%);
+}
+
+.action-link:active {
+  transform: scale(0.97);
+}
+
+.action-link:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--tool-border-strong));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 420px) {
+  :host {
+    flex: 1 1 100%;
+  }
+
+  .action-link {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action-link {
+    transition-duration: 0ms;
+  }
+}

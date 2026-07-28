@@ -1,0 +1,149 @@
+:host {
+  display: block;
+  view-transition-name: site-navigation;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-background);
+}
+
+.site-header__inner {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-inline: auto;
+}
+
+.brand,
+.site-nav a,
+.editor-link {
+  text-decoration: none;
+}
+
+.brand {
+  color: var(--app-foreground);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.brand__compact {
+  display: none;
+}
+
+.header-actions,
+.site-nav {
+  display: flex;
+  align-items: center;
+}
+
+.header-actions {
+  gap: 8px;
+}
+
+.site-nav {
+  gap: 3px;
+}
+
+.site-nav a,
+.editor-link {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 10px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.site-nav a:hover,
+.editor-link:hover {
+  color: var(--app-foreground);
+  background: var(--toolbar-background-hover);
+}
+
+.site-nav a[aria-current='page'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.editor-link {
+  color: var(--app-foreground);
+}
+
+.site-nav a:focus-visible,
+.editor-link:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .site-header__inner {
+    width: min(100% - 32px, 1180px);
+    min-height: 56px;
+    gap: 8px;
+  }
+
+  .site-header__inner,
+  .header-actions {
+    flex-wrap: nowrap;
+  }
+
+  .header-actions {
+    min-width: 0;
+    flex: 0 1 auto;
+    gap: 3px;
+  }
+
+  .brand {
+    flex: 0 0 auto;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  .site-nav {
+    min-width: 0;
+    gap: 0;
+  }
+
+  .site-nav a {
+    min-height: 34px;
+    padding-inline: 7px;
+    font-size: 0.76rem;
+  }
+
+  .editor-link {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-header__inner {
+    width: min(100% - 32px, 1180px);
+    gap: 5px;
+  }
+
+  .brand {
+    font-size: 0.8rem;
+  }
+
+  .site-nav a {
+    padding-inline: 5px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand__wide {
+    display: none;
+  }
+
+  .brand__compact {
+    display: inline;
+  }
+}

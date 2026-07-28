@@ -3,6 +3,7 @@
     #tooltipElement
     class="custom-tooltip"
     role="tooltip"
+    [attr.data-theme]="currentTooltip.theme"
     [class.custom-tooltip--bottom]="currentTooltip.placement === 'bottom'"
     [class.custom-tooltip--leaving]="currentTooltip.phase === 'leaving'"
     [style.left.px]="currentTooltip.left"

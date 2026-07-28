@@ -1,0 +1,66 @@
+:host {
+  min-width: 0;
+  display: block;
+}
+
+.visual-card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--tool-border);
+  border-radius: 9px;
+  background: var(--panel-background);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.visual-card:hover {
+  border-color: var(--tool-border-strong);
+  transform: translateY(-2px);
+}
+
+.visual-card__copy {
+  padding: 18px 20px 21px;
+}
+
+.visual-card__label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+p {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--app-foreground) 78%, var(--muted-foreground));
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.visual-card--compact {
+  display: grid;
+  grid-template-columns: 126px minmax(0, 1fr);
+  align-items: center;
+}
+
+.visual-card--compact app-diagram-artwork {
+  margin-left: 8px;
+}
+
+@media (max-width: 520px) {
+  .visual-card--compact {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .visual-card__copy {
+    padding: 16px;
+  }
+}

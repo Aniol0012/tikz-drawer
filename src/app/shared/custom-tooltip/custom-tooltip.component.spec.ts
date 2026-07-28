@@ -12,7 +12,8 @@ import { CustomTooltipComponent } from './custom-tooltip.component';
   standalone: true,
   imports: [CustomTooltipComponent],
   template: `
-    <div data-tooltip-disabled>
+    <nav aria-label="Main navigation"><a href="/guide">Guide</a></nav>
+    <div data-theme="light" data-tooltip-disabled>
       <button type="button" data-tooltip="Selection (V)" data-tooltip-enabled aria-label="Selection (V)">Tool</button>
     </div>
     <app-custom-tooltip />
@@ -53,5 +54,16 @@ describe('CustomTooltipComponent', () => {
     const tooltip = fixture.nativeElement.querySelector('.custom-tooltip') as HTMLElement | null;
     expect(button.getAttribute('title')).toBeNull();
     expect(tooltip?.textContent?.trim()).toBe('Selection (V)');
+    expect(tooltip?.dataset['theme']).toBe('light');
+  });
+
+  it('does not turn structural aria labels into tooltips', () => {
+    const nav = fixture.nativeElement.querySelector('nav') as HTMLElement;
+
+    nav.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.custom-tooltip')).toBeNull();
   });
 });

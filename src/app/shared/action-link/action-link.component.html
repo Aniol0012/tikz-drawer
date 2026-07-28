@@ -1,0 +1,6 @@
+<a class="action-link" [class.action-link--primary]="tone() === 'primary'" [routerLink]="route()">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path [attr.d]="iconPath()"></path>
+  </svg>
+  <span>{{ label() }}</span>
+</a>

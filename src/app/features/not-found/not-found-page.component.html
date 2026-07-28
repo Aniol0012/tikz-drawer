@@ -1,0 +1,17 @@
+<main class="not-found-page" data-tooltip-disabled>
+  <a class="brand" routerLink="/">TikZ Drawer</a>
+
+  <section class="message" aria-labelledby="not-found-title">
+    <div class="message__copy">
+      <h1 id="not-found-title">We can’t find this page</h1>
+      <p class="explanation">This link seems to have lost its coordinates. The canvas is better at finding points than we are.</p>
+      <code>{{ requestedPath }}</code>
+      <div class="actions">
+        <app-action-link label="Open the editor" route="/" [iconPath]="editorIconPath" tone="primary" />
+        <app-action-link label="Read the guide" route="/guide" [iconPath]="guideIconPath" />
+      </div>
+    </div>
+
+    <app-diagram-artwork kind="lost" label="Error 404 selected on a diagram canvas" [interactive]="true" />
+  </section>
+</main>

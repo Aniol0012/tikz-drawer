@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+.code-preview {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--tool-border-strong);
+  border-radius: 9px;
+  background: var(--input-background);
+  box-shadow: var(--floating-shadow);
+}
+
+figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--tool-border);
+  background: var(--toolbar-background);
+}
+
+figcaption strong {
+  font-size: 0.8rem;
+}
+
+figcaption span {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: clamp(16px, 3vw, 24px);
+  color: var(--app-foreground);
+  font: 0.78rem/1.72 var(--font-mono);
+}

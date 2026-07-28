@@ -1,0 +1,96 @@
+<a class="skip-link" href="#main-content">Skip to content</a>
+<app-site-navigation [activePage]="page.key" />
+
+<main id="main-content" class="site-page">
+  @if (page.layout === 'visual') {
+    <header class="hero">
+      <div class="hero__copy">
+        <p class="kicker">{{ page.eyebrow }}</p>
+        <h1>{{ page.title }}</h1>
+        <p class="lede">{{ page.lede }}</p>
+        <div class="actions">
+          <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
+          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <app-diagram-artwork [kind]="page.heroVisual" [label]="page.title" [interactive]="true" />
+      </div>
+    </header>
+
+    <article class="content">
+      @for (section of page.sections; track section.id) {
+        <section [id]="section.id">
+          <header class="section-heading">
+            <h2>{{ section.title }}</h2>
+            @if (section.intro) {
+              <p>{{ section.intro }}</p>
+            }
+          </header>
+
+          @if (section.cards?.length) {
+            <div class="visual-grid" [class.visual-grid--compact]="section.compactCards">
+              @for (card of section.cards; track card.title) {
+                <app-site-visual-card [card]="card" [compact]="section.compactCards ?? false" />
+              }
+            </div>
+          }
+
+          @if (section.code; as code) {
+            <app-site-code-preview [sample]="code" />
+          }
+        </section>
+      }
+
+      <aside class="closing-note">
+        <span>Ready to draw?</span>
+        <app-action-link label="Open the visual editor" route="/" [iconPath]="editorIconPath" tone="primary" />
+      </aside>
+    </article>
+  } @else {
+    <header class="about-hero">
+      <div class="about-hero__identity">
+        <img src="logo.png" alt="" aria-hidden="true" />
+        <p class="kicker">{{ page.eyebrow }}</p>
+      </div>
+      <h1>{{ page.title }}</h1>
+      <p class="lede">{{ page.lede }}</p>
+      <div class="actions">
+        <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
+        <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
+      </div>
+    </header>
+
+    <article class="about-content">
+      @for (section of page.sections; track section.id) {
+        <section [id]="section.id" class="about-section">
+          <h2>{{ section.title }}</h2>
+          <div class="about-section__copy">
+            @for (paragraph of section.paragraphs; track paragraph) {
+              <p>{{ paragraph }}</p>
+            }
+            @if (section.link; as link) {
+              <a
+                class="text-link"
+                [class.text-link--github]="link.href.includes('github.com')"
+                [href]="link.href"
+                target="_blank"
+                rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="link.href.includes('github.com') ? githubIconPath : externalIconPath"></path>
+                </svg>
+                {{ link.label }}
+              </a>
+            }
+          </div>
+        </section>
+      }
+    </article>
+  }
+</main>
+
+<footer class="site-footer">
+  <span>TikZ Drawer</span>
+  <a href="https://github.com/Aniol0012" target="_blank" rel="noopener noreferrer">Created by Aniol0012</a>
+</footer>

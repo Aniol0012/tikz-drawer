@@ -3,6 +3,7 @@ import { ɵresolveComponentResources as resolveComponentResources } from '@angul
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
+import { provideRouter } from '@angular/router';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,7 +56,7 @@ describe('AppConfigurationDialogComponent', () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [AppConfigurationDialogComponent],
-      providers: [EditorStore, EditorConfigurationService]
+      providers: [EditorStore, EditorConfigurationService, provideRouter([])]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppConfigurationDialogComponent);
@@ -383,18 +384,6 @@ describe('AppConfigurationDialogComponent', () => {
     component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
 
     expect(closeSpy).toHaveBeenCalledOnce();
-  });
-
-  it('opens the about dialog separately from the configuration tabs and closes it on Escape', () => {
-    component.openAboutDialog();
-
-    expect(component.aboutDialogOpen()).toBe(true);
-    expect(component.activeTab()).toBe('general');
-
-    component.onDialogKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-    expect(component.aboutDialogOpen()).toBe(false);
-    expect(closeSpy).not.toHaveBeenCalled();
   });
 
   it('closes only the topmost settings layer on Escape', () => {

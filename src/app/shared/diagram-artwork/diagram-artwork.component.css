@@ -1,0 +1,390 @@
+:host {
+  --artwork-rotate-x: 0deg;
+  --artwork-rotate-y: 0deg;
+  min-width: 0;
+  display: block;
+  perspective: 800px;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  transform: rotateX(var(--artwork-rotate-x)) rotateY(var(--artwork-rotate-y));
+  transform-style: preserve-3d;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.artwork-surface {
+  fill: var(--panel-background);
+  stroke: none;
+}
+
+.artwork-grid path {
+  fill: none;
+  stroke: var(--grid-line);
+  stroke-width: 1;
+}
+
+.layer {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:host(.diagram-artwork--interactive:hover) .layer--front {
+  transform: translateY(-4px);
+}
+
+:host(.diagram-artwork--interactive:hover) .layer--back {
+  transform: translateY(2px);
+}
+
+:host(.diagram-artwork--interactive:hover) .layer--mid {
+  transform: translateY(-1px) scale(1.015);
+}
+
+.spatial-scene {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.spatial-shadow {
+  fill: color-mix(in srgb, var(--app-foreground) 10%, transparent);
+}
+
+.spatial-orbit,
+.spatial-axis,
+.spatial-edge {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spatial-orbit {
+  stroke: color-mix(in srgb, var(--accent) 48%, var(--tool-border));
+  stroke-width: 1.5;
+  stroke-dasharray: 5 7;
+  animation: spatial-orbit-flow 12s linear infinite;
+}
+
+.spatial-orbit--vertical {
+  stroke: color-mix(in srgb, var(--app-foreground) 30%, var(--tool-border));
+  stroke-dasharray: 3 8;
+  animation-direction: reverse;
+}
+
+.spatial-axis {
+  stroke: color-mix(in srgb, var(--muted-foreground) 32%, transparent);
+  stroke-width: 1.25;
+}
+
+.spatial-face {
+  stroke: color-mix(in srgb, var(--tool-border-strong) 82%, transparent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.spatial-face--muted {
+  fill: color-mix(in srgb, var(--tool-surface) 86%, transparent);
+}
+
+.spatial-face--soft {
+  fill: color-mix(in srgb, var(--accent-soft) 64%, transparent);
+}
+
+.spatial-face--accent {
+  fill: color-mix(in srgb, var(--accent) 23%, transparent);
+}
+
+.spatial-face--bright {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--tool-surface));
+}
+
+.spatial-edge {
+  stroke: color-mix(in srgb, var(--app-foreground) 68%, var(--tool-border-strong));
+  stroke-width: 2;
+}
+
+.spatial-edge--inner {
+  stroke: color-mix(in srgb, var(--accent) 72%, var(--tool-border-strong));
+  stroke-width: 1.6;
+}
+
+.spatial-node {
+  fill: var(--panel-background);
+  stroke: var(--app-foreground);
+  stroke-width: 2;
+}
+
+.spatial-node--accent,
+.spatial-orbit-node {
+  fill: var(--accent);
+  stroke: var(--panel-background);
+  stroke-width: 2.5;
+}
+
+.spatial-node--core {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.spatial-orbit-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spatial-node-pulse 2.8s ease-in-out infinite;
+}
+
+.spatial-orbit-node--right {
+  animation-delay: -1.4s;
+}
+
+@keyframes spatial-orbit-flow {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+@keyframes spatial-node-pulse {
+  50% {
+    transform: scale(1.22);
+  }
+}
+
+.plane {
+  stroke: var(--tool-border-strong);
+  stroke-linejoin: round;
+}
+
+.plane--muted {
+  fill: var(--toolbar-background);
+}
+
+.plane--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent-soft-border);
+}
+
+.node,
+.tile {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.app-window,
+.file-sheet,
+.chat-bubble,
+.selected-object,
+.floating-tools,
+.paper-preview,
+.person-node,
+.format-chip {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.selected-object {
+  fill: var(--accent-soft);
+  fill-opacity: 0.42;
+  stroke: var(--accent);
+  stroke-dasharray: 7 5;
+}
+
+.database-shape,
+.status-circle {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.status-circle {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+
+.node--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+circle.node--accent {
+  fill: var(--accent-soft);
+}
+
+.connector,
+.accent-line,
+.geometry-circle,
+.cube,
+.image-shape,
+.window-bar,
+.code-lines path,
+.lost-mark,
+.tool-mark,
+.code-strokes,
+.dimension-line,
+.status-check,
+.link-shape {
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.code-strokes,
+.tool-mark {
+  stroke: var(--muted-foreground);
+  stroke-width: 4;
+}
+
+.dimension-line {
+  stroke: var(--tool-border-strong);
+  stroke-width: 1.5;
+}
+
+.status-check,
+.link-shape {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+.connector--strong {
+  stroke: var(--app-foreground);
+}
+
+.connector--soft {
+  opacity: 0.45;
+}
+
+.connector--dashed {
+  stroke-dasharray: 7 7;
+}
+
+.accent-line,
+.lost-mark {
+  stroke: var(--accent);
+}
+
+.arrow {
+  fill: none;
+  stroke: var(--muted-foreground);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.handle {
+  fill: var(--handle-fill);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.cube {
+  fill: var(--tool-surface);
+  stroke: var(--tool-border-strong);
+}
+
+.cube--accent {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+
+.image-frame,
+.code-window {
+  fill: var(--input-background);
+  stroke: var(--tool-border-strong);
+  stroke-width: 2;
+}
+
+.artwork-label {
+  fill: var(--muted-foreground);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.artwork-label--strong {
+  fill: var(--app-foreground);
+  font-weight: 750;
+}
+
+.artwork-label--accent {
+  fill: var(--accent);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.latex-mark,
+.json-mark {
+  fill: var(--app-foreground);
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.json-mark {
+  fill: var(--accent);
+  font-size: 44px;
+}
+
+.image-shape {
+  fill: var(--toolbar-background-hover);
+  stroke: var(--tool-border);
+}
+
+.image-sun {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.label-chip {
+  fill: var(--tool-surface);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.window-bar {
+  stroke: var(--tool-border);
+}
+
+.window-dot {
+  fill: var(--muted-foreground);
+}
+
+.code-lines path {
+  stroke: var(--muted-foreground);
+  stroke-width: 5;
+}
+
+.selection-frame {
+  fill: var(--accent-soft);
+  fill-opacity: 0.32;
+  stroke: var(--accent);
+  stroke-dasharray: 7 6;
+  stroke-width: 2;
+}
+
+.error-code {
+  fill: var(--app-foreground);
+  font-family: var(--font-sans);
+  font-size: 80px;
+  font-weight: 850;
+  letter-spacing: -7px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  svg,
+  .layer,
+  .spatial-orbit,
+  .spatial-orbit-node {
+    animation: none;
+    transition: none;
+  }
+}
