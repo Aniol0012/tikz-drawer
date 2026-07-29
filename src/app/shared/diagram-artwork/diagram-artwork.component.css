@@ -78,6 +78,13 @@ svg {
 
 :host(.diagram-artwork--webgl) .enhanced-fallback {
   opacity: 0;
+  visibility: hidden;
+}
+
+:host(.diagram-artwork--pending) svg,
+:host(.diagram-artwork--pending) .artwork-webgl {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .artwork-surface,

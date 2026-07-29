@@ -37,6 +37,7 @@ type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'lost' | 'spa
   host: {
     '[class.diagram-artwork--interactive]': 'interactive()',
     '[class.diagram-artwork--lost]': "kind() === 'lost'",
+    '[class.diagram-artwork--pending]': 'enhancedKind() !== null && !renderResolved()',
     '[class.diagram-artwork--webgl]': 'webglActive()',
     '[class.diagram-artwork--pointer-active]': 'pointerActive()',
     '(pointermove)': 'onPointerMove($event)',
@@ -58,6 +59,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
     const kind = this.kind();
     return kind === 'spatial' || kind === 'gallery' || kind === 'lost' ? kind : null;
   });
+  readonly renderResolved = signal(false);
   readonly webglActive = signal(false);
   readonly pointerActive = signal(false);
 
@@ -66,12 +68,14 @@ export class DiagramArtworkComponent implements AfterViewInit {
     const enhancedKind = this.enhancedKind();
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (!canvas || !enhancedKind || reducedMotion) {
+      this.renderResolved.set(true);
       return;
     }
 
     const createRenderer = (): DiagramArtworkWebglRenderer | null => DiagramArtworkWebglRenderer.create(canvas, this.host.nativeElement, enhancedKind);
     this.renderer = createRenderer();
     if (!this.renderer) {
+      this.renderResolved.set(true);
       return;
     }
 
@@ -90,6 +94,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
     });
     this.themeObserver.observe(document.documentElement, { attributeFilter: ['data-theme'] });
     this.webglActive.set(true);
+    this.renderResolved.set(true);
     this.renderer.start();
 
     this.destroyRef.onDestroy(() => {
