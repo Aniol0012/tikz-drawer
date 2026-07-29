@@ -36,7 +36,9 @@ type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'spatial'>;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.diagram-artwork--interactive]': 'interactive()',
+    '[class.diagram-artwork--lost]': "kind() === 'lost'",
     '[class.diagram-artwork--webgl]': 'webglActive()',
+    '[class.diagram-artwork--pointer-active]': 'pointerActive()',
     '(pointermove)': 'onPointerMove($event)',
     '(pointerleave)': 'resetTilt()'
   }
@@ -57,6 +59,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
     return kind === 'spatial' || kind === 'gallery' ? kind : null;
   });
   readonly webglActive = signal(false);
+  readonly pointerActive = signal(false);
 
   ngAfterViewInit(): void {
     const canvas = this.webglCanvas()?.nativeElement;
@@ -106,6 +109,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
     const rect = this.host.nativeElement.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
     const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+    this.pointerActive.set(true);
     this.host.nativeElement.style.setProperty('--artwork-rotate-x', `${(-y * 11).toFixed(2)}deg`);
     this.host.nativeElement.style.setProperty('--artwork-rotate-y', `${(x * 14).toFixed(2)}deg`);
     this.host.nativeElement.style.setProperty('--artwork-pointer-x', `${((x + 1) * 50).toFixed(1)}%`);
@@ -114,6 +118,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
   }
 
   resetTilt(): void {
+    this.pointerActive.set(false);
     this.host.nativeElement.style.removeProperty('--artwork-rotate-x');
     this.host.nativeElement.style.removeProperty('--artwork-rotate-y');
     this.host.nativeElement.style.removeProperty('--artwork-pointer-x');

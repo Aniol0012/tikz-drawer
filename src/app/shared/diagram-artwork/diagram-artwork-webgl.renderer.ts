@@ -35,18 +35,19 @@ const VERTEX_SHADER = `
   varying vec4 v_color;
 
   void main() {
-    float idleY = sin(u_time * 0.00022) * 0.09;
+    float idleY = u_time * 0.00016;
+    float idleX = sin(u_time * 0.00027) * 0.1;
     float cy = cos(u_rotation.y + idleY);
     float sy = sin(u_rotation.y + idleY);
-    float cx = cos(u_rotation.x);
-    float sx = sin(u_rotation.x);
+    float cx = cos(u_rotation.x + idleX);
+    float sx = sin(u_rotation.x + idleX);
 
     vec3 p = a_position;
     p = vec3(cy * p.x + sy * p.z, p.y, -sy * p.x + cy * p.z);
     p = vec3(p.x, cx * p.y - sx * p.z, sx * p.y + cx * p.z);
 
-    float depth = max(2.2, 4.4 - p.z);
-    float perspective = 2.25 / depth;
+    float depth = max(2.1, 4.35 - p.z);
+    float perspective = 2.8 / depth;
     gl_Position = vec4((p.x * perspective) / u_aspect, p.y * perspective, p.z / 7.0, 1.0);
     gl_PointSize = max(2.0, a_size * perspective);
     v_color = vec4(a_color.rgb, a_color.a * clamp(0.68 + perspective * 0.42, 0.7, 1.0));
@@ -68,7 +69,7 @@ const FRAGMENT_SHADER = `
       float core = smoothstep(0.31, 0.25, distanceFromCenter);
       float glow = smoothstep(0.5, 0.12, distanceFromCenter);
       vec3 litColor = mix(v_color.rgb, vec3(1.0), core * 0.38);
-      gl_FragColor = vec4(litColor, v_color.a * mix(glow * 0.48, 1.0, core));
+      gl_FragColor = vec4(litColor, v_color.a * mix(glow * 0.2, 1.0, core));
       return;
     }
 
@@ -121,66 +122,37 @@ const createGeometryBuilder = () => {
 
 const createSpatialGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   const geometry = createGeometryBuilder();
-  const vertices: readonly Point3[] = [
-    [0, -1.25, 0.05],
-    [-1.08, -0.45, 0.62],
-    [-0.68, 0.78, -0.18],
-    [0, 1.32, 0.28],
-    [0.76, 0.77, 0.64],
-    [1.16, -0.38, -0.04],
-    [0.66, -1.02, -0.62],
-    [-0.62, -1.02, -0.55]
-  ];
-  const outerEdges = vertices.map((_, index) => [index, (index + 1) % vertices.length] as const);
-  const edgeColor = color(foreground, 0.84);
-  const accentLine = color(accent, 0.92);
+  const ringNodeCount = 6;
+  const ring = (depth: number, angleOffset: number): readonly Point3[] =>
+    Array.from({ length: ringNodeCount }, (_, index) => {
+      const angle = (index / ringNodeCount) * Math.PI * 2 + angleOffset;
+      return [Math.cos(angle) * 1.32, Math.sin(angle) * 1.12, depth] as const;
+    });
+  const backRing = ring(-0.62, 0);
+  const frontRing = ring(0.62, Math.PI / 6);
+  const edgeColor = color(foreground, 0.88);
 
-  for (const [from, to] of outerEdges) {
-    geometry.addLine(vertices[from], vertices[to], edgeColor);
+  for (let index = 0; index < ringNodeCount; index += 1) {
+    const nextIndex = (index + 1) % ringNodeCount;
+    geometry.addLine(backRing[index], backRing[nextIndex], edgeColor);
+    geometry.addLine(frontRing[index], frontRing[nextIndex], edgeColor);
+    geometry.addLine(backRing[index], frontRing[index], edgeColor);
+    geometry.addPoint(backRing[index], color(accent), 24);
+    geometry.addPoint(frontRing[index], color(accent), 29);
   }
-
-  for (const vertex of vertices) {
-    geometry.addLine([0, 0, 0.7], vertex, accentLine);
-    geometry.addPoint(vertex, color(vertex[2] > 0.2 ? accent : foreground, 0.98), vertex[2] > 0.2 ? 24 : 19);
-  }
-  geometry.addPoint([0, 0, 0.78], color(accent), 38);
-
-  const orbitColor = color(accent, 0.52);
-  const orbitSegments = 64;
-  for (let index = 0; index < orbitSegments; index += 1) {
-    const angle = (index / orbitSegments) * Math.PI * 2;
-    const nextAngle = ((index + 1) / orbitSegments) * Math.PI * 2;
-    const orbitPoint = (value: number): Point3 => [Math.cos(value) * 1.65, Math.sin(value) * 0.58, Math.sin(value * 2) * 0.38];
-    geometry.addLine(orbitPoint(angle), orbitPoint(nextAngle), orbitColor);
-  }
-  geometry.addPoint([1.65, 0, 0], color(accent, 0.95), 25);
-  geometry.addPoint([-1.42, -0.29, 0.27], color(accent, 0.95), 22);
 
   return geometry.build();
 };
 
 const createGalleryGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   const geometry = createGeometryBuilder();
-  const strong = color(foreground, 0.72);
-  const soft = color(foreground, 0.24);
-  const blue = color(accent, 0.9);
+  const strong = color(foreground, 0.86);
+  const blue = color(accent, 0.98);
 
-  const addDiagramFrame = (center: Point3, width: number, height: number): void => {
-    const [x, y, z] = center;
-    const corners: readonly Point3[] = [
-      [x - width, y - height, z],
-      [x + width, y - height, z],
-      [x + width, y + height, z],
-      [x - width, y + height, z]
-    ];
-    corners.forEach((corner, index) => geometry.addLine(corner, corners[(index + 1) % corners.length], soft));
+  const addNode = (point: Point3, size = 19): void => {
+    geometry.addPoint(point, blue, size);
   };
 
-  const addNode = (point: Point3, accented = false, size = 14): void => {
-    geometry.addPoint(point, accented ? blue : color(foreground, 0.88), size);
-  };
-
-  addDiagramFrame([-1.05, 0.5, -0.35], 0.7, 0.54);
   const flowNodes: readonly Point3[] = [
     [-1.42, 0.72, -0.32],
     [-0.72, 0.72, -0.32],
@@ -188,9 +160,8 @@ const createGalleryGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   ];
   geometry.addLine(flowNodes[0], flowNodes[1], strong);
   geometry.addLine(flowNodes[1], flowNodes[2], strong);
-  flowNodes.forEach((point, index) => addNode(point, index === 1));
+  flowNodes.forEach((point) => addNode(point));
 
-  addDiagramFrame([0.98, 0.38, 0.22], 0.72, 0.58);
   const graphNodes: readonly Point3[] = [
     [0.62, 0.7, 0.28],
     [1.28, 0.76, 0.28],
@@ -207,23 +178,22 @@ const createGalleryGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
     [0, 3],
     [1, 4]
   ] as const;
-  graphEdges.forEach(([from, to]) => geometry.addLine(graphNodes[from], graphNodes[to], color(accent, 0.5)));
-  graphNodes.forEach((point, index) => addNode(point, index === 0 || index === 3, 13));
+  graphEdges.forEach(([from, to]) => geometry.addLine(graphNodes[from], graphNodes[to], strong));
+  graphNodes.forEach((point) => addNode(point, 18));
 
-  addDiagramFrame([-0.25, -0.78, 0.72], 0.88, 0.5);
   const triangle: readonly Point3[] = [
     [-0.85, -1.04, 0.78],
     [0.38, -1.04, 0.78],
     [-0.05, -0.43, 0.78]
   ];
   triangle.forEach((point, index) => {
-    geometry.addLine(point, triangle[(index + 1) % triangle.length], index === 2 ? blue : strong);
-    addNode(point, index === 2, 11);
+    geometry.addLine(point, triangle[(index + 1) % triangle.length], strong);
+    addNode(point, 16);
   });
 
   geometry.addLine([-1.28, 0.04, -0.28], [-0.5, -0.48, 0.48], color(accent, 0.3));
   geometry.addLine([0.62, -0.1, 0.3], [0.08, -0.42, 0.68], color(accent, 0.3));
-  geometry.addPoint([0, 0, 1.05], color(accent, 0.9), 9);
+  geometry.addPoint([0, 0, 1.05], color(accent, 0.96), 16);
 
   return geometry.build();
 };

@@ -316,15 +316,19 @@
       </g>
     }
     @case ('lost') {
+      <g class="layer layer--back">
+        <path class="lost-crosshair" d="M160 25v170M43 110h234" />
+        <circle class="lost-crosshair" cx="160" cy="110" r="64" />
+      </g>
       <g class="layer layer--front">
-        <rect class="selection-frame" x="46" y="56" width="228" height="112" rx="8" />
-        <text class="error-code" x="160" y="140" text-anchor="middle">404</text>
-        <circle class="handle" cx="46" cy="56" r="5" />
-        <circle class="handle" cx="274" cy="56" r="5" />
-        <circle class="handle" cx="46" cy="168" r="5" />
-        <circle class="handle" cx="274" cy="168" r="5" />
-        <path class="connector connector--dashed" d="M274 83h22v-25" />
-        <path class="accent-line" d="m289 65 7-7 7 7" />
+        <rect class="selection-frame" x="54" y="55" width="212" height="112" rx="12" />
+        <text class="error-code" x="157" y="140" text-anchor="middle">404</text>
+        <circle class="handle" cx="54" cy="55" r="5" />
+        <circle class="handle" cx="266" cy="55" r="5" />
+        <circle class="handle" cx="54" cy="167" r="5" />
+        <circle class="handle" cx="266" cy="167" r="5" />
+        <path class="lost-coordinate-line" d="M266 83h28V44" />
+        <circle class="lost-coordinate-node" cx="294" cy="44" r="6" />
       </g>
     }
   }

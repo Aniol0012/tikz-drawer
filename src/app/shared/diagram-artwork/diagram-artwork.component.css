@@ -26,22 +26,31 @@ svg {
 :host(.diagram-artwork--interactive)::after {
   position: absolute;
   z-index: 3;
-  inset: 0;
-  border-radius: inherit;
+  top: var(--artwork-pointer-y);
+  left: var(--artwork-pointer-x);
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
   background: radial-gradient(
-    circle at var(--artwork-pointer-x) var(--artwork-pointer-y),
-    color-mix(in srgb, var(--accent) 16%, transparent),
-    transparent 34%
+    circle,
+    color-mix(in srgb, var(--accent) 28%, transparent),
+    color-mix(in srgb, var(--accent) 8%, transparent) 42%,
+    transparent 70%
   );
-  mix-blend-mode: multiply;
+  filter: blur(4px);
+  mix-blend-mode: screen;
   pointer-events: none;
   content: '';
   opacity: 0;
-  transition: opacity 260ms ease-out;
+  transform: translate(-50%, -50%) scale(0.72);
+  transition:
+    opacity 220ms ease-out,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:host(.diagram-artwork--interactive:hover)::after {
-  opacity: 1;
+:host(.diagram-artwork--pointer-active)::after {
+  opacity: 0.72;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .artwork-webgl {
@@ -68,7 +77,21 @@ svg {
 }
 
 :host(.diagram-artwork--webgl) .enhanced-fallback {
-  opacity: 0.12;
+  opacity: 0;
+}
+
+.artwork-surface,
+.artwork-grid {
+  transition: opacity 360ms ease-out;
+}
+
+:host(.diagram-artwork--webgl) .artwork-surface,
+:host(.diagram-artwork--webgl) .artwork-grid {
+  opacity: 0;
+}
+
+:host(.diagram-artwork--webgl) svg {
+  transform: none;
 }
 
 .artwork-surface {
@@ -80,6 +103,14 @@ svg {
   fill: none;
   stroke: var(--grid-line);
   stroke-width: 1;
+}
+
+:host(.diagram-artwork--lost) .artwork-surface {
+  fill: transparent;
+}
+
+:host(.diagram-artwork--lost) .artwork-grid {
+  opacity: 0;
 }
 
 .layer {
@@ -487,11 +518,30 @@ circle.node--accent {
 }
 
 .selection-frame {
-  fill: var(--accent-soft);
-  fill-opacity: 0.32;
+  fill: transparent;
   stroke: var(--accent);
   stroke-dasharray: 7 6;
   stroke-width: 2;
+}
+
+.lost-crosshair {
+  fill: none;
+  stroke: color-mix(in srgb, var(--app-foreground) 18%, transparent);
+  stroke-width: 1;
+}
+
+.lost-coordinate-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-dasharray: 5 6;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.lost-coordinate-node {
+  fill: var(--accent);
+  stroke: var(--app-background);
+  stroke-width: 3;
 }
 
 .error-code {
