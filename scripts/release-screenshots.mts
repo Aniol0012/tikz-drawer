@@ -13,7 +13,6 @@ import type {
   ObjectPreset,
   Point,
   RectangleShape,
-  ScenePreset,
   TextShape,
   TikzScene
 } from '../src/app/features/editor/models/tikz.models.ts';
@@ -77,6 +76,8 @@ interface Palette {
   readonly accentSoft: string;
 }
 
+type DiagramShapeRole = 'frame' | 'highlight' | 'supporting' | 'note' | 'default';
+
 type SceneComposer = (rng: SeededRandom, palette: Palette) => GeneratedScreenshotScene;
 
 const DESKTOP_VIEWPORT = { width: 1600, height: 900 } as const;
@@ -85,11 +86,9 @@ const MOBILE_VIEWPORT = { width: 390, height: 844 } as const;
 type RuntimePresetExports = {
   readonly defaultPreferences?: EditorPreferences;
   readonly objectPresets?: readonly ObjectPreset[];
-  readonly scenePresets?: readonly ScenePreset[];
   readonly default?: {
     readonly defaultPreferences?: EditorPreferences;
     readonly objectPresets?: readonly ObjectPreset[];
-    readonly scenePresets?: readonly ScenePreset[];
   };
 };
 
@@ -158,7 +157,6 @@ function resolveEditorPageUtilsExport<T>(name: 'encodeSharePayload' | 'transform
 
 const defaultPreferences = resolvePresetExport<EditorPreferences>('defaultPreferences', FALLBACK_DEFAULT_PREFERENCES);
 const objectPresets = resolvePresetExport<readonly ObjectPreset[]>('objectPresets');
-const scenePresets = resolvePresetExport<readonly ScenePreset[]>('scenePresets');
 const sceneToTikz = resolveTikzCodegenExport<(scene: TikzScene) => string>('sceneToTikz');
 const encodeSharePayload = resolveEditorPageUtilsExport<(payload: SharedScenePayload) => Promise<string>>('encodeSharePayload');
 const transformCanvasShape = resolveEditorPageUtilsExport<(shape: CanvasShape, options: TransformCanvasShapeOptions) => CanvasShape>('transformCanvasShape');
@@ -274,14 +272,6 @@ function resolveScreenshotSeed(): number {
   }
 
   return (Date.now() ^ globalThis.crypto.getRandomValues(new Uint32Array(1))[0]) >>> 0;
-}
-
-function findScenePreset(id: string): ScenePreset {
-  const preset = scenePresets.find((candidate) => candidate.id === id);
-  if (!preset) {
-    throw new Error(`Scene preset "${id}" not found.`);
-  }
-  return preset;
 }
 
 function findObjectPreset(id: string): ObjectPreset {
@@ -402,17 +392,6 @@ function computeBounds(shapes: readonly CanvasShape[]): WorldBounds | null {
   return shapes.reduce<WorldBounds | null>((bounds, shape) => mergeBounds(bounds, shapeBounds(shape)), null);
 }
 
-function jitterBox(box: LayoutBox, rng: SeededRandom, offset = 0.35, scaleJitter = 0.08): LayoutBox {
-  const widthScale = 1 + rng.signed(scaleJitter);
-  const heightScale = 1 + rng.signed(scaleJitter);
-  return {
-    x: box.x + rng.signed(offset),
-    y: box.y + rng.signed(offset),
-    width: Math.max(box.width * widthScale, 2.8),
-    height: Math.max(box.height * heightScale, 2.2)
-  };
-}
-
 function fitShapesIntoBox(shapes: readonly CanvasShape[], box: LayoutBox): readonly CanvasShape[] {
   const bounds = computeBounds(shapes);
   if (!bounds) {
@@ -464,21 +443,84 @@ function replaceTextByName(
   });
 }
 
-function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: SeededRandom): readonly CanvasShape[] {
-  return shapes.map((shape, index) => {
-    const fill = palette.fills[index % palette.fills.length] ?? palette.accentSoft;
-    const softFill = palette.softFills[index % palette.softFills.length] ?? palette.accentSoft;
+function includesAny(value: string, candidates: readonly string[]): boolean {
+  return candidates.some((candidate) => value.includes(candidate));
+}
+
+function diagramShapeRole(name: string): DiagramShapeRole {
+  const normalizedName = name.toLowerCase();
+
+  if (includesAny(normalizedName, ['frame', 'lane', 'browser', 'table', 'kanban', 'swimlane'])) {
+    return 'frame';
+  }
+  if (includesAny(normalizedName, ['header', 'active', 'current', 'primary', 'milestone', 'api', 'service'])) {
+    return 'highlight';
+  }
+  if (includesAny(normalizedName, ['database', 'store', 'cache', 'worker', 'queue', 'bus'])) {
+    return 'supporting';
+  }
+  if (includesAny(normalizedName, ['note', 'callout', 'sticky'])) {
+    return 'note';
+  }
+  return 'default';
+}
+
+function rectangleFill(
+  shape: RectangleShape,
+  role: DiagramShapeRole,
+  fills: {
+    readonly primary: string;
+    readonly secondary: string;
+    readonly supporting: string;
+    readonly note: string;
+    readonly accent: string;
+  }
+): string {
+  if (shape.fill === 'none') {
+    return 'none';
+  }
+
+  switch (role) {
+    case 'frame':
+      return fills.primary;
+    case 'highlight':
+      return fills.accent;
+    case 'supporting':
+      return fills.supporting;
+    case 'note':
+      return fills.note;
+    case 'default':
+      return fills.secondary;
+  }
+}
+
+function styleShapes(shapes: readonly CanvasShape[], palette: Palette): readonly CanvasShape[] {
+  const primaryFill = palette.fills[0] ?? palette.accentSoft;
+  const secondaryFill = palette.fills[1] ?? primaryFill;
+  const supportingFill = palette.fills[2] ?? secondaryFill;
+  const noteFill = palette.fills[3] ?? secondaryFill;
+  const fills = {
+    primary: primaryFill,
+    secondary: secondaryFill,
+    supporting: supportingFill,
+    note: noteFill,
+    accent: palette.accentSoft
+  } as const;
+
+  return shapes.map((shape) => {
+    const normalizedName = shape.name.toLowerCase();
+    const role = diagramShapeRole(normalizedName);
 
     switch (shape.kind) {
       case 'rectangle': {
-        const isHighlight = /note|callout|sticky|card|kanban|browser|folder|table/i.test(shape.name);
+        const fill = rectangleFill(shape, role, fills);
         return {
           ...shape,
           stroke: palette.stroke,
           strokeOpacity: 1,
           strokeWidth: Math.max(shape.strokeWidth, 0.08),
-          fill: isHighlight ? softFill : fill,
-          fillOpacity: 1,
+          fill,
+          fillOpacity: shape.fill === 'none' ? 0 : 1,
           cornerRadius: Math.max(shape.cornerRadius, 0.14)
         } satisfies RectangleShape;
       }
@@ -488,7 +530,7 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
           stroke: palette.stroke,
           strokeOpacity: 1,
           strokeWidth: Math.max(shape.strokeWidth, 0.08),
-          fill: index % 2 === 0 ? palette.accentSoft : softFill,
+          fill: role === 'highlight' ? palette.accentSoft : primaryFill,
           fillOpacity: 1
         } satisfies CircleShape;
       case 'ellipse':
@@ -497,11 +539,11 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
           stroke: palette.stroke,
           strokeOpacity: 1,
           strokeWidth: Math.max(shape.strokeWidth, 0.08),
-          fill: index % 2 === 0 ? palette.accentSoft : softFill,
+          fill: role === 'supporting' ? supportingFill : primaryFill,
           fillOpacity: 1
         } satisfies EllipseShape;
       case 'line': {
-        const stroke = shape.arrowStart || shape.arrowEnd || rng.bool(0.28) ? palette.accent : palette.stroke;
+        const stroke = shape.arrowStart || shape.arrowEnd ? palette.accent : palette.stroke;
         return {
           ...shape,
           stroke,
@@ -516,8 +558,7 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
           ...shape,
           color: palette.text,
           colorOpacity: 1,
-          fontWeight:
-            shape.fontWeight === 'normal' && (shape.text.length <= 18 || /label|title|todo|doing|done|stage/i.test(shape.name)) ? 'bold' : shape.fontWeight
+          fontWeight: shape.fontWeight === 'normal' && /title|header|label/.test(normalizedName) ? 'bold' : shape.fontWeight
         } satisfies TextShape;
       case 'image':
         return {
@@ -533,29 +574,14 @@ function styleShapes(shapes: readonly CanvasShape[], palette: Palette, rng: Seed
 function buildModule(
   presetId: string,
   box: LayoutBox,
-  rng: SeededRandom,
   palette: Palette,
   replacements: Readonly<Record<string, string>> = {},
   fallbackSequence: readonly string[] = []
 ): readonly CanvasShape[] {
   const cloned = cloneShapes(findObjectPreset(presetId).shapes);
   const withText = replaceTextByName(cloned, replacements, fallbackSequence);
-  const fitted = fitShapesIntoBox(withText, jitterBox(box, rng));
-  return styleShapes(fitted, palette, rng);
-}
-
-function buildSceneModule(
-  presetId: string,
-  box: LayoutBox,
-  rng: SeededRandom,
-  palette: Palette,
-  replacements: Readonly<Record<string, string>> = {},
-  fallbackSequence: readonly string[] = []
-): readonly CanvasShape[] {
-  const cloned = cloneShapes(findScenePreset(presetId).scene.shapes);
-  const withText = replaceTextByName(cloned, replacements, fallbackSequence);
-  const fitted = fitShapesIntoBox(withText, jitterBox(box, rng, 0.25, 0.05));
-  return styleShapes(fitted, palette, rng);
+  const fitted = fitShapesIntoBox(withText, box);
+  return styleShapes(fitted, palette);
 }
 
 function createScene(name: string, shapes: readonly CanvasShape[]): TikzScene {
@@ -566,202 +592,51 @@ function createScene(name: string, shapes: readonly CanvasShape[]): TikzScene {
   };
 }
 
-function architectureScene(rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
-  const client = rng.pick(['Client app', 'Dashboard', 'Mobile app', 'Control room']);
-  const api = rng.pick(['Workflow API', 'Gateway', 'Sync service', 'Diagram engine']);
-  const database = rng.pick(['Warehouse', 'Metrics DB', 'Snapshot store', 'Figure cache']);
-  const extras = rng.pickMany(
-    [
-      {
-        id: 'pipeline',
-        box: { x: -14.2, y: 3.1, width: 7.3, height: 3 },
-        labels: ['Ingest', 'Shape', 'Export']
-      },
-      {
-        id: 'cloud',
-        box: { x: 9.2, y: 3.1, width: 5.4, height: 3.1 },
-        labels: ['Preview sync']
-      },
-      {
-        id: 'folder',
-        box: { x: 9.4, y: -1.3, width: 5.2, height: 3 },
-        labels: ['Assets']
-      },
-      {
-        id: 'message',
-        box: { x: -14, y: -4.6, width: 6.2, height: 2.8 },
-        labels: ['Event bus']
-      },
-      {
-        id: 'callout',
-        box: { x: 2.9, y: -5, width: 5.6, height: 3 },
-        labels: ['Reusable diagram presets']
-      },
-      {
-        id: 'hub',
-        box: { x: -14.3, y: -0.8, width: 5.8, height: 4 },
-        labels: ['Routing']
-      }
-    ],
-    4
-  );
-
-  const shapes = [
-    ...buildSceneModule('system-map', { x: -8.4, y: -3.5, width: 16.8, height: 8.1 }, rng, palette, {
-      'Client label': client,
-      'API label': api,
-      'Database label': database
-    }),
-    ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
-  ];
+function architectureScene(_rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
+  const shapes = buildModule('service-architecture', { x: -13.5, y: -5.8, width: 27, height: 11.6 }, palette);
 
   return {
     family: 'architecture',
     paletteName: palette.name,
     seed: 0,
-    summary: `${client} -> ${api} -> ${database}`,
-    scene: createScene(`${client} delivery map`, shapes)
+    summary: 'UI, API, domain services, event bus, stores and worker',
+    scene: createScene('Service architecture', shapes)
   };
 }
 
-function analyticsScene(rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
-  const extras = rng.pickMany(
-    [
-      {
-        id: 'table',
-        box: { x: 8.4, y: 1.8, width: 6.8, height: 4.4 },
-        labels: []
-      },
-      {
-        id: 'network',
-        box: { x: 9, y: -4.8, width: 5.6, height: 3.5 },
-        labels: []
-      },
-      {
-        id: 'funnel',
-        box: { x: -14.2, y: 2, width: 5.4, height: 4 },
-        labels: []
-      },
-      {
-        id: 'sticky-note',
-        box: { x: -14.3, y: -4.8, width: 5.6, height: 3.2 },
-        labels: ['Variance is shrinking']
-      },
-      {
-        id: 'message',
-        box: { x: 1.7, y: -5, width: 6.3, height: 2.8 },
-        labels: ['Daily sync']
-      },
-      {
-        id: 'cloud',
-        box: { x: -14.2, y: -0.7, width: 5.8, height: 3.2 },
-        labels: ['Auto refresh']
-      }
-    ],
-    4
-  );
-
-  const shapes = [
-    ...buildSceneModule('metrics-board', { x: -8.6, y: -3.9, width: 16.5, height: 8.5 }, rng, palette, {}, [
-      'Growth',
-      'Activation',
-      'Retention',
-      'Kickoff',
-      'Review',
-      'Launch',
-      'Keep exports tidy'
-    ]),
-    ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
-  ];
+function analyticsScene(_rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
+  const shapes = buildModule('entity-relationship', { x: -13.5, y: -5.8, width: 27, height: 11.6 }, palette);
 
   return {
     family: 'analytics',
     paletteName: palette.name,
     seed: 0,
-    summary: 'metrics-board + supporting modules',
-    scene: createScene('Analytics workspace', shapes)
+    summary: 'Customer, invoice, payment and invoice-line entities with cardinalities',
+    scene: createScene('Commerce data model', shapes)
   };
 }
 
-function workflowScene(rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
-  const endpointPreset = rng.bool() ? 'browser' : 'phone';
-  const endpointLabel = endpointPreset === 'browser' ? 'Preview' : 'Mobile QA';
-  const extras = rng.pickMany(
-    [
-      {
-        id: 'pipeline',
-        box: { x: 8.8, y: 2.6, width: 6.1, height: 3.4 },
-        labels: ['Parse', 'Arrange', 'Export']
-      },
-      {
-        id: endpointPreset,
-        box: { x: -14.3, y: 1.8, width: 5.6, height: 4.1 },
-        labels: [endpointLabel]
-      },
-      {
-        id: 'cloud',
-        box: { x: -14, y: -4.8, width: 5.8, height: 3.4 },
-        labels: ['Shared snapshots']
-      },
-      {
-        id: 'sticky-note',
-        box: { x: 9, y: -4.7, width: 5.3, height: 3.2 },
-        labels: ['Try another layout']
-      },
-      {
-        id: 'hub',
-        box: { x: 3.6, y: -5, width: 4.8, height: 3 },
-        labels: ['Routing']
-      },
-      {
-        id: 'actor',
-        box: { x: -14.2, y: -0.8, width: 4.8, height: 3.8 },
-        labels: ['Reviewer']
-      }
-    ],
-    4
-  );
-
-  const shapes = [
-    ...buildSceneModule('flow-starter', { x: -8.8, y: -3.6, width: 17.2, height: 8.2 }, rng, palette, {}, ['Capture', 'Normalize', 'Review', 'Publish']),
-    ...extras.flatMap((extra) => buildModule(extra.id, extra.box, rng, palette, {}, extra.labels))
-  ];
+function workflowScene(_rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
+  const shapes = buildModule('sequence-diagram', { x: -13.5, y: -5.8, width: 27, height: 11.6 }, palette);
 
   return {
     family: 'workflow',
     paletteName: palette.name,
     seed: 0,
-    summary: `flow-starter + ${endpointPreset}`,
-    scene: createScene('Workflow builder', shapes)
+    summary: 'Client, API and worker request lifecycle',
+    scene: createScene('Request lifecycle', shapes)
   };
 }
 
-function planningScene(rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
-  const topBanner = buildModule('message', { x: -14.1, y: 6, width: 7.8, height: 2.1 }, rng, palette, {}, [
-    rng.pick(['Release planning', 'Diagram sprint', 'Editorial sync'])
-  ]);
-
-  const shapes = [
-    ...topBanner,
-    ...buildModule('kanban', { x: -14.2, y: -0.2, width: 18.6, height: 6.6 }, rng, palette, {}, [
-      rng.pick(['Ideas', 'Backlog']),
-      rng.pick(['Doing', 'In progress']),
-      rng.pick(['Done', 'Ready'])
-    ]),
-    ...buildModule('timeline', { x: -14.1, y: -5.9, width: 11.8, height: 4.4 }, rng, palette, {}, ['Kickoff', 'Review', 'Publish']),
-    ...buildModule('table', { x: 5, y: -5.8, width: 9.1, height: 4.4 }, rng, palette),
-    ...buildModule('swimlane', { x: 5.2, y: 1, width: 9, height: 5.2 }, rng, palette, {}, ['Owner']),
-    ...buildModule('sticky-note', { x: 8.9, y: -0.8, width: 5, height: 3 }, rng, palette, {}, [
-      rng.pick(['Presets stay editable', 'TikZ export is one click', 'Same board, many views'])
-    ])
-  ];
+function planningScene(_rng: SeededRandom, palette: Palette): GeneratedScreenshotScene {
+  const shapes = buildModule('project-timeline', { x: -13.5, y: -5.8, width: 27, height: 11.6 }, palette);
 
   return {
     family: 'planning',
     paletteName: palette.name,
     seed: 0,
-    summary: 'kanban + timeline + swimlane',
-    scene: createScene('Planning board', shapes)
+    summary: 'Planning, prototype, testing and release milestones',
+    scene: createScene('Project delivery timeline', shapes)
   };
 }
 
