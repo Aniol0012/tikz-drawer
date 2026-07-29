@@ -27,7 +27,7 @@ export const DIAGRAM_ARTWORK_KINDS = [
 ] as const;
 
 export type DiagramArtworkKind = (typeof DIAGRAM_ARTWORK_KINDS)[number];
-type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'spatial'>;
+type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'lost' | 'spatial'>;
 
 @Component({
   selector: 'app-diagram-artwork',
@@ -56,7 +56,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
   readonly interactive = input(false);
   readonly enhancedKind = computed<EnhancedArtworkKind | null>(() => {
     const kind = this.kind();
-    return kind === 'spatial' || kind === 'gallery' ? kind : null;
+    return kind === 'spatial' || kind === 'gallery' || kind === 'lost' ? kind : null;
   });
   readonly webglActive = signal(false);
   readonly pointerActive = signal(false);

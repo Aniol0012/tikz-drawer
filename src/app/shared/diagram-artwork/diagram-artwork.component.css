@@ -113,6 +113,12 @@ svg {
   opacity: 0;
 }
 
+:host(.diagram-artwork--lost) svg {
+  position: relative;
+  z-index: 3;
+  pointer-events: none;
+}
+
 .layer {
   transform-box: fill-box;
   transform-origin: center;
@@ -443,38 +449,26 @@ circle.node--accent {
   stroke-width: 2;
 }
 
-.lost-spatial-object {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: lost-spatial-drift 6.4s ease-in-out infinite alternate;
-}
-
-.lost-wire {
+.lost-atom-orbit {
   fill: none;
+  stroke: color-mix(in srgb, var(--app-foreground) 48%, transparent);
   stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-width: 1.35;
 }
 
-.lost-wire--front {
-  stroke: color-mix(in srgb, var(--accent) 72%, var(--app-foreground));
-  stroke-width: 2;
+.lost-atom-orbit--wide {
+  stroke: color-mix(in srgb, var(--accent) 54%, var(--app-foreground));
 }
 
-.lost-wire--depth {
-  stroke: color-mix(in srgb, var(--app-foreground) 54%, transparent);
-  stroke-width: 1.5;
+.lost-atom-orbit--tall {
+  stroke: color-mix(in srgb, var(--app-foreground) 34%, transparent);
 }
 
-.lost-spatial-node {
+.lost-electron {
   fill: var(--accent);
   stroke: var(--app-background);
-  stroke-width: 2;
-  filter: drop-shadow(0 3px 4px color-mix(in srgb, var(--accent) 28%, transparent));
-}
-
-.lost-spatial-node--muted {
-  fill: var(--panel-background);
-  stroke: var(--app-foreground);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 3px 5px color-mix(in srgb, var(--accent) 34%, transparent));
 }
 
 .error-code {
@@ -488,19 +482,13 @@ circle.node--accent {
   letter-spacing: -7px;
 }
 
-@keyframes lost-spatial-drift {
-  to {
-    transform: translateY(-4px) rotate(1.5deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   svg,
   .layer,
   .spatial-orbit,
   .spatial-orbit-node,
   .gallery-solid,
-  .lost-spatial-object {
+  .lost-atom-fallback {
     animation: none;
     transition: none;
   }

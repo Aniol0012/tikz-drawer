@@ -1,6 +1,6 @@
 import type { DiagramArtworkKind } from './diagram-artwork.component';
 
-type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'spatial'>;
+type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'lost' | 'spatial'>;
 type Rgb = readonly [number, number, number];
 type Point3 = readonly [number, number, number];
 
@@ -43,7 +43,7 @@ const VERTEX_SHADER = `
     float sx = sin(u_rotation.x + idleX);
 
     vec3 p = a_position;
-    float pointSize = abs(a_size);
+    float pointSize = a_size < -0.5 ? 38.0 : abs(a_size);
     if (a_size < -0.5) {
       float orbitId = abs(a_size) - 21.0;
       float orbitAngle = u_time * (0.00062 + orbitId * 0.00012) + orbitId * 2.1;
@@ -51,8 +51,10 @@ const VERTEX_SHADER = `
         p = vec3(cos(orbitAngle) * 1.72, sin(orbitAngle) * 0.5, sin(orbitAngle) * 1.08);
       } else if (orbitId < 1.5) {
         p = vec3(cos(orbitAngle) * 0.56, sin(orbitAngle) * 1.58, cos(orbitAngle) * 0.92);
-      } else {
+      } else if (orbitId < 2.5) {
         p = vec3(cos(orbitAngle) * 1.42, sin(orbitAngle) * 1.0, cos(orbitAngle) * 0.58);
+      } else {
+        p = vec3(cos(orbitAngle) * 1.55, sin(orbitAngle) * 0.76, cos(orbitAngle) * 0.86);
       }
     }
     p = vec3(cy * p.x + sy * p.z, p.y, -sy * p.x + cy * p.z);
@@ -255,6 +257,32 @@ const createGalleryGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   return geometry.build();
 };
 
+const createLostGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
+  const geometry = createGeometryBuilder();
+  const orbitSegments = 96;
+  const orbitPoints: readonly ((angle: number) => Point3)[] = [
+    (angle) => [Math.cos(angle) * 1.72, Math.sin(angle) * 0.5, Math.sin(angle) * 1.08],
+    (angle) => [Math.cos(angle) * 0.56, Math.sin(angle) * 1.58, Math.cos(angle) * 0.92],
+    (angle) => [Math.cos(angle) * 1.42, Math.sin(angle) * 1, Math.cos(angle) * 0.58],
+    (angle) => [Math.cos(angle) * 1.55, Math.sin(angle) * 0.76, Math.cos(angle) * 0.86],
+    (angle) => [Math.cos(angle) * 1.12, Math.sin(angle) * 1.34, Math.sin(angle) * 0.52]
+  ];
+  const orbitColors = [color(foreground, 0.72), color(accent, 0.58), color(foreground, 0.52), color(accent, 0.42), color(foreground, 0.34)] as const;
+
+  orbitPoints.forEach((pointAt, orbitIndex) => {
+    for (let index = 0; index < orbitSegments; index += 1) {
+      const angle = (index / orbitSegments) * Math.PI * 2;
+      const nextAngle = ((index + 1) / orbitSegments) * Math.PI * 2;
+      geometry.addLine(pointAt(angle), pointAt(nextAngle), orbitColors[orbitIndex]);
+    }
+    if (orbitIndex < 4) {
+      geometry.addPoint([0, 0, 0], color(accent), -(21 + orbitIndex));
+    }
+  });
+
+  return geometry.build();
+};
+
 const compileShader = (gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null => {
   const shader = gl.createShader(type);
   if (!shader) {
@@ -331,7 +359,11 @@ export class DiagramArtworkWebglRenderer {
         canvas,
         host,
         gl,
-        kind === 'spatial' ? createSpatialGeometry(accent, foreground) : createGalleryGeometry(accent, foreground)
+        kind === 'spatial'
+          ? createSpatialGeometry(accent, foreground)
+          : kind === 'gallery'
+            ? createGalleryGeometry(accent, foreground)
+            : createLostGeometry(accent, foreground)
       );
     } catch {
       return null;
