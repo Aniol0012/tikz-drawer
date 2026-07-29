@@ -6,7 +6,6 @@
   position: relative;
   min-width: 0;
   display: block;
-  perspective: 1000px;
   isolation: isolate;
 }
 
