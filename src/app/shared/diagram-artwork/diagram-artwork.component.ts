@@ -121,8 +121,6 @@ export class DiagramArtworkComponent implements AfterViewInit {
     this.pointerActive.set(false);
     this.host.nativeElement.style.removeProperty('--artwork-rotate-x');
     this.host.nativeElement.style.removeProperty('--artwork-rotate-y');
-    this.host.nativeElement.style.removeProperty('--artwork-pointer-x');
-    this.host.nativeElement.style.removeProperty('--artwork-pointer-y');
     this.renderer?.resetPointer();
   }
 }

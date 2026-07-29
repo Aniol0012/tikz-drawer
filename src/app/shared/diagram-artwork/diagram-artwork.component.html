@@ -12,35 +12,27 @@
     @case ('spatial') {
       <g class="spatial-scene enhanced-fallback">
         <g class="layer layer--back">
-          <ellipse class="spatial-shadow" cx="160" cy="190" rx="82" ry="15" />
           <ellipse class="spatial-orbit spatial-orbit--horizontal" cx="160" cy="113" rx="132" ry="50" transform="rotate(-8 160 113)" />
           <ellipse class="spatial-orbit spatial-orbit--vertical" cx="160" cy="113" rx="45" ry="104" transform="rotate(28 160 113)" />
-          <path class="spatial-axis" d="M49 177 160 113l111 64M160 113V22" />
         </g>
 
         <g class="layer layer--mid spatial-solid">
-          <path class="spatial-face spatial-face--muted" d="m160 30-61 42 58 43z" />
-          <path class="spatial-face spatial-face--soft" d="m160 30 61 42-64 43z" />
-          <path class="spatial-face spatial-face--accent" d="m99 72-39 55 97-12z" />
-          <path class="spatial-face spatial-face--bright" d="m221 72 39 55-103-12z" />
-          <path class="spatial-face spatial-face--soft" d="m60 127 39 57 58-69z" />
-          <path class="spatial-face spatial-face--accent" d="m260 127-39 57-64-69z" />
-          <path class="spatial-face spatial-face--bright" d="m99 184 61 24-3-93z" />
-          <path class="spatial-face spatial-face--muted" d="m221 184-61 24-3-93z" />
-          <path class="spatial-edge" d="m160 30-61 42-39 55 39 57 61 24 61-24 39-57-39-55-61-42Z" />
-          <path class="spatial-edge spatial-edge--inner" d="m99 72 58 43 64-43M60 127l97-12 103 12M99 184l58-69 64 69M160 30l-3 85 3 93" />
+          <path class="spatial-edge" d="m160 28 85 62-32 100H107L75 90Z" />
+          <path class="spatial-edge spatial-edge--inner" d="m160 72 25 76-65-47h80l-65 47Z" />
+          <path class="spatial-edge spatial-edge--inner" d="M160 28v44m85 18-45 11m13 89-28-42m-78 42 28-42M75 90l45 11" />
         </g>
 
         <g class="layer layer--front">
-          <circle class="spatial-node spatial-node--accent" cx="160" cy="30" r="5" />
-          <circle class="spatial-node" cx="99" cy="72" r="4" />
-          <circle class="spatial-node" cx="221" cy="72" r="4" />
-          <circle class="spatial-node" cx="60" cy="127" r="5" />
-          <circle class="spatial-node spatial-node--core" cx="157" cy="115" r="7" />
-          <circle class="spatial-node" cx="260" cy="127" r="5" />
-          <circle class="spatial-node" cx="99" cy="184" r="4" />
-          <circle class="spatial-node" cx="221" cy="184" r="4" />
-          <circle class="spatial-node spatial-node--accent" cx="160" cy="208" r="5" />
+          <circle class="spatial-node spatial-node--accent" cx="160" cy="28" r="5" />
+          <circle class="spatial-node spatial-node--accent" cx="245" cy="90" r="5" />
+          <circle class="spatial-node spatial-node--accent" cx="213" cy="190" r="5" />
+          <circle class="spatial-node spatial-node--accent" cx="107" cy="190" r="5" />
+          <circle class="spatial-node spatial-node--accent" cx="75" cy="90" r="5" />
+          <circle class="spatial-node" cx="160" cy="72" r="4" />
+          <circle class="spatial-node" cx="200" cy="101" r="4" />
+          <circle class="spatial-node" cx="185" cy="148" r="4" />
+          <circle class="spatial-node" cx="135" cy="148" r="4" />
+          <circle class="spatial-node" cx="120" cy="101" r="4" />
           <circle class="spatial-orbit-node spatial-orbit-node--left" cx="34" cy="133" r="6" />
           <circle class="spatial-orbit-node spatial-orbit-node--right" cx="279" cy="77" r="5" />
         </g>
@@ -108,40 +100,31 @@
     }
     @case ('gallery') {
       <g class="gallery-scene enhanced-fallback">
-        <g class="layer layer--back gallery-connector-cloud">
-          <path d="M69 68 161 45l91 31M69 68l39 100m53-123-53 123m144-92-52 88m-92 4 92-4" />
-          <circle cx="161" cy="45" r="3" />
-          <circle cx="108" cy="168" r="3" />
-          <circle cx="252" cy="76" r="3" />
-          <circle cx="200" cy="164" r="3" />
+        <g class="gallery-solid gallery-solid--tetrahedron">
+          <path class="spatial-edge" d="m42 90 68 6-35-58Zm0 0 38-23m30 29L80 67m-5-29 5 29" />
+          <circle class="spatial-node spatial-node--accent" cx="42" cy="90" r="4" />
+          <circle class="spatial-node spatial-node--accent" cx="110" cy="96" r="4" />
+          <circle class="spatial-node spatial-node--accent" cx="75" cy="38" r="4" />
+          <circle class="spatial-node" cx="80" cy="67" r="4" />
         </g>
-        <g class="layer layer--mid gallery-plane gallery-plane--flow">
-          <path class="gallery-plane__surface" d="m34 52 92-13 3 68-93 13z" />
-          <circle class="node node--accent" cx="61" cy="73" r="7" />
-          <circle class="node" cx="102" cy="68" r="7" />
-          <circle class="node" cx="82" cy="99" r="7" />
-          <path class="connector" d="m68 72 27-3m3 6L86 94M64 80l13 14" />
+        <g class="gallery-solid gallery-solid--cube">
+          <path class="spatial-edge" d="m201 57 61 7v56l-61-7Zm17-15 61 7v56l-17 15m0-56 17-15m-78 8 17-15m-17 71 17-8" />
+          <circle class="spatial-node spatial-node--accent" cx="201" cy="57" r="3.5" />
+          <circle class="spatial-node spatial-node--accent" cx="262" cy="64" r="3.5" />
+          <circle class="spatial-node spatial-node--accent" cx="262" cy="120" r="3.5" />
+          <circle class="spatial-node spatial-node--accent" cx="201" cy="113" r="3.5" />
+          <circle class="spatial-node" cx="218" cy="42" r="3.5" />
+          <circle class="spatial-node" cx="279" cy="49" r="3.5" />
+          <circle class="spatial-node" cx="279" cy="105" r="3.5" />
+          <circle class="spatial-node" cx="218" cy="98" r="3.5" />
         </g>
-        <g class="layer layer--mid gallery-plane gallery-plane--graph">
-          <path class="gallery-plane__surface" d="m180 38 100 19-13 70-99-19z" />
-          <path class="connector" d="m198 70 29-12 27 24-15 27-38-8zM198 70l41 39m15-27-53 19" />
-          <circle class="node node--accent" cx="198" cy="70" r="7" />
-          <circle class="node" cx="227" cy="58" r="7" />
-          <circle class="node" cx="254" cy="82" r="7" />
-          <circle class="node node--accent" cx="239" cy="109" r="7" />
-          <circle class="node" cx="201" cy="101" r="7" />
-        </g>
-        <g class="layer layer--front gallery-plane gallery-plane--geometry">
-          <path class="gallery-plane__surface" d="m87 129 122-4 22 61-125 9z" />
-          <path class="connector connector--strong" d="m119 177 40-40 42 37z" />
-          <path class="accent-line" d="m119 177 82-3" />
-          <circle class="node" cx="119" cy="177" r="5" />
-          <circle class="node node--accent" cx="159" cy="137" r="5" />
-          <circle class="node" cx="201" cy="174" r="5" />
-        </g>
-        <g class="layer layer--front">
-          <circle class="gallery-core" cx="160" cy="115" r="10" />
-          <circle class="gallery-core-ring" cx="160" cy="115" r="18" />
+        <g class="gallery-solid gallery-solid--octahedron">
+          <path class="spatial-edge" d="m156 119-47 42 47 43 47-43Zm0 0 13 42-13 43m-47-43 60 0 34 0" />
+          <circle class="spatial-node spatial-node--accent" cx="156" cy="119" r="4" />
+          <circle class="spatial-node spatial-node--accent" cx="156" cy="204" r="4" />
+          <circle class="spatial-node" cx="109" cy="161" r="4" />
+          <circle class="spatial-node" cx="203" cy="161" r="4" />
+          <circle class="spatial-node spatial-node--accent" cx="169" cy="161" r="4.5" />
         </g>
       </g>
     }
@@ -316,20 +299,15 @@
       </g>
     }
     @case ('lost') {
-      <g class="layer layer--back">
-        <path class="lost-crosshair" d="M160 25v170M43 110h234" />
-        <circle class="lost-crosshair" cx="160" cy="110" r="64" />
+      <g class="lost-spatial-object">
+        <path class="lost-wire lost-wire--front" d="M160 34 68 174l184-13Z" />
+        <path class="lost-wire lost-wire--depth" d="m160 34 52 45L68 174m144-95 40 82" />
+        <circle class="lost-spatial-node" cx="160" cy="34" r="4.5" />
+        <circle class="lost-spatial-node" cx="68" cy="174" r="4.5" />
+        <circle class="lost-spatial-node" cx="252" cy="161" r="4.5" />
+        <circle class="lost-spatial-node lost-spatial-node--muted" cx="212" cy="79" r="4" />
       </g>
-      <g class="layer layer--front">
-        <rect class="selection-frame" x="54" y="55" width="212" height="112" rx="12" />
-        <text class="error-code" x="157" y="140" text-anchor="middle">404</text>
-        <circle class="handle" cx="54" cy="55" r="5" />
-        <circle class="handle" cx="266" cy="55" r="5" />
-        <circle class="handle" cx="54" cy="167" r="5" />
-        <circle class="handle" cx="266" cy="167" r="5" />
-        <path class="lost-coordinate-line" d="M266 83h28V44" />
-        <circle class="lost-coordinate-node" cx="294" cy="44" r="6" />
-      </g>
+      <text class="error-code" x="157" y="140" text-anchor="middle">404</text>
     }
   }
 </svg>

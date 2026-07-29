@@ -43,13 +43,25 @@ const VERTEX_SHADER = `
     float sx = sin(u_rotation.x + idleX);
 
     vec3 p = a_position;
+    float pointSize = abs(a_size);
+    if (a_size < -0.5) {
+      float orbitId = abs(a_size) - 21.0;
+      float orbitAngle = u_time * (0.00062 + orbitId * 0.00012) + orbitId * 2.1;
+      if (orbitId < 0.5) {
+        p = vec3(cos(orbitAngle) * 1.72, sin(orbitAngle) * 0.5, sin(orbitAngle) * 1.08);
+      } else if (orbitId < 1.5) {
+        p = vec3(cos(orbitAngle) * 0.56, sin(orbitAngle) * 1.58, cos(orbitAngle) * 0.92);
+      } else {
+        p = vec3(cos(orbitAngle) * 1.42, sin(orbitAngle) * 1.0, cos(orbitAngle) * 0.58);
+      }
+    }
     p = vec3(cy * p.x + sy * p.z, p.y, -sy * p.x + cy * p.z);
     p = vec3(p.x, cx * p.y - sx * p.z, sx * p.y + cx * p.z);
 
     float depth = max(2.1, 4.35 - p.z);
     float perspective = 2.8 / depth;
     gl_Position = vec4((p.x * perspective) / u_aspect, p.y * perspective, p.z / 7.0, 1.0);
-    gl_PointSize = max(2.0, a_size * perspective);
+    gl_PointSize = max(2.0, pointSize * perspective);
     v_color = vec4(a_color.rgb, a_color.a * clamp(0.68 + perspective * 0.42, 0.7, 1.0));
   }
 `;
@@ -122,24 +134,36 @@ const createGeometryBuilder = () => {
 
 const createSpatialGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   const geometry = createGeometryBuilder();
-  const ringNodeCount = 6;
-  const ring = (depth: number, angleOffset: number): readonly Point3[] =>
-    Array.from({ length: ringNodeCount }, (_, index) => {
-      const angle = (index / ringNodeCount) * Math.PI * 2 + angleOffset;
-      return [Math.cos(angle) * 1.32, Math.sin(angle) * 1.12, depth] as const;
-    });
-  const backRing = ring(-0.62, 0);
-  const frontRing = ring(0.62, Math.PI / 6);
+  const pointOnRing = (index: number, radius: number, z: number): Point3 => {
+    const angle = (index / 5) * Math.PI * 2 + Math.PI / 2;
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius, z];
+  };
+  const outerNodes: readonly Point3[] = Array.from({ length: 5 }, (_, index) => pointOnRing(index, 1.24, -0.24));
+  const innerNodes: readonly Point3[] = Array.from({ length: 5 }, (_, index) => pointOnRing(index, 0.62, 0.38));
   const edgeColor = color(foreground, 0.88);
 
-  for (let index = 0; index < ringNodeCount; index += 1) {
-    const nextIndex = (index + 1) % ringNodeCount;
-    geometry.addLine(backRing[index], backRing[nextIndex], edgeColor);
-    geometry.addLine(frontRing[index], frontRing[nextIndex], edgeColor);
-    geometry.addLine(backRing[index], frontRing[index], edgeColor);
-    geometry.addPoint(backRing[index], color(accent), 24);
-    geometry.addPoint(frontRing[index], color(accent), 29);
-  }
+  outerNodes.forEach((outerNode, index) => {
+    geometry.addLine(outerNode, outerNodes[(index + 1) % 5], edgeColor);
+    geometry.addLine(outerNode, innerNodes[index], edgeColor);
+    geometry.addLine(innerNodes[index], innerNodes[(index + 2) % 5], edgeColor);
+    geometry.addPoint(outerNode, color(accent), 28);
+    geometry.addPoint(innerNodes[index], color(accent), 24);
+  });
+
+  const orbitSegments = 72;
+  const orbitPoints: readonly ((angle: number) => Point3)[] = [
+    (angle) => [Math.cos(angle) * 1.72, Math.sin(angle) * 0.5, Math.sin(angle) * 1.08],
+    (angle) => [Math.cos(angle) * 0.56, Math.sin(angle) * 1.58, Math.cos(angle) * 0.92],
+    (angle) => [Math.cos(angle) * 1.42, Math.sin(angle) * 1.0, Math.cos(angle) * 0.58]
+  ];
+  orbitPoints.forEach((pointAt, orbitIndex) => {
+    for (let index = 0; index < orbitSegments; index += 1) {
+      const angle = (index / orbitSegments) * Math.PI * 2;
+      const nextAngle = ((index + 1) / orbitSegments) * Math.PI * 2;
+      geometry.addLine(pointAt(angle), pointAt(nextAngle), color(accent, orbitIndex === 0 ? 0.28 : 0.18));
+    }
+    geometry.addPoint([0, 0, 0], color(accent), -(21 + orbitIndex));
+  });
 
   return geometry.build();
 };
@@ -148,52 +172,85 @@ const createGalleryGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   const geometry = createGeometryBuilder();
   const strong = color(foreground, 0.86);
   const blue = color(accent, 0.98);
-
-  const addNode = (point: Point3, size = 19): void => {
-    geometry.addPoint(point, blue, size);
+  const addShape = (points: readonly Point3[], edges: readonly (readonly [number, number])[], nodeSize = 18): void => {
+    edges.forEach(([from, to]) => geometry.addLine(points[from], points[to], strong));
+    points.forEach((point) => geometry.addPoint(point, blue, nodeSize));
   };
 
-  const flowNodes: readonly Point3[] = [
-    [-1.42, 0.72, -0.32],
-    [-0.72, 0.72, -0.32],
-    [-1.05, 0.22, -0.32]
+  const tetrahedron: readonly Point3[] = [
+    [-1.5, 0.42, 0.02],
+    [-0.5, 0.42, 0.02],
+    [-1, 1.2, 0.02],
+    [-1, 0.7, 0.78]
   ];
-  geometry.addLine(flowNodes[0], flowNodes[1], strong);
-  geometry.addLine(flowNodes[1], flowNodes[2], strong);
-  flowNodes.forEach((point) => addNode(point));
+  addShape(
+    tetrahedron,
+    [
+      [0, 1],
+      [1, 2],
+      [2, 0],
+      [0, 3],
+      [1, 3],
+      [2, 3]
+    ],
+    17
+  );
 
-  const graphNodes: readonly Point3[] = [
-    [0.62, 0.7, 0.28],
-    [1.28, 0.76, 0.28],
-    [1.46, 0.22, 0.28],
-    [0.92, -0.05, 0.28],
-    [0.48, 0.18, 0.28]
+  const cube: readonly Point3[] = [
+    [0.48, 0.02, -0.36],
+    [1.28, 0.02, -0.36],
+    [1.28, 0.74, -0.36],
+    [0.48, 0.74, -0.36],
+    [0.7, 0.18, 0.36],
+    [1.5, 0.18, 0.36],
+    [1.5, 0.9, 0.36],
+    [0.7, 0.9, 0.36]
   ];
-  const graphEdges = [
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 4],
-    [4, 0],
-    [0, 3],
-    [1, 4]
-  ] as const;
-  graphEdges.forEach(([from, to]) => geometry.addLine(graphNodes[from], graphNodes[to], strong));
-  graphNodes.forEach((point) => addNode(point, 18));
+  addShape(
+    cube,
+    [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 0],
+      [4, 5],
+      [5, 6],
+      [6, 7],
+      [7, 4],
+      [0, 4],
+      [1, 5],
+      [2, 6],
+      [3, 7]
+    ],
+    15
+  );
 
-  const triangle: readonly Point3[] = [
-    [-0.85, -1.04, 0.78],
-    [0.38, -1.04, 0.78],
-    [-0.05, -0.43, 0.78]
+  const octahedron: readonly Point3[] = [
+    [-0.16, -0.18, 0],
+    [-0.16, -1.36, 0],
+    [-0.68, -0.77, 0],
+    [0.36, -0.77, 0],
+    [-0.16, -0.77, 0.64],
+    [-0.16, -0.77, -0.64]
   ];
-  triangle.forEach((point, index) => {
-    geometry.addLine(point, triangle[(index + 1) % triangle.length], strong);
-    addNode(point, 16);
-  });
-
-  geometry.addLine([-1.28, 0.04, -0.28], [-0.5, -0.48, 0.48], color(accent, 0.3));
-  geometry.addLine([0.62, -0.1, 0.3], [0.08, -0.42, 0.68], color(accent, 0.3));
-  geometry.addPoint([0, 0, 1.05], color(accent, 0.96), 16);
+  addShape(
+    octahedron,
+    [
+      [0, 2],
+      [0, 3],
+      [0, 4],
+      [0, 5],
+      [1, 2],
+      [1, 3],
+      [1, 4],
+      [1, 5],
+      [2, 4],
+      [4, 3],
+      [3, 5],
+      [5, 2]
+    ],
+    16
+  );
 
   return geometry.build();
 };
