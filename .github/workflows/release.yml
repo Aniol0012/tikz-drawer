@@ -17,6 +17,14 @@ on:
         required: true
         default: false
         type: boolean
+      release_description:
+        description: Short paragraph placed between Version and Snapshot
+        required: true
+        type: string
+      release_notes:
+        description: Markdown placed after Snapshot (include headings and bullet lists)
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -37,6 +45,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Verify release author token
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          EXPECTED_ACTOR: ${{ github.actor }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The RELEASE_TOKEN repository secret is required to create releases as the triggering user."
+            exit 1
+          fi
+
+          TOKEN_ACTOR="$(gh api user --jq '.login')"
+          if [ "${TOKEN_ACTOR,,}" != "${EXPECTED_ACTOR,,}" ]; then
+            echo "::error::RELEASE_TOKEN belongs to ${TOKEN_ACTOR}, but this workflow was triggered by ${EXPECTED_ACTOR}."
+            exit 1
+          fi
+
+          echo "Release will be authored by ${TOKEN_ACTOR}."
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -101,28 +128,29 @@ jobs:
           REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
           RELEASE_URL="${REPO_URL}/releases/tag/${TAG}"
           APP_URL="https://tikzdrawer.com/?version=${VERSION}"
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if git rev-parse --verify --quiet "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::Tag ${TAG} already exists."
+            exit 1
+          fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "repo_url=${REPO_URL}" >> "$GITHUB_OUTPUT"
           echo "release_url=${RELEASE_URL}" >> "$GITHUB_OUTPUT"
           echo "app_url=${APP_URL}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${PREVIOUS_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build release body with snapshots
-        shell: bash
-        run: |
-          mkdir -p .artifacts/release
-          cat > .artifacts/release/release-body.md <<EOF
-          **Version:** [${{ steps.meta.outputs.tag }}](${{ steps.meta.outputs.release_url }})
-
-          EOF
-
-          if [ -f screenshots/editor-light.png ]; then
-            cat >> .artifacts/release/release-body.md <<EOF
-          ### Snapshot
-
-          ![Editor light](${{ steps.meta.outputs.repo_url }}/releases/download/${{ steps.meta.outputs.tag }}/editor-light.png)
-          EOF
-          fi
+        env:
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          RELEASE_URL: ${{ steps.meta.outputs.release_url }}
+          REPOSITORY_URL: ${{ steps.meta.outputs.repo_url }}
+          PREVIOUS_TAG: ${{ steps.meta.outputs.previous_tag }}
+          RELEASE_DESCRIPTION: ${{ inputs.release_description }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          RELEASE_BODY_PATH: .artifacts/release/release-body.md
+          RELEASE_SNAPSHOT_PATH: screenshots/editor-light.png
+        run: node scripts/build-release-body.mjs
 
       - name: Sync README release preview
         shell: bash
@@ -248,11 +276,9 @@ jobs:
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: Release ${{ steps.meta.outputs.tag }}
-          generate_release_notes: true
-          append_body: true
           body_path: .artifacts/release/release-body.md
           prerelease: ${{ inputs.prerelease }}
           files: |
             .artifacts/release/*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
