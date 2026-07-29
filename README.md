@@ -27,7 +27,7 @@
 
 ## Preview
 
-> <img width="1600" height="900" alt="image" src="[https://github.com/Aniol0012/tikz-drawer/releases/download/v2.1.0/editor-light.png](https://github.com/user-attachments/assets/52608db4-c461-4f22-926d-6b05b2e3013d)" />
+> <img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/52608db4-c461-4f22-926d-6b05b2e3013d" />
 > v2.1.0
 
 > [!TIP]
