@@ -18,6 +18,7 @@ interface ShaderLocations {
   readonly size: number;
   readonly rotation: WebGLUniformLocation;
   readonly aspect: WebGLUniformLocation;
+  readonly scale: WebGLUniformLocation;
   readonly pointMode: WebGLUniformLocation;
   readonly time: WebGLUniformLocation;
 }
@@ -29,6 +30,7 @@ const VERTEX_SHADER = `
 
   uniform vec2 u_rotation;
   uniform float u_aspect;
+  uniform float u_scale;
   uniform float u_point_mode;
   uniform float u_time;
 
@@ -57,6 +59,7 @@ const VERTEX_SHADER = `
         p = vec3(cos(orbitAngle) * 1.55, sin(orbitAngle) * 0.76, cos(orbitAngle) * 0.86);
       }
     }
+    p *= u_scale;
     p = vec3(cy * p.x + sy * p.z, p.y, -sy * p.x + cy * p.z);
     p = vec3(p.x, cx * p.y - sx * p.z, sx * p.y + cx * p.z);
 
@@ -363,7 +366,8 @@ export class DiagramArtworkWebglRenderer {
           ? createSpatialGeometry(accent, foreground)
           : kind === 'gallery'
             ? createGalleryGeometry(accent, foreground)
-            : createLostGeometry(accent, foreground)
+            : createLostGeometry(accent, foreground),
+        kind === 'lost' ? 0.72 : 1
       );
     } catch {
       return null;
@@ -374,7 +378,8 @@ export class DiagramArtworkWebglRenderer {
     private readonly canvas: HTMLCanvasElement,
     host: HTMLElement,
     private readonly gl: WebGLRenderingContext,
-    geometry: SceneGeometry
+    geometry: SceneGeometry,
+    private readonly sceneScale: number
   ) {
     const program = createProgram(gl);
     if (!program) {
@@ -385,10 +390,11 @@ export class DiagramArtworkWebglRenderer {
 
     const rotation = requiredUniform(gl, program, 'u_rotation');
     const aspect = requiredUniform(gl, program, 'u_aspect');
+    const scale = requiredUniform(gl, program, 'u_scale');
     const pointMode = requiredUniform(gl, program, 'u_point_mode');
     const time = requiredUniform(gl, program, 'u_time');
     const buffers = Array.from({ length: 5 }, () => gl.createBuffer());
-    if (!rotation || !aspect || !pointMode || !time || buffers.some((buffer) => !buffer)) {
+    if (!rotation || !aspect || !scale || !pointMode || !time || buffers.some((buffer) => !buffer)) {
       throw new Error('Unable to initialize diagram artwork buffers.');
     }
 
@@ -398,6 +404,7 @@ export class DiagramArtworkWebglRenderer {
       size: gl.getAttribLocation(program, 'a_size'),
       rotation,
       aspect,
+      scale,
       pointMode,
       time
     };
@@ -458,6 +465,7 @@ export class DiagramArtworkWebglRenderer {
     gl.useProgram(this.program);
     gl.uniform2f(this.locations.rotation, this.rotation.x, this.rotation.y);
     gl.uniform1f(this.locations.aspect, this.canvas.width / Math.max(this.canvas.height, 1));
+    gl.uniform1f(this.locations.scale, this.sceneScale);
     gl.uniform1f(this.locations.time, time);
 
     this.draw(this.linePositionBuffer, this.lineColorBuffer, null, this.geometry.linePositions.length / 3, gl.LINES);

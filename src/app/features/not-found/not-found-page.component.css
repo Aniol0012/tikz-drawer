@@ -22,9 +22,9 @@
 
 .message {
   display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.08fr);
+  grid-template-columns: minmax(0, 0.72fr) minmax(480px, 1.18fr);
   align-items: center;
-  gap: clamp(42px, 8vw, 104px);
+  gap: clamp(36px, 6vw, 84px);
   padding-block: clamp(64px, 10vh, 112px) 76px;
 }
 
@@ -88,7 +88,7 @@ app-diagram-artwork:hover {
   border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
 }
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .message {
     grid-template-columns: 1fr;
     padding-block: 54px;

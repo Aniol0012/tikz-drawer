@@ -3,10 +3,12 @@
 }
 
 <svg viewBox="0 0 320 220" role="img" [attr.aria-label]="label()">
-  <rect class="artwork-surface" x="1" y="1" width="318" height="218" rx="10" />
-  <g class="artwork-grid" aria-hidden="true">
-    <path d="M0 55h320M0 110h320M0 165h320M64 0v220M128 0v220M192 0v220M256 0v220" />
-  </g>
+  @if (!enhancedKind()) {
+    <rect class="artwork-surface" x="1" y="1" width="318" height="218" rx="10" />
+    <g class="artwork-grid" aria-hidden="true">
+      <path d="M0 55h320M0 110h320M0 165h320M64 0v220M128 0v220M192 0v220M256 0v220" />
+    </g>
+  }
 
   @switch (kind()) {
     @case ('spatial') {
