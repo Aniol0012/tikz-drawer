@@ -143,21 +143,18 @@ svg {
   transform: translateY(-2px) scale(1.012);
 }
 
-.spatial-scene {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
 .spatial-orbit,
-.spatial-edge {
+.spatial-graph-edge,
+.gallery-edge {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .spatial-orbit {
   stroke: color-mix(in srgb, var(--accent) 48%, var(--tool-border));
-  stroke-width: 1.5;
+  stroke-width: 1.1;
   stroke-dasharray: 5 7;
   animation: spatial-orbit-flow 12s linear infinite;
 }
@@ -168,73 +165,45 @@ svg {
   animation-direction: reverse;
 }
 
-.spatial-edge {
-  stroke: color-mix(in srgb, var(--app-foreground) 68%, var(--tool-border-strong));
-  stroke-width: 2;
+.spatial-graph-edge {
+  stroke: color-mix(in srgb, var(--app-foreground) 82%, var(--tool-border-strong));
+  stroke-width: 1.65;
 }
 
-.spatial-edge--inner {
-  stroke: color-mix(in srgb, var(--accent) 72%, var(--tool-border-strong));
-  stroke-width: 1.6;
+.spatial-graph-edge--spokes {
+  stroke: color-mix(in srgb, var(--app-foreground) 66%, var(--tool-border-strong));
 }
 
-.spatial-node {
-  fill: var(--panel-background);
-  stroke: var(--app-foreground);
-  stroke-width: 2;
-}
-
-.spatial-node--accent,
+.spatial-graph-node,
+.gallery-node,
 .spatial-orbit-node {
   fill: var(--accent);
-  stroke: var(--panel-background);
-  stroke-width: 2.5;
+  stroke: var(--app-background);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
 .spatial-orbit-node {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: spatial-node-pulse 2.8s ease-in-out infinite;
+  opacity: 0.78;
 }
 
-.spatial-orbit-node--right {
-  animation-delay: -1.4s;
+.gallery-edge {
+  stroke: color-mix(in srgb, var(--app-foreground) 78%, var(--tool-border-strong));
+  stroke-width: 1.65;
 }
 
-.gallery-scene {
-  transform-box: fill-box;
-  transform-origin: center;
+.gallery-edge--rear {
+  stroke: color-mix(in srgb, var(--app-foreground) 38%, var(--tool-border));
+  stroke-dasharray: 3 4;
 }
 
-.gallery-solid {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: gallery-solid-float 5.8s ease-in-out infinite alternate;
-}
-
-.gallery-solid--cube {
-  animation-delay: -1.9s;
-}
-
-.gallery-solid--octahedron {
-  animation-delay: -3.8s;
+.gallery-node--rear {
+  opacity: 0.62;
 }
 
 @keyframes spatial-orbit-flow {
   to {
     stroke-dashoffset: -120;
-  }
-}
-
-@keyframes spatial-node-pulse {
-  50% {
-    transform: scale(1.22);
-  }
-}
-
-@keyframes gallery-solid-float {
-  to {
-    transform: translateY(-4px);
   }
 }
 
@@ -460,6 +429,7 @@ circle.node--accent {
   stroke: color-mix(in srgb, var(--app-foreground) 48%, transparent);
   stroke-linecap: round;
   stroke-width: 1.35;
+  vector-effect: non-scaling-stroke;
 }
 
 .lost-atom-orbit--wide {
@@ -470,11 +440,18 @@ circle.node--accent {
   stroke: color-mix(in srgb, var(--app-foreground) 34%, transparent);
 }
 
-.lost-electron {
+.lost-electron-ring {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  stroke: color-mix(in srgb, var(--accent) 42%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.lost-electron-core {
   fill: var(--accent);
   stroke: var(--app-background);
-  stroke-width: 2.5;
-  filter: drop-shadow(0 3px 5px color-mix(in srgb, var(--accent) 34%, transparent));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
 .error-code {
@@ -483,17 +460,15 @@ circle.node--accent {
   stroke-width: 3px;
   paint-order: stroke fill;
   font-family: var(--font-sans);
-  font-size: 80px;
+  font-size: 78px;
   font-weight: 850;
-  letter-spacing: -7px;
+  letter-spacing: -5px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   svg,
   .layer,
   .spatial-orbit,
-  .spatial-orbit-node,
-  .gallery-solid,
   .lost-atom-fallback {
     animation: none;
     transition: none;
