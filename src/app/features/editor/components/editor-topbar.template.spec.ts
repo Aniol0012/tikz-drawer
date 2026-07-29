@@ -65,12 +65,12 @@ describe('EditorTopbarComponent template', () => {
     expect(menu).not.toContain("{{ t('importCode') }}");
   });
 
-  it('shows the about shortcut only while the desktop topbar has room', async () => {
+  it('shows the guide shortcut only while the desktop topbar has room', async () => {
     const template = await readTemplate();
     const rightActions = sectionBetween(template, '<div class="topbar__right">', '<div class="topbar-primary-actions">');
 
-    expect(rightActions).toContain('@if (showAboutShortcut())');
-    expect(rightActions).toContain('routerLink="/about"');
+    expect(rightActions).toContain('@if (showGuideShortcut())');
+    expect(rightActions).toContain('routerLink="/guide"');
     expect(rightActions).toContain("icon('info')");
   });
 

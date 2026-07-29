@@ -8,9 +8,9 @@ export interface SeoRouteData {
 }
 
 export const EDITOR_SEO = {
-  title: 'TikZ Drawer — free online visual TikZ editor',
+  title: 'TikZ Drawer, free online visual TikZ editor',
   description:
-    'Create LaTeX TikZ diagrams visually with a free online editor. Draw shapes, graphs and labels, then export clean TikZ code—no installation required.',
+    'Create LaTeX TikZ diagrams visually with a free online editor. Draw shapes, graphs and labels, then export clean TikZ code with no installation required.',
   canonicalPath: '/',
   robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
 } as const satisfies SeoRouteData;

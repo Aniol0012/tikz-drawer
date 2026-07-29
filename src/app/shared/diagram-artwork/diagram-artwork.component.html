@@ -1,3 +1,7 @@
+@if (interactive() && enhancedKind()) {
+  <canvas #webglCanvas class="artwork-webgl" aria-hidden="true"></canvas>
+}
+
 <svg viewBox="0 0 320 220" role="img" [attr.aria-label]="label()">
   <rect class="artwork-surface" x="1" y="1" width="318" height="218" rx="10" />
   <g class="artwork-grid" aria-hidden="true">
@@ -6,7 +10,7 @@
 
   @switch (kind()) {
     @case ('spatial') {
-      <g class="spatial-scene">
+      <g class="spatial-scene enhanced-fallback">
         <g class="layer layer--back">
           <ellipse class="spatial-shadow" cx="160" cy="190" rx="82" ry="15" />
           <ellipse class="spatial-orbit spatial-orbit--horizontal" cx="160" cy="113" rx="132" ry="50" transform="rotate(-8 160 113)" />
@@ -103,16 +107,42 @@
       </g>
     }
     @case ('gallery') {
-      <g class="layer layer--front">
-        <rect class="tile" x="39" y="39" width="108" height="62" rx="7" />
-        <rect class="tile" x="173" y="39" width="108" height="62" rx="7" />
-        <rect class="tile" x="39" y="119" width="108" height="62" rx="7" />
-        <rect class="tile" x="173" y="119" width="108" height="62" rx="7" />
-        <path class="connector" d="M61 70h28m12 0h24M197 70l15-14 17 27 24-23M61 150h25l12-17 25 33M198 151h57" />
-        <circle class="node--accent" cx="94" cy="70" r="7" />
-        <circle class="node" cx="198" cy="151" r="8" />
-        <circle class="node" cx="226" cy="151" r="8" />
-        <circle class="node--accent" cx="255" cy="151" r="8" />
+      <g class="gallery-scene enhanced-fallback">
+        <g class="layer layer--back gallery-connector-cloud">
+          <path d="M69 68 161 45l91 31M69 68l39 100m53-123-53 123m144-92-52 88m-92 4 92-4" />
+          <circle cx="161" cy="45" r="3" />
+          <circle cx="108" cy="168" r="3" />
+          <circle cx="252" cy="76" r="3" />
+          <circle cx="200" cy="164" r="3" />
+        </g>
+        <g class="layer layer--mid gallery-plane gallery-plane--flow">
+          <path class="gallery-plane__surface" d="m34 52 92-13 3 68-93 13z" />
+          <circle class="node node--accent" cx="61" cy="73" r="7" />
+          <circle class="node" cx="102" cy="68" r="7" />
+          <circle class="node" cx="82" cy="99" r="7" />
+          <path class="connector" d="m68 72 27-3m3 6L86 94M64 80l13 14" />
+        </g>
+        <g class="layer layer--mid gallery-plane gallery-plane--graph">
+          <path class="gallery-plane__surface" d="m180 38 100 19-13 70-99-19z" />
+          <path class="connector" d="m198 70 29-12 27 24-15 27-38-8zM198 70l41 39m15-27-53 19" />
+          <circle class="node node--accent" cx="198" cy="70" r="7" />
+          <circle class="node" cx="227" cy="58" r="7" />
+          <circle class="node" cx="254" cy="82" r="7" />
+          <circle class="node node--accent" cx="239" cy="109" r="7" />
+          <circle class="node" cx="201" cy="101" r="7" />
+        </g>
+        <g class="layer layer--front gallery-plane gallery-plane--geometry">
+          <path class="gallery-plane__surface" d="m87 129 122-4 22 61-125 9z" />
+          <path class="connector connector--strong" d="m119 177 40-40 42 37z" />
+          <path class="accent-line" d="m119 177 82-3" />
+          <circle class="node" cx="119" cy="177" r="5" />
+          <circle class="node node--accent" cx="159" cy="137" r="5" />
+          <circle class="node" cx="201" cy="174" r="5" />
+        </g>
+        <g class="layer layer--front">
+          <circle class="gallery-core" cx="160" cy="115" r="10" />
+          <circle class="gallery-core-ring" cx="160" cy="115" r="18" />
+        </g>
       </g>
     }
     @case ('flowchart') {

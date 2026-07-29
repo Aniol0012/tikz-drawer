@@ -1,9 +1,13 @@
 :host {
   --artwork-rotate-x: 0deg;
   --artwork-rotate-y: 0deg;
+  --artwork-pointer-x: 50%;
+  --artwork-pointer-y: 50%;
+  position: relative;
   min-width: 0;
   display: block;
-  perspective: 800px;
+  perspective: 1000px;
+  isolation: isolate;
 }
 
 svg {
@@ -13,7 +17,58 @@ svg {
   overflow: visible;
   transform: rotateX(var(--artwork-rotate-x)) rotateY(var(--artwork-rotate-y));
   transform-style: preserve-3d;
-  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+:host(.diagram-artwork--interactive)::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--artwork-pointer-x) var(--artwork-pointer-y),
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 34%
+  );
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  content: '';
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+}
+
+:host(.diagram-artwork--interactive:hover)::after {
+  opacity: 1;
+}
+
+.artwork-webgl {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:host(.diagram-artwork--webgl) .artwork-webgl {
+  opacity: 1;
+}
+
+.enhanced-fallback {
+  transition:
+    opacity 360ms ease-out,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:host(.diagram-artwork--webgl) .enhanced-fallback {
+  opacity: 0.12;
 }
 
 .artwork-surface {
@@ -34,15 +89,15 @@ svg {
 }
 
 :host(.diagram-artwork--interactive:hover) .layer--front {
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(1.025);
 }
 
 :host(.diagram-artwork--interactive:hover) .layer--back {
-  transform: translateY(2px);
+  transform: translateY(5px) scale(0.985);
 }
 
 :host(.diagram-artwork--interactive:hover) .layer--mid {
-  transform: translateY(-1px) scale(1.015);
+  transform: translateY(-2px) scale(1.012);
 }
 
 .spatial-scene {
@@ -141,6 +196,60 @@ svg {
   animation-delay: -1.4s;
 }
 
+.gallery-scene {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.gallery-connector-cloud {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 34%, var(--tool-border));
+  stroke-width: 1.25;
+  stroke-dasharray: 4 7;
+}
+
+.gallery-connector-cloud circle {
+  fill: var(--accent);
+  stroke: var(--panel-background);
+  stroke-width: 2;
+}
+
+.gallery-plane__surface {
+  fill: color-mix(in srgb, var(--tool-surface) 92%, transparent);
+  stroke: color-mix(in srgb, var(--tool-border-strong) 72%, transparent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.gallery-plane {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gallery-plane-float 5s ease-in-out infinite;
+}
+
+.gallery-plane--graph {
+  animation-delay: -1.7s;
+}
+
+.gallery-plane--geometry {
+  animation-delay: -3.4s;
+}
+
+.gallery-core {
+  fill: var(--accent);
+  stroke: var(--panel-background);
+  stroke-width: 3;
+}
+
+.gallery-core-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 62%, transparent);
+  stroke-width: 2;
+  animation: gallery-core-pulse 2.8s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 @keyframes spatial-orbit-flow {
   to {
     stroke-dashoffset: -120;
@@ -150,6 +259,20 @@ svg {
 @keyframes spatial-node-pulse {
   50% {
     transform: scale(1.22);
+  }
+}
+
+@keyframes gallery-plane-float {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes gallery-core-pulse {
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.75);
   }
 }
 
@@ -383,8 +506,14 @@ circle.node--accent {
   svg,
   .layer,
   .spatial-orbit,
-  .spatial-orbit-node {
+  .spatial-orbit-node,
+  .gallery-plane,
+  .gallery-core-ring {
     animation: none;
     transition: none;
+  }
+
+  .artwork-webgl {
+    display: none;
   }
 }

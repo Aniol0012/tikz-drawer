@@ -29,7 +29,7 @@ const DEFAULT_WINDOW_WIDTH = 1280;
 const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
 const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
-const ABOUT_SHORTCUT_MIN_WINDOW_WIDTH = 1500;
+const GUIDE_SHORTCUT_MIN_WINDOW_WIDTH = 1500;
 const LANGUAGE_SEARCH_THRESHOLD = 7;
 
 interface ShoelaceDropdownElement extends HTMLElement {
@@ -86,7 +86,7 @@ export class EditorTopbarComponent {
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
   readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH);
-  readonly showAboutShortcut = computed(() => !this.mobileLayout() && this.windowWidth() >= ABOUT_SHORTCUT_MIN_WINDOW_WIDTH);
+  readonly showGuideShortcut = computed(() => !this.mobileLayout() && this.windowWidth() >= GUIDE_SHORTCUT_MIN_WINDOW_WIDTH);
 
   constructor() {
     effect(() => {
