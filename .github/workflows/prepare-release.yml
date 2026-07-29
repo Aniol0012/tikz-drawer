@@ -1,0 +1,58 @@
+name: 1. Prepare release notes
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  compare:
+    name: Compare the latest release with the default branch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build release comparison
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}
+        run: |
+          LATEST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [ -z "$LATEST_TAG" ]; then
+            echo "::error::No previous release tag was found."
+            exit 1
+          fi
+
+          git fetch origin "$DEFAULT_BRANCH"
+          COMMIT_COUNT="$(git rev-list --count "${LATEST_TAG}..origin/${DEFAULT_BRANCH}")"
+          COMPARE_URL="${REPOSITORY_URL}/compare/${LATEST_TAG}...${DEFAULT_BRANCH}"
+          RELEASE_WORKFLOW_URL="${REPOSITORY_URL}/actions/workflows/release.yml"
+
+          {
+            echo "# Prepare release notes"
+            echo
+            echo "**Latest release:** [${LATEST_TAG}](${REPOSITORY_URL}/releases/tag/${LATEST_TAG})"
+            echo
+            echo "**Target branch:** \`${DEFAULT_BRANCH}\`"
+            echo
+            echo "**Changes since ${LATEST_TAG}:** ${COMMIT_COUNT} commits"
+            echo
+            echo "## Review the changes"
+            echo
+            echo "[Compare ${LATEST_TAG}...${DEFAULT_BRANCH}](${COMPARE_URL})"
+            echo
+            echo "Use that comparison to write the release description and the Markdown release notes."
+            echo
+            echo "## Continue"
+            echo
+            echo "[Open the publish release workflow](${RELEASE_WORKFLOW_URL})"
+          } >> "$GITHUB_STEP_SUMMARY"

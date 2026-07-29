@@ -1,4 +1,4 @@
-name: Release
+name: 2. Publish release
 
 on:
   workflow_dispatch:
@@ -14,6 +14,11 @@ on:
           - major
       prerelease:
         description: Mark this release as a pre-release
+        required: true
+        default: false
+        type: boolean
+      changes_reviewed:
+        description: Review changes first at https://github.com/Aniol0012/tikz-drawer/actions/workflows/prepare-release.yml
         required: true
         default: false
         type: boolean
@@ -41,6 +46,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Confirm release changes were reviewed
+        if: ${{ !inputs.changes_reviewed }}
+        run: |
+          echo "::error::Run '1. Prepare release notes', review the comparison, and confirm the checkbox before publishing."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
