@@ -75,8 +75,17 @@ code {
 }
 
 app-diagram-artwork {
-  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--app-foreground) 22%, transparent);
+  border-radius: 16px;
+  background: transparent;
   overflow: hidden;
+  transition:
+    border-color 220ms ease-out,
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+app-diagram-artwork:hover {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
 }
 
 @media (max-width: 760px) {
