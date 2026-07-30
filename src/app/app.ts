@@ -45,7 +45,12 @@ export class App {
     this.title.setTitle(seo.title);
     this.meta.updateTag({ name: 'description', content: seo.description });
     this.meta.updateTag({ name: 'robots', content: seo.robots });
+    this.meta.updateTag({ property: 'og:title', content: seo.title });
+    this.meta.updateTag({ property: 'og:description', content: seo.description });
+    this.meta.updateTag({ name: 'twitter:title', content: seo.title });
+    this.meta.updateTag({ name: 'twitter:description', content: seo.description });
     this.updateCanonical(seo.canonicalPath);
+    this.updateOpenGraphUrl(seo.canonicalPath);
   }
 
   private leafRoute(): ActivatedRoute {
@@ -69,5 +74,14 @@ export class App {
     if (!existing) {
       this.document.head.append(canonical);
     }
+  }
+
+  private updateOpenGraphUrl(canonicalPath: string | null): void {
+    if (!canonicalPath) {
+      this.meta.removeTag('property="og:url"');
+      return;
+    }
+
+    this.meta.updateTag({ property: 'og:url', content: `${SITE_ORIGIN}${canonicalPath}` });
   }
 }

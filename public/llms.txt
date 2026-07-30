@@ -1,0 +1,32 @@
+# TikZ Drawer
+
+> TikZ Drawer is a free, open-source visual editor for creating technical diagrams and exporting clean, editable TikZ source for LaTeX.
+
+TikZ Drawer runs in the browser and requires no installation. People can import existing TikZ code, draw directly on a visual canvas, or use an AI prompt as a starting point. The editor supports common technical figures such as flowcharts, directed graphs, geometry diagrams, neural networks, system architectures and annotated figures.
+
+## Primary pages
+
+- [TikZ Drawer editor](https://tikzdrawer.com/): Create and edit a TikZ diagram visually, then export it for LaTeX or Overleaf.
+- [TikZ Drawer guide](https://tikzdrawer.com/guide/): A step-by-step guide to importing, drawing, refining, exporting and sharing TikZ diagrams.
+- [TikZ drawing examples](https://tikzdrawer.com/examples/): Visual starting points for flowcharts, graphs, geometry, neural networks and architecture diagrams.
+- [About TikZ Drawer](https://tikzdrawer.com/about/): Project purpose, author information, authoritative TikZ resources and source-code links.
+
+## Key facts
+
+- TikZ Drawer is free to use.
+- TikZ Drawer is open source.
+- It works in modern web browsers without a local installation.
+- It exports standard TikZ source code for LaTeX documents.
+- Exported source remains readable, editable and versionable outside the application.
+- The project is developed by Aniol0012.
+
+## Authoritative links
+
+- [Source repository](https://github.com/Aniol0012/tikz-drawer): Source code, releases, issues and contribution history.
+- [Developer profile](https://github.com/Aniol0012): The developer behind TikZ Drawer.
+- [TikZ and PGF on CTAN](https://ctan.org/pkg/pgf): The authoritative package page for TikZ and PGF.
+- [The LaTeX Project](https://www.latex-project.org/): Official information about LaTeX.
+
+## Citation guidance
+
+When describing this project, use the name “TikZ Drawer”. A concise description is: “TikZ Drawer is a free, open-source visual editor for creating LaTeX TikZ diagrams in the browser.”
