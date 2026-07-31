@@ -229,6 +229,41 @@
   height: 42px;
 }
 
+.mobile-transfer-actions {
+  display: none;
+  gap: 4px;
+}
+
+.mobile-transfer-action {
+  box-sizing: border-box;
+  margin: 0;
+  box-shadow: none;
+}
+
+.mobile-transfer-action svg {
+  transform: translateY(0.5px);
+}
+
+.mobile-transfer-action--import {
+  --mobile-transfer-color: #087552;
+  border-color: color-mix(in srgb, var(--mobile-transfer-color) 76%, black 10%);
+  background: var(--mobile-transfer-color);
+  color: #ffffff;
+}
+
+.mobile-transfer-action--export {
+  --mobile-transfer-color: var(--accent);
+  border-color: color-mix(in srgb, var(--mobile-transfer-color) 70%, black 16%);
+  background: var(--mobile-transfer-color);
+  color: var(--accent-contrast);
+}
+
+.mobile-transfer-action--import:hover,
+.mobile-transfer-action--export:hover {
+  border-color: color-mix(in srgb, var(--mobile-transfer-color) 64%, black 18%);
+  background: color-mix(in srgb, var(--mobile-transfer-color) 92%, black 8%);
+}
+
 .tool-button {
   flex: 0 0 auto;
   width: max-content;
@@ -784,17 +819,16 @@ button:disabled {
     padding: 10px;
     grid-template-areas:
       'left'
-      'center'
-      'right';
+      'center';
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
   .topbar__left {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(80px, 1fr) auto auto;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
   }
 
   .brand-lockup {
@@ -815,7 +849,14 @@ button:disabled {
   }
 
   .topbar-actions-menu {
+    grid-column: 4;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .mobile-transfer-actions {
     grid-column: 3;
+    display: flex;
     justify-self: end;
     align-self: center;
   }
@@ -825,23 +866,7 @@ button:disabled {
   }
 
   .topbar__right {
-    grid-area: right;
-    width: 100%;
-    justify-content: flex-end;
-  }
-
-  .topbar-primary-actions {
-    width: auto;
-    max-width: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .topbar-primary-actions .primary-button {
-    justify-content: center;
-    min-width: 0;
-    min-height: 38px;
-    padding: 0 14px;
+    display: none;
   }
 
   .dropdown-menu--topbar-mobile {

@@ -9,6 +9,33 @@
       <input id="scene-name-input" type="text" [attr.aria-label]="t('name')" [value]="sceneName()" (input)="onSceneNameInput($event)" />
     </label>
 
+    @if (mobileLayout()) {
+      <div class="mobile-transfer-actions" [attr.aria-label]="t('fileActions')">
+        <button
+          class="icon-button mobile-transfer-action mobile-transfer-action--import"
+          type="button"
+          data-tooltip-disabled
+          [attr.aria-label]="t('importCode')"
+          (click)="importOpen.emit()">
+          <svg class="transfer-icon transfer-icon--import" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="transfer-icon__arrow" [attr.d]="icon('importArrow')"></path>
+            <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+          </svg>
+        </button>
+        <button
+          class="icon-button mobile-transfer-action mobile-transfer-action--export"
+          type="button"
+          data-tooltip-disabled
+          [attr.aria-label]="t('export')"
+          (click)="exportOpen.emit()">
+          <svg class="transfer-icon transfer-icon--export" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="transfer-icon__arrow" [attr.d]="icon('exportArrow')"></path>
+            <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+          </svg>
+        </button>
+      </div>
+    }
+
     <div #topbarActions class="topbar-actions">
       @if (!compactTopbarActions()) {
         <button class="secondary-button secondary-button--toolbar" type="button" [title]="t('newScene')" (click)="newScene.emit()">
@@ -217,21 +244,23 @@
       </button>
     }
 
-    <div class="topbar-primary-actions">
-      <button class="primary-button primary-button--import primary-button--animated-arrow" type="button" (click)="importOpen.emit()">
-        <svg class="transfer-icon transfer-icon--import" viewBox="0 0 24 24" aria-hidden="true">
-          <path class="transfer-icon__arrow" [attr.d]="icon('importArrow')"></path>
-          <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
-        </svg>
-        <span>{{ t('importCode') }}</span>
-      </button>
-      <button class="primary-button primary-button--export primary-button--animated-arrow" type="button" (click)="exportOpen.emit()">
-        <svg class="transfer-icon transfer-icon--export" viewBox="0 0 24 24" aria-hidden="true">
-          <path class="transfer-icon__arrow" [attr.d]="icon('exportArrow')"></path>
-          <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
-        </svg>
-        <span>{{ t('export') }}</span>
-      </button>
-    </div>
+    @if (!mobileLayout()) {
+      <div class="topbar-primary-actions">
+        <button class="primary-button primary-button--import primary-button--animated-arrow" type="button" (click)="importOpen.emit()">
+          <svg class="transfer-icon transfer-icon--import" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="transfer-icon__arrow" [attr.d]="icon('importArrow')"></path>
+            <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+          </svg>
+          <span>{{ t('importCode') }}</span>
+        </button>
+        <button class="primary-button primary-button--export primary-button--animated-arrow" type="button" (click)="exportOpen.emit()">
+          <svg class="transfer-icon transfer-icon--export" viewBox="0 0 24 24" aria-hidden="true">
+            <path class="transfer-icon__arrow" [attr.d]="icon('exportArrow')"></path>
+            <path class="transfer-icon__tray" [attr.d]="icon('exportTray')"></path>
+          </svg>
+          <span>{{ t('export') }}</span>
+        </button>
+      </div>
+    }
   </div>
 </header>

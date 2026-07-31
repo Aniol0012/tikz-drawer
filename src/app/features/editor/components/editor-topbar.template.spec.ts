@@ -109,18 +109,27 @@ describe('EditorTopbarComponent template', () => {
     expect(toolbarButton).toContain('flex: 0 0 auto;');
   });
 
-  it('keeps mobile menu controls and primary actions compact', async () => {
+  it('moves mobile transfer actions into the title row while preserving the desktop actions', async () => {
     const template = await readTemplate();
     const styles = await readStyles();
     const inlineMenu = sectionBetween(styles, '.dropdown-menu__topbar-inline {', '}');
     const mobileMenu = sectionBetween(template, '<div class="dropdown-menu__topbar-inline">', '</div>');
-    const mobileTopbarActions = sectionBetweenAfter(styles, '@media (max-width: 760px)', '.topbar-primary-actions {', '}');
+    const transferActions = sectionBetween(template, '<div class="mobile-transfer-actions"', '</div>');
+    const mobileTransferActions = sectionBetweenAfter(styles, '@media (max-width: 760px)', '.mobile-transfer-actions {', '}');
+    const mobileTopbarRight = sectionBetweenAfter(styles, '@media (max-width: 760px)', '.topbar__right {', '}');
 
     expect(inlineMenu).toContain('grid-template-columns: minmax(76px, 1fr) repeat(4, auto);');
     expect(mobileMenu).toContain('routerLink="/guide"');
     expect(mobileMenu).toContain("'site.guide.eyebrow' | translate");
-    expect(mobileTopbarActions).toContain('width: auto;');
-    expect(mobileTopbarActions).toContain('display: flex;');
+    expect(transferActions).toContain('(click)="importOpen.emit()"');
+    expect(transferActions).toContain('(click)="exportOpen.emit()"');
+    expect(transferActions).toContain('icon-button mobile-transfer-action mobile-transfer-action--import');
+    expect(transferActions).toContain('icon-button mobile-transfer-action mobile-transfer-action--export');
+    expect(transferActions).toContain('[attr.aria-label]="t(\'importCode\')"');
+    expect(transferActions).toContain("icon('importArrow')");
+    expect(transferActions).toContain("icon('exportArrow')");
+    expect(mobileTransferActions).toContain('display: flex;');
+    expect(mobileTopbarRight).toContain('display: none;');
   });
 });
 
