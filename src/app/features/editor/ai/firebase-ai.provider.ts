@@ -1,35 +1,38 @@
 import { Injectable } from '@angular/core';
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai';
+import type * as FirebaseAi from 'firebase/ai';
+import type * as FirebaseAppCheck from 'firebase/app-check';
+import type { FirebaseApp } from 'firebase/app';
+import type { Schema as FirebaseSchema } from 'firebase/ai';
 import { FIREBASE_AI_MODEL, FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY, FIREBASE_CONFIG } from './firebase-ai.config';
 import type { AiProviderRequest, AiProviderTextResult } from './ai-provider-result.model';
+
+type FirebaseAiModule = typeof FirebaseAi;
+type FirebaseAppCheckModule = typeof FirebaseAppCheck;
+
+interface FirebaseAiRuntime {
+  readonly app: FirebaseApp;
+  readonly ai: FirebaseAiModule;
+}
 
 @Injectable({ providedIn: 'root' })
 export class FirebaseAiProvider {
   readonly mode = 'cloud' as const;
   readonly modelName = FIREBASE_AI_MODEL;
 
-  private readonly app: FirebaseApp;
-
-  constructor() {
-    this.app = initializeApp(FIREBASE_CONFIG);
-    this.initializeAnalytics();
-    this.initializeAppCheck();
-  }
+  private runtimePromise: Promise<FirebaseAiRuntime> | null = null;
 
   async generateText(request: AiProviderRequest): Promise<AiProviderTextResult> {
+    const { app, ai: firebaseAi } = await this.runtime();
     const modelName = request.options.remoteModel;
-    const ai = getAI(this.app, { backend: new GoogleAIBackend() });
-    const model = getGenerativeModel(ai, {
+    const ai = firebaseAi.getAI(app, { backend: new firebaseAi.GoogleAIBackend() });
+    const model = firebaseAi.getGenerativeModel(ai, {
       model: modelName,
       generationConfig: {
         maxOutputTokens: request.options.maxTokens,
         temperature: request.options.temperature,
         topP: 0.82,
         responseMimeType: 'application/json',
-        responseSchema: this.responseSchema()
+        responseSchema: this.responseSchema(firebaseAi.Schema)
       },
       systemInstruction: request.systemInstruction
     });
@@ -43,50 +46,59 @@ export class FirebaseAiProvider {
     };
   }
 
-  private initializeAnalytics(): void {
-    isAnalyticsSupported().then((supported) => {
-      if (supported) {
-        getAnalytics(this.app);
-      }
-    });
-  }
-
-  private initializeAppCheck(): void {
-    if (!FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY) {
-      return;
+  private async runtime(): Promise<FirebaseAiRuntime> {
+    if (!this.runtimePromise) {
+      this.runtimePromise = this.initializeRuntime().catch((error: unknown) => {
+        this.runtimePromise = null;
+        throw error;
+      });
     }
 
-    initializeAppCheck(this.app, {
-      provider: new ReCaptchaEnterpriseProvider(FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
-      isTokenAutoRefreshEnabled: true
-    });
+    return await this.runtimePromise;
   }
 
-  private responseSchema(): Schema {
+  private async initializeRuntime(): Promise<FirebaseAiRuntime> {
+    const appCheckModulePromise: Promise<FirebaseAppCheckModule | null> = FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY
+      ? import('firebase/app-check')
+      : Promise.resolve(null);
+    const [firebaseApp, firebaseAi, appCheck] = await Promise.all([import('firebase/app'), import('firebase/ai'), appCheckModulePromise]);
+    const app = firebaseApp.initializeApp(FIREBASE_CONFIG);
+
+    if (appCheck) {
+      appCheck.initializeAppCheck(app, {
+        provider: new appCheck.ReCaptchaEnterpriseProvider(FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
+        isTokenAutoRefreshEnabled: true
+      });
+    }
+
+    return { app, ai: firebaseAi };
+  }
+
+  private responseSchema(schema: FirebaseAiModule['Schema']): FirebaseSchema {
     const shapeProperties = {
-      kind: Schema.enumString({ enum: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'triangle'] }),
-      name: Schema.string(),
-      x: Schema.number(),
-      y: Schema.number(),
-      width: Schema.number(),
-      height: Schema.number(),
-      cx: Schema.number(),
-      cy: Schema.number(),
-      r: Schema.number(),
-      rx: Schema.number(),
-      ry: Schema.number(),
-      fromX: Schema.number(),
-      fromY: Schema.number(),
-      toX: Schema.number(),
-      toY: Schema.number(),
-      text: Schema.string(),
-      stroke: Schema.string(),
-      fill: Schema.string(),
-      color: Schema.string(),
-      strokeWidth: Schema.number(),
-      fontSize: Schema.number(),
-      arrowStart: Schema.boolean(),
-      arrowEnd: Schema.boolean()
+      kind: schema.enumString({ enum: ['rectangle', 'circle', 'ellipse', 'line', 'text', 'triangle'] }),
+      name: schema.string(),
+      x: schema.number(),
+      y: schema.number(),
+      width: schema.number(),
+      height: schema.number(),
+      cx: schema.number(),
+      cy: schema.number(),
+      r: schema.number(),
+      rx: schema.number(),
+      ry: schema.number(),
+      fromX: schema.number(),
+      fromY: schema.number(),
+      toX: schema.number(),
+      toY: schema.number(),
+      text: schema.string(),
+      stroke: schema.string(),
+      fill: schema.string(),
+      color: schema.string(),
+      strokeWidth: schema.number(),
+      fontSize: schema.number(),
+      arrowStart: schema.boolean(),
+      arrowEnd: schema.boolean()
     };
     const optionalShapeProperties = [
       'name',
@@ -112,36 +124,36 @@ export class FirebaseAiProvider {
       'arrowStart',
       'arrowEnd'
     ];
-    const patchShape = Schema.object({
+    const patchShape = schema.object({
       properties: shapeProperties,
       optionalProperties: optionalShapeProperties
     });
-    const patchShapeUpdate = Schema.object({
+    const patchShapeUpdate = schema.object({
       properties: shapeProperties,
       optionalProperties: ['kind', ...optionalShapeProperties]
     });
 
-    return Schema.object({
+    return schema.object({
       properties: {
-        type: Schema.enumString({ enum: ['message', 'scenePatch', 'tikzCode'] }),
-        message: Schema.string(),
-        patch: Schema.object({
+        type: schema.enumString({ enum: ['message', 'scenePatch', 'tikzCode'] }),
+        message: schema.string(),
+        patch: schema.object({
           properties: {
-            create: Schema.array({ items: patchShape }),
-            update: Schema.array({
-              items: Schema.object({
+            create: schema.array({ items: patchShape }),
+            update: schema.array({
+              items: schema.object({
                 properties: {
-                  id: Schema.string(),
+                  id: schema.string(),
                   changes: patchShapeUpdate
                 },
                 optionalProperties: []
               })
             }),
-            remove: Schema.array({ items: Schema.string() })
+            remove: schema.array({ items: schema.string() })
           },
           optionalProperties: ['create', 'update', 'remove']
         }),
-        tikzCode: Schema.string()
+        tikzCode: schema.string()
       },
       optionalProperties: ['patch', 'tikzCode']
     });
