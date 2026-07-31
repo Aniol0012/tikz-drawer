@@ -234,6 +234,9 @@ export const isPasteShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partia
 export const isFigureSearchShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
   isFindShortcut(event, shortcuts);
 
+export const isFigureSearchSlashShortcut = (event: KeyboardShortcutEvent): boolean =>
+  normalizeKeyboardKey(event.key) === '/' && !event.ctrlKey && !event.metaKey && !event.altKey;
+
 export const isFindShortcut = (event: KeyboardShortcutEvent, shortcuts?: Partial<KeyboardShortcutConfig> | null | undefined): boolean =>
   isKeyboardShortcut(event, keyboardShortcutForAction(shortcuts, 'figureSearch'));
 

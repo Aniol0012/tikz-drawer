@@ -6,6 +6,7 @@ import {
   isCutShortcut,
   isDeleteShortcutKey,
   isEscapeShortcutKey,
+  isFigureSearchSlashShortcut,
   isFindShortcut,
   isOpenImportShortcut,
   isOpenSettingsShortcut,
@@ -74,6 +75,13 @@ describe('editor-keyboard utils', () => {
     expect(isFindShortcut(shortcutEvent({ key: 'F', metaKey: true }))).toBe(true);
     expect(isFindShortcut(shortcutEvent({ key: 'f', ctrlKey: true, shiftKey: true }))).toBe(false);
     expect(isFindShortcut(shortcutEvent({ key: 'f' }))).toBe(false);
+  });
+
+  it('detects the unmodified slash shortcut for figure search', () => {
+    expect(isFigureSearchSlashShortcut(shortcutEvent({ key: '/' }))).toBe(true);
+    expect(isFigureSearchSlashShortcut(shortcutEvent({ key: '/', shiftKey: true }))).toBe(true);
+    expect(isFigureSearchSlashShortcut(shortcutEvent({ key: '/', ctrlKey: true }))).toBe(false);
+    expect(isFigureSearchSlashShortcut(shortcutEvent({ key: '/', altKey: true }))).toBe(false);
   });
 
   it('normalizes and applies custom shortcuts', () => {

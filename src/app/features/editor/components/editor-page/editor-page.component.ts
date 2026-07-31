@@ -204,6 +204,7 @@ import {
   isCutShortcut,
   isDeleteShortcut,
   isEscapeShortcutKey,
+  isFigureSearchSlashShortcut,
   isFigureSearchShortcut,
   isOpenSettingsShortcut,
   isOpenImportShortcut,
@@ -438,7 +439,6 @@ export class EditorPageComponent {
   readonly savedTemplates = signal<readonly SavedTemplate[]>([]);
   readonly pinnedToolIds = signal<readonly string[]>([]);
   readonly pinnedToolsReady = signal(false);
-  readonly libraryQuery = signal('');
   readonly shareFeedback = signal('');
   readonly shareFeedbackTone = signal<NotificationTone>('info');
   readonly notifications = signal<readonly ToastNotification[]>([]);
@@ -842,21 +842,9 @@ export class EditorPageComponent {
       }))
   );
   readonly librarySections = computed<readonly LibrarySection[]>(() => {
-    const query = this.libraryQuery().trim().toLowerCase();
     return categoryOrder
       .map((category) => {
-        const presets = this.objectPresets.filter((preset) => {
-          if (preset.category !== category) {
-            return false;
-          }
-          if (!query) {
-            return true;
-          }
-          const haystack = [this.presetTitle(preset), this.presetDescription(preset), preset.title, preset.description, ...(preset.searchTerms ?? [])]
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(query);
-        });
+        const presets = this.objectPresets.filter((preset) => preset.category === category);
         return {
           category,
           title: this.t(categoryTranslationKey[category]),
@@ -869,15 +857,6 @@ export class EditorPageComponent {
         };
       })
       .filter((section) => section.presets.length > 0);
-  });
-  readonly visibleSavedTemplates = computed<readonly SavedTemplate[]>(() => {
-    const query = this.libraryQuery().trim().toLowerCase();
-    return this.savedTemplates().filter((template) => {
-      if (!query) {
-        return true;
-      }
-      return [template.title, template.description].join(' ').toLowerCase().includes(query);
-    });
   });
   readonly selectionBounds = computed<SelectionBounds | null>(() => this.computeBounds(this.selectedShapesForBounds()));
   readonly selectedShapeIdSet = computed(() => new Set(this.store.selectedShapeIds()));
@@ -1771,15 +1750,6 @@ export class EditorPageComponent {
     this.textSymbolPaletteOpen.set(false);
   }
 
-  openMobileLibraryPanel(): void {
-    if (!this.sidebarsOverlayLayout()) {
-      return;
-    }
-
-    this.leftSidebarCollapsed.set(false);
-    this.mobileLibraryPanelOpen.set(true);
-  }
-
   closeMobileLibraryPanel(): void {
     this.mobileLibraryPanelOpen.set(false);
   }
@@ -1860,10 +1830,6 @@ export class EditorPageComponent {
     this.rightSidebarAutoCollapsed = false;
     this.rightSidebarCollapsed.set(false);
     this.inspectorTab.set('assistant');
-  }
-
-  setLibraryQuery(value: string): void {
-    this.libraryQuery.set(value);
   }
 
   setActiveTool(toolId: string): void {
@@ -6233,7 +6199,7 @@ export class EditorPageComponent {
       return true;
     }
 
-    if (isFigureSearchShortcut(event, shortcuts)) {
+    if (isFigureSearchShortcut(event, shortcuts) || (!this.isEditableTarget(event.target) && isFigureSearchSlashShortcut(event))) {
       event.preventDefault();
       event.stopPropagation();
       this.openFigureSearch();

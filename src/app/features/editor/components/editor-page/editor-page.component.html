@@ -31,7 +31,7 @@
     (copyError)="handleCopyError()"
     (fileMenuToggle)="toggleFileMenu()"
     (fileMenuClose)="closeFileMenu()"
-    (mobileLibraryOpen)="openMobileLibraryPanel()"
+    (mobileLibraryOpen)="openFigureSearch()"
     (importOpen)="openImportModal()"
     (settingsOpen)="openAppConfigurationDialog()"
     (exportOpen)="openExportModal()"></app-editor-topbar>
@@ -72,34 +72,13 @@
             }
           </span>
         </div>
-        <div class="search-field">
-          <button
-            class="search-field__button"
-            type="button"
-            [title]="'figureSearchPlaceholder' | translate"
-            [attr.aria-label]="'figureSearchPlaceholder' | translate"
-            (click)="openFigureSearch()">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.search"></path>
-            </svg>
-          </button>
-          <input
-            type="search"
-            [attr.aria-label]="'searchLibrary' | translate"
-            [value]="libraryQuery()"
-            [placeholder]="'searchLibrary' | translate"
-            (input)="setLibraryQuery($any($event.target).value)" />
-          <button
-            class="search-field__clear"
-            type="button"
-            [class.is-visible]="libraryQuery()"
-            [attr.aria-label]="'figureSearchClear' | translate"
-            (click)="setLibraryQuery('')">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="iconMap.close"></path>
-            </svg>
-          </button>
-        </div>
+        <button class="search-field search-field--launcher" type="button" (click)="openFigureSearch()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="iconMap.search"></path>
+          </svg>
+          <span>{{ 'figureSearchPlaceholder' | translate }}</span>
+          <kbd>{{ figureSearchShortcutLabel() }}</kbd>
+        </button>
       </section>
 
       <section class="sidebar-section" [class.is-collapsed]="isSectionCollapsed('savedTemplates')">
@@ -110,9 +89,9 @@
           </svg>
         </button>
         @if (!isSectionCollapsed('savedTemplates')) {
-          @if (visibleSavedTemplates().length) {
+          @if (savedTemplates().length) {
             <div class="preset-list">
-              @for (template of visibleSavedTemplates(); track template.id) {
+              @for (template of savedTemplates(); track template.id) {
                 <div class="preset-card preset-card--library preset-card--saved">
                   <button
                     class="preset-card__main"
