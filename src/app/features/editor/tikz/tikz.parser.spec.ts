@@ -691,4 +691,29 @@ return/.style={-{Latex[length=2.6mm]}, thick, dashed}
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'F')).toBe(true);
     expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'R5')).toBe(true);
   });
+
+  it('imports resized diagrams with RGB colors, command styles, fill paths and bp dimensions', () => {
+    const result = parseTikz(String.raw`\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1bp, y=1bp]
+\definecolor{accent}{RGB}{0,204,102}
+\definecolor{surface}{RGB}{229,250,239}
+\path[use as bounding box] (0,0) rectangle (200,100);
+\fill[white] (0,0) rectangle (200,100);
+\foreach \position/\score in {50/100,150/93} {
+  \filldraw[fill=surface, draw=accent, line width=3bp]
+    (\position,60) circle[radius=24.5bp];
+  \node[text=accent] at (\position,60) {\score};
+}
+\path[fill=surface, rounded corners=16bp] (80,10) rectangle (120,30);
+\tikzset{caption/.style={text=accent, font=\fontsize{13bp}{16bp}\selectfont}}
+\node[caption] at (100,20) {Label};
+\end{tikzpicture}%
+}`);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.scene.shapes).toHaveLength(7);
+    expect(result.scene.shapes.filter((shape) => shape.kind === 'circle')).toHaveLength(2);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'text' && shape.text === 'Label' && shape.color === '#00cc66')).toBe(true);
+    expect(result.scene.shapes.some((shape) => shape.kind === 'rectangle' && shape.fill === '#e5faef' && shape.cornerRadius > 0)).toBe(true);
+  });
 });

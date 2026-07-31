@@ -21,6 +21,7 @@ export interface TikzBasis {
 
 export interface ParseContext {
   readonly styles: Record<string, Record<string, string>>;
+  readonly colors: Readonly<Record<string, string>>;
   readonly nodes: Map<string, NamedNode>;
   readonly basis: TikzBasis;
   readonly variables: Record<string, string>;

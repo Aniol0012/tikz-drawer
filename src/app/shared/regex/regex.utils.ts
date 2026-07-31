@@ -144,7 +144,7 @@ export const REGEX = {
     arrowScale: /scale=([^,\]}]+)/i,
     triangle: /^\\draw(?:\[(?<styles>.+)\])?\s*(?<apex>\([^)]*\))\s*--\s*(?<left>\([^)]*\))\s*--\s*(?<right>\([^)]*\))\s*--\s*cycle\s*;?$/,
     smoothLine: /^\\draw(?:\[(?<styles>.+)\])?\s*plot\s*\[\s*smooth\s*\]\s*coordinates\s*\{\s*(?<points>.+?)\s*\}\s*;?$/,
-    rectangle: /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/,
+    rectangle: /^\\(?<command>draw|fill|filldraw|path)(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*rectangle\s*(?<to>\([^)]*\))\s*;?$/,
     ellipse: new RegExp(
       String.raw`^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*ellipse\s*\(\s*(?<rx>${TIKZ_NUMBER_PATTERN_SOURCE})\s*and\s*(?<ry>${TIKZ_NUMBER_PATTERN_SOURCE})\s*\)\s*;?$`
     ),
@@ -155,7 +155,7 @@ export const REGEX = {
     arrowBend: new RegExp(String.raw`[[,]\s*bend(?:\s*[,}\]])`, 'i'),
     arrowFlexPrime: new RegExp(String.raw`flex'\s*(?:=|[,}\]])`, 'i'),
     arrowFlex: new RegExp(String.raw`flex\s*(?:=|[,}\]])`, 'i'),
-    dimension: /^\s*(-?\d+(?:\.\d+)?)\s*(cm|mm|pt|in)?\s*$/i,
+    dimension: /^\s*(-?\d+(?:\.\d+)?)\s*(cm|mm|pt|bp|in)?\s*$/i,
     numericExpressionToken: /\d+(?:\.\d+)?|[()+\-*/]/g,
     whitespaceGlobal: /\s+/g,
     wrappedParens: /^\((.*)\)$/,
@@ -165,6 +165,8 @@ export const REGEX = {
     rgbModel: /^rgb\s*,/i,
     colorChannelSeparator: /\s*,\s*/,
     colorMix: /^([a-z]+)!(\d+(?:\.\d+)?)$/i,
+    defineColor: /\\definecolor\{(?<name>[^}]+)\}\{(?<model>[^}]+)\}\{(?<value>[^}]+)\}/g,
+    fontSizeCommand: /\\fontsize\{(?<size>[^}]+)\}\{[^}]+\}/,
     tikzBeginCommand: /\\begin\{tikzpicture\}/,
     nonWhitespace: /\S/,
     foreachRange: /^\s*(-?\d+)\s*,\s*\.\.\.\s*,\s*(-?\d+)\s*$/,
@@ -181,7 +183,9 @@ export const REGEX = {
     interpolation: /^\((?<from>[^)]+)\)\s*!\s*(?<ratio>-?\d+(?:\.\d+)?)\s*!\s*\((?<to>[^)]+)\)$/,
     projection: /^\((?<from>[^)]+)\)\s*!\s*\((?<point>[^)]+)\)\s*!\s*\((?<to>[^)]+)\)$/,
     simpleLine: /^\\draw(?:\[(?<styles>.+)\])?\s*(?<from>\([^)]*\))\s*--\s*(?<to>\([^)]*\))\s*;?$/,
-    circle: /^\\draw(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle\s*\(\s*(?<radius>-?\d+(?:\.\d+)?)\s*\)\s*;?$/,
+    circle:
+      /^\\(?<command>draw|fill|filldraw|path)(?:\[(?<styles>.+)\])?\s*(?<center>\([^)]*\))\s*circle(?:\[\s*radius\s*=\s*(?<radiusOption>[^\]]+)\]|\s*\(\s*(?<radiusParen>[^)]+)\s*\))\s*;?$/,
+    boundingBoxPath: /^\\path\[[^\]]*\buse as bounding box\b[^\]]*\]/,
     nodeName: /^\(([A-Za-z]\w*)\)/,
     nodeText: /^\{(?<text>[\s\S]*)\}\s*;?$/,
     inlineTikz: /\\tikz\{[^}]*\}/g,

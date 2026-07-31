@@ -62,6 +62,8 @@ const parseDimension = (value: string | undefined, fallback = 0): number => {
       return amount / 10;
     case 'pt':
       return amount / 28.45;
+    case 'bp':
+      return (amount * 2.54) / 72;
     case 'in':
       return amount * 2.54;
     default:
@@ -208,6 +210,39 @@ const NAMED_TIKZ_COLORS: Record<string, string> = {
   magenta: '#ff00ff'
 };
 
+const parseDefinedColor = (model: string, value: string): string | null => {
+  const channels = value.split(REGEX.tikzParser.commaListSeparator).map(Number);
+  const normalizedModel = model.trim();
+  if (normalizedModel === 'RGB' && channels.length === 3 && channels.every(Number.isFinite)) {
+    return `#${channels.map((channel) => toHexByte(channel)).join('')}`;
+  }
+
+  if (normalizedModel === 'rgb' && channels.length === 3 && channels.every(Number.isFinite)) {
+    return `#${channels.map((channel) => toHexByte(channel * 255)).join('')}`;
+  }
+
+  if (normalizedModel.toUpperCase() === 'HTML' && REGEX.color.optionalHashHex6.test(value.trim())) {
+    return `#${value.trim().replace('#', '').toLowerCase()}`;
+  }
+
+  return null;
+};
+
+const parseColorDefinitions = (source: string): Readonly<Record<string, string>> => {
+  const colors: Record<string, string> = {};
+  for (const match of source.matchAll(REGEX.tikzParser.defineColor)) {
+    if (!match.groups) {
+      continue;
+    }
+
+    const color = parseDefinedColor(match.groups['model'], match.groups['value']);
+    if (color) {
+      colors[match.groups['name'].trim().toLowerCase()] = color;
+    }
+  }
+  return colors;
+};
+
 const mixHexWithWhite = (hex: string, percent: number): string => {
   const normalized = hex.replace('#', '');
   const red = Number.parseInt(normalized.slice(0, 2), 16);
@@ -251,7 +286,7 @@ function tikzColorChannel(value: string | undefined, channel: 'red' | 'green' | 
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const normalizeTikzColor = (value: string | undefined, fallback: string): string => {
+const normalizeTikzColor = (value: string | undefined, fallback: string, customColors: Readonly<Record<string, string>> = {}): string => {
   if (!value) {
     return fallback;
   }
@@ -263,6 +298,11 @@ const normalizeTikzColor = (value: string | undefined, fallback: string): string
 
   if (normalized === 'none') {
     return 'none';
+  }
+
+  const customColor = customColors[normalized.toLowerCase()];
+  if (customColor) {
+    return customColor;
   }
 
   const rgbColor = parseTikzRgbColor(normalized);
@@ -369,6 +409,24 @@ const resolveStyleMap = (raw: string | undefined, context?: ParseContext): Recor
   };
 };
 
+type TikzPathCommand = 'draw' | 'fill' | 'filldraw' | 'path';
+
+const resolvePathStyleMap = (raw: string | undefined, command: TikzPathCommand, context: ParseContext): Record<string, string> => {
+  const styles = resolveStyleMap(raw, context);
+  const bareColor = Object.entries(styles).find(
+    ([key, value]) => value === 'true' && (NAMED_TIKZ_COLORS[key.toLowerCase()] !== undefined || context.colors[key.toLowerCase()] !== undefined)
+  )?.[0];
+
+  if ((command === 'fill' || command === 'filldraw') && !styles['fill']) {
+    styles['fill'] = bareColor ?? 'black';
+  }
+  if ((command === 'fill' || command === 'path') && !styles['draw']) {
+    styles['draw'] = 'none';
+  }
+
+  return styles;
+};
+
 const extractBalanced = (
   source: string,
   startIndex: number,
@@ -396,6 +454,60 @@ const extractBalanced = (
   }
 
   return null;
+};
+
+const extractBalancedCommandBodies = (source: string, command: string): readonly string[] => {
+  const bodies: string[] = [];
+  let searchIndex = 0;
+  while (searchIndex < source.length) {
+    const commandIndex = source.indexOf(command, searchIndex);
+    if (commandIndex < 0) {
+      break;
+    }
+
+    const bodyStartOffset = source.slice(commandIndex + command.length).search(REGEX.tikzParser.nonWhitespace);
+    const bodyStart = commandIndex + command.length + bodyStartOffset;
+    if (bodyStartOffset < 0 || source[bodyStart] !== '{') {
+      searchIndex = commandIndex + command.length;
+      continue;
+    }
+
+    const body = extractBalanced(source, bodyStart, '{', '}');
+    if (!body) {
+      break;
+    }
+
+    bodies.push(body.value);
+    searchIndex = body.endIndex;
+  }
+  return bodies;
+};
+
+const stripBalancedCommandBlocks = (source: string, command: string): string => {
+  let nextSource = source;
+  let searchIndex = 0;
+  while (searchIndex < nextSource.length) {
+    const commandIndex = nextSource.indexOf(command, searchIndex);
+    if (commandIndex < 0) {
+      break;
+    }
+
+    const bodyStartOffset = nextSource.slice(commandIndex + command.length).search(REGEX.tikzParser.nonWhitespace);
+    const bodyStart = commandIndex + command.length + bodyStartOffset;
+    if (bodyStartOffset < 0 || nextSource[bodyStart] !== '{') {
+      searchIndex = commandIndex + command.length;
+      continue;
+    }
+
+    const body = extractBalanced(nextSource, bodyStart, '{', '}');
+    if (!body) {
+      break;
+    }
+
+    nextSource = `${nextSource.slice(0, commandIndex)}${nextSource.slice(body.endIndex)}`;
+    searchIndex = commandIndex;
+  }
+  return nextSource;
 };
 
 const extractTikzPictureOptions = (source: string): string | undefined => {
@@ -588,17 +700,16 @@ const expandForeachLoops = (source: string): string => {
 };
 
 const parseStyleDefinitions = (source: string): Record<string, Record<string, string>> => {
-  const options = extractTikzPictureOptions(source);
-  const optionStyles = parseStyleMap(options);
-
-  return Object.entries(optionStyles).reduce<Record<string, Record<string, string>>>((styles, [key, value]) => {
-    if (!key.endsWith('/.style')) {
-      return styles;
+  const styles: Record<string, Record<string, string>> = {};
+  const definitionBlocks = [extractTikzPictureOptions(source), ...extractBalancedCommandBodies(source, String.raw`\tikzset`)];
+  for (const block of definitionBlocks) {
+    for (const [key, value] of Object.entries(parseStyleMap(block))) {
+      if (key.endsWith('/.style')) {
+        styles[key.slice(0, -'/.style'.length)] = parseStyleMap(removeOuterBraces(value));
+      }
     }
-
-    styles[key.slice(0, -'/.style'.length)] = parseStyleMap(removeOuterBraces(value));
-    return styles;
-  }, {});
+  }
+  return styles;
 };
 
 const parseTikzBasis = (source: string): TikzBasis => {
@@ -610,7 +721,18 @@ const parseTikzBasis = (source: string): TikzBasis => {
       return defaultTikzBasis[key];
     }
 
-    return parseCoordinateLiteral(removeOuterBraces(raw), defaultTikzBasis) ?? defaultTikzBasis[key];
+    const normalized = removeOuterBraces(raw);
+    const scalar = parseDimension(normalized, Number.NaN);
+    if (Number.isFinite(scalar)) {
+      if (key === 'x') {
+        return { x: scalar, y: 0 };
+      }
+      if (key === 'y') {
+        return { x: 0, y: scalar };
+      }
+    }
+
+    return parseCoordinateLiteral(normalized, defaultTikzBasis) ?? defaultTikzBasis[key];
   };
 
   return {
@@ -702,8 +824,11 @@ const styleStrokeWidth = (styles: Record<string, string>): number => {
   return parseDimension(raw, 0.08);
 };
 
-const sharedStroke = (styles: Record<string, string>): { stroke: string; strokeWidth: number; strokeStyle: LineShape['strokeStyle'] } => ({
-  stroke: normalizeTikzColor(styles['draw'], '#0f172a'),
+const sharedStroke = (
+  styles: Record<string, string>,
+  context?: ParseContext
+): { stroke: string; strokeWidth: number; strokeStyle: LineShape['strokeStyle'] } => ({
+  stroke: normalizeTikzColor(styles['draw'], '#0f172a', context?.colors),
   strokeWidth: styleStrokeWidth(styles),
   strokeStyle: parseLineStrokeStyle(styles)
 });
@@ -778,10 +903,10 @@ const parseArrowType = (styles: Record<string, string>): LineShape['arrowType'] 
   return 'latex';
 };
 
-const parseArrowColor = (styles: Record<string, string>): string => {
+const parseArrowColor = (styles: Record<string, string>, context?: ParseContext): string => {
   const raw = styles['arrow meta'] ?? '';
   const drawMatch = REGEX.tikzParser.arrowDraw.exec(raw);
-  return normalizeTikzColor(drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'], '#0f172a');
+  return normalizeTikzColor(drawMatch?.[1]?.trim() ?? styles['arrows'] ?? styles['draw'], '#0f172a', context?.colors);
 };
 
 const parseArrowOpacity = (styles: Record<string, string>): number => {
@@ -968,7 +1093,7 @@ const parseLine = (line: string, context?: ParseContext): CanvasShape | null => 
     id: createId(),
     name: 'Imported line',
     kind: 'line',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     from,
     to,
     anchors: [],
@@ -978,7 +1103,7 @@ const parseLine = (line: string, context?: ParseContext): CanvasShape | null => 
     arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     arrowType: parseArrowType(styles),
-    arrowColor: parseArrowColor(styles),
+    arrowColor: parseArrowColor(styles, context),
     arrowOpacity: parseArrowOpacity(styles),
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
@@ -1026,7 +1151,7 @@ const parseSmoothLine = (line: string, context?: ParseContext): CanvasShape | nu
     id: createId(),
     name: 'Imported line',
     kind: 'line',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     from: points[0],
     to: points.at(-1)!,
     anchors: points.slice(1, -1),
@@ -1036,7 +1161,7 @@ const parseSmoothLine = (line: string, context?: ParseContext): CanvasShape | nu
     arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     arrowType: parseArrowType(styles),
-    arrowColor: parseArrowColor(styles),
+    arrowColor: parseArrowColor(styles, context),
     arrowOpacity: parseArrowOpacity(styles),
     arrowOpen: parseArrowOpen(styles),
     arrowRound: parseArrowRound(styles),
@@ -1056,26 +1181,28 @@ const parseRectangle = (line: string, context?: ParseContext): CanvasShape | nul
     return null;
   }
 
-  const from = parsePoint(match.groups['from']);
-  const to = parsePoint(match.groups['to']);
+  const from = context ? parseCoordinateExpression(match.groups['from'], context) : parsePoint(match.groups['from']);
+  const to = context ? parseCoordinateExpression(match.groups['to'], context) : parsePoint(match.groups['to']);
 
   if (!from || !to) {
     return null;
   }
 
-  const styles = resolveStyleMap(match.groups['styles'], context);
+  const styles = context
+    ? resolvePathStyleMap(match.groups['styles'], match.groups['command'] as TikzPathCommand, context)
+    : resolveStyleMap(match.groups['styles']);
 
   const shape: RectangleShape = {
     id: createId(),
     name: 'Imported rectangle',
     kind: 'rectangle',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     x: Math.min(from.x, to.x),
     y: Math.min(from.y, to.y),
     width: Math.abs(to.x - from.x),
     height: Math.abs(from.y - to.y),
-    fill: normalizeTikzColor(styles['fill'], 'none'),
+    fill: normalizeTikzColor(styles['fill'], 'none', context?.colors),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: parseDimension(styles['rounded corners'], 0),
     rotation: styleRotation(styles)
@@ -1113,13 +1240,13 @@ const parseTriangle = (line: string, context?: ParseContext): CanvasShape | null
     id: createId(),
     name: 'Imported triangle',
     kind: 'triangle',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     x: minX,
     y: minY,
     width,
     height: Math.max(maxY - minY, 0.2),
-    fill: normalizeTikzColor(styles['fill'], 'none'),
+    fill: normalizeTikzColor(styles['fill'], 'none', context?.colors),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     cornerRadius: parseDimension(styles['rounded corners'], 0),
     apexOffset,
@@ -1136,23 +1263,29 @@ const parseCircle = (line: string, context?: ParseContext): CanvasShape | null =
     return null;
   }
 
-  const center = parsePoint(match.groups['center']);
+  const center = context ? parseCoordinateExpression(match.groups['center'], context) : parsePoint(match.groups['center']);
 
   if (!center) {
     return null;
   }
 
-  const styles = resolveStyleMap(match.groups['styles'], context);
+  const styles = context
+    ? resolvePathStyleMap(match.groups['styles'], match.groups['command'] as TikzPathCommand, context)
+    : resolveStyleMap(match.groups['styles']);
+  const radius = parseDimension(match.groups['radiusOption'] ?? match.groups['radiusParen'], Number.NaN);
+  if (!Number.isFinite(radius)) {
+    return null;
+  }
   const shape: CircleShape = {
     id: createId(),
     name: 'Imported circle',
     kind: 'circle',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     cx: center.x,
     cy: center.y,
-    r: Number(match.groups['radius']),
-    fill: normalizeTikzColor(styles['fill'], 'none'),
+    r: radius,
+    fill: normalizeTikzColor(styles['fill'], 'none', context?.colors),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     rotation: styleRotation(styles)
   };
@@ -1178,13 +1311,13 @@ const parseEllipse = (line: string, context?: ParseContext): CanvasShape | null 
     id: createId(),
     name: 'Imported ellipse',
     kind: 'ellipse',
-    ...sharedStroke(styles),
+    ...sharedStroke(styles, context),
     strokeOpacity: styleOpacity(styles, 'draw opacity'),
     cx: center.x,
     cy: center.y,
     rx: Number(match.groups['rx']),
     ry: Number(match.groups['ry']),
-    fill: normalizeTikzColor(styles['fill'], 'none'),
+    fill: normalizeTikzColor(styles['fill'], 'none', context?.colors),
     fillOpacity: styleOpacity(styles, 'fill opacity'),
     rotation: styleRotation(styles)
   };
@@ -1220,7 +1353,7 @@ const parseImageNode = (line: string, context?: ParseContext): CanvasShape | nul
   const styles = resolveStyleMap(match.groups['styles'], context);
   const latexSource = match.groups['source'].trim();
   const imageLabel = latexSource.split('/').at(-1) ?? 'Image';
-  const drawColor = styles['draw'] ? normalizeTikzColor(styles['draw'], 'none') : 'none';
+  const drawColor = styles['draw'] ? normalizeTikzColor(styles['draw'], 'none', context?.colors) : 'none';
   const drawWidth = drawColor === 'none' ? 0 : styleStrokeWidth(styles);
 
   return {
@@ -1389,6 +1522,10 @@ const nodeSizeFromStyles = (styles: Record<string, string>, splitPartCount: numb
 
 const nodeFontSizeFromStyles = (styles: Record<string, string>, scale: number): number => {
   const rawFont = styles['font'] ?? '';
+  const explicitFontSize = REGEX.tikzParser.fontSizeCommand.exec(rawFont)?.groups?.['size'];
+  if (explicitFontSize) {
+    return parseDimension(explicitFontSize, DEFAULT_TEXT_FONT_SIZE) * scale;
+  }
   if (rawFont.includes(String.raw`\scriptsize`)) {
     return DEFAULT_TEXT_FONT_SIZE * 0.72 * scale;
   }
@@ -1554,7 +1691,7 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
     textBox: Boolean(styles['text width'] || styles['minimum width'] || textContent.text.includes('\n')),
     boxWidth: parseDimension(styles['text width'] ?? styles['minimum width'], DEFAULT_TEXT_BOX_WIDTH),
     fontSize: nodeFontSizeFromStyles(styles, scale),
-    color: normalizeTikzColor(styles['text'], '#0f172a'),
+    color: normalizeTikzColor(styles['text'], '#0f172a', context.colors),
     colorOpacity: styleOpacity(styles, 'text opacity'),
     fontWeight: textContent.fontWeight,
     fontStyle: textContent.fontStyle,
@@ -1574,12 +1711,12 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
       id: createId(),
       name: parsedNode.name ?? 'Imported node',
       kind: 'circle',
-      ...sharedStroke(styles),
+      ...sharedStroke(styles, context),
       strokeOpacity: styleOpacity(styles, 'draw opacity'),
       cx: point.x,
       cy: point.y,
       r: radius,
-      fill: normalizeTikzColor(styles['fill'], 'none'),
+      fill: normalizeTikzColor(styles['fill'], 'none', context.colors),
       fillOpacity: styleOpacity(styles, 'fill opacity'),
       rotation: styleRotation(styles)
     });
@@ -1588,13 +1725,13 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
       id: createId(),
       name: parsedNode.name ?? 'Imported node',
       kind: 'rectangle',
-      ...sharedStroke(styles),
+      ...sharedStroke(styles, context),
       strokeOpacity: styleOpacity(styles, 'draw opacity'),
       x: point.x - size.width / 2,
       y: point.y - size.height / 2,
       width: size.width,
       height: size.height,
-      fill: normalizeTikzColor(styles['fill'], 'none'),
+      fill: normalizeTikzColor(styles['fill'], 'none', context.colors),
       fillOpacity: styleOpacity(styles, 'fill opacity'),
       cornerRadius: parseDimension(styles['rounded corners'], 0),
       rotation: styleRotation(styles)
@@ -1606,7 +1743,9 @@ const parseNode = (line: string, context: ParseContext): readonly CanvasShape[] 
     const rowHeight = size.height / splitPartCount;
     for (let index = 1; index < splitPartCount; index += 1) {
       const y = point.y + size.height / 2 - rowHeight * index;
-      shapes.push(createImportedLine(styles, { x: point.x - size.width / 2, y }, { x: point.x + size.width / 2, y }, [], 'straight', 'Imported split divider'));
+      shapes.push(
+        createImportedLine(styles, { x: point.x - size.width / 2, y }, { x: point.x + size.width / 2, y }, [], 'straight', 'Imported split divider', context)
+      );
     }
 
     parts.slice(0, splitPartCount).forEach((part, index) => {
@@ -1692,12 +1831,13 @@ const createImportedLine = (
   to: Point,
   anchors: readonly Point[] = [],
   lineMode: LineShape['lineMode'] = 'straight',
-  name = 'Imported line'
+  name = 'Imported line',
+  context?: ParseContext
 ): LineShape => ({
   id: createId(),
   name,
   kind: 'line',
-  ...sharedStroke(styles),
+  ...sharedStroke(styles, context),
   from,
   to,
   anchors,
@@ -1707,7 +1847,7 @@ const createImportedLine = (
   arrowEnd: styles['->'] === 'true' || styles['<->'] === 'true',
   strokeOpacity: styleOpacity(styles, 'draw opacity'),
   arrowType: parseArrowType(styles),
-  arrowColor: parseArrowColor(styles),
+  arrowColor: parseArrowColor(styles, context),
   arrowOpacity: parseArrowOpacity(styles),
   arrowOpen: parseArrowOpen(styles),
   arrowRound: parseArrowRound(styles),
@@ -1793,7 +1933,7 @@ const inlineLabelShape = (
     textBox: textContent.text.includes('\n'),
     boxWidth: DEFAULT_TEXT_BOX_WIDTH,
     fontSize: DEFAULT_TEXT_FONT_SIZE,
-    color: normalizeTikzColor(nodeStyles['text'], '#0f172a'),
+    color: normalizeTikzColor(nodeStyles['text'], '#0f172a', context.colors),
     colorOpacity: styleOpacity(nodeStyles, 'text opacity'),
     fontWeight: textContent.fontWeight,
     fontStyle: textContent.fontStyle,
@@ -1931,7 +2071,7 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
     const center = { x: from.x - Math.cos(startRadians) * radius, y: from.y - Math.sin(startRadians) * radius };
     const to = { x: center.x + Math.cos(endRadians) * radius, y: center.y + Math.sin(endRadians) * radius };
     const anchor = { x: center.x + Math.cos(midRadians) * radius, y: center.y + Math.sin(midRadians) * radius };
-    return [createImportedLine(styles, from, to, [anchor], 'curved')];
+    return [createImportedLine(styles, from, to, [anchor], 'curved', 'Imported line', context)];
   }
 
   const shapes: CanvasShape[] = [];
@@ -1992,7 +2132,7 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
           : lineMode === 'curved'
             ? [{ x: (current.x + to.x) / 2, y: (current.y + to.y) / 2 }]
             : [];
-    shapes.push(createImportedLine(styles, current, to, anchors, lineMode, styles['decorate'] === 'true' ? 'Imported brace' : 'Imported line'));
+    shapes.push(createImportedLine(styles, current, to, anchors, lineMode, styles['decorate'] === 'true' ? 'Imported brace' : 'Imported line', context));
 
     if (inlineNode) {
       shapes.push(inlineLabelShape(inlineNode, current, to, context));
@@ -2006,6 +2146,10 @@ const parseDrawPath = (line: string, context: ParseContext): readonly CanvasShap
 };
 
 const parseShape = (line: string, context: ParseContext): readonly CanvasShape[] | null => {
+  if (REGEX.tikzParser.boundingBoxPath.test(line)) {
+    return [];
+  }
+
   const coordinate = parseCoordinateDeclaration(line, context);
   if (coordinate) {
     return coordinate;
@@ -2129,10 +2273,14 @@ export const parseTikz = (source: string): ParsedTikzResult => {
   const warnings: string[] = [];
   const shapes: CanvasShape[] = [];
   const rawTikzLines: string[] = [];
-  const preprocessedSource = expandForeachLoops(stripNewCommandBlocks(stripTikzPictureOptionBlocks(source)));
+  const withoutDefinitions = source.replace(REGEX.tikzParser.defineColor, '');
+  const preprocessedSource = expandForeachLoops(
+    stripBalancedCommandBlocks(stripNewCommandBlocks(stripTikzPictureOptionBlocks(withoutDefinitions)), String.raw`\tikzset`)
+  );
   const normalizedLines = collapseMultilineCommands(extractTikzBodyLines(sourceLines(preprocessedSource)));
   const context: ParseContext = {
     styles: parseStyleDefinitions(source),
+    colors: parseColorDefinitions(source),
     nodes: new Map(),
     basis: parseTikzBasis(source),
     variables: parseTikzVariables(source),
