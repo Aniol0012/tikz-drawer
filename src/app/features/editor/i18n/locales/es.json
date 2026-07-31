@@ -483,6 +483,7 @@
   "zoomPercent": "Zoom (%)",
   "zoomIn": "Acercar",
   "zoomOut": "Alejar",
+  "zoomLevel": "Nivel de zoom",
   "undo": "Deshacer",
   "redo": "Rehacer",
   "duplicate": "Duplicar",

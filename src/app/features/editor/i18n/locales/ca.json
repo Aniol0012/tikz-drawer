@@ -483,6 +483,7 @@
   "zoomPercent": "Zoom (%)",
   "zoomIn": "Apropar",
   "zoomOut": "Allunyar",
+  "zoomLevel": "Nivell de zoom",
   "undo": "Desfer",
   "redo": "Refer",
   "duplicate": "Duplicar",

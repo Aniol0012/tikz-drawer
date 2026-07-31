@@ -46,6 +46,7 @@
   <input
     type="range"
     autocomplete="off"
+    [attr.aria-label]="'zoomLevel' | translate"
     [min]="minScale"
     [max]="maxScale"
     [step]="zoomStep"

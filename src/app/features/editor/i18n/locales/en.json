@@ -483,6 +483,7 @@
   "zoomPercent": "Zoom (%)",
   "zoomIn": "Zoom in",
   "zoomOut": "Zoom out",
+  "zoomLevel": "Zoom level",
   "undo": "Undo",
   "redo": "Redo",
   "duplicate": "Duplicate",

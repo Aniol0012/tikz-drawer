@@ -108,6 +108,7 @@ describe('EditorCanvasToolbarComponent', () => {
     expect(range.min).toBe(String(EDITOR_SCALE_MIN));
     expect(range.max).toBe(String(EDITOR_SCALE_MAX));
     expect(range.step).toBe(String(EDITOR_ZOOM_STEP));
+    expect(range.getAttribute('aria-label')).toBe('Zoom level');
   });
 
   it('opens a compact preset menu with common zoom levels', async () => {

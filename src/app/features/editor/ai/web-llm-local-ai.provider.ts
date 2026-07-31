@@ -1,12 +1,5 @@
-import { effect, inject, Injectable, signal } from '@angular/core';
-import {
-  CreateWebWorkerMLCEngine,
-  prebuiltAppConfig,
-  type ChatCompletionChunk,
-  type CompletionUsage,
-  type InitProgressReport,
-  type MLCEngineInterface
-} from '@mlc-ai/web-llm';
+import { inject, Injectable, signal } from '@angular/core';
+import type { ChatCompletionChunk, CompletionUsage, InitProgressReport, MLCEngineInterface } from '@mlc-ai/web-llm';
 import type { AiProviderRequest, AiProviderTextResult, AiProviderUsage } from './ai-provider-result.model';
 import type { LocalAiStatus } from './local-ai-status.model';
 import { AiSettingsService, WEB_LLM_MODEL_OPTIONS } from './ai-settings.service';
@@ -23,36 +16,14 @@ const WEB_LLM_ABORT_ERROR_KEY = 'ai.errorGenerationStopped';
 const WEB_LLM_STATUS = signal<LocalAiStatus>(initialStatus());
 const WEB_LLM_ENGINES = new Map<string, MLCEngineInterface>();
 const WEB_LLM_LOADING_PROMISES = new Map<string, Promise<MLCEngineInterface>>();
-let preloadStarted = false;
-
-export function preloadWebLlmLocalAi(): void {
-  if (preloadStarted || !WEB_LLM_STATUS().supported) {
-    return;
-  }
-
-  preloadStarted = true;
-  preloadEngine(preloadModelName(), 'preload:failed');
-}
 
 @Injectable({ providedIn: 'root' })
 export class WebLlmLocalAiProvider {
   private readonly aiSettingsService = inject(AiSettingsService);
-  private autoRequestedModel = '';
 
   readonly mode = 'local' as const;
   readonly modelName = DEFAULT_WEB_LLM_MODEL;
   readonly status = WEB_LLM_STATUS;
-
-  constructor() {
-    preloadWebLlmLocalAi();
-    effect(() => {
-      const modelName = this.aiSettingsService.settings().webLlmModel;
-      if (this.status().supported && this.autoRequestedModel !== modelName) {
-        this.autoRequestedModel = modelName;
-        preloadEngine(modelName, 'settings-preload:failed');
-      }
-    });
-  }
 
   async installLocalModel(): Promise<void> {
     if (!this.status().supported) {
@@ -156,10 +127,6 @@ async function generateWithInterruptingTimeout(
       generation.catch((error) => logWebLlm('generate:interrupted', { error: error instanceof Error ? error.message : String(error) }));
     }
   }
-}
-
-function preloadEngine(modelName: string, failureEvent: string): void {
-  ensureEngine(modelName).catch((error) => logWebLlm(failureEvent, { error: errorMessage(error) }));
 }
 
 function interruptGeneration(engine: MLCEngineInterface): void {
@@ -453,6 +420,8 @@ async function createEngine(modelName: string): Promise<MLCEngineInterface> {
 }
 
 async function createBrowserWorkerEngine(modelName: string): Promise<MLCEngineInterface> {
+  const { CreateWebWorkerMLCEngine, prebuiltAppConfig } = await import('@mlc-ai/web-llm');
+
   return await CreateWebWorkerMLCEngine(new Worker(new URL('./web-llm.worker', import.meta.url), { type: 'module' }), modelName, {
     appConfig: { ...prebuiltAppConfig, cacheBackend: 'indexeddb' },
     initProgressCallback: updateProgress

@@ -152,7 +152,7 @@
 }
 
 .primary-button--import {
-  --import-action-color: #0f9f6e;
+  --import-action-color: #087552;
   background: var(--import-action-color);
   border-color: color-mix(in srgb, var(--import-action-color) 76%, black 10%);
   box-shadow: none;

@@ -1,4 +1,4 @@
-<div
+<main
   class="editor-shell"
   [style.--left-sidebar-width.px]="effectiveLeftSidebarWidth()"
   [style.--right-sidebar-width.px]="effectiveRightSidebarWidth()"
@@ -3376,7 +3376,7 @@
       (cancelDialog)="closeGraphDialog()"
       (confirm)="confirmGraphDialog($event)"></app-graph-dialog>
   }
-</div>
+</main>
 
 <figure class="print-canvas" aria-hidden="true">
   <img [src]="printCanvasDataUrl()" [attr.alt]="scene().name" />
