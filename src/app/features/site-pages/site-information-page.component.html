@@ -1,7 +1,7 @@
 <a class="skip-link" href="#main-content">Skip to content</a>
 <app-site-navigation [activePage]="page.key" />
 
-<main id="main-content" class="site-page">
+<div class="site-page">
   @if (page.layout === 'visual') {
     <header class="hero">
       <div class="hero__copy">
@@ -108,7 +108,7 @@
       }
     </article>
   }
-</main>
+</div>
 
 <footer class="site-footer">
   <span>TikZ Drawer</span>
