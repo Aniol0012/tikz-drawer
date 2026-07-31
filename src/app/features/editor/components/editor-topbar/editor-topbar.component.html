@@ -170,36 +170,14 @@
         <app-badge tone="dev" size="sm" [iconPath]="icon('code')">{{ t('devMode') }}</app-badge>
       }
 
-      <sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
-        <button slot="trigger" class="language-select language-select--shoelace" type="button" [attr.aria-label]="t('language')">
-          <span>{{ languageLabel() }}</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="icon('chevronDown')"></path>
-          </svg>
-        </button>
-        <div class="language-menu" role="menu" [attr.aria-label]="t('language')">
-          @if (languageOptions().length >= languageSearchThreshold) {
-            <label class="language-menu__search">
-              <input type="search" [attr.placeholder]="t('search')" />
-            </label>
-          }
-          @for (option of languageOptions(); track option.value) {
-            <button
-              class="language-menu__item"
-              type="button"
-              role="menuitemradio"
-              [class.is-selected]="language() === option.value"
-              [attr.aria-checked]="language() === option.value"
-              (click)="selectLanguageOption(option.value, languageDropdown)">
-              <img class="language-menu__flag" ngSrc="{{ option.flagSrc }}" width="16" height="16" alt="" aria-hidden="true" />
-              <span>{{ option.longLabel }}</span>
-            </button>
-          }
-        </div>
-      </sl-dropdown>
+      <app-language-selector [chevronIconPath]="icon('chevronDown')" />
 
       @if (showGuideShortcut()) {
-        <a class="icon-button icon-button--info" routerLink="/guide" aria-label="TikZ Drawer guide" title="TikZ Drawer guide">
+        <a
+          class="icon-button icon-button--info"
+          routerLink="/guide"
+          [attr.aria-label]="'site.guide.eyebrow' | translate"
+          [title]="'site.guide.eyebrow' | translate">
           <svg class="info-icon" viewBox="0 0 32 32" aria-hidden="true">
             <path [attr.d]="icon('info')"></path>
           </svg>

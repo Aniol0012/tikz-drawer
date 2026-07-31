@@ -72,6 +72,9 @@ describe('EditorTopbarComponent template', () => {
     expect(rightActions).toContain('@if (showGuideShortcut())');
     expect(rightActions).toContain('routerLink="/guide"');
     expect(rightActions).toContain("icon('info')");
+    expect(rightActions).toContain('[attr.aria-label]="\'site.guide.eyebrow\' | translate"');
+    expect(rightActions).toContain('[title]="\'site.guide.eyebrow\' | translate"');
+    expect(rightActions).not.toContain('aria-label="TikZ Drawer guide"');
   });
 
   it('keeps pinned toolbar overflow contained in the center section', async () => {

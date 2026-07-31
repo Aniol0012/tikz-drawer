@@ -8,8 +8,19 @@ import { EditorLanguageService } from './editor-language.service';
 })
 export class EditorTranslatePipe implements PipeTransform {
   private readonly languageService = inject(EditorLanguageService);
+  private cachedKey: string | null = null;
+  private cachedLanguage = '';
+  private cachedTranslation = '';
 
   transform(key: string): string {
-    return this.languageService.t(key);
+    const language = this.languageService.language();
+    if (key === this.cachedKey && language === this.cachedLanguage) {
+      return this.cachedTranslation;
+    }
+
+    this.cachedKey = key;
+    this.cachedLanguage = language;
+    this.cachedTranslation = this.languageService.t(key);
+    return this.cachedTranslation;
   }
 }

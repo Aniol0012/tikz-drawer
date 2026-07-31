@@ -55,4 +55,12 @@ describe('editor-page i18n', () => {
       }
     }
   });
+
+  it('translates the documentation navigation in every supported language', () => {
+    for (const language of languages) {
+      for (const key of ['site.navigation.documentation', 'site.navigation.guide', 'site.navigation.examples', 'site.navigation.about']) {
+        expect(translate(language.code, key)).not.toBe(key);
+      }
+    }
+  });
 });

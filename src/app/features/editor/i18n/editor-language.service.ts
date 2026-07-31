@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, effect, Injectable, inject, signal } from '@angular/core';
 import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 import type { CanvasShape } from '../models/tikz.models';
 import { EditorLocalStorageService } from '../state/editor-local-storage.service';
@@ -15,6 +15,10 @@ export class EditorLanguageService {
   readonly language = signal<LanguageCode>(this.restoreStoredLanguage());
 
   constructor() {
+    effect(() => {
+      this.document.documentElement.lang = this.language();
+    });
+
     const handleStorage = (event: StorageEvent) => {
       if (event.key === this.languageStorageKey && event.newValue) {
         this.applyStoredLanguage(event.newValue);

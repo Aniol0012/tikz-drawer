@@ -1,0 +1,29 @@
+<sl-dropdown
+  #languageDropdown
+  class="language-dropdown"
+  placement="bottom-end"
+  distance="6"
+  hoist
+  (sl-show)="menuOpen.set(true)"
+  (sl-hide)="menuOpen.set(false)">
+  <button slot="trigger" class="language-select" type="button" [attr.aria-label]="'language' | translate">
+    <span>{{ languageLabel() }}</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="chevronIconPath()"></path>
+    </svg>
+  </button>
+  <div class="language-menu" role="menu" [attr.aria-label]="'language' | translate">
+    @for (option of languageOptions(); track option.value) {
+      <button
+        class="language-menu__item"
+        type="button"
+        role="menuitemradio"
+        [class.is-selected]="language() === option.value"
+        [attr.aria-checked]="language() === option.value"
+        (click)="selectLanguage(option.value, languageDropdown)">
+        <img class="language-menu__flag" ngSrc="{{ option.flagSrc }}" width="16" height="16" alt="" aria-hidden="true" />
+        <span>{{ option.longLabel }}</span>
+      </button>
+    }
+  </div>
+</sl-dropdown>

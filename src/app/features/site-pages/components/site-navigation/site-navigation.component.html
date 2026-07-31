@@ -5,19 +5,22 @@
       <span class="brand__compact" aria-hidden="true">TD</span>
     </a>
 
-    <div class="header-actions">
-      <nav class="site-nav" aria-label="Documentation">
-        <a routerLink="/guide" [attr.aria-current]="activePage() === 'guide' ? 'page' : null">Guide</a>
-        <a routerLink="/examples" [attr.aria-current]="activePage() === 'examples' ? 'page' : null">Examples</a>
-        <a routerLink="/about" [attr.aria-current]="activePage() === 'about' ? 'page' : null">About</a>
-      </nav>
+    <nav class="site-nav" [attr.aria-label]="'site.navigation.documentation' | translate">
+      <a routerLink="/guide" [attr.aria-current]="activePage() === 'guide' ? 'page' : null">{{ 'site.navigation.guide' | translate }}</a>
+      <a routerLink="/examples" [attr.aria-current]="activePage() === 'examples' ? 'page' : null">{{
+        'site.navigation.examples' | translate
+      }}</a>
+      <a routerLink="/about" [attr.aria-current]="activePage() === 'about' ? 'page' : null">{{ 'site.navigation.about' | translate }}</a>
+    </nav>
 
+    <div class="header-actions">
+      <app-language-selector [chevronIconPath]="chevronIconPath" />
       <app-theme-toggle-button
         [theme]="theme()"
-        [label]="theme() === 'dark' ? 'Use light theme' : 'Use dark theme'"
+        [label]="theme() === 'dark' ? ('site.navigation.useLightTheme' | translate) : ('site.navigation.useDarkTheme' | translate)"
         (themeToggle)="toggleTheme()" />
 
-      <a class="editor-link" routerLink="/">Open editor</a>
+      <a class="editor-link" routerLink="/">{{ 'site.navigation.openEditor' | translate }}</a>
     </div>
   </div>
 </header>

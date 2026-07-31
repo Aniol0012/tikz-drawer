@@ -1,4 +1,5 @@
 import type { DiagramArtworkKind } from '../../shared/diagram-artwork/diagram-artwork.component';
+import { translateOrFallback, type LanguageCode } from '../editor/i18n/editor-page.i18n';
 
 export const SITE_PAGE_KEYS = ['guide', 'examples', 'about'] as const;
 
@@ -339,5 +340,63 @@ const DEFAULT_SITE_PAGE = SITE_PAGES.guide;
 
 export const isSitePageKey = (value: unknown): value is SitePageKey => typeof value === 'string' && SITE_PAGE_KEY_SET.has(value);
 
-export const resolveSitePage = (value: unknown): SitePageContent =>
-  isSitePageKey(value) ? (SITE_PAGE_BY_KEY.get(value) ?? DEFAULT_SITE_PAGE) : DEFAULT_SITE_PAGE;
+const localizedText = (language: LanguageCode, key: string, fallback: string): string => translateOrFallback(language, `site.${key}`, fallback);
+
+const localizePageBase = (page: SitePageContent, language: LanguageCode) => ({
+  eyebrow: localizedText(language, `${page.key}.eyebrow`, page.eyebrow),
+  title: localizedText(language, `${page.key}.title`, page.title),
+  lede: localizedText(language, `${page.key}.lede`, page.lede),
+  primaryAction: localizedText(language, `${page.key}.primaryAction`, page.primaryAction),
+  secondaryAction: localizedText(language, `${page.key}.secondaryAction`, page.secondaryAction)
+});
+
+const localizeVisualPage = (page: VisualSitePageContent, language: LanguageCode): VisualSitePageContent => ({
+  ...page,
+  ...localizePageBase(page, language),
+  sections: page.sections.map((section) => ({
+    ...section,
+    title: localizedText(language, `${page.key}.${section.id}.title`, section.title),
+    intro: section.intro ? localizedText(language, `${page.key}.${section.id}.intro`, section.intro) : undefined,
+    cards: section.cards?.map((card, index) => ({
+      ...card,
+      label: card.label ? localizedText(language, `${page.key}.${section.id}.cards.${index}.label`, card.label) : undefined,
+      title: localizedText(language, `${page.key}.${section.id}.cards.${index}.title`, card.title),
+      body: localizedText(language, `${page.key}.${section.id}.cards.${index}.body`, card.body)
+    })),
+    code: section.code
+      ? {
+          ...section.code,
+          title: localizedText(language, `${page.key}.${section.id}.code.title`, section.code.title),
+          caption: localizedText(language, `${page.key}.${section.id}.code.caption`, section.code.caption)
+        }
+      : undefined
+  }))
+});
+
+const localizeEditorialPage = (page: EditorialSitePageContent, language: LanguageCode): EditorialSitePageContent => ({
+  ...page,
+  ...localizePageBase(page, language),
+  sections: page.sections.map((section) => ({
+    ...section,
+    title: localizedText(language, `${page.key}.${section.id}.title`, section.title),
+    paragraphs: section.paragraphs.map((paragraph, index) => localizedText(language, `${page.key}.${section.id}.paragraphs.${index}`, paragraph)),
+    resources: section.resources?.map((resource, index) => ({
+      ...resource,
+      label: localizedText(language, `${page.key}.${section.id}.resources.${index}`, resource.label)
+    })),
+    link: section.link
+      ? {
+          ...section.link,
+          label: localizedText(language, `${page.key}.${section.id}.link`, section.link.label)
+        }
+      : undefined
+  }))
+});
+
+const localizeSitePage = (page: SitePageContent, language: LanguageCode): SitePageContent =>
+  page.layout === 'visual' ? localizeVisualPage(page, language) : localizeEditorialPage(page, language);
+
+export const resolveSitePage = (value: unknown, language: LanguageCode = 'en'): SitePageContent => {
+  const page = isSitePageKey(value) ? (SITE_PAGE_BY_KEY.get(value) ?? DEFAULT_SITE_PAGE) : DEFAULT_SITE_PAGE;
+  return localizeSitePage(page, language);
+};

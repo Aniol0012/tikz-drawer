@@ -1,4 +1,6 @@
-<a class="skip-link" href="#main-content">Skip to content</a>
+@let page = localizedPage();
+
+<a class="skip-link" href="#main-content">{{ 'site.skipToContent' | translate }}</a>
 <app-site-navigation [activePage]="page.key" />
 
 <div class="site-page">
@@ -9,7 +11,7 @@
         <p class="lede">{{ page.lede }}</p>
         <div class="actions">
           <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
-          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
+          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath()" />
         </div>
       </div>
 
@@ -43,8 +45,8 @@
       }
 
       <aside class="closing-note">
-        <span>Ready to draw?</span>
-        <app-action-link label="Open the visual editor" route="/" [iconPath]="editorIconPath" tone="primary" />
+        <span>{{ 'site.readyToDraw' | translate }}</span>
+        <app-action-link [label]="'site.openVisualEditor' | translate" route="/" [iconPath]="editorIconPath" tone="primary" />
       </aside>
     </article>
   } @else {
@@ -54,7 +56,7 @@
         <p class="lede">{{ page.lede }}</p>
         <div class="actions">
           <app-action-link [label]="page.primaryAction" route="/" [iconPath]="editorIconPath" tone="primary" />
-          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath" />
+          <app-action-link [label]="page.secondaryAction" [route]="page.secondaryRoute" [iconPath]="secondaryActionIconPath()" />
         </div>
       </div>
       <img class="about-hero__logo" src="logo.png" alt="TikZ Drawer" />
@@ -69,7 +71,7 @@
               <p>{{ paragraph }}</p>
             }
             @if (section.resources?.length) {
-              <nav class="resource-links" aria-label="Related resources">
+              <nav class="resource-links" [attr.aria-label]="'site.relatedResources' | translate">
                 @for (resource of section.resources; track resource.href) {
                   <a [href]="resource.href" target="_blank" rel="noopener noreferrer">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -82,7 +84,7 @@
                       <span class="latex-wordmark" aria-label="LaTeX">
                         L<span class="latex-wordmark__a">A</span>T<span class="latex-wordmark__e">E</span>X
                       </span>
-                      <span>Project</span>
+                      <span>{{ 'site.project' | translate }}</span>
                     } @else {
                       <span>{{ resource.label }}</span>
                     }
@@ -112,5 +114,5 @@
 
 <footer class="site-footer">
   <span>TikZ Drawer</span>
-  <a href="https://github.com/Aniol0012" target="_blank" rel="noopener noreferrer">Created by Aniol0012</a>
+  <a href="https://github.com/Aniol0012" target="_blank" rel="noopener noreferrer">{{ 'site.createdBy' | translate }}</a>
 </footer>

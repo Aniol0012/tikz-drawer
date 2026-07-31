@@ -1,28 +1,16 @@
-import { DOCUMENT, NgOptimizedImage } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import type { ElementRef } from '@angular/core';
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  CUSTOM_ELEMENTS_SCHEMA,
-  DestroyRef,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  viewChild
-} from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import { EditorLanguageService } from '../../i18n/editor-language.service';
-import { getLanguageOptions, isLanguageCode, languageByCode, type LanguageCode } from '../../i18n/editor-page.i18n';
+import { getLanguageOptions, isLanguageCode } from '../../i18n/editor-page.i18n';
 import type { ThemeMode } from '../../models/tikz.models';
 import { CopyButtonComponent, type CopyButtonValueResolver } from '../../../../shared/copy-button/copy-button.component';
 import { AppSelectComponent } from '../../../../shared/app-select/app-select.component';
 import { BadgeComponent } from '../../../../shared/badge/badge.component';
 import { ThemeToggleButtonComponent } from '../../../../shared/theme-toggle-button/theme-toggle-button.component';
+import { LanguageSelectorComponent } from '../../../../shared/language-selector/language-selector.component';
+import { EditorTranslatePipe } from '../../i18n/editor-translate.pipe';
 import type { TopbarTool } from './editor-topbar.types';
 
 const DEFAULT_WINDOW_WIDTH = 1280;
@@ -30,16 +18,9 @@ const TOPBAR_OVERFLOW_TOLERANCE_PX = 1;
 const TOPBAR_COMPACT_VIEWPORT_WIDTH = 1180;
 const TOPBAR_COMPACT_WINDOW_WIDTH = 1320;
 const GUIDE_SHORTCUT_MIN_WINDOW_WIDTH = 1500;
-const LANGUAGE_SEARCH_THRESHOLD = 7;
-
-interface ShoelaceDropdownElement extends HTMLElement {
-  hide?: () => void;
-}
-
 @Component({
   selector: 'app-editor-topbar',
-  imports: [CopyButtonComponent, AppSelectComponent, BadgeComponent, NgOptimizedImage, RouterLink, ThemeToggleButtonComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [AppSelectComponent, BadgeComponent, CopyButtonComponent, EditorTranslatePipe, LanguageSelectorComponent, RouterLink, ThemeToggleButtonComponent],
   templateUrl: './editor-topbar.component.html',
   styleUrl: './editor-topbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,7 +65,6 @@ export class EditorTopbarComponent {
   readonly compactTopbarActions = signal(false);
   readonly language = this.languageService.language;
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
-  readonly languageSearchThreshold = LANGUAGE_SEARCH_THRESHOLD;
   private readonly windowWidth = signal(typeof globalThis.innerWidth === 'number' ? globalThis.innerWidth : DEFAULT_WINDOW_WIDTH);
   readonly showGuideShortcut = computed(() => !this.mobileLayout() && this.windowWidth() >= GUIDE_SHORTCUT_MIN_WINDOW_WIDTH);
 
@@ -125,10 +105,6 @@ export class EditorTopbarComponent {
     return this.iconMap()[key] ?? '';
   }
 
-  languageLabel(language: LanguageCode = this.language()): string {
-    return languageByCode[language].label;
-  }
-
   onShareLinkCopied(value: string, closeMenu = false): void {
     this.shareLinkCopied.emit(value);
     if (closeMenu) {
@@ -147,11 +123,6 @@ export class EditorTopbarComponent {
     if (closeMenu) {
       this.fileMenuClose.emit();
     }
-  }
-
-  selectLanguageOption(language: LanguageCode, dropdown: ShoelaceDropdownElement): void {
-    this.languageService.setLanguage(language);
-    dropdown.hide?.();
   }
 
   private updateCompactTopbarActions(): void {
