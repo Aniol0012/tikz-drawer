@@ -196,6 +196,7 @@ Angular’s security guide covers built-in XSS protections, `DomSanitizer`, and 
 - Prefer small, deterministic tests over giant integration tests
 - When using Material or CDK components, prefer harness-style testing where it improves resilience
 - Test loading, error, empty, and success states
+- Do not keep permanent tests for one-off configuration fixes or incidental cases that do not protect durable project behavior. Temporary diagnostic tests and harnesses are allowed, but remove them before finishing unless they cover a realistic, recurring regression risk.
 
 ## AI-specific generation rules
 
