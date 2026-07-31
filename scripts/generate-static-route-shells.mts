@@ -110,7 +110,7 @@ const renderPageSections = (page: SitePageContent): string => {
 
 const renderStaticPageContent = (page: SitePageContent): string => {
   const sections = renderPageSections(page);
-  return `<main id="seo-static-content"><header><p>${escapeHtml(page.eyebrow)}</p><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(
+  return `<main id="seo-static-content" hidden><header><p>${escapeHtml(page.eyebrow)}</p><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(
     page.lede
   )}</p></header>${sections}${STATIC_NAVIGATION}</main>`;
 };

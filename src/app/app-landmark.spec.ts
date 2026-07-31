@@ -4,6 +4,14 @@ import { resolve } from 'node:path';
 const readWorkspaceFile = (path: string): Promise<string> => readFile(resolve(process.cwd(), path), 'utf8');
 
 describe('application landmarks', () => {
+  it('keeps the static SEO content hidden before Angular replaces it', async () => {
+    const indexHtml = await readWorkspaceFile('src/index.html');
+    const staticShellGenerator = await readWorkspaceFile('scripts/generate-static-route-shells.mts');
+
+    expect(indexHtml).toContain('<main id="seo-static-content" hidden>');
+    expect(staticShellGenerator).toContain('<main id="seo-static-content" hidden>');
+  });
+
   it('keeps the main landmark in the persistent application shell', async () => {
     const template = await readWorkspaceFile('src/app/app.html');
 
