@@ -185,14 +185,24 @@
 }
 
 .figure-search-result__copy small,
-.figure-search-result__hint,
 .figure-search-empty {
   color: var(--muted-foreground);
   font-size: 0.78rem;
 }
 
-.figure-search-result__hint {
+.figure-search-result__shortcut {
+  min-width: 26px;
+  padding: 3px 7px;
+  border: 1px solid var(--tool-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tool-surface) 84%, transparent);
+  color: var(--muted-foreground);
+  font-family: inherit;
+  font-size: 0.72rem;
   font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .figure-search-empty {
@@ -206,7 +216,7 @@
   }
 
   .figure-search-field kbd,
-  .figure-search-result__hint {
+  .figure-search-result__shortcut {
     display: none;
   }
 

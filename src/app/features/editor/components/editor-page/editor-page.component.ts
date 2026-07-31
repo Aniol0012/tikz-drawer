@@ -566,6 +566,7 @@ export class EditorPageComponent {
   });
   readonly figureSearchPresetTitle = (preset: ObjectPreset): string => this.presetTitle(preset);
   readonly figureSearchPresetDescription = (preset: ObjectPreset): string => this.presetDescription(preset);
+  readonly figureSearchPresetShortcut = (preset: ObjectPreset): string | undefined => this.toolShortcut(preset.id);
   readonly textSymbolGroups: readonly TextSymbolGroup[] = [
     {
       label: 'Greek',

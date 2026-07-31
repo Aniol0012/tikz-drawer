@@ -52,7 +52,9 @@
               <strong>{{ titleForPreset()(preset) }}</strong>
               <small>{{ descriptionForPreset()(preset) }}</small>
             </span>
-            <span class="figure-search-result__hint">{{ selectLabel() }}</span>
+            @if (shortcutForPreset()(preset); as shortcut) {
+              <kbd class="figure-search-result__shortcut">{{ shortcut }}</kbd>
+            }
           </button>
         }
       } @else {

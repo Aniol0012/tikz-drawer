@@ -16,11 +16,11 @@ export class FigureSearchOverlayComponent {
   readonly iconMap = input.required<Record<string, string>>();
   readonly titleForPreset = input.required<(preset: ObjectPreset) => string>();
   readonly descriptionForPreset = input.required<(preset: ObjectPreset) => string>();
+  readonly shortcutForPreset = input.required<(preset: ObjectPreset) => string | undefined>();
   readonly placeholder = input.required<string>();
   readonly clearLabel = input.required<string>();
   readonly noResultsLabel = input.required<string>();
   readonly shortcutLabel = input.required<string>();
-  readonly selectLabel = input.required<string>();
 
   readonly closeSearch = output<void>();
   readonly selectPreset = output<string>();
