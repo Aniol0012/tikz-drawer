@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, CUSTOM_ELEMENTS_SCHEMA, inject, input } from '@angular/core';
 import '@shoelace-style/shoelace/dist/components/dropdown/dropdown.js';
 import { EditorLanguageService } from '../../features/editor/i18n/editor-language.service';
 import { getLanguageOptions, languageByCode, type LanguageCode } from '../../features/editor/i18n/editor-page.i18n';
@@ -15,10 +15,7 @@ interface ShoelaceDropdownElement extends HTMLElement {
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './language-selector.component.html',
   styleUrl: './language-selector.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '[class.language-selector--open]': 'menuOpen()'
-  }
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LanguageSelectorComponent {
   private readonly languageService = inject(EditorLanguageService);
@@ -26,7 +23,6 @@ export class LanguageSelectorComponent {
   readonly chevronIconPath = input.required<string>();
   readonly language = this.languageService.language;
   readonly languageOptions = computed(() => getLanguageOptions(this.language()));
-  readonly menuOpen = signal(false);
 
   languageLabel(language: LanguageCode = this.language()): string {
     return languageByCode[language].label;

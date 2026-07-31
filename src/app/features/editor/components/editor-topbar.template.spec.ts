@@ -110,11 +110,15 @@ describe('EditorTopbarComponent template', () => {
   });
 
   it('keeps mobile menu controls and primary actions compact', async () => {
+    const template = await readTemplate();
     const styles = await readStyles();
     const inlineMenu = sectionBetween(styles, '.dropdown-menu__topbar-inline {', '}');
+    const mobileMenu = sectionBetween(template, '<div class="dropdown-menu__topbar-inline">', '</div>');
     const mobileTopbarActions = sectionBetweenAfter(styles, '@media (max-width: 760px)', '.topbar-primary-actions {', '}');
 
-    expect(inlineMenu).toContain('grid-template-columns: minmax(96px, 1fr) auto auto auto;');
+    expect(inlineMenu).toContain('grid-template-columns: minmax(76px, 1fr) repeat(4, auto);');
+    expect(mobileMenu).toContain('routerLink="/guide"');
+    expect(mobileMenu).toContain("'site.guide.eyebrow' | translate");
     expect(mobileTopbarActions).toContain('width: auto;');
     expect(mobileTopbarActions).toContain('display: flex;');
   });

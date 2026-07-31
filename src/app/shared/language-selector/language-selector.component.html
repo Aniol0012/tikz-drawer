@@ -1,11 +1,4 @@
-<sl-dropdown
-  #languageDropdown
-  class="language-dropdown"
-  placement="bottom-end"
-  distance="6"
-  hoist
-  (sl-show)="menuOpen.set(true)"
-  (sl-hide)="menuOpen.set(false)">
+<sl-dropdown #languageDropdown class="language-dropdown" placement="bottom-end" distance="6" hoist>
   <button slot="trigger" class="language-select" type="button" [attr.aria-label]="'language' | translate">
     <span>{{ languageLabel() }}</span>
     <svg viewBox="0 0 24 24" aria-hidden="true">

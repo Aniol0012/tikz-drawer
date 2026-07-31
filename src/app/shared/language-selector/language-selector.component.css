@@ -1,6 +1,6 @@
 :host {
   position: relative;
-  z-index: 1;
+  z-index: 10002;
   display: inline-flex;
 }
 
@@ -11,10 +11,12 @@
   --sl-color-primary-600: var(--accent);
   --sl-color-neutral-0: var(--panel-background);
   --sl-color-neutral-700: var(--app-foreground);
-  --sl-z-index-dropdown: 1000;
+  --sl-z-index-dropdown: 2147483000;
 }
 
 .language-dropdown::part(panel) {
+  position: relative;
+  z-index: 2147483000;
   pointer-events: auto;
   min-width: 100px;
   padding: 5px;
@@ -22,6 +24,8 @@
   border-radius: 8px;
   background: var(--panel-background);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .language-select {

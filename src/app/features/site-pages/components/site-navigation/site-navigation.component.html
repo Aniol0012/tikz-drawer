@@ -1,9 +1,6 @@
 <header class="site-header" data-tooltip-disabled>
   <div class="site-header__inner">
-    <a class="brand" routerLink="/">
-      <span class="brand__wide">TikZ Drawer</span>
-      <span class="brand__compact" aria-hidden="true">TD</span>
-    </a>
+    <a class="brand" routerLink="/">TikZ Drawer</a>
 
     <nav class="site-nav" [attr.aria-label]="'site.navigation.documentation' | translate">
       <a routerLink="/guide" [attr.aria-current]="activePage() === 'guide' ? 'page' : null">{{ 'site.navigation.guide' | translate }}</a>

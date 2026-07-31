@@ -31,7 +31,7 @@ describe('editor-page i18n', () => {
   });
 
   it('translates labels and shape kinds with local fallbacks', () => {
-    expect(translate('en', 'brand')).toBe('Tikz Drawer');
+    expect(translate('en', 'brand')).toBe('TikZ Drawer');
     expect(translate('en', 'missing.translation')).toBe('missing.translation');
     expect(translateOrFallback('en', 'missing.translation', 'Fallback')).toBe('Fallback');
     expect(localizedShapeKind('ca', 'circle')).toBe('Cercle');

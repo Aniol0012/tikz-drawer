@@ -87,6 +87,17 @@
                     (valueChange)="onLanguageSelect($event, true)"></app-select>
 
                   <a
+                    class="icon-button icon-button--info"
+                    routerLink="/guide"
+                    [attr.aria-label]="'site.guide.eyebrow' | translate"
+                    [title]="'site.guide.eyebrow' | translate"
+                    (click)="fileMenuClose.emit()">
+                    <svg class="info-icon" viewBox="0 0 32 32" aria-hidden="true">
+                      <path [attr.d]="icon('info')"></path>
+                    </svg>
+                  </a>
+
+                  <a
                     class="icon-button icon-button--github"
                     href="https://github.com/Aniol0012/tikz-drawer/"
                     target="_blank"

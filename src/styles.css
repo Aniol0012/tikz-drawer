@@ -181,6 +181,11 @@ a {
   text-decoration: none;
 }
 
+body:has(app-site-navigation .language-dropdown[open]) app-diagram-artwork {
+  z-index: 0;
+  pointer-events: none;
+}
+
 .settings-gear-button svg {
   transform-origin: 50% 50%;
 }

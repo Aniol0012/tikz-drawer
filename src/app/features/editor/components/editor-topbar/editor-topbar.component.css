@@ -214,8 +214,8 @@
 
 .dropdown-menu__topbar-inline {
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) auto auto auto;
-  gap: 8px;
+  grid-template-columns: minmax(76px, 1fr) repeat(4, auto);
+  gap: 6px;
   align-items: center;
 }
 
@@ -849,7 +849,7 @@ button:disabled {
     top: 68px;
     right: 10px;
     left: auto;
-    width: min(260px, calc(100vw - 20px));
+    width: min(290px, calc(100vw - 20px));
     min-width: 0;
     max-width: calc(100vw - 20px);
   }
