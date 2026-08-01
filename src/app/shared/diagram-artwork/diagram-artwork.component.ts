@@ -1,6 +1,7 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { DiagramArtworkWebglRenderer } from './diagram-artwork-webgl.renderer';
+import { updatedArtworkRotation } from './diagram-artwork-rotation.utils';
 
 export const DIAGRAM_ARTWORK_KINDS = [
   'spatial',
@@ -36,8 +37,6 @@ interface ArtworkDragState {
 }
 
 const INITIAL_ROTATION: Readonly<{ x: number; y: number }> = { x: -0.08, y: 0.12 };
-const ROTATION_SENSITIVITY = 0.008;
-const MAX_VERTICAL_ROTATION = Math.PI * 0.42;
 
 @Component({
   selector: 'app-diagram-artwork',
@@ -150,10 +149,7 @@ export class DiagramArtworkComponent implements AfterViewInit {
     event.preventDefault();
     const deltaX = event.clientX - dragState.x;
     const deltaY = event.clientY - dragState.y;
-    this.rotation = {
-      x: Math.max(-MAX_VERTICAL_ROTATION, Math.min(MAX_VERTICAL_ROTATION, this.rotation.x + deltaY * ROTATION_SENSITIVITY)),
-      y: this.rotation.y + deltaX * ROTATION_SENSITIVITY
-    };
+    this.rotation = updatedArtworkRotation(this.rotation, deltaX, deltaY);
     this.dragState = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
     this.applyRotation();
     this.updatePointerHighlight(event);
