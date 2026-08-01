@@ -1123,5 +1123,10 @@
   "site.about.author.link": "See my GitHub profile",
   "site.about.source.title": "Source, issues and ideas",
   "site.about.source.paragraphs.0": "The complete source code, release history and issue tracker are public. You can inspect how the editor works, report a problem or suggest the next improvement.",
-  "site.about.source.link": "Open the TikZ Drawer repository"
+  "site.about.source.link": "Open the TikZ Drawer repository",
+  "notFound.title": "We can’t find this page",
+  "notFound.explanation": "This link seems to have lost its coordinates. The canvas is better at finding points than we are.",
+  "notFound.openEditor": "Open the editor",
+  "notFound.readGuide": "Read the guide",
+  "notFound.artworkLabel": "Error 404 selected on a diagram canvas"
 }

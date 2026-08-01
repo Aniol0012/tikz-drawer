@@ -1123,5 +1123,10 @@
   "site.about.author.link": "Ver mi perfil de GitHub",
   "site.about.source.title": "Código fuente, incidencias e ideas",
   "site.about.source.paragraphs.0": "Todo el código fuente, el historial de versiones y el gestor de incidencias son públicos. Puedes inspeccionar cómo funciona el editor, informar de un problema o sugerir la próxima mejora.",
-  "site.about.source.link": "Abrir el repositorio de TikZ Drawer"
+  "site.about.source.link": "Abrir el repositorio de TikZ Drawer",
+  "notFound.title": "No encontramos esta página",
+  "notFound.explanation": "Parece que este enlace ha perdido sus coordenadas. El lienzo encuentra mejor los puntos que nosotros.",
+  "notFound.openEditor": "Abrir el editor",
+  "notFound.readGuide": "Leer la guía",
+  "notFound.artworkLabel": "Error 404 seleccionado en un lienzo de diagrama"
 }

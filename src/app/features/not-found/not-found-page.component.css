@@ -33,10 +33,13 @@
 }
 
 h1 {
+  max-width: 760px;
   margin: 0;
-  font-size: clamp(2.55rem, 5.4vw, 4.8rem);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
+  font-family: var(--font-sans);
+  font-size: clamp(2.5rem, 5vw, 4.3rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.048em;
   text-wrap: balance;
 }
 

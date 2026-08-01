@@ -63,4 +63,14 @@ describe('editor-page i18n', () => {
       }
     }
   });
+
+  it('translates every visible message on the not-found page', () => {
+    const notFoundKeys = ['notFound.title', 'notFound.explanation', 'notFound.openEditor', 'notFound.readGuide', 'notFound.artworkLabel'];
+
+    for (const language of languages) {
+      for (const key of notFoundKeys) {
+        expect(translate(language.code, key)).not.toBe(key);
+      }
+    }
+  });
 });

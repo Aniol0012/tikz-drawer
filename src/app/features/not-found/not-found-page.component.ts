@@ -4,10 +4,11 @@ import { ActionLinkComponent } from '../../shared/action-link/action-link.compon
 import { DiagramArtworkComponent } from '../../shared/diagram-artwork/diagram-artwork.component';
 import { GlobalThemeService } from '../../shared/theme/global-theme.service';
 import { iconPaths } from '../editor/config/editor-icons';
+import { EditorTranslatePipe } from '../editor/i18n/editor-translate.pipe';
 
 @Component({
   selector: 'app-not-found-page',
-  imports: [RouterLink, ActionLinkComponent, DiagramArtworkComponent],
+  imports: [RouterLink, ActionLinkComponent, DiagramArtworkComponent, EditorTranslatePipe],
   templateUrl: './not-found-page.component.html',
   styleUrl: './not-found-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

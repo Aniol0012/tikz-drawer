@@ -1123,5 +1123,10 @@
   "site.about.author.link": "Mira el meu perfil de GitHub",
   "site.about.source.title": "Codi font, incidències i idees",
   "site.about.source.paragraphs.0": "Tot el codi font, l'historial de versions i el gestor d'incidències són públics. Pots inspeccionar com funciona l'editor, informar d'un problema o suggerir la propera millora.",
-  "site.about.source.link": "Obre el repositori de TikZ Drawer"
+  "site.about.source.link": "Obre el repositori de TikZ Drawer",
+  "notFound.title": "No trobem aquesta pàgina",
+  "notFound.explanation": "Sembla que aquest enllaç ha perdut les coordenades. El llenç troba millor els punts que nosaltres.",
+  "notFound.openEditor": "Obre l'editor",
+  "notFound.readGuide": "Llegeix la guia",
+  "notFound.artworkLabel": "Error 404 seleccionat en un llenç de diagrama"
 }
