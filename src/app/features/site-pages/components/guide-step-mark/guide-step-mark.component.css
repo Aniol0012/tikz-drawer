@@ -1,7 +1,17 @@
 :host {
+  position: relative;
   width: min(100%, 240px);
   height: 128px;
   display: block;
+}
+
+.guide-ai-icon {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  width: 34px;
+  height: 34px;
+  font-size: 34px;
 }
 
 svg {
@@ -36,6 +46,18 @@ svg {
 
 .accent-fill {
   fill: var(--accent);
+}
+
+.guide {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 48%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.selection-rotate-icon {
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
 }
 
 .soft-fill {
