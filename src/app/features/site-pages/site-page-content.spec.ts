@@ -61,4 +61,28 @@ describe('site page content', () => {
     expect(SITE_PAGE_KEYS.every(isSitePageKey)).toBe(true);
     expect(isSitePageKey('missing')).toBe(false);
   });
+
+  it('uses exported images instead of editor canvases for every example card', () => {
+    const examples = resolveSitePage('examples');
+    expect(examples.layout).toBe('visual');
+    if (examples.layout !== 'visual') {
+      return;
+    }
+
+    const cards = examples.sections.flatMap((section) => section.cards ?? []);
+    expect(cards).toHaveLength(6);
+    expect(cards.every((card) => card.imageSrc?.endsWith('.webp'))).toBe(true);
+  });
+
+  it('uses semantic artwork instead of exported example images throughout the guide', () => {
+    const guide = resolveSitePage('guide');
+    expect(guide.layout).toBe('visual');
+    if (guide.layout !== 'visual') {
+      return;
+    }
+
+    const cards = guide.sections.flatMap((section) => section.cards ?? []);
+    expect(cards).toHaveLength(15);
+    expect(cards.every((card) => card.imageSrc === undefined)).toBe(true);
+  });
 });

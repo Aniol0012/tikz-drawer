@@ -1,10 +1,11 @@
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { DiagramArtworkComponent } from '../../../../shared/diagram-artwork/diagram-artwork.component';
 import type { SitePageCard } from '../../site-page-content';
+import { GuideStepMarkComponent } from '../guide-step-mark/guide-step-mark.component';
 
 @Component({
   selector: 'app-site-visual-card',
-  imports: [DiagramArtworkComponent],
+  imports: [GuideStepMarkComponent, NgOptimizedImage],
   templateUrl: './site-visual-card.component.html',
   styleUrl: './site-visual-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -12,4 +13,5 @@ import type { SitePageCard } from '../../site-page-content';
 export class SiteVisualCardComponent {
   readonly card = input.required<SitePageCard>();
   readonly compact = input(false);
+  readonly priority = input(false);
 }

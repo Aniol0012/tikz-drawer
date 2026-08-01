@@ -10,6 +10,7 @@ export interface SitePageCard {
   readonly title: string;
   readonly body: string;
   readonly visual: DiagramArtworkKind;
+  readonly imageSrc?: string;
 }
 
 export interface SitePageCodeSample {
@@ -82,7 +83,6 @@ const SITE_PAGES = {
       {
         id: 'start',
         title: 'Choose how to start',
-        intro: 'Use whichever input is closest to what you already have.',
         cards: [
           {
             label: 'Option 1',
@@ -107,7 +107,6 @@ const SITE_PAGES = {
       {
         id: 'refine',
         title: 'Turn the draft into a clear figure',
-        intro: 'The canvas stays visual while the TikZ source updates with your edits.',
         cards: [
           {
             label: 'Step 1',
@@ -138,7 +137,6 @@ const SITE_PAGES = {
       {
         id: 'latex',
         title: 'Export it to LaTeX',
-        intro: 'Copy the generated TikZ, paste it into Overleaf or another LaTeX project, then compile.',
         cards: [
           {
             label: 'Step 1',
@@ -172,7 +170,6 @@ const SITE_PAGES = {
       {
         id: 'iterate',
         title: 'Edit, compile and export again',
-        intro: 'Keep TikZ Drawer open while you test the figure in the real document.',
         cards: [
           {
             label: 'Step 1',
@@ -191,7 +188,6 @@ const SITE_PAGES = {
       {
         id: 'share',
         title: 'Save or share the work',
-        intro: 'Use source code for LaTeX, a project file for editing, or a link for collaboration.',
         cards: [
           {
             title: 'Share a link',
@@ -231,32 +227,38 @@ const SITE_PAGES = {
           {
             title: 'Flowchart',
             body: 'Processes, decisions and directional steps.',
-            visual: 'flowchart'
+            visual: 'flowchart',
+            imageSrc: 'examples/flowchart.webp'
           },
           {
             title: 'Directed graph',
             body: 'Paths, cycles, trees and connected ideas.',
-            visual: 'graph'
+            visual: 'graph',
+            imageSrc: 'examples/directed-graph.webp'
           },
           {
             title: 'System architecture',
             body: 'Clients, services, APIs and data flow.',
-            visual: 'architecture'
+            visual: 'architecture',
+            imageSrc: 'examples/system-architecture.webp'
           },
           {
             title: 'Geometry',
             body: 'Lines, angles, circles and concise labels.',
-            visual: 'geometry'
+            visual: 'geometry',
+            imageSrc: 'examples/geometry.webp'
           },
           {
             title: 'Neural network',
             body: 'Layered nodes with inputs and outputs.',
-            visual: 'network'
+            visual: 'network',
+            imageSrc: 'examples/neural-network.webp'
           },
           {
             title: 'Annotated figure',
             body: 'Callouts, arrows and notes over an image.',
-            visual: 'annotation'
+            visual: 'annotation',
+            imageSrc: 'examples/annotated-figure.webp'
           }
         ]
       }

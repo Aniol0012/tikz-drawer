@@ -21,7 +21,7 @@
     </header>
 
     <article class="content">
-      @for (section of page.sections; track section.id) {
+      @for (section of page.sections; track section.id; let sectionIndex = $index) {
         <section [id]="section.id">
           <header class="section-heading">
             <h2>{{ section.title }}</h2>
@@ -32,8 +32,11 @@
 
           @if (section.cards?.length) {
             <div class="visual-grid" [class.visual-grid--compact]="section.compactCards">
-              @for (card of section.cards; track card.title) {
-                <app-site-visual-card [card]="card" [compact]="section.compactCards ?? false" />
+              @for (card of section.cards; track card.title; let cardIndex = $index) {
+                <app-site-visual-card
+                  [card]="card"
+                  [compact]="section.compactCards ?? false"
+                  [priority]="sectionIndex === 0 && cardIndex < 3" />
               }
             </div>
           }

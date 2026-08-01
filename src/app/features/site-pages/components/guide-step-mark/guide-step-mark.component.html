@@ -1,0 +1,145 @@
+<svg viewBox="0 0 200 112" role="img" [attr.aria-label]="label()">
+  @switch (kind()) {
+    @case ('import') {
+      <path class="ink" d="M8 12h67l16 16v70H8zM75 12v16h16" />
+      <path class="muted" d="M21 42h50M21 54h57M21 66h39M21 78h51" />
+      <path class="accent" d="M99 56h25" />
+      <path class="accent-fill" d="m119 50 9 6-9 6Z" />
+      <path class="ink" d="m139 88 23-48 26 48z" />
+      <circle class="accent-fill" cx="162" cy="40" r="3.5" />
+      <circle class="accent-fill" cx="139" cy="88" r="3.5" />
+      <circle class="accent-fill" cx="188" cy="88" r="3.5" />
+    }
+    @case ('canvas') {
+      <rect class="ink" x="6" y="9" width="188" height="94" rx="4" />
+      <path class="muted" d="M6 27h188M30 27v76" />
+      <path class="muted" d="M14 40h9m-9 14h9m-9 14h9m-9 14h9" />
+      <rect class="soft-fill" x="48" y="40" width="45" height="22" rx="4" />
+      <rect class="ink" x="125" y="40" width="45" height="22" rx="4" />
+      <path class="ink" d="m108 75 24 14-24 14-24-14zM93 51h32m22 11v27h-15" />
+      <path class="accent" d="M93 51h32" />
+      <path class="accent-fill" d="m120 46 8 5-8 5Zm17 38-8 5 8 5Z" />
+    }
+    @case ('ai') {
+      <path class="ink" d="M7 12h83v57H38L20 86V69H7z" />
+      <path class="muted" d="M20 30h55M20 42h46M20 54h58" />
+      <path class="accent" d="M98 56h24" />
+      <path class="accent-fill" d="m117 50 9 6-9 6Z" />
+      <path class="ink" d="M139 34h42m-42 43h42M139 34v43m42-43v43" />
+      <rect class="soft-fill" x="148" y="45" width="24" height="20" rx="3" />
+      <circle class="accent-fill" cx="186" cy="20" r="3" />
+      <path class="accent" d="M186 11v18m-9-9h18" />
+    }
+    @case ('edit') {
+      <path class="ink" d="m50 80 35-47 48 47z" />
+      <rect class="accent" x="35" y="19" width="114" height="77" stroke-dasharray="5 4" />
+      <circle class="accent-fill" cx="35" cy="19" r="4" />
+      <circle class="accent-fill" cx="149" cy="19" r="4" />
+      <circle class="accent-fill" cx="35" cy="96" r="4" />
+      <circle class="accent-fill" cx="149" cy="96" r="4" />
+      <path class="muted" d="M92 19V8" />
+      <path class="accent" d="M84 10a9 9 0 1 1 15 5m0 0-1-8m1 8-8-1" />
+      <path class="ink" d="m151 75 22 8-10 5-5 11Z" />
+    }
+    @case ('flowchart') {
+      <rect class="ink" x="8" y="18" width="45" height="24" rx="4" />
+      <rect class="soft-fill" x="77" y="18" width="45" height="24" rx="4" />
+      <rect class="ink" x="146" y="18" width="45" height="24" rx="4" />
+      <path class="ink" d="M53 30h24m45 0h24" />
+      <path class="muted" d="M30 42v23h139V42" />
+      <path class="ink" d="m99 65 27 16-27 16-27-16z" />
+      <path class="accent" d="M30 105h139M30 98v11m69-11v11m70-11v11" />
+      <path class="accent-fill" d="m30 101-7 4 7 4Zm139 0 7 4-7 4Z" />
+    }
+    @case ('annotation') {
+      <path class="muted" d="M8 95h184M15 91V16" />
+      <path class="ink" d="M25 85c25-62 51-66 76-17 20 39 36 16 61-43" />
+      <circle class="accent-fill" cx="101" cy="68" r="4" />
+      <path class="accent" d="m101 63 22-30" />
+      <rect class="soft-fill" x="116" y="16" width="70" height="25" rx="3" />
+      <text class="label" x="127" y="32">Local maximum</text>
+      <circle class="accent-fill" cx="162" cy="25" r="3.5" />
+      <path class="accent" d="M162 29v54" />
+    }
+    @case ('source') {
+      <path class="ink" d="M5 9h91v94H5z" />
+      <path class="muted" d="M17 28h52M17 40h66M17 52h43M17 64h71M17 76h57M17 88h34" />
+      <path class="accent" d="M17 40h17m33 24h21M105 56h20" />
+      <path class="accent-fill" d="m120 50 9 6-9 6Z" />
+      <path class="ink" d="m139 88 23-47 27 47z" />
+      <circle class="accent-fill" cx="162" cy="41" r="3.5" />
+    }
+    @case ('latex') {
+      <path class="ink" d="M5 10h86v92H5z" />
+      <path class="muted" d="M17 29h54M17 41h62M17 53h46M17 65h57M17 77h38" />
+      <path class="accent" d="M100 56h22" />
+      <path class="accent-fill" d="m117 50 9 6-9 6Z" />
+      <path class="ink" d="M137 9h46l12 12v81h-58zM183 9v12h12" />
+      <text class="code-label" x="151" y="55">TeX</text>
+      <path class="muted" d="M149 70h34m-34 11h26" />
+    }
+    @case ('overleaf') {
+      <rect class="ink" x="4" y="8" width="192" height="96" rx="4" />
+      <path class="ink" d="M100 8v96" />
+      <path class="muted" d="M16 25h56M16 37h68M16 49h45M16 61h72M16 73h58M16 85h34" />
+      <path class="accent" d="M16 37h21m31 36h20" />
+      <path class="muted" d="M114 24h67m-67 65h67" />
+      <path class="ink" d="m124 76 24-38 25 38z" />
+      <path class="accent" d="M124 76h49" />
+    }
+    @case ('compile') {
+      <path class="ink" d="M21 7h113v98H21z" />
+      <path class="muted" d="M34 23h87M34 33h72M34 86h87M34 95h62" />
+      <path class="ink" d="m48 76 30-34 31 34z" />
+      <circle class="accent-fill" cx="78" cy="42" r="3.5" />
+      <text class="label" x="56" y="83">Figure 1</text>
+      <circle class="soft-fill" cx="165" cy="56" r="25" />
+      <path class="accent" d="m153 56 9 9 17-21" />
+    }
+    @case ('iterate') {
+      <rect class="ink" x="5" y="26" width="66" height="59" rx="4" />
+      <path class="muted" d="M5 40h66M18 53h40m-40 11h29" />
+      <rect class="soft-fill" x="23" y="68" width="30" height="10" rx="2" />
+      <path class="ink" d="M129 15h63v82h-63z" />
+      <path class="muted" d="M138 30h45m-45 54h45" />
+      <path class="ink" d="m143 72 18-27 18 27z" />
+      <path class="accent" d="M71 23c17-17 41-18 59-7m-1 81c-18 11-42 10-58-7" />
+      <path class="accent-fill" d="m124 10 10 8-12 2Zm-47 86-11-8 12-2Z" />
+    }
+    @case ('share') {
+      <path class="ink" d="M7 19h79v72H7z" />
+      <path class="ink" d="M114 19h79v72h-79z" />
+      <path class="muted" d="M18 35h57m50 0h57" />
+      <path class="ink" d="m25 76 20-26 22 26m106 0-20-26-22 26" />
+      <path class="accent" d="M77 55h46" />
+      <path class="accent-fill" d="m82 49-9 6 9 6Zm36 0 9 6-9 6Z" />
+      <path class="ink" d="M91 55a9 9 0 0 1 9-9h7m2 18h-7a9 9 0 0 1-9-9" />
+    }
+    @case ('json') {
+      <path class="ink" d="M8 8h83l17 17v79H8zM91 8v17h17" />
+      <text class="code-label" x="20" y="42">&#123; "scene":</text>
+      <text class="code-label" x="29" y="57">"shapes": [ ]</text>
+      <text class="code-label" x="20" y="72">&#125;</text>
+      <path class="accent" d="M119 56h21" />
+      <path class="accent-fill" d="m135 50 9 6-9 6Z" />
+      <rect class="ink" x="151" y="22" width="41" height="68" rx="3" />
+      <circle class="soft-fill" cx="171.5" cy="45" r="8" />
+      <path class="ink" d="M160 72h23" />
+    }
+    @case ('image-export') {
+      <rect class="ink" x="6" y="10" width="112" height="91" rx="4" />
+      <path class="ink" d="m17 86 29-35 22 22 23-33 17 46" />
+      <circle class="accent-fill" cx="91" cy="31" r="6" />
+      <path class="accent" d="M126 56h17" />
+      <path class="accent-fill" d="m138 50 9 6-9 6Z" />
+      <rect class="soft-fill" x="153" y="27" width="39" height="24" rx="3" />
+      <rect class="ink" x="153" y="63" width="39" height="24" rx="3" />
+      <text class="label" x="162" y="43">PNG</text>
+      <text class="label" x="162" y="79">SVG</text>
+    }
+    @default {
+      <path class="ink" d="m18 91 47-66 53 66 39-47 26 47Z" />
+      <circle class="accent-fill" cx="118" cy="91" r="4" />
+    }
+  }
+</svg>

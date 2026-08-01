@@ -1,5 +1,11 @@
-<article class="visual-card" [class.visual-card--compact]="compact()">
-  <app-diagram-artwork [kind]="card().visual" [label]="card().title" />
+<article class="visual-card" [class.visual-card--compact]="compact()" [class.visual-card--text-only]="!card().imageSrc">
+  @if (card().imageSrc; as imageSrc) {
+    <div class="visual-card__image-stage">
+      <img [ngSrc]="imageSrc" [alt]="card().title" width="640" height="360" [priority]="priority()" />
+    </div>
+  } @else {
+    <app-guide-step-mark [kind]="card().visual" [label]="card().title" />
+  }
   <div class="visual-card__copy">
     @if (card().label) {
       <span class="visual-card__label">{{ card().label }}</span>

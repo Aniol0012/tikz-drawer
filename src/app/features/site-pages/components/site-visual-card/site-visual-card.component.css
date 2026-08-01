@@ -19,6 +19,54 @@
   transform: translateY(-2px);
 }
 
+.visual-card--text-only {
+  min-height: 264px;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.visual-card--text-only:hover {
+  border-color: var(--tool-border-strong);
+  transform: none;
+}
+
+.visual-card--text-only .visual-card__copy {
+  padding: 12px 0 8px;
+}
+
+.visual-card--text-only app-guide-step-mark {
+  margin-top: 22px;
+}
+
+.visual-card--text-only .visual-card__label {
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+}
+
+.visual-card--text-only h3 {
+  font-size: 1.15rem;
+}
+
+.visual-card--text-only p {
+  max-width: 42ch;
+}
+
+.visual-card__image-stage {
+  aspect-ratio: 16 / 9;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff;
+}
+
+.visual-card__image-stage img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
 .visual-card__copy {
   padding: 18px 20px 21px;
 }
@@ -51,11 +99,16 @@ p {
   align-items: center;
 }
 
-.visual-card--compact app-diagram-artwork {
-  margin-left: 8px;
-}
-
 @media (max-width: 520px) {
+  .visual-card--text-only {
+    min-height: 238px;
+  }
+
+  .visual-card--text-only app-guide-step-mark {
+    width: 210px;
+    height: 112px;
+  }
+
   .visual-card--compact {
     grid-template-columns: 96px minmax(0, 1fr);
   }

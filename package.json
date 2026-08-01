@@ -8,6 +8,7 @@
     "build": "ng build && tsx scripts/generate-static-route-shells.mts",
     "watch": "ng build --watch --configuration development",
     "generate:latex-validation": "tsx scripts/generate-tikz-validation-output.mts",
+    "generate:site-figures": "tsx scripts/generate-site-figure-assets.mts",
     "validate:i18n": "tsx scripts/validate-i18n.mts",
     "validate:i18n:all": "tsx scripts/validate-i18n.mts --all",
     "capture:release": "tsx scripts/release-screenshots.mts",
