@@ -19,6 +19,7 @@ interface ShaderLocations {
   readonly rotation: WebGLUniformLocation;
   readonly aspect: WebGLUniformLocation;
   readonly scale: WebGLUniformLocation;
+  readonly overscan: WebGLUniformLocation;
   readonly pointMode: WebGLUniformLocation;
   readonly time: WebGLUniformLocation;
 }
@@ -31,6 +32,7 @@ const VERTEX_SHADER = `
   uniform vec2 u_rotation;
   uniform float u_aspect;
   uniform float u_scale;
+  uniform float u_overscan;
   uniform float u_point_mode;
   uniform float u_time;
 
@@ -65,7 +67,7 @@ const VERTEX_SHADER = `
 
     float depth = max(2.1, 4.35 - p.z);
     float perspective = 2.8 / depth;
-    gl_Position = vec4((p.x * perspective) / u_aspect, p.y * perspective, p.z / 7.0, 1.0);
+    gl_Position = vec4((p.x * perspective) / (u_aspect * u_overscan), (p.y * perspective) / u_overscan, p.z / 7.0, 1.0);
     gl_PointSize = max(2.0, pointSize * perspective);
     v_color = vec4(a_color.rgb, a_color.a * clamp(0.68 + perspective * 0.42, 0.7, 1.0));
   }
@@ -108,6 +110,14 @@ const parseCssColor = (value: string, fallback: Rgb): Rgb => {
 
 const color = (rgb: Rgb, alpha = 1): readonly [number, number, number, number] => [...rgb, alpha];
 
+const isLightSurface = (foreground: Rgb): boolean => foreground[0] + foreground[1] + foreground[2] < 1.5;
+
+const mixRgb = (from: Rgb, to: Rgb, toWeight: number): Rgb => [
+  from[0] * (1 - toWeight) + to[0] * toWeight,
+  from[1] * (1 - toWeight) + to[1] * toWeight,
+  from[2] * (1 - toWeight) + to[2] * toWeight
+];
+
 const createGeometryBuilder = () => {
   const linePositions: number[] = [];
   const lineColors: number[] = [];
@@ -146,6 +156,10 @@ const createSpatialGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
   const outerNodes: readonly Point3[] = Array.from({ length: 5 }, (_, index) => pointOnRing(index, 1.24, -0.24));
   const innerNodes: readonly Point3[] = Array.from({ length: 5 }, (_, index) => pointOnRing(index, 0.62, 0.38));
   const edgeColor = color(foreground, 0.88);
+  const lightSurface = isLightSurface(foreground);
+  const orbitColor = lightSurface ? mixRgb(accent, foreground, 0.28) : accent;
+  const primaryOrbitOpacity = lightSurface ? 0.68 : 0.28;
+  const secondaryOrbitOpacity = lightSurface ? 0.5 : 0.18;
 
   outerNodes.forEach((outerNode, index) => {
     geometry.addLine(outerNode, outerNodes[(index + 1) % 5], edgeColor);
@@ -165,7 +179,7 @@ const createSpatialGeometry = (accent: Rgb, foreground: Rgb): SceneGeometry => {
     for (let index = 0; index < orbitSegments; index += 1) {
       const angle = (index / orbitSegments) * Math.PI * 2;
       const nextAngle = ((index + 1) / orbitSegments) * Math.PI * 2;
-      geometry.addLine(pointAt(angle), pointAt(nextAngle), color(accent, orbitIndex === 0 ? 0.28 : 0.18));
+      geometry.addLine(pointAt(angle), pointAt(nextAngle), color(orbitColor, orbitIndex === 0 ? primaryOrbitOpacity : secondaryOrbitOpacity));
     }
     geometry.addPoint([0, 0, 0], color(accent), -(21 + orbitIndex));
   });
@@ -356,6 +370,7 @@ export class DiagramArtworkWebglRenderer {
     const styles = getComputedStyle(host);
     const accent = parseCssColor(styles.getPropertyValue('--accent'), [0.18, 0.4, 0.95]);
     const foreground = parseCssColor(styles.getPropertyValue('--app-foreground'), [0.08, 0.08, 0.08]);
+    const overscan = Number.parseFloat(styles.getPropertyValue('--artwork-render-overscan')) || 1;
 
     try {
       return new DiagramArtworkWebglRenderer(
@@ -367,7 +382,8 @@ export class DiagramArtworkWebglRenderer {
           : kind === 'gallery'
             ? createGalleryGeometry(accent, foreground)
             : createLostGeometry(accent, foreground),
-        kind === 'lost' ? 0.72 : 1
+        kind === 'lost' ? 0.72 : 1,
+        overscan
       );
     } catch {
       return null;
@@ -379,7 +395,8 @@ export class DiagramArtworkWebglRenderer {
     host: HTMLElement,
     private readonly gl: WebGLRenderingContext,
     geometry: SceneGeometry,
-    private readonly sceneScale: number
+    private readonly sceneScale: number,
+    private readonly overscan: number
   ) {
     const program = createProgram(gl);
     if (!program) {
@@ -391,10 +408,11 @@ export class DiagramArtworkWebglRenderer {
     const rotation = requiredUniform(gl, program, 'u_rotation');
     const aspect = requiredUniform(gl, program, 'u_aspect');
     const scale = requiredUniform(gl, program, 'u_scale');
+    const overscanUniform = requiredUniform(gl, program, 'u_overscan');
     const pointMode = requiredUniform(gl, program, 'u_point_mode');
     const time = requiredUniform(gl, program, 'u_time');
     const buffers = Array.from({ length: 5 }, () => gl.createBuffer());
-    if (!rotation || !aspect || !scale || !pointMode || !time || buffers.some((buffer) => !buffer)) {
+    if (!rotation || !aspect || !scale || !overscanUniform || !pointMode || !time || buffers.some((buffer) => !buffer)) {
       throw new Error('Unable to initialize diagram artwork buffers.');
     }
 
@@ -405,6 +423,7 @@ export class DiagramArtworkWebglRenderer {
       rotation,
       aspect,
       scale,
+      overscan: overscanUniform,
       pointMode,
       time
     };
@@ -421,15 +440,8 @@ export class DiagramArtworkWebglRenderer {
     }
   }
 
-  setPointer(x: number, y: number): void {
-    this.targetRotation = {
-      x: -y * 0.48 - 0.08,
-      y: x * 0.62 + 0.12
-    };
-  }
-
-  resetPointer(): void {
-    this.targetRotation = { x: -0.08, y: 0.12 };
+  setRotation(x: number, y: number): void {
+    this.targetRotation = { x, y };
   }
 
   setVisible(visible: boolean): void {
@@ -466,6 +478,7 @@ export class DiagramArtworkWebglRenderer {
     gl.uniform2f(this.locations.rotation, this.rotation.x, this.rotation.y);
     gl.uniform1f(this.locations.aspect, this.canvas.width / Math.max(this.canvas.height, 1));
     gl.uniform1f(this.locations.scale, this.sceneScale);
+    gl.uniform1f(this.locations.overscan, this.overscan);
     gl.uniform1f(this.locations.time, time);
 
     this.draw(this.linePositionBuffer, this.lineColorBuffer, null, this.geometry.linePositions.length / 3, gl.LINES);

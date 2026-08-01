@@ -101,7 +101,7 @@ h2 {
   min-width: 0;
 }
 
-.hero__visual app-diagram-artwork {
+.hero__visual app-diagram-artwork:not(.diagram-artwork--webgl) {
   border-radius: 12px;
   overflow: hidden;
 }

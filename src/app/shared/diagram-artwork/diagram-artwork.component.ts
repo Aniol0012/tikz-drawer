@@ -29,6 +29,16 @@ export const DIAGRAM_ARTWORK_KINDS = [
 export type DiagramArtworkKind = (typeof DIAGRAM_ARTWORK_KINDS)[number];
 type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'lost' | 'spatial'>;
 
+interface ArtworkDragState {
+  readonly pointerId: number;
+  readonly x: number;
+  readonly y: number;
+}
+
+const INITIAL_ROTATION: Readonly<{ x: number; y: number }> = { x: -0.08, y: 0.12 };
+const ROTATION_SENSITIVITY = 0.008;
+const MAX_VERTICAL_ROTATION = Math.PI * 0.42;
+
 @Component({
   selector: 'app-diagram-artwork',
   templateUrl: './diagram-artwork.component.html',
@@ -40,8 +50,11 @@ type EnhancedArtworkKind = Extract<DiagramArtworkKind, 'gallery' | 'lost' | 'spa
     '[class.diagram-artwork--pending]': 'enhancedKind() !== null && !renderResolved()',
     '[class.diagram-artwork--webgl]': 'webglActive()',
     '[class.diagram-artwork--pointer-active]': 'pointerActive()',
+    '(pointerdown)': 'onPointerDown($event)',
     '(pointermove)': 'onPointerMove($event)',
-    '(pointerleave)': 'resetTilt()'
+    '(pointerup)': 'onPointerEnd($event)',
+    '(pointercancel)': 'onPointerEnd($event)',
+    '(lostpointercapture)': 'onPointerCaptureLost($event)'
   }
 })
 export class DiagramArtworkComponent implements AfterViewInit {
@@ -51,6 +64,8 @@ export class DiagramArtworkComponent implements AfterViewInit {
   private renderer: DiagramArtworkWebglRenderer | null = null;
   private visibilityObserver: IntersectionObserver | null = null;
   private themeObserver: MutationObserver | null = null;
+  private dragState: ArtworkDragState | null = null;
+  private rotation = { ...INITIAL_ROTATION };
 
   readonly kind = input.required<DiagramArtworkKind>();
   readonly label = input.required<string>();
@@ -72,7 +87,11 @@ export class DiagramArtworkComponent implements AfterViewInit {
       return;
     }
 
-    const createRenderer = (): DiagramArtworkWebglRenderer | null => DiagramArtworkWebglRenderer.create(canvas, this.host.nativeElement, enhancedKind);
+    const createRenderer = (): DiagramArtworkWebglRenderer | null => {
+      const renderer = DiagramArtworkWebglRenderer.create(canvas, this.host.nativeElement, enhancedKind);
+      renderer?.setRotation(this.rotation.x, this.rotation.y);
+      return renderer;
+    };
     this.renderer = createRenderer();
     if (!this.renderer) {
       this.renderResolved.set(true);
@@ -106,26 +125,72 @@ export class DiagramArtworkComponent implements AfterViewInit {
     });
   }
 
-  onPointerMove(event: PointerEvent): void {
-    if (!this.interactive()) {
+  onPointerDown(event: PointerEvent): void {
+    if (!this.interactive() || this.dragState || (event.pointerType === 'mouse' && event.button !== 0)) {
       return;
     }
 
+    event.preventDefault();
+    this.dragState = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    this.pointerActive.set(true);
+    try {
+      this.host.nativeElement.setPointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture can be unavailable for synthetic or interrupted pointer streams.
+    }
+    this.updatePointerHighlight(event);
+  }
+
+  onPointerMove(event: PointerEvent): void {
+    const dragState = this.dragState;
+    if (!dragState || event.pointerId !== dragState.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    const deltaX = event.clientX - dragState.x;
+    const deltaY = event.clientY - dragState.y;
+    this.rotation = {
+      x: Math.max(-MAX_VERTICAL_ROTATION, Math.min(MAX_VERTICAL_ROTATION, this.rotation.x + deltaY * ROTATION_SENSITIVITY)),
+      y: this.rotation.y + deltaX * ROTATION_SENSITIVITY
+    };
+    this.dragState = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    this.applyRotation();
+    this.updatePointerHighlight(event);
+  }
+
+  onPointerEnd(event: PointerEvent): void {
+    if (event.pointerId !== this.dragState?.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    this.dragState = null;
+    this.pointerActive.set(false);
+    if (this.host.nativeElement.hasPointerCapture(event.pointerId)) {
+      this.host.nativeElement.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  onPointerCaptureLost(event: PointerEvent): void {
+    if (event.pointerId === this.dragState?.pointerId) {
+      this.dragState = null;
+      this.pointerActive.set(false);
+    }
+  }
+
+  private applyRotation(): void {
+    const radiansToDegrees = 180 / Math.PI;
+    this.host.nativeElement.style.setProperty('--artwork-rotate-x', `${(this.rotation.x * radiansToDegrees).toFixed(2)}deg`);
+    this.host.nativeElement.style.setProperty('--artwork-rotate-y', `${(this.rotation.y * radiansToDegrees).toFixed(2)}deg`);
+    this.renderer?.setRotation(this.rotation.x, this.rotation.y);
+  }
+
+  private updatePointerHighlight(event: PointerEvent): void {
     const rect = this.host.nativeElement.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
     const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-    this.pointerActive.set(true);
-    this.host.nativeElement.style.setProperty('--artwork-rotate-x', `${(-y * 11).toFixed(2)}deg`);
-    this.host.nativeElement.style.setProperty('--artwork-rotate-y', `${(x * 14).toFixed(2)}deg`);
     this.host.nativeElement.style.setProperty('--artwork-pointer-x', `${((x + 1) * 50).toFixed(1)}%`);
     this.host.nativeElement.style.setProperty('--artwork-pointer-y', `${((y + 1) * 50).toFixed(1)}%`);
-    this.renderer?.setPointer(x, y);
-  }
-
-  resetTilt(): void {
-    this.pointerActive.set(false);
-    this.host.nativeElement.style.removeProperty('--artwork-rotate-x');
-    this.host.nativeElement.style.removeProperty('--artwork-rotate-y');
-    this.renderer?.resetPointer();
   }
 }
