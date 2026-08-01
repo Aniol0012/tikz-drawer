@@ -1,7 +1,7 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, signal, viewChild } from '@angular/core';
 import { DiagramArtworkWebglRenderer } from './diagram-artwork-webgl.renderer';
-import { updatedArtworkRotation } from './diagram-artwork-rotation.utils';
+import { boundedArtworkPointerPosition, updatedArtworkRotation } from './diagram-artwork-rotation.utils';
 
 export const DIAGRAM_ARTWORK_KINDS = [
   'spatial',
@@ -37,6 +37,7 @@ interface ArtworkDragState {
 }
 
 const INITIAL_ROTATION: Readonly<{ x: number; y: number }> = { x: -0.08, y: 0.12 };
+const POINTER_HIGHLIGHT_RADIUS_PX = 38;
 
 @Component({
   selector: 'app-diagram-artwork',
@@ -183,10 +184,9 @@ export class DiagramArtworkComponent implements AfterViewInit {
   }
 
   private updatePointerHighlight(event: PointerEvent): void {
-    const rect = this.host.nativeElement.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-    this.host.nativeElement.style.setProperty('--artwork-pointer-x', `${((x + 1) * 50).toFixed(1)}%`);
-    this.host.nativeElement.style.setProperty('--artwork-pointer-y', `${((y + 1) * 50).toFixed(1)}%`);
+    const viewport = this.host.nativeElement.ownerDocument.documentElement;
+    const position = boundedArtworkPointerPosition(event.clientX, event.clientY, viewport.clientWidth, viewport.clientHeight, POINTER_HIGHLIGHT_RADIUS_PX);
+    this.host.nativeElement.style.setProperty('--artwork-pointer-x', `${position.xPercent.toFixed(1)}%`);
+    this.host.nativeElement.style.setProperty('--artwork-pointer-y', `${position.yPercent.toFixed(1)}%`);
   }
 }

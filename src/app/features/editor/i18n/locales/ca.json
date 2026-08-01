@@ -1066,7 +1066,6 @@
   "site.guide.latex.cards.2.label": "Pas 3",
   "site.guide.latex.cards.2.title": "Compila i revisa",
   "site.guide.latex.cards.2.body": "Comprova el resultat al costat del text, els peus de figura i les referències.",
-  "site.guide.latex.code.title": "Una exportació mínima",
   "site.guide.latex.code.caption": "Enganxa això al teu projecte LaTeX",
   "site.guide.iterate.title": "Edita, compila i torna a exportar",
   "site.guide.iterate.intro": "Mantén TikZ Drawer obert mentre proves la figura al document real.",

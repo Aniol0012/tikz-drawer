@@ -1066,7 +1066,6 @@
   "site.guide.latex.cards.2.label": "Paso 3",
   "site.guide.latex.cards.2.title": "Compilar y revisar",
   "site.guide.latex.cards.2.body": "Comprueba el resultado junto al texto, los pies de figura y las referencias.",
-  "site.guide.latex.code.title": "Una exportación mínima",
   "site.guide.latex.code.caption": "Pega esto en tu proyecto LaTeX",
   "site.guide.iterate.title": "Edita, compila y vuelve a exportar",
   "site.guide.iterate.intro": "Mantén TikZ Drawer abierto mientras pruebas la figura en el documento real.",

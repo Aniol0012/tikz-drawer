@@ -13,7 +13,7 @@
 
 figcaption {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 12px 15px;
@@ -21,13 +21,10 @@ figcaption {
   background: var(--toolbar-background);
 }
 
-figcaption strong {
-  font-size: 0.8rem;
-}
-
 figcaption span {
-  color: var(--muted-foreground);
-  font-size: 0.72rem;
+  color: var(--app-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 pre {

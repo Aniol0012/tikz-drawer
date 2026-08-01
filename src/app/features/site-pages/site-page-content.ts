@@ -14,7 +14,6 @@ export interface SitePageCard {
 }
 
 export interface SitePageCodeSample {
-  readonly title: string;
   readonly caption: string;
   readonly value: string;
 }
@@ -158,7 +157,6 @@ const SITE_PAGES = {
           }
         ],
         code: {
-          title: 'A minimal export',
           caption: 'Paste this into your LaTeX project',
           value: String.raw`\begin{tikzpicture}[node distance=1.8cm]
   \node[draw, rounded corners] (start) {Start};
@@ -368,7 +366,6 @@ const localizeVisualPage = (page: VisualSitePageContent, language: LanguageCode)
     code: section.code
       ? {
           ...section.code,
-          title: localizedText(language, `${page.key}.${section.id}.code.title`, section.code.title),
           caption: localizedText(language, `${page.key}.${section.id}.code.caption`, section.code.caption)
         }
       : undefined

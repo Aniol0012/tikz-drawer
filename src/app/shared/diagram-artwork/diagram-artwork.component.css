@@ -35,7 +35,7 @@ svg {
 }
 
 :host(.diagram-artwork--interactive)::after {
-  position: absolute;
+  position: fixed;
   z-index: 3;
   top: var(--artwork-pointer-y);
   left: var(--artwork-pointer-x);

@@ -61,9 +61,7 @@ const renderCodeSample = (sample: SitePageCodeSample | undefined): string => {
     return '';
   }
 
-  return `<figure><figcaption><strong>${escapeHtml(sample.title)}</strong> — ${escapeHtml(sample.caption)}</figcaption><pre><code>${escapeHtml(
-    sample.value
-  )}</code></pre></figure>`;
+  return `<figure><figcaption>${escapeHtml(sample.caption)}</figcaption><pre><code>${escapeHtml(sample.value)}</code></pre></figure>`;
 };
 
 const renderVisualSection = (section: SitePageSection): string => {

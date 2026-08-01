@@ -1,7 +1,11 @@
 <figure class="code-preview tikz-code-theme" [style]="highlightThemeStyle">
   <figcaption>
-    <strong>{{ sample().title }}</strong>
     <span>{{ sample().caption }}</span>
+    <app-copy-button
+      [value]="sample().value"
+      [copyLabel]="'copy' | translate"
+      [successLabel]="'copied' | translate"
+      [errorLabel]="'copyError' | translate" />
   </figcaption>
   <pre><code [innerHTML]="highlightedCode()"></code></pre>
 </figure>

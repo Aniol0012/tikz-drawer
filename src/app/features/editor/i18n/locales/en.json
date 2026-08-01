@@ -1066,7 +1066,6 @@
   "site.guide.latex.cards.2.label": "Step 3",
   "site.guide.latex.cards.2.title": "Compile and review",
   "site.guide.latex.cards.2.body": "Check the result beside the surrounding text, captions and references.",
-  "site.guide.latex.code.title": "A minimal export",
   "site.guide.latex.code.caption": "Paste this into your LaTeX project",
   "site.guide.iterate.title": "Edit, compile and export again",
   "site.guide.iterate.intro": "Keep TikZ Drawer open while you test the figure in the real document.",

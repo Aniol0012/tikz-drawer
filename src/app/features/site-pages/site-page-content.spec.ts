@@ -10,7 +10,7 @@ const visiblePageText = (page: SitePageContent): readonly string[] => {
         section.title,
         ...(section.intro ? [section.intro] : []),
         ...(section.cards?.flatMap((card) => [...(card.label ? [card.label] : []), card.title, card.body]) ?? []),
-        ...(section.code ? [section.code.title, section.code.caption] : [])
+        ...(section.code ? [section.code.caption] : [])
       ])
     ];
   }

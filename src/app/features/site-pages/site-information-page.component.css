@@ -1,6 +1,7 @@
 :host {
   min-height: 100dvh;
   display: block;
+  overflow-x: clip;
   color: var(--app-foreground);
   background: var(--app-background);
   font-size: 17px;
