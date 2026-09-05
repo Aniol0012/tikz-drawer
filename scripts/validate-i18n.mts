@@ -80,7 +80,7 @@ function parseModeValue(value: string | undefined): ValidationMode {
 }
 
 function printHelpAndExit(): never {
-  console.log('Usage: pnpm validate:i18n [--all|--mode all|--mode diff]');
+  console.log('Usage: bun validate:i18n [--all|--mode all|--mode diff]');
   process.exit(0);
 }
 

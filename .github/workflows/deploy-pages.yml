@@ -48,14 +48,13 @@ jobs:
             echo "No package.json version change detected for target commit ($TARGET_SHA)."
           fi
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Bump package version (patch)
         if: github.event_name == 'workflow_run' && steps.detect-version-change.outputs.changed == 'false'
@@ -118,10 +117,10 @@ jobs:
           exit 1
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build app for GitHub Pages
-        run: pnpm run build
+        run: bun run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

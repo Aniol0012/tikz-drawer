@@ -22,12 +22,12 @@ function normalizeVersion(raw) {
     .trim();
 }
 
-function extractPnpmVersion(packageManager) {
-  if (!packageManager || !String(packageManager).startsWith('pnpm@')) {
+function extractBunVersion(packageManager) {
+  if (!packageManager || !String(packageManager).startsWith('bun@')) {
     return '';
   }
 
-  return normalizeVersion(String(packageManager).slice('pnpm@'.length));
+  return normalizeVersion(String(packageManager).slice('bun@'.length));
 }
 
 function escapeRegExp(value) {
@@ -80,7 +80,7 @@ const badgeVersions = [
     slug: 'Prettier',
     version: normalizeVersion(packageJson.devDependencies?.prettier),
   },
-  { label: 'pnpm', slug: 'pnpm', version: extractPnpmVersion(packageJson.packageManager) },
+  { label: 'Bun', slug: 'Bun', version: extractBunVersion(packageJson.packageManager) },
 ];
 
 let nextReadmeContent = readmeContent;

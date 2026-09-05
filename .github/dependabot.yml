@@ -15,7 +15,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "pnpm"
+      - "bun"
     commit-message:
       prefix: "chore"
       include: "scope"

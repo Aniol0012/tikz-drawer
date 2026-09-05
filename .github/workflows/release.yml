@@ -76,20 +76,19 @@ jobs:
 
           echo "Release will be authored by ${TOKEN_ACTOR}."
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Bump package version
-        run: pnpm version "${{ inputs.version }}" --no-git-tag-version
+        run: npm version "${{ inputs.version }}" --no-git-tag-version
 
       - name: Sync README version badge
         shell: bash
@@ -116,19 +115,19 @@ jobs:
           NODE
 
       - name: Run lint
-        run: pnpm run lint
+        run: bun run lint
 
       - name: Run unit tests
-        run: pnpm run test
+        run: bun run test
 
       - name: Build production app
-        run: pnpm run build --configuration production
+        run: bun run build --configuration production
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: bun x playwright install --with-deps chromium
 
       - name: Generate release screenshots
-        run: pnpm run capture:release
+        run: bun run capture:release
 
       - name: Resolve release metadata
         id: meta
@@ -235,12 +234,12 @@ jobs:
       - name: Commit and push release metadata
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain package.json pnpm-lock.yaml README.md)" ]; then
+          if [ -z "$(git status --porcelain package.json bun.lock README.md)" ]; then
             echo "No release metadata changes to commit."
           else
             git add package.json README.md
-            if [ -f pnpm-lock.yaml ]; then
-              git add pnpm-lock.yaml
+            if [ -f bun.lock ]; then
+              git add bun.lock
             fi
             git commit -m "chore(release): bump version to ${{ steps.meta.outputs.version }}"
 

@@ -29,7 +29,7 @@ const parseArgs = (args: readonly string[]): CliOptions => {
   }
 
   if (inputs.length === 0) {
-    throw new Error('Usage: pnpm optimize:png <file.png> [...file.png] [--out-dir public/flags-optimized]');
+    throw new Error('Usage: bun optimize:png <file.png> [...file.png] [--out-dir public/flags-optimized]');
   }
 
   return {

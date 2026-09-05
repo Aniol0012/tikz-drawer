@@ -735,7 +735,7 @@ async function captureScreenshot(
 
 async function run(): Promise<void> {
   if (!existsSync(join(DIST_DIR, 'index.html'))) {
-    throw new Error(`Build output not found at ${DIST_DIR}. Run "pnpm build" first.`);
+    throw new Error(`Build output not found at ${DIST_DIR}. Run "bun run build" first.`);
   }
 
   const seed = resolveScreenshotSeed();

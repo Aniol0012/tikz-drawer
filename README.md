@@ -14,7 +14,7 @@
 [![Shoelace](https://img.shields.io/badge/Shoelace-2.20.1-1E88E5?style=flat-square&logo=shoelace&logoColor=white)](https://shoelace.style/)
 [![Vitest](https://img.shields.io/badge/Vitest-4.1.11-729B1B?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Prettier](https://img.shields.io/badge/Prettier-3.9.6-F7B93E?style=flat-square&logo=prettier&logoColor=black)](https://prettier.io/)
-[![pnpm](https://img.shields.io/badge/pnpm-10.33.1-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Bun](https://img.shields.io/badge/Bun-1.4.0-black?style=flat-square&logo=bun&logoColor=white)](https://bun.com/)
 
 </div>
 
@@ -36,8 +36,8 @@
 ## Run it
 
 ```bash
-pnpm install
-pnpm start
+bun install
+bun start
 ```
 
 Open [http://localhost:4200](http://localhost:4200).
@@ -45,7 +45,7 @@ Open [http://localhost:4200](http://localhost:4200).
 ## Build
 
 ```bash
-pnpm build
+bun run build
 ```
 
 ## License
