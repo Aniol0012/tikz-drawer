@@ -4,6 +4,8 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { EditorStore } from './editor.store';
 import type { CanvasShape, TikzScene } from '../models/tikz.models';
 import { DEFAULT_ARROW_TIP_KIND } from '../config/arrow-tip.config';
+import { defaultPreferences } from '../presets/presets';
+import { EDITOR_STORAGE_KEYS } from '../constants/editor.constants';
 
 const importedScene = (name: string): TikzScene => ({
   name,
@@ -82,6 +84,49 @@ describe('EditorStore import application', () => {
     expect(store.scene().shapes).toHaveLength(initialCount + 1);
     expect(store.scene().shapes.at(-1)).toMatchObject({ kind: 'line', arrowEnd: true });
     expect(store.importCode()).toBe(String.raw`\draw (0,0) -- (1,1);`);
+  });
+
+  it('uses white default strokes and text in dark mode and restores the light defaults', () => {
+    store.setTheme('dark');
+    expect(store.preferences()).toMatchObject({ defaultStroke: '#ffffff', defaultTextColor: '#ffffff' });
+
+    store.setTheme('light');
+    expect(store.preferences()).toMatchObject({ defaultStroke: defaultPreferences.defaultStroke, defaultTextColor: defaultPreferences.defaultTextColor });
+  });
+
+  it('preserves custom defaults and existing shapes when changing theme through settings', () => {
+    const shapes = structuredClone(store.scene().shapes);
+    store.patchPreferences({ defaultStroke: '#ff0000', defaultTextColor: '#008800' });
+    store.patchPreferences({ theme: 'dark' });
+
+    expect(store.preferences()).toMatchObject({ defaultStroke: '#ff0000', defaultTextColor: '#008800' });
+    expect(store.scene().shapes).toEqual(shapes);
+  });
+
+  it('respects colors explicitly supplied together with a theme change', () => {
+    store.patchPreferences({ theme: 'dark', defaultStroke: '#1f1f1f', defaultTextColor: '#161616' });
+
+    expect(store.preferences()).toMatchObject({ defaultStroke: '#1f1f1f', defaultTextColor: '#161616' });
+  });
+
+  it('upgrades the old dark-mode defaults when restoring persisted preferences', () => {
+    TestBed.resetTestingModule();
+    localStorage.setItem(EDITOR_STORAGE_KEYS.state, JSON.stringify({ preferences: { ...defaultPreferences, defaultColorsVersion: undefined, theme: 'dark' } }));
+    TestBed.configureTestingModule({ providers: [EditorStore] });
+    store = TestBed.inject(EditorStore);
+
+    expect(store.preferences()).toMatchObject({ theme: 'dark', defaultStroke: '#ffffff', defaultTextColor: '#ffffff' });
+  });
+
+  it('keeps deliberately dark custom colors after reloading a dark-mode document', () => {
+    store.patchPreferences({ theme: 'dark', defaultStroke: '#1f1f1f', defaultTextColor: '#161616' });
+    const preferences = store.preferences();
+    TestBed.resetTestingModule();
+    localStorage.setItem(EDITOR_STORAGE_KEYS.state, JSON.stringify({ preferences }));
+    TestBed.configureTestingModule({ providers: [EditorStore] });
+    store = TestBed.inject(EditorStore);
+
+    expect(store.preferences()).toMatchObject({ theme: 'dark', defaultStroke: '#1f1f1f', defaultTextColor: '#161616' });
   });
 
   it('replaces the current scene when requested by the import dialog', () => {

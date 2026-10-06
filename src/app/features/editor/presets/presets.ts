@@ -746,6 +746,7 @@ export const buildTablePresetShapes = (overrides: Partial<typeof DEFAULT_TABLE_G
   });
 
 export const defaultPreferences: EditorPreferences = {
+  defaultColorsVersion: 1,
   theme: 'light',
   snapToGrid: true,
   snapToObjects: true,

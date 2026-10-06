@@ -368,7 +368,30 @@ const applyDefaultShapeStyle = (shape: CanvasShape, preferences: EditorPreferenc
   }
 };
 
+const themeDefaultColors = (theme: EditorPreferences['theme']): Pick<EditorPreferences, 'defaultStroke' | 'defaultTextColor'> => ({
+  defaultStroke: theme === 'dark' ? '#ffffff' : defaultPreferences.defaultStroke,
+  defaultTextColor: theme === 'dark' ? '#ffffff' : defaultPreferences.defaultTextColor
+});
+
+const preferencesForTheme = (
+  preferences: Partial<EditorPreferences>,
+  previousTheme: EditorPreferences['theme'],
+  theme: EditorPreferences['theme']
+): Partial<EditorPreferences> => {
+  const previousColors = themeDefaultColors(previousTheme);
+  const nextColors = themeDefaultColors(theme);
+  return {
+    ...preferences,
+    theme,
+    defaultColorsVersion: 1,
+    defaultStroke: preferences.defaultStroke === previousColors.defaultStroke ? nextColors.defaultStroke : preferences.defaultStroke,
+    defaultTextColor: preferences.defaultTextColor === previousColors.defaultTextColor ? nextColors.defaultTextColor : preferences.defaultTextColor
+  };
+};
+
 const normalizePreferences = (preferences: Partial<EditorPreferences> | undefined): EditorPreferences => {
+  const theme = normalizeAppTheme(preferences?.theme, defaultPreferences.theme);
+  const colors = themeDefaultColors(theme);
   const scale = Number(preferences?.scale);
   const normalizedScale = Number.isFinite(scale) ? Math.min(EDITOR_SCALE_MAX, Math.max(EDITOR_SCALE_MIN, scale)) : DEFAULT_EDITOR_SCALE;
   const defaultArrowType = normalizeArrowTipKind(preferences?.defaultArrowType);
@@ -378,7 +401,10 @@ const normalizePreferences = (preferences: Partial<EditorPreferences> | undefine
   return {
     ...defaultPreferences,
     ...preferences,
-    theme: normalizeAppTheme(preferences?.theme, defaultPreferences.theme),
+    theme,
+    defaultColorsVersion: 1,
+    defaultStroke: preferences?.defaultStroke ?? colors.defaultStroke,
+    defaultTextColor: preferences?.defaultTextColor ?? colors.defaultTextColor,
     scale: normalizedScale,
     gridStep,
     objectSnapTolerance,
@@ -424,7 +450,7 @@ export class EditorStore {
   private pendingStatePersistHandle: ReturnType<typeof setTimeout> | null = null;
   private pendingStatePersist: PersistedEditorState | null = null;
 
-  readonly preferences = signal<EditorPreferences>(defaultPreferences);
+  readonly preferences = signal<EditorPreferences>(normalizePreferences({ theme: this.globalTheme.theme() }));
   readonly scene = signal<TikzScene>(cloneScene(defaultScene));
   readonly selectedShapeIds = signal<readonly string[]>([]);
   readonly importCode = signal(sceneToTikz(defaultScene));
@@ -661,14 +687,15 @@ export class EditorStore {
   }
 
   setTheme(theme: EditorPreferences['theme']): void {
-    this.preferences.update((preferences) => ({
-      ...preferences,
-      theme: normalizeAppTheme(theme, preferences.theme)
-    }));
+    this.patchPreferences({ theme });
   }
 
   patchPreferences(patch: Partial<EditorPreferences>): void {
-    this.preferences.update((preferences) => normalizePreferences({ ...preferences, ...patch }));
+    this.preferences.update((preferences) => {
+      const theme = normalizeAppTheme(patch.theme, preferences.theme);
+      const themedPreferences = preferencesForTheme(preferences, preferences.theme, theme);
+      return normalizePreferences({ ...themedPreferences, ...patch, theme });
+    });
   }
 
   patchSelectedShape(mutator: (shape: CanvasShape) => CanvasShape): void {
@@ -867,7 +894,10 @@ export class EditorStore {
 
     try {
       if (parsed.preferences) {
-        this.preferences.set(normalizePreferences(parsed.preferences));
+        const theme = normalizeAppTheme(parsed.preferences.theme);
+        const restoredPreferences =
+          parsed.preferences.defaultColorsVersion === 1 ? parsed.preferences : preferencesForTheme(parsed.preferences, 'light', theme);
+        this.preferences.set(normalizePreferences(restoredPreferences));
       }
 
       if (parsed.scene) {

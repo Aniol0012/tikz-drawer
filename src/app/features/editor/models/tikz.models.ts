@@ -151,6 +151,7 @@ export interface TikzScene {
 }
 
 export interface EditorPreferences {
+  readonly defaultColorsVersion?: 1;
   readonly theme: ThemeMode;
   readonly snapToGrid: boolean;
   readonly snapToObjects: boolean;
