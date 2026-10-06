@@ -227,6 +227,8 @@ import { sceneToTikzBundle, type TikzExportOptions } from '../../tikz/tikz.codeg
 import { EditorStore } from '../../state/editor.store';
 import { EditorLocalStorageService } from '../../state/editor-local-storage.service';
 import { CodeHighlightThemeService } from '../../state/code-highlight-theme.service';
+import { readEditorSystemClipboard, resolveEditorClipboardPaste } from '../../utils/editor-clipboard.utils';
+import type { EditorSystemClipboard } from '../../utils/editor-clipboard.utils';
 import { AppThemeService } from '../../state/app-theme.service';
 import { EditorDevModeService } from '../../state/editor-dev-mode.service';
 import { ScenePatchService } from '../../ai/scene-patch.service';
@@ -475,6 +477,8 @@ export class EditorPageComponent {
   readonly suppressContextMenuUntil = signal(0);
   readonly suppressNextContextMenu = signal(false);
   readonly clipboardShapes = signal<ClipboardShapeSet | null>(null);
+  private clipboardMarker = '';
+  private clipboardWritePromise: Promise<void> | null = null;
   readonly ignoreNextShapeClickId = signal<string | null>(null);
   private readonly initialSidebarSizes = this.restoreSidebarSizes();
   readonly leftSidebarWidth = signal(this.initialSidebarSizes.left);
@@ -2740,17 +2744,26 @@ export class EditorPageComponent {
       shapes: structuredClone(shapes),
       pasteCount: 0
     });
-    this.copySingleSelectedImageToSystemClipboard(shapes);
+    this.clipboardMarker = `tikz-drawer:clipboard:${crypto.randomUUID()}`;
+    this.clipboardWritePromise = this.copySelectedToSystemClipboard(shapes, this.clipboardMarker);
+    if (this.clipboardWritePromise) {
+      this.runAsync(this.clipboardWritePromise);
+    }
   }
 
-  private copySingleSelectedImageToSystemClipboard(shapes: readonly CanvasShape[]): void {
+  private copySelectedToSystemClipboard(shapes: readonly CanvasShape[], marker: string): Promise<void> | null {
     const [shape] = shapes;
     if (shapes.length !== 1 || shape?.kind !== 'image' || !navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-      return;
+      if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(marker);
+      }
+      return null;
     }
 
     const pngBlob = this.imageSourceToPngBlob(shape.src);
-    this.runAsync(navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]));
+    return navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': pngBlob, 'text/plain': pngBlob.then(() => new Blob([marker], { type: 'text/plain' })) })
+    ]);
   }
 
   private async imageSourceToPngBlob(src: string): Promise<Blob> {
@@ -2778,21 +2791,18 @@ export class EditorPageComponent {
       return;
     }
 
-    this.clipboardShapes.set({
-      shapes: structuredClone(shapes),
-      pasteCount: 0
-    });
+    this.copySelected();
     this.removeSelected();
   }
 
   async pasteClipboard(): Promise<void> {
-    if (this.pasteInternalClipboard()) {
-      return;
-    }
-
-    const imageFile = await this.readImageFileFromNavigatorClipboard();
-    if (imageFile) {
-      await this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter()));
+    await this.clipboardWritePromise?.catch(() => undefined);
+    const clipboard = await readEditorSystemClipboard(navigator.clipboard);
+    const paste = resolveEditorClipboardPaste(clipboard, this.clipboardMarker, !!this.clipboardShapes()?.shapes.length);
+    if (paste.source === 'image') {
+      await this.insertImageFileAtPoint(paste.file, this.snapScenePoint(this.viewportCenter()));
+    } else if (paste.source === 'internal') {
+      this.pasteInternalClipboard();
     }
   }
 
@@ -3754,7 +3764,7 @@ export class EditorPageComponent {
 
   contextMenuActionDisabled(action: ContextAction): boolean {
     if (action === 'paste') {
-      return !this.clipboardShapes()?.shapes.length;
+      return !this.clipboardShapes()?.shapes.length && !navigator.clipboard?.read;
     }
     return action !== 'png' && this.selectionCount() === 0;
   }
@@ -6475,17 +6485,31 @@ export class EditorPageComponent {
       return;
     }
 
-    if (this.pasteInternalClipboard()) {
-      event.preventDefault();
-      event.stopPropagation();
+    const clipboard = { marker: event.clipboardData?.getData('text/plain') ?? '', imageFile: this.getImageFileFromTransfer(event.clipboardData) };
+    const paste = resolveEditorClipboardPaste(clipboard, this.clipboardMarker, !!this.clipboardShapes()?.shapes.length);
+    if (paste.source === 'none') {
       return;
     }
+    event.preventDefault();
+    event.stopPropagation();
+    if (paste.source === 'image') {
+      this.runAsync(this.pasteTransferredImage(clipboard));
+    } else {
+      this.pasteInternalClipboard();
+    }
+  }
 
-    const imageFile = this.getImageFileFromTransfer(event.clipboardData);
-    if (imageFile) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.runAsync(this.insertImageFileAtPoint(imageFile, this.snapScenePoint(this.viewportCenter())));
+  private async pasteTransferredImage(clipboard: EditorSystemClipboard): Promise<void> {
+    // Native image paste events can expose stale or missing text formats just after a clipboard write.
+    if (clipboard.marker !== this.clipboardMarker && this.clipboardMarker && this.clipboardShapes()?.shapes.length) {
+      await this.clipboardWritePromise?.catch(() => undefined);
+      const systemClipboard = await readEditorSystemClipboard(navigator.clipboard);
+      if (systemClipboard?.marker === this.clipboardMarker && this.pasteInternalClipboard()) {
+        return;
+      }
+    }
+    if (clipboard.imageFile) {
+      await this.insertImageFileAtPoint(clipboard.imageFile, this.snapScenePoint(this.viewportCenter()));
     }
   }
 
@@ -8140,30 +8164,6 @@ export class EditorPageComponent {
     }
 
     return Array.from(transfer?.files ?? []).find((file) => file.type.startsWith('image/')) ?? null;
-  }
-
-  private async readImageFileFromNavigatorClipboard(): Promise<File | null> {
-    if (!navigator.clipboard?.read) {
-      return null;
-    }
-
-    try {
-      const items = await navigator.clipboard.read();
-      for (const item of items) {
-        const imageType = item.types.find((type) => type.startsWith('image/'));
-        if (!imageType) {
-          continue;
-        }
-
-        const blob = await item.getType(imageType);
-        const extension = imageType.split('/')[1] || 'png';
-        return new File([blob], `clipboard-image.${extension}`, { type: imageType });
-      }
-    } catch {
-      return null;
-    }
-
-    return null;
   }
 
   private async insertImageFileAtPoint(file: File, point: Point): Promise<void> {
