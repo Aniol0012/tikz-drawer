@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import type * as FirebaseAi from 'firebase/ai';
 import type * as FirebaseAppCheck from 'firebase/app-check';
 import type { FirebaseApp } from 'firebase/app';
@@ -12,6 +12,8 @@ type FirebaseAppCheckModule = typeof FirebaseAppCheck;
 interface FirebaseAiRuntime {
   readonly app: FirebaseApp;
   readonly ai: FirebaseAiModule;
+  readonly appCheck: FirebaseAppCheck.AppCheck;
+  readonly getToken: FirebaseAppCheckModule['getToken'];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,7 +24,8 @@ export class FirebaseAiProvider {
   private runtimePromise: Promise<FirebaseAiRuntime> | null = null;
 
   async generateText(request: AiProviderRequest): Promise<AiProviderTextResult> {
-    const { app, ai: firebaseAi } = await this.runtime();
+    const { app, ai: firebaseAi, appCheck, getToken } = await this.runtime();
+    await getToken(appCheck);
     const modelName = request.options.remoteModel;
     const ai = firebaseAi.getAI(app, { backend: new firebaseAi.GoogleAIBackend() });
     const model = firebaseAi.getGenerativeModel(ai, {
@@ -58,20 +61,24 @@ export class FirebaseAiProvider {
   }
 
   private async initializeRuntime(): Promise<FirebaseAiRuntime> {
-    const appCheckModulePromise: Promise<FirebaseAppCheckModule | null> = FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY
-      ? import('firebase/app-check')
-      : Promise.resolve(null);
-    const [firebaseApp, firebaseAi, appCheck] = await Promise.all([import('firebase/app'), import('firebase/ai'), appCheckModulePromise]);
-    const app = firebaseApp.initializeApp(FIREBASE_CONFIG);
-
-    if (appCheck) {
-      appCheck.initializeAppCheck(app, {
-        provider: new appCheck.ReCaptchaEnterpriseProvider(FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
-        isTokenAutoRefreshEnabled: true
-      });
+    const siteKey = FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY.trim();
+    if (!siteKey) {
+      throw new Error('Firebase App Check requires a reCAPTCHA Enterprise site key in firebase-ai.config.ts.');
     }
 
-    return { app, ai: firebaseAi };
+    if (isDevMode() && typeof location !== 'undefined' && ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) {
+      const debugGlobal = globalThis as typeof globalThis & { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string };
+      debugGlobal.FIREBASE_APPCHECK_DEBUG_TOKEN ??= true;
+    }
+
+    const [firebaseApp, firebaseAi, appCheckModule] = await Promise.all([import('firebase/app'), import('firebase/ai'), import('firebase/app-check')]);
+    const app = firebaseApp.getApps().length ? firebaseApp.getApp() : firebaseApp.initializeApp(FIREBASE_CONFIG);
+    const appCheck = appCheckModule.initializeAppCheck(app, {
+      provider: new appCheckModule.ReCaptchaEnterpriseProvider(siteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+
+    return { app, ai: firebaseAi, appCheck, getToken: appCheckModule.getToken };
   }
 
   private responseSchema(schema: FirebaseAiModule['Schema']): FirebaseSchema {

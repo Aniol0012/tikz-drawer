@@ -12,4 +12,5 @@ export const FIREBASE_CONFIG: FirebaseOptions = {
 
 type AI_MODEL = 'gemini-3.1-flash-lite' | 'gemini-3.1-flash';
 export const FIREBASE_AI_MODEL = 'gemini-3.1-flash-lite' satisfies AI_MODEL;
-export const FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = '';
+// Public website key registered for this web app in Firebase App Check (not a secret or debug token).
+export const FIREBASE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY: string = '6Le3cOItAAAAALMDNS3Yyy4jvhAXxxGO5EFGpCzW';
